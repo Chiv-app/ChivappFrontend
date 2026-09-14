@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_COLOR: Record<
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };`n`nconst STATUS_COLOR: Record<
     string,
     "default" | "warning" | "success" | "danger" | "primary"
 > = {
@@ -192,7 +192,7 @@ export default function AdminContractorsPage() {
                                             variant="flat"
                                             color={STATUS_COLOR[profile.status] ?? "default"}
                                         >
-                                            {profile.status}
+                                            {STATUS_LABELS[profile.status] ?? profile.status}
                                         </Chip>
                                         {profile.submitted_at ? (
                                             <span className="text-xs text-default-400">
@@ -368,3 +368,5 @@ export default function AdminContractorsPage() {
         </div>
     );
 }
+
+

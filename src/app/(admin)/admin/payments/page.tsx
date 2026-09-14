@@ -57,7 +57,7 @@ const STATUS_FILTERS = [
     { key: "refunded", label: "Reembolsados" },
 ];
 
-const STATUS_COLOR: Record<
+import { PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";`n`nconst STATUS_COLOR: Record<
     string,
     "default" | "primary" | "success" | "warning" | "danger"
 > = {
@@ -823,7 +823,7 @@ export default function AdminPaymentsPage() {
                                         variant="flat"
                                         color={STATUS_COLOR[payment.status] ?? "default"}
                                     >
-                                        {payment.status}
+                                        {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
                                     </Chip>
                                 </TableCell>
                                 <TableCell>
@@ -1025,4 +1025,5 @@ export default function AdminPaymentsPage() {
         </div>
     );
 }
+
 

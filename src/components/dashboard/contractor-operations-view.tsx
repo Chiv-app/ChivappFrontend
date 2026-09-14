@@ -14,6 +14,7 @@ import {
 import { Icon } from "@iconify/react";
 import {
     BOOKING_STATUS_LABELS,
+    PAYMENT_STATUS_LABELS,
     formatBookingDate,
     formatCurrency,
 } from "@/lib/booking-labels";
@@ -451,13 +452,7 @@ function OperationRow({ item }: { item: ContractorOperationItem }) {
 }
 
 function paymentStatusLabel(status: PaymentStatus): string {
-    const labels: Record<PaymentStatus, string> = {
-        initiated: "En revisión",
-        retained: "Retenido",
-        released: "Liberado",
-        refunded: "Reembolsado",
-        failed: "Fallido",
-        rejected: "Rechazado",
-    };
-    return labels[status] || status;
+    
+    return PAYMENT_STATUS_LABELS[status] || status;
 }
+

@@ -55,7 +55,7 @@ function paymentTypeLabel(type: string | null): string {
     return "Pago";
 }
 
-const PAYMENT_STATUS_COLOR: Record<
+import { PAYMENT_STATUS_LABELS, PAYMENT_TYPE_LABELS } from "@/lib/booking-labels";`n`nconst PAYMENT_STATUS_COLOR: Record<
     string,
     "default" | "warning" | "success" | "danger" | "primary"
 > = {
@@ -375,7 +375,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                             variant="flat"
                                             color={PAYMENT_STATUS_COLOR[payment.status] ?? "default"}
                                         >
-                                            {payment.status}
+                                            {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
                                         </Chip>
                                     </div>
                                 </div>
@@ -550,4 +550,5 @@ export default function AdminBookingDetailPage({ params }: Props) {
         </div>
     );
 }
+
 
