@@ -34,6 +34,11 @@ export async function GET(
         return new NextResponse("Not Found", { status: 404 });
     }
 
+    if (process.env.NEXT_PUBLIC_GCS_BUCKET_URL) {
+        const gcsUrl = `${process.env.NEXT_PUBLIC_GCS_BUCKET_URL}/${path.join("/")}`;
+        return NextResponse.redirect(gcsUrl, 302);
+    }
+
     const upstreamBase = getUpstreamBase(request);
     const targetUrl = `${upstreamBase}/uploads/${path.join("/")}`;
 

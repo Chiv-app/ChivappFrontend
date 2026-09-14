@@ -35,10 +35,13 @@ export function resolveUploadUrl(url: string | null | undefined): string | null 
     if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
         try {
             const parsed = new URL(trimmed);
-            const asUploads = toUploadsPath(parsed.pathname);
-            if (asUploads) {
-                // Absolute backend upload URLs → same-origin path for next/image + rewrite.
-                return asUploads;
+            if (parsed.pathname.startsWith("/uploads/")) {
+                const filename = parsed.pathname.replace("/uploads/", "");
+                if (process.env.NEXT_PUBLIC_GCS_BUCKET_URL) {
+                    return `${process.env.NEXT_PUBLIC_GCS_BUCKET_URL}/${filename}`;
+                }
+                const asUploads = toUploadsPath(parsed.pathname);
+                if (asUploads) return asUploads;
             }
         } catch {
             // fall through
@@ -47,6 +50,14 @@ export function resolveUploadUrl(url: string | null | undefined): string | null 
     }
 
     const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+    
+    if (path.startsWith("/uploads/")) {
+        if (process.env.NEXT_PUBLIC_GCS_BUCKET_URL) {
+            const filename = path.replace("/uploads/", "");
+            return `${process.env.NEXT_PUBLIC_GCS_BUCKET_URL}/${filename}`;
+        }
+    }
+
     const asUploads = toUploadsPath(path);
     if (asUploads) {
         return asUploads;
