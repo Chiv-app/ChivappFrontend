@@ -9,6 +9,7 @@ import AdminStatCard from "@/components/admin/admin-stat-card";
 import { getAdminActivity, getAdminStats } from "@/lib/admin";
 import { ADMIN_MODULES } from "@/lib/dashboard-nav";
 import { formatCurrency } from "@/lib/booking-labels";
+import { formatDateTime } from "@/lib/date-utils";
 import type { AdminActivityItem, AdminStatsOut } from "@/types/api";
 
 export default function AdminDashboardPage() {
@@ -137,7 +138,7 @@ export default function AdminDashboardPage() {
                                         ) : null}
                                     </div>
                                     <span className="text-xs text-default-400 shrink-0 ml-3">
-                                        {new Date(item.created_at).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+                                        {formatDateTime(item.created_at)}
                                     </span>
                                 </Link>
                             ))}
@@ -190,3 +191,4 @@ export default function AdminDashboardPage() {
         </div>
     );
 }
+

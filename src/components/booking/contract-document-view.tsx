@@ -8,7 +8,9 @@ import ContractPdfViewer from "@/components/booking/contract-pdf-viewer";
 import { getBookingContractPdfBlob } from "@/lib/contracts";
 import { normalizeContractBodyToHtml } from "@/lib/contract-templates";
 import { resolveUploadUrl } from "@/lib/uploads";
-import type { ContractOut } from "@/types/api";
+import { formatCurrency, formatBookingDate } from "@/lib/booking-labels";
+import { formatDateTime } from "@/lib/date-utils";
+import type { BookingOut, ContractOut } from "@/types/api";
 
 type Props = {
     contract: ContractOut | null;
@@ -223,13 +225,11 @@ export default function ContractDocumentView({
             <Card shadow="none" className="border border-default-200">
                 <CardBody className="gap-5 p-5 sm:p-6">
                     <div>
-                        {contract.musician_signed || musicianSignatureUrl ? (
+                        {contract.musician_signed ? (
                             <p className="text-sm text-success">
                                 Firma del artista incluida
                                 {contract.musician_sign_timestamp
-                                    ? ` · ${new Date(
-                                          contract.musician_sign_timestamp,
-                                      ).toLocaleString("es-PE", { timeZone: "America/Lima" })}`
+                                    ? ` — ${formatDateTime(contract.musician_sign_timestamp)}`
                                     : ""}
                             </p>
                         ) : (
@@ -241,9 +241,7 @@ export default function ContractDocumentView({
                             <p className="text-sm text-success mt-1">
                                 Firmado digitalmente por el contratista
                                 {contract.contractor_sign_timestamp
-                                    ? ` · ${new Date(
-                                          contract.contractor_sign_timestamp,
-                                      ).toLocaleString("es-PE", { timeZone: "America/Lima" })}`
+                                    ? ` — ${formatDateTime(contract.contractor_sign_timestamp)}`
                                     : ""}
                             </p>
                         ) : (
@@ -351,3 +349,5 @@ export default function ContractDocumentView({
         </div>
     );
 }
+
+

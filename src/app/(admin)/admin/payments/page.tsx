@@ -27,6 +27,7 @@ import {
 import { Icon } from "@iconify/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import FileUploadField from "@/components/ui/file-upload-field";
+import { formatDateTime } from "@/lib/date-utils";
 import {
     getAdminPaymentInstructions,
     getAdminPayments,
@@ -509,7 +510,7 @@ export default function AdminPaymentsPage() {
                         {instructions?.updated_at ? (
                             <p className="text-xs text-default-400">
                                 Última actualización:{" "}
-                                {new Date(instructions.updated_at).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+                                {formatDateTime(instructions.updated_at)}
                             </p>
                         ) : null}
                     </form>
@@ -795,10 +796,7 @@ export default function AdminPaymentsPage() {
                                             {payment.payment_type || "pago"}
                                         </p>
                                         <p className="text-xs text-default-500">
-                                            {new Date(payment.created_at).toLocaleString(
-                                                "es-PE",
-                                                { timeZone: "America/Lima" },
-                                            )}
+                                            {formatDateTime(payment.created_at)}
                                         </p>
                                     </div>
                                 </TableCell>
@@ -1027,3 +1025,4 @@ export default function AdminPaymentsPage() {
         </div>
     );
 }
+

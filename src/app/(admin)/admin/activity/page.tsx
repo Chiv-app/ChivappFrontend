@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, Card, CardBody, Chip } from "@heroui/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getAdminActivity } from "@/lib/admin";
+import { formatDateTime } from "@/lib/date-utils";
 import type { AdminActivityItem } from "@/types/api";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -79,7 +80,7 @@ export default function AdminActivityPage() {
                                     </div>
                                 </div>
                                 <span className="text-xs text-default-400 shrink-0">
-                                    {new Date(item.created_at).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+                                    {formatDateTime(item.created_at)}
                                 </span>
                             </Link>
                         ))
@@ -89,3 +90,5 @@ export default function AdminActivityPage() {
         </div>
     );
 }
+
+

@@ -20,6 +20,7 @@ import {
 import { Icon } from "@iconify/react";
 import AdminBookingTimelineCard from "@/components/admin/admin-booking-timeline-card";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { formatDateTime } from "@/lib/date-utils";
 import ContractDocumentView from "@/components/booking/contract-document-view";
 import { PaymentEvidenceViewer } from "@/components/booking/contract-pdf-viewer";
 import {
@@ -430,7 +431,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                 >
                                     <p className="text-xs text-default-500 mb-1">
                                         {message.sender_name ?? "Usuario"} ·{" "}
-                                        {new Date(message.created_at).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+                                        {formatDateTime(message.created_at)}
                                     </p>
                                     <p>{message.body}</p>
                                 </div>
@@ -549,3 +550,4 @@ export default function AdminBookingDetailPage({ params }: Props) {
         </div>
     );
 }
+

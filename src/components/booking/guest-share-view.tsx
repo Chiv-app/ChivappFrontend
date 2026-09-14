@@ -23,18 +23,13 @@ import {
     formatBookingTime,
 } from "@/lib/booking-labels";
 import { resolveUploadUrl } from "@/lib/uploads";
+import { formatPeruDateTime } from "@/lib/date-utils";
 import type { BookingReviewOut, BookingSharePublicOut } from "@/types/api";
 
 const REVIEW_EMOJIS = ["🤩", "🔥", "💃", "👏", "❤️", "🎵", "🥳", "✨"];
 
 function formatReviewTime(value: string): string {
-    return new Date(value).toLocaleString("es-PE", {
-        timeZone: "America/Lima",
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    return formatPeruDateTime(value);
 }
 
 export default function GuestShareView({ token }: { token: string }) {

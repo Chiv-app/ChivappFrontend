@@ -23,6 +23,7 @@ import RecommendContractorCard from "@/components/booking/recommend-contractor-c
 import { useAuth } from "@/contexts/auth-context";
 import { formatCurrency } from "@/lib/booking-labels";
 import { createMercadoPagoPreference } from "@/lib/payments";
+import { formatDateTime } from "@/lib/date-utils";
 import {
     completeBooking,
     getBooking,
@@ -308,9 +309,7 @@ export default function BookingConfirmedWorkspace({
                                         >
                                             <p className="text-[11px] opacity-80 mb-1">
                                                 {message.sender_name ?? "Usuario"} ·{" "}
-                                                {new Date(
-                                                    message.created_at,
-                                                ).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+                                                {formatDateTime(message.created_at)}
                                             </p>
                                             <p>{message.body}</p>
                                         </div>
@@ -512,3 +511,5 @@ export default function BookingConfirmedWorkspace({
         </div>
     );
 }
+
+

@@ -25,6 +25,7 @@ import {
     resendEnsembleInvite,
     updateEnsembleMember,
 } from "@/lib/ensemble-members";
+import { formatPeruDate } from "@/lib/date-utils";
 import { COMMON_INSTRUMENTS, getInstrumentIcon } from "@/lib/instrument-icons";
 import { UI } from "@/lib/ui-classes";
 import type { EnsembleMemberOut, EnsembleMemberStatus } from "@/types/api";
@@ -55,15 +56,11 @@ const emptyForm = {
     notes: "",
 };
 
-function formatShortDate(value: string | null | undefined) {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
-    return date.toLocaleDateString("es-PE", {
-        timeZone: "America/Lima",
+function formatJoinedDate(value: string | null | undefined) {
+    return formatPeruDate(value, {
         day: "2-digit",
         month: "short",
-        year: "numeric",
+        year: "numeric"
     });
 }
 
@@ -86,7 +83,7 @@ function getDisplayState(member: EnsembleMemberOut): DisplayState {
         };
     }
     if (hasAcceptedInvite(member)) {
-        const joined = formatShortDate(member.joined_at);
+        const joined = formatJoinedDate(member.joined_at);
         return {
             key: "accepted",
             label: "Aceptó",
@@ -97,7 +94,7 @@ function getDisplayState(member: EnsembleMemberOut): DisplayState {
         };
     }
     if (member.invite_expired) {
-        const expired = formatShortDate(member.invite_expires_at);
+        const expired = formatJoinedDate(member.invite_expires_at);
         return {
             key: "expired",
             label: "Enlace expirado",
@@ -105,7 +102,7 @@ function getDisplayState(member: EnsembleMemberOut): DisplayState {
             detail: expired ? `Venció el ${expired}` : "Regenera el enlace",
         };
     }
-    const invited = formatShortDate(member.invited_at);
+    const invited = formatJoinedDate(member.invited_at);
     return {
         key: "pending",
         label: "Pendiente",
@@ -987,8 +984,8 @@ export default function MusicianMembersView() {
                                                 {editing.invite_expires_at ? (
                                                     <p className="text-xs text-default-500">
                                                         {editing.invite_expired
-                                                            ? `Venció el ${formatShortDate(editing.invite_expires_at) ?? "—"}`
-                                                            : `Válido hasta ${formatShortDate(editing.invite_expires_at) ?? "—"}`}
+                                                            ? `Venció el ${formatJoinedDate(editing.invite_expires_at) ?? "—"}`
+                                                            : `Válido hasta ${formatJoinedDate(editing.invite_expires_at) ?? "—"}`}
                                                     </p>
                                                 ) : null}
                                                 <div className="flex flex-wrap gap-2">
@@ -1163,3 +1160,4 @@ export default function MusicianMembersView() {
         </div>
     );
 }
+

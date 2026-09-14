@@ -152,9 +152,7 @@ export default function BookingDocumentsCard({
                                                     </p>
                                                     <p className="text-sm text-default-500 mt-1">
                                                         {formatCurrency(Number(payment.amount))} ·{" "}
-                                                        {new Date(
-                                                            payment.created_at,
-                                                        ).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+                                                        {formatDateTime(payment.created_at)}
                                                     </p>
                                                 </div>
                                                 <Chip
@@ -190,3 +188,4 @@ export default function BookingDocumentsCard({
         </Card>
     );
 }
+

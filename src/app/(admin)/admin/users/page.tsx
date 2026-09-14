@@ -17,6 +17,7 @@ import {
     addToast,
 } from "@heroui/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { formatDateTime } from "@/lib/date-utils";
 import { getAdminUsers, updateAdminUser } from "@/lib/admin";
 import { UI } from "@/lib/ui-classes";
 import type { AdminUserOut } from "@/types/api";
@@ -183,7 +184,7 @@ export default function AdminUsersPage() {
                                     />
                                 </TableCell>
                                 <TableCell className="text-xs text-default-500">
-                                    {new Date(user.created_at).toLocaleDateString("es-PE", { timeZone: "America/Lima" })}
+                                    {formatDateTime(user.created_at)}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -193,3 +194,4 @@ export default function AdminUsersPage() {
         </div>
     );
 }
+

@@ -16,6 +16,7 @@ import {
     addToast,
 } from "@heroui/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { formatDateTime } from "@/lib/date-utils";
 import {
     getAdminEmailLogs,
     getAdminEmailTemplates,
@@ -480,10 +481,7 @@ export default function AdminEmailsPage() {
                                                         {STATUS_LABEL[log.status] ?? log.status}
                                                     </Chip>
                                                     <span className="text-xs text-default-400">
-                                                        {new Date(log.created_at).toLocaleString(
-                                                            "es-PE",
-                                                            { timeZone: "America/Lima" },
-                                                        )}
+                                                        {formatDateTime(log.created_at)}
                                                     </span>
                                                 </div>
                                             </div>
@@ -498,3 +496,5 @@ export default function AdminEmailsPage() {
         </div>
     );
 }
+
+

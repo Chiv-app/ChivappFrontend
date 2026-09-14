@@ -84,3 +84,11 @@ export function getPeruEventDate(eventDate: string, startTime: string): Date {
     // Interpretar explícitamente en UTC-5 (hora de Perú)
     return new Date(`${eventDate}T${cleanTime}-05:00`);
 }
+
+/**
+ * Formatea un timestamp ISO genérico a formato legible.
+ * Ej: "10 de sep. de 2026, 19:30"
+ */
+export function formatDateTime(value: string | Date | null | undefined): string {
+    return formatPeruDateTime(value);
+}

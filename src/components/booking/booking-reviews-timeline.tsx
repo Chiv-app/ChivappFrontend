@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { formatPeruDateTime } from "@/lib/date-utils";
 import { Button, Card, CardBody, Chip, Textarea, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import FileUploadField from "@/components/ui/file-upload-field";
@@ -23,13 +24,7 @@ type Props = {
 const REVIEW_EMOJIS = ["🤩", "🔥", "💃", "👏", "❤️", "🎵", "🥳", "✨"];
 
 function formatReviewTime(value: string): string {
-    return new Date(value).toLocaleString("es-PE", {
-        timeZone: "America/Lima",
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    return formatPeruDateTime(value);
 }
 
 function ReviewTimelineItem({

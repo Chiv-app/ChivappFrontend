@@ -21,6 +21,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
 import {
     BOOKING_STATUS_LABELS,
+    PAYMENT_STATUS_LABELSS,
+    PAYMENT_TYPE_LABELSS,
     formatBookingDate,
     formatCurrency,
 } from "@/lib/booking-labels";
@@ -83,20 +85,10 @@ const DEBT_STATE_COLOR: Record<
     disputed: "danger",
     awaiting_admin: "warning",
     settled: "success",
+    payment_released: "success",
+    completed: "success",
+    cancelled: "danger",
     in_progress: "secondary",
-};
-
-const PAYMENT_STATUS_LABEL: Record<string, string> = {
-    initiated: "Iniciado",
-    retained: "Retenido",
-    released: "Liberado",
-    failed: "Fallido",
-};
-
-const PAYMENT_TYPE_LABEL: Record<string, string> = {
-    advance: "Anticipo",
-    balance: "Saldo",
-    full: "Pago total",
 };
 
 const MEMBER_PAYOUT_LABEL: Record<string, string> = {
@@ -105,17 +97,7 @@ const MEMBER_PAYOUT_LABEL: Record<string, string> = {
     paid: "Pagado",
 };
 
-function formatDateTime(value: string | null | undefined): string {
-    if (!value) return "—";
-    return new Date(value).toLocaleString("es-PE", {
-        timeZone: "America/Lima",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-}
+
 
 export default function MusicianEarningsView() {
     const { user } = useAuth();
@@ -510,12 +492,12 @@ function PlatformPaymentsSection({
                                                 {item.event_type}
                                             </h3>
                                             <Chip size="sm" variant="flat" color="secondary">
-                                                {PAYMENT_TYPE_LABEL[item.payment_type || ""] ||
+                                                {PAYMENT_TYPE_LABELS[item.payment_type || ""] ||
                                                     item.payment_type ||
                                                     "Pago"}
                                             </Chip>
                                             <Chip size="sm" variant="flat">
-                                                {PAYMENT_STATUS_LABEL[item.status] ||
+                                                {PAYMENT_STATUS_LABELS[item.status] ||
                                                     item.status}
                                             </Chip>
                                         </div>
@@ -779,14 +761,14 @@ function PaymentDetailModal({
                                     <DetailField
                                         label="Estado"
                                         value={
-                                            PAYMENT_STATUS_LABEL[item.status] ||
+                                            PAYMENT_STATUS_LABELS[item.status] ||
                                             item.status
                                         }
                                     />
                                     <DetailField
                                         label="Tipo"
                                         value={
-                                            PAYMENT_TYPE_LABEL[item.payment_type || ""] ||
+                                            PAYMENT_TYPE_LABELS[item.payment_type || ""] ||
                                             item.payment_type ||
                                             "—"
                                         }
@@ -969,3 +951,4 @@ function EmptyState({
         </Card>
     );
 }
+

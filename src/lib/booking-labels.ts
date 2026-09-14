@@ -174,3 +174,18 @@ export function getEventDateTime(eventDate: string, startTime: string): Date {
 export function isEventUpcoming(eventDate: string, startTime: string): boolean {
     return getEventDateTime(eventDate, startTime).getTime() > Date.now();
 }
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+    initiated: "Iniciado",
+    retained: "Retenido",
+    released: "Liberado",
+    failed: "Fallido",
+    refunded: "Reembolsado",
+    rejected: "Rechazado"
+};
+
+export const PAYMENT_TYPE_LABELS: Record<string, string> = {
+    advance: "Anticipo",
+    balance: "Saldo",
+    full: "Pago total"
+};
