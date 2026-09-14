@@ -1,0 +1,58 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
+
+  deploy:
+    name: Deploy to Cloud Run
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+        
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/chivapp-repo/frontend:latest \
+            --build-arg NEXT_PUBLIC_API_URL=/api/v1 \
+            --build-arg NEXT_PUBLIC_SITE_URL=https://chiv.app \
+            --build-arg NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }} \
+            .
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/chivapp-repo/frontend:latest
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: chivapp-frontend
+          region: us-central1
+          image: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/chivapp-repo/frontend:latest
+          env_vars: |
+            PORT=8080
+            API_PROXY_TARGET=https://api.chiv.app
+            NEXT_PUBLIC_SITE_URL=https://chiv.app
+            NEXT_PUBLIC_API_URL=/api/v1
+            NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }}
