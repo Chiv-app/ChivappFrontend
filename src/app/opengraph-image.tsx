@@ -99,7 +99,7 @@ export default function OpenGraphImage() {
                         paddingTop: "24px",
                     }}
                 >
-                    <span style={{ color: "#46C0D9", fontWeight: 600 }}>chiv.app</span>
+                    <span style={{ color: "#46C0D9", fontWeight: 600 }}>Chivapp</span>
                     <span>Música en vivo para bodas, serenatas y celebraciones</span>
                 </div>
             </div>

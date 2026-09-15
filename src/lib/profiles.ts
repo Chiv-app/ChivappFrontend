@@ -142,6 +142,5 @@ export function resolveAuthRedirect(
 }
 
 export async function checkUsername(username: string): Promise<{ available: boolean; message: string; normalized?: string }> {
-    const res = await api.get("/profiles/check-username", { params: { username } });
-    return res.data;
+    return apiFetch<{ available: boolean; message: string; normalized?: string }>(`/profiles/check-username?username=${encodeURIComponent(username)}`);
 }

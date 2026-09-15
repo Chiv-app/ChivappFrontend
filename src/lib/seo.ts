@@ -14,7 +14,7 @@ export function getSiteUrl(): string {
     if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
 
     if (process.env.NODE_ENV === "production") {
-        return "https://chiv.app";
+        return "https://Chivapp.com";
     }
 
     return "http://localhost:3000";
@@ -100,7 +100,7 @@ export function websiteJsonLd() {
         "@context": "https://schema.org",
         "@type": "WebSite",
         name: SITE_NAME,
-        alternateName: ["chiv.app", "ChivApp"],
+        alternateName: ["Chivapp"],
         url,
         description: SITE_DESCRIPTION,
         inLanguage: "es",

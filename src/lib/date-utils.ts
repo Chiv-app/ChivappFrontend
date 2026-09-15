@@ -24,7 +24,7 @@ export function formatPeruDate(
 ): string {
     if (!value) return "—";
     const date = typeof value === "string" 
-        ? (value.includes("T") ? new Date(value) : new Date(`${value}T12:00:00-05:00`))
+        ? (value.includes("T") ? new Date(normalizeUtcString(value)) : new Date(`${value}T12:00:00-05:00`))
         : value;
     
     if (Number.isNaN(date.getTime())) return "—";
