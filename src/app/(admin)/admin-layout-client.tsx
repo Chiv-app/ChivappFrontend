@@ -29,7 +29,7 @@ export default function AdminLayoutClient({
 
     if (isLoading || !user || user.role !== "admin") {
         return (
-            <div className="min-h-screen bg-background">
+            <div className="min-h-[100dvh] bg-background">
                 <div className="h-[var(--app-navbar-height)] border-b border-default-200 bg-content1 animate-pulse" />
                 <div className="p-4 lg:p-8">
                     <div className="max-w-4xl mx-auto h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
@@ -39,7 +39,7 @@ export default function AdminLayoutClient({
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-[100dvh] bg-background">
             <AppNavbar />
             <main className="pt-[var(--app-navbar-height)]">
                 <div className="p-4 lg:p-8">

@@ -46,7 +46,7 @@ export default function PasswordSetupGate({
         !isAllowed
     ) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-6">
+            <div className="min-h-[100dvh] bg-background flex items-center justify-center p-6">
                 <div className="h-40 w-full max-w-md rounded-4xl border border-default-200 bg-content1 animate-pulse" />
             </div>
         );

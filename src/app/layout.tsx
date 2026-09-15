@@ -127,7 +127,7 @@ export default function RootLayout({
             data-scroll-behavior="smooth"
             className={`${geistSans.variable} ${geistMono.variable}`}
         >
-            <body className="min-h-screen flex flex-col bg-background text-foreground">
+            <body className="min-h-[100dvh] flex flex-col bg-background text-foreground">
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{

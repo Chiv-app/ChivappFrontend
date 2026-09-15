@@ -342,7 +342,7 @@ export default function MusicianDetailView({
                             ? showreelUrl
                                 ? "grid-cols-1 lg:grid-cols-2 min-h-[65vh] lg:min-h-[80vh]"
                                 : "grid-cols-1 min-h-[50vh] lg:min-h-[65vh]"
-                            : `min-h-screen ${
+                            : `min-h-[100dvh] ${
                                   showreelUrl ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
                               }`
                     }`}

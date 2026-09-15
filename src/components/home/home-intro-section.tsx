@@ -23,7 +23,7 @@ export default function HomeIntroSection({ musicians, hasMoreMusicians = false }
     return (
         <section
             id="musicians"
-            className="relative min-h-screen w-full overflow-hidden pt-20 sm:pt-24 pb-24 sm:pb-28"
+            className="relative min-h-[100dvh] w-full overflow-hidden pt-20 sm:pt-24 pb-24 sm:pb-28"
         >
             <div className="pointer-events-none absolute inset-x-0 top-0 h-[min(36rem,70vh)] bg-gradient-radial-brand -z-10" />
 

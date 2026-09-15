@@ -23,7 +23,7 @@ export default function PublicLayout({
             <div
                 className={
                     isFullBleed
-                        ? "min-h-screen"
+                        ? "min-h-[100dvh]"
                         : "pt-[var(--app-navbar-height)] min-h-[calc(100dvh-var(--app-navbar-height))]"
                 }
             >
