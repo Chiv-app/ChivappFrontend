@@ -50,6 +50,8 @@ export default function ContractorProfileWizard() {
 
     const [fullname, setFullname] = useState("");
     const [username, setUsername] = useState("");
+    const [usernameCheck, setUsernameCheck] = useState<{available: boolean, message: string} | null>(null);
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
     const [documentType, setDocumentType] = useState("DNI");
@@ -135,6 +137,27 @@ export default function ContractorProfileWizard() {
             setIsLoading(false);
         }
     }
+
+
+    useEffect(() => {
+        if (!username || username === user?.username) {
+            setUsernameCheck(null);
+            return;
+        }
+        setIsCheckingUsername(true);
+        const timer = setTimeout(async () => {
+            try {
+                const { checkUsername } = await import("@/lib/profiles");
+                const res = await checkUsername(username);
+                setUsernameCheck(res);
+            } catch (e) {
+                setUsernameCheck(null);
+            } finally {
+                setIsCheckingUsername(false);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [username, user?.username]);
 
     useEffect(() => {
         void loadData();
@@ -261,6 +284,9 @@ export default function ContractorProfileWizard() {
                         <Input
                             label="Nombre de usuario (opcional)"
                             placeholder="ej. juan-perez"
+                            description={usernameCheck ? usernameCheck.message : "Identificador único para tu perfil público."}
+                            color={usernameCheck ? (usernameCheck.available ? "success" : "danger") : "default"}
+                            errorMessage={usernameCheck && !usernameCheck.available ? usernameCheck.message : undefined}
                             value={username}
                             onValueChange={(val) => {
                                 const sanitized = val.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "");

@@ -166,8 +166,39 @@ function PhaseRail({
     onStepSelect?: (index: number) => void;
     compact?: boolean;
 }) {
+    const scrollRef = useRef<HTMLElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!scrollRef.current) return;
+        setIsDragging(true);
+        setStartX(e.pageX - scrollRef.current.offsetLeft);
+        setScrollLeft(scrollRef.current.scrollLeft);
+    };
+
+    const handleMouseLeave = () => setIsDragging(false);
+    const handleMouseUp = () => setIsDragging(false);
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - scrollRef.current.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        scrollRef.current.scrollLeft = scrollLeft - walk;
+    };
+
     return (
-        <nav aria-label="Pasos del perfil" className="w-full overflow-x-auto pb-2 scrollbar-none">
+        <nav 
+            ref={scrollRef}
+            aria-label="Pasos del perfil" 
+            className="w-full overflow-x-auto pb-2 scrollbar-none cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+        >
             <ol className="flex items-center gap-2.5 w-max min-w-full px-1">
                 {steps.map((step, index) => {
                     const isCurrent = step.state === "current";

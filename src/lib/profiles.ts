@@ -140,3 +140,8 @@ export function resolveAuthRedirect(
 
     return fallback;
 }
+
+export async function checkUsername(username: string): Promise<{ available: boolean; message: string; normalized?: string }> {
+    const res = await api.get("/profiles/check-username", { params: { username } });
+    return res.data;
+}

@@ -142,6 +142,8 @@ export default function MusicianProfileWizard() {
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
     const [username, setUsername] = useState("");
+    const [usernameCheck, setUsernameCheck] = useState<{available: boolean, message: string} | null>(null);
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
     const [stageName, setStageName] = useState("");
@@ -418,6 +420,27 @@ export default function MusicianProfileWizard() {
         }
     }
 
+
+    useEffect(() => {
+        if (!username || username === user?.username) {
+            setUsernameCheck(null);
+            return;
+        }
+        setIsCheckingUsername(true);
+        const timer = setTimeout(async () => {
+            try {
+                const { checkUsername } = await import("@/lib/profiles");
+                const res = await checkUsername(username);
+                setUsernameCheck(res);
+            } catch (e) {
+                setUsernameCheck(null);
+            } finally {
+                setIsCheckingUsername(false);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [username, user?.username]);
+
     useEffect(() => {
         void loadData();
         // Carga inicial única al montar el wizard.
@@ -687,7 +710,9 @@ export default function MusicianProfileWizard() {
                             <Input
                                 label="Nombre de usuario"
                                 placeholder="Ej. mariachi-sol-de-oro"
-                                description="Identificador único para tu URL pública (/musicians/tu-usuario)."
+                                description={usernameCheck ? usernameCheck.message : "Identificador único para tu URL pública."}
+                                color={usernameCheck ? (usernameCheck.available ? "success" : "danger") : "default"}
+                                errorMessage={usernameCheck && !usernameCheck.available ? usernameCheck.message : undefined}
                                 value={username}
                                 onValueChange={(val) => {
                                     setUsername(val.toLowerCase().replace(/\s+/g, "-"));

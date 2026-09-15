@@ -77,7 +77,9 @@ export default function LocationMapPicker({ value, onChange }: Props) {
                     setIsResolving(true);
                     try {
                         const loc = await reverseGeocode(lat, lng);
-                        onChange(loc);
+                        if (loc) {
+                            onChange(loc);
+                        }
                     } catch (e) {
                         console.error("Error obtiendo ubicación", e);
                     } finally {
