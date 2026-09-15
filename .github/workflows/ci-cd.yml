@@ -45,7 +45,7 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend:latest \
-            --build-arg NEXT_PUBLIC_API_URL=https://chivapp-backend-211475760639.us-central1.run.app \
+            --build-arg NEXT_PUBLIC_API_URL=/api/v1 \
             --build-arg NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }} .
           docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend:latest
 
