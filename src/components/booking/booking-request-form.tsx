@@ -74,6 +74,35 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         () => (eventDate ? getSlotsForDate(slots, eventDate) : []),
         [slots, eventDate],
     );
+
+    const timeOptions = useMemo(() => {
+        const options = [];
+        for (let h = 0; h < 24; h++) {
+            for (let m of [0, 30]) {
+                const hh = h.toString().padStart(2, "0");
+                const mm = m.toString().padStart(2, "0");
+                const value = hh + ":" + mm;
+                
+                let disabled = false;
+                if (eventDate && slots.length > 0) {
+                    disabled = !!validateBookingAgainstAvailability({
+                        eventDate,
+                        startTime: value,
+                        slots,
+                    });
+                }
+                
+                let hours = h;
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                const label = hours + ":" + mm + " " + ampm;
+
+                options.push({ value, label, disabled });
+            }
+        }
+        return options;
+    }, [eventDate, slots]);
     const availabilitySummary = useMemo(
         () => formatAvailabilitySummary(slots),
         [slots],

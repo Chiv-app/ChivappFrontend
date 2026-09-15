@@ -1,3 +1,12 @@
+function normalizeUtcString(value: string): string {
+    // If it's a full ISO string from the backend (has T) but no timezone (Z or +/-, e.g. 2026-09-15T21:00:00)
+    // append 'Z' so the browser parses it as UTC.
+    if (value.includes("T") && !value.endsWith("Z") && !value.includes("+") && !value.match(/-\d{2}:\d{2}$/)) {
+        return value + "Z";
+    }
+    return value;
+}
+
 /**
  * Utilidades para manejo y visualización de fechas y horas en zona horaria oficial de Perú (America/Lima, UTC-5).
  */
@@ -41,7 +50,7 @@ export function formatPeruTime(value: string | Date | null | undefined): string 
         // String directo de tiempo "HH:mm:ss" o "HH:mm"
         return value.slice(0, 5);
     }
-    const date = typeof value === "string" ? new Date(value) : value;
+    const date = typeof value === "string" ? new Date(normalizeUtcString(value)) : value;
     if (Number.isNaN(date.getTime())) return "—";
 
     return date.toLocaleTimeString(PERU_LOCALE, {
@@ -61,7 +70,7 @@ export function formatPeruDateTime(
     options?: Intl.DateTimeFormatOptions
 ): string {
     if (!value) return "—";
-    const date = typeof value === "string" ? new Date(value) : value;
+    const date = typeof value === "string" ? new Date(normalizeUtcString(value)) : value;
     if (Number.isNaN(date.getTime())) return "—";
 
     const defaultOptions: Intl.DateTimeFormatOptions = {
