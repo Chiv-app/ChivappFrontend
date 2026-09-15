@@ -56,7 +56,6 @@ jobs:
           region: us-central1
           image: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend:latest
           env_vars: |
-            PORT=8080
             API_PROXY_TARGET=https://api.chiv.app
             NEXT_PUBLIC_SITE_URL=https://chiv.app
             NEXT_PUBLIC_API_URL=/api/v1
