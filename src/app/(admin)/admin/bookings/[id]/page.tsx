@@ -55,7 +55,9 @@ function paymentTypeLabel(type: string | null): string {
     return "Pago";
 }
 
-import { PAYMENT_STATUS_LABELS, PAYMENT_TYPE_LABELS } from "@/lib/booking-labels";`n`nconst PAYMENT_STATUS_COLOR: Record<
+import { PAYMENT_STATUS_LABELS, PAYMENT_TYPE_LABELS } from "@/lib/booking-labels";
+
+const PAYMENT_STATUS_COLOR: Record<
     string,
     "default" | "warning" | "success" | "danger" | "primary"
 > = {

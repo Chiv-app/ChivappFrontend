@@ -57,7 +57,9 @@ const STATUS_FILTERS = [
     { key: "refunded", label: "Reembolsados" },
 ];
 
-import { PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";`n`nconst STATUS_COLOR: Record<
+import { PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";
+
+const STATUS_COLOR: Record<
     string,
     "default" | "primary" | "success" | "warning" | "danger"
 > = {

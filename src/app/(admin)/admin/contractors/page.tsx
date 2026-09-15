@@ -39,7 +39,9 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };`n`nconst STATUS_COLOR: Record<
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisiÃ³n", published: "Publicado", rejected: "Rechazado" };
+
+const STATUS_COLOR: Record<
     string,
     "default" | "warning" | "success" | "danger" | "primary"
 > = {
