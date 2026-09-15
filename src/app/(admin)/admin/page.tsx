@@ -8,9 +8,27 @@ import AdminPageHeader from "@/components/admin/admin-page-header";
 import AdminStatCard from "@/components/admin/admin-stat-card";
 import { getAdminActivity, getAdminStats } from "@/lib/admin";
 import { ADMIN_MODULES } from "@/lib/dashboard-nav";
-import { formatCurrency } from "@/lib/booking-labels";
+import { formatCurrency, BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
-import type { AdminActivityItem, AdminStatsOut } from "@/types/api";
+import type { AdminActivityItem, AdminStatsOut, BookingStatus } from "@/types/api";
+
+function formatSubtitle(item: AdminActivityItem): string | null {
+    if (!item.subtitle) return null;
+    if (item.type === "booking_updated") {
+        const parts = item.subtitle.split(" · ");
+        if (parts.length >= 2) {
+            const statusKey = parts[0] as BookingStatus;
+            const label = BOOKING_STATUS_LABELS[statusKey] || parts[0];
+            return `${label} · ${parts.slice(1).join(" · ")}`;
+        }
+    }
+    if (item.type === "payment_event") {
+        const statusKey = item.subtitle;
+        const label = PAYMENT_STATUS_LABELS[statusKey] || statusKey;
+        return label;
+    }
+    return item.subtitle;
+}
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<AdminStatsOut | null>(null);
@@ -133,7 +151,7 @@ export default function AdminDashboardPage() {
                                         </p>
                                         {item.subtitle ? (
                                             <p className="text-sm text-default-500 truncate">
-                                                {item.subtitle}
+                                                {formatSubtitle(item)}
                                             </p>
                                         ) : null}
                                     </div>

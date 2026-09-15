@@ -6,7 +6,8 @@ import { Button, Card, CardBody, Chip } from "@heroui/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getAdminActivity } from "@/lib/admin";
 import { formatDateTime } from "@/lib/date-utils";
-import type { AdminActivityItem } from "@/types/api";
+import type { AdminActivityItem, BookingStatus } from "@/types/api";
+import { BOOKING_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";
 
 const TYPE_LABEL: Record<string, string> = {
     user_registered: "Usuario",
@@ -15,6 +16,27 @@ const TYPE_LABEL: Record<string, string> = {
     booking_updated: "Reserva",
     payment_event: "Pago",
 };
+
+function formatSubtitle(item: AdminActivityItem): string | null {
+    if (!item.subtitle) return null;
+    
+    if (item.type === "booking_updated") {
+        const parts = item.subtitle.split(" · ");
+        if (parts.length >= 2) {
+            const statusKey = parts[0] as BookingStatus;
+            const label = BOOKING_STATUS_LABELS[statusKey] || parts[0];
+            return `${label} · ${parts.slice(1).join(" · ")}`;
+        }
+    }
+    
+    if (item.type === "payment_event") {
+        const statusKey = item.subtitle;
+        const label = PAYMENT_STATUS_LABELS[statusKey] || statusKey;
+        return label;
+    }
+    
+    return item.subtitle;
+}
 
 export default function AdminActivityPage() {
     const [activity, setActivity] = useState<AdminActivityItem[]>([]);
@@ -74,7 +96,7 @@ export default function AdminActivityPage() {
                                         </p>
                                         {item.subtitle ? (
                                             <p className="text-sm text-default-500 truncate">
-                                                {item.subtitle}
+                                                {formatSubtitle(item)}
                                             </p>
                                         ) : null}
                                     </div>
