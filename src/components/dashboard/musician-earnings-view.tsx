@@ -21,11 +21,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
 import {
     BOOKING_STATUS_LABELS,
-    PAYMENT_STATUS_LABELSS,
-    PAYMENT_TYPE_LABELSS,
+    PAYMENT_STATUS_LABELS,
+    PAYMENT_TYPE_LABELS,
     formatBookingDate,
     formatCurrency,
 } from "@/lib/booking-labels";
+import { formatDateTime } from "@/lib/date-utils";
 import { listMyMemberIncome } from "@/lib/ensemble-members";
 import { getMusicianEarnings } from "@/lib/payments";
 import type {

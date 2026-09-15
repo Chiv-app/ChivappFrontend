@@ -37,22 +37,19 @@ jobs:
         
       - name: Build and Push Docker Image
         run: |
-          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/chivapp-repo/frontend:latest \
-            --build-arg NEXT_PUBLIC_API_URL=/api/v1 \
-            --build-arg NEXT_PUBLIC_SITE_URL=https://chiv.app \
-            --build-arg NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }} \
-            .
-          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/chivapp-repo/frontend:latest
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend:latest \
+            --build-arg NEXT_PUBLIC_API_URL=https://chivapp-backend-211475760639.us-central1.run.app \
+            --build-arg NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }} .
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend:latest
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: chivapp-frontend
           region: us-central1
-          image: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/chivapp-repo/frontend:latest
+          image: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/frontend:latest
           env_vars: |
             PORT=8080
             API_PROXY_TARGET=https://api.chiv.app
             NEXT_PUBLIC_SITE_URL=https://chiv.app
             NEXT_PUBLIC_API_URL=/api/v1
-            NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }}
