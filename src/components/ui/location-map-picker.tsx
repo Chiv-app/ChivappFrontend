@@ -67,6 +67,29 @@ export default function LocationMapPicker({ value, onChange }: Props) {
     const [isSearching, setIsSearching] = useState(false);
     const [isResolving, setIsResolving] = useState(false);
 
+    useEffect(() => {
+        if (!value && typeof window !== "undefined" && navigator.geolocation) {
+            const consent = window.confirm("¿Deseas usar tu ubicación actual en el mapa?");
+            if (consent) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    setIsResolving(true);
+                    try {
+                        const loc = await reverseGeocode(lat, lng);
+                        onChange(loc);
+                    } catch (e) {
+                        console.error("Error obtiendo ubicación", e);
+                    } finally {
+                        setIsResolving(false);
+                    }
+                }, (err) => {
+                    console.error("Ubicación denegada", err);
+                });
+            }
+        }
+    }, []);
+
     const center = useMemo<[number, number]>(() => {
         if (value) return [value.lat, value.lng];
         return DEFAULT_CENTER;

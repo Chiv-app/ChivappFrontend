@@ -232,23 +232,33 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-default-200 bg-default-50/80 px-4 py-3">
-                <p className="text-sm font-semibold text-foreground">
-                    Disponibilidad de {musician.name}
-                </p>
+            <div className="rounded-2xl border-l-4 border-l-primary bg-primary-50/40 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="text-primary text-xl">📅</span>
+                    <p className="text-base font-bold text-primary-900">
+                        Disponibilidad de {musician.name}
+                    </p>
+                </div>
+                
                 {isLoadingSlots ? (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-default-500">
+                    <div className="flex items-center gap-2 mt-2 text-sm text-primary-700">
                         <Spinner size="sm" color="primary" />
                         Cargando horarios...
                     </div>
                 ) : slotsError ? (
                     <p className="text-sm text-danger mt-2">{slotsError}</p>
                 ) : slots.length === 0 ? (
-                    <p className="text-sm text-default-600 mt-2">
-                        Disponibilidad flexible (el músico confirmará la fecha y hora al cotizar).
-                    </p>
+                    <div className="mt-2 text-sm text-primary-800 bg-white/60 p-2.5 rounded-lg border border-primary-100">
+                        ✨ <strong>Disponibilidad flexible</strong>: el músico confirmará la fecha y hora exacta al enviarte una cotización.
+                    </div>
                 ) : (
-                    <p className="text-sm text-default-600 mt-2">{availabilitySummary}</p>
+                    <div className="mt-2 text-sm text-primary-800 leading-relaxed bg-white/60 p-3 rounded-lg border border-primary-100">
+                        {availabilitySummary.split('·').map((line, i) => (
+                            <div key={i} className="flex items-center gap-2 mb-1 last:mb-0">
+                                <span className="text-primary/60">•</span> {line.trim()}
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
 
