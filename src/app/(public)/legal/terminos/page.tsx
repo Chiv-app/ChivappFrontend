@@ -148,14 +148,28 @@ export default function TermsPage() {
                 </ul>
             </Section>
 
-            <Section title="8. Suspensión y Cierre de Cuentas">
+            <Section title="8. Seguridad, Privacidad y Cookies">
+                <p>
+                    {SITE_NAME} implementa estándares de seguridad técnicos estrictos para proteger tu información. 
+                    Tus sesiones de usuario (logins) están protegidas utilizando <strong>Cookies HTTP-Only</strong> y 
+                    comunicaciones cifradas a través de <strong>certificados SSL/TLS (HTTPS)</strong> para mitigar riesgos de 
+                    robo de credenciales o ataques (XSS, CSRF).
+                </p>
+                <p>
+                    Ningún dato de inicio de sesión sensible se almacena de forma desprotegida en tu navegador. 
+                    Nuestra infraestructura en la nube garantiza el manejo confidencial de tu información, alineada con 
+                    la Ley de Protección de Datos Personales (Ley N° 29733).
+                </p>
+            </Section>
+
+            <Section title="9. Suspensión y Cierre de Cuentas">
                 <p>
                     {SITE_NAME} se reserva la potestad de suspender temporal o permanentemente el acceso a cualquier cuenta que incumpla estos términos,
                     incurra en actos de estafa, acumule quejas graves no resueltas de contratistas o músicos, o genere riesgos de seguridad para la plataforma.
                 </p>
             </Section>
 
-            <Section title="9. Protección al Consumidor y Libro de Reclamaciones (Ley N° 29571)">
+            <Section title="10. Protección al Consumidor y Libro de Reclamaciones (Ley N° 29571)">
                 <p>
                     En cumplimiento de la <strong className="text-foreground">Ley N° 29571 (Código de Protección y Defensa del Consumidor de la República del Perú)</strong>,
                     {SITE_NAME} garantiza los derechos de los usuarios y pone a disposición su sistema de atención de consultas, solicitudes y Libro de Reclamaciones Virtual
@@ -163,7 +177,7 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="10. Ley Aplicable y Jurisdicción">
+            <Section title="11. Ley Aplicable y Jurisdicción">
                 <p>
                     Estos Términos y Condiciones se rigen e interpretan en su totalidad por las{" "}
                     <strong className="text-foreground">leyes de la República del Perú</strong>.
@@ -173,7 +187,7 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="11. Contacto y Soporte">
+            <Section title="12. Contacto y Soporte">
                 <p>
                     Para consultas, dudas sobre estos términos o requerimientos de asistencia, puedes comunicarte a través del módulo de{" "}
                     <span className="text-foreground font-semibold">ayuda y comentarios</span> en la aplicación o escribiéndonos directamente a{" "}
