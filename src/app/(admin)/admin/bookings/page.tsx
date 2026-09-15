@@ -33,6 +33,7 @@ import {
     validateAdminAdvancePayment,
     validateAdminBalancePayment,
 } from "@/lib/admin";
+import { formatPeruDate, formatPeruTime } from "@/lib/date-utils";
 import {
     BOOKING_STATUS_COLORS,
     BOOKING_STATUS_LABELS,
@@ -276,7 +277,7 @@ export default function AdminBookingsPage() {
                                         <div>
                                             <p className="font-medium">{booking.event_type}</p>
                                             <p className="text-xs text-default-500">
-                                                {booking.event_date} ·{" "}
+                                                {formatPeruDate(booking.event_date)} a las {formatPeruTime(booking.start_time)} ·{" "}
                                                 {booking.location_city ||
                                                     booking.location_address}
                                             </p>

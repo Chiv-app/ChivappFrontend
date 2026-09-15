@@ -100,6 +100,7 @@ export function websiteJsonLd() {
         "@context": "https://schema.org",
         "@type": "WebSite",
         name: SITE_NAME,
+        alternateName: ["chiv.app", "ChivApp"],
         url,
         description: SITE_DESCRIPTION,
         inLanguage: "es",
