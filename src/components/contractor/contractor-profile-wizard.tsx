@@ -293,7 +293,6 @@ export default function ContractorProfileWizard() {
                                 setUsername(sanitized);
                             }}
                             variant="bordered"
-                            description="Identificador en la plataforma (letras, números o guiones)"
                         />
                         <Input
                             label="Correo electrónico"
