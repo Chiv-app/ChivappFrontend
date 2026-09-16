@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "./middleware";
+import { proxy } from "./proxy";
 
 function createMockJwt(payload: Record<string, unknown>): string {
     const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
@@ -11,7 +11,7 @@ function createMockJwt(payload: Record<string, unknown>): string {
 describe("Next.js Middleware", () => {
     it("redirects unauthenticated user from protected dashboard to login", () => {
         const req = new NextRequest("http://localhost:3000/musician/bookings");
-        const res = middleware(req);
+        const res = proxy(req);
 
         expect(res.status).toBe(307);
         expect(res.headers.get("location")).toBe(
@@ -21,7 +21,7 @@ describe("Next.js Middleware", () => {
 
     it("allows public access to home page without auth", () => {
         const req = new NextRequest("http://localhost:3000/");
-        const res = middleware(req);
+        const res = proxy(req);
 
         expect(res.status).toBe(200);
         expect(res.headers.get("location")).toBeNull();
@@ -39,7 +39,7 @@ describe("Next.js Middleware", () => {
                 cookie: `access_token=${token}`,
             },
         });
-        const res = middleware(req);
+        const res = proxy(req);
 
         expect(res.status).toBe(200);
         expect(res.headers.get("location")).toBeNull();
@@ -57,7 +57,7 @@ describe("Next.js Middleware", () => {
                 cookie: `access_token=${token}`,
             },
         });
-        const res = middleware(req);
+        const res = proxy(req);
 
         expect(res.status).toBe(307);
         expect(res.headers.get("location")).toBe("http://localhost:3000/musician/bookings");
@@ -75,7 +75,7 @@ describe("Next.js Middleware", () => {
                 cookie: `access_token=${token}`,
             },
         });
-        const res = middleware(req);
+        const res = proxy(req);
 
         expect(res.status).toBe(307);
         expect(res.headers.get("location")).toBe("http://localhost:3000/");
