@@ -5,6 +5,7 @@ import { getMusicianById } from "@/lib/musicians";
 import { absoluteImageUrl } from "@/lib/seo";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 export const alt = "Perfil de músico en Chivapp";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
