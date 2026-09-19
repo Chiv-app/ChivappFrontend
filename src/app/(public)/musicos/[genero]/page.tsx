@@ -24,11 +24,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
 }
 
+import type { MusicianCard } from "@/types/ui/musician";
+
 export default async function GenrePage({ params }: Props) {
     const { genero } = await params;
     const genreName = formatTitle(genero);
 
-    let initialMusicians = [];
+    let initialMusicians: MusicianCard[] = [];
     try {
         initialMusicians = await searchMusicians({
             genres: [genreName],
