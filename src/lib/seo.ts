@@ -58,10 +58,10 @@ export function buildPageMetadata({
     const url = absoluteUrl(path);
     const ogImage = image ? absoluteImageUrl(image) : undefined;
     const isRoot = title === SITE_NAME;
-    const fullTitle = isRoot ? SITE_NAME : `${title} | ${SITE_NAME}`;
+    const fullTitle = isRoot ? SITE_NAME : `${SITE_NAME} - ${title}`;
 
     return {
-        title: isRoot ? { absolute: SITE_NAME } : title,
+        title: isRoot ? { absolute: SITE_NAME } : { absolute: fullTitle },
         description,
         alternates: { canonical: url },
         robots: noIndex
