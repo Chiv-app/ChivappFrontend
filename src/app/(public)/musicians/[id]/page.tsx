@@ -67,6 +67,17 @@ export default async function MusicianDetailPage({ params }: PageProps) {
         image: musician.image ?? musician.galleryImages[0] ?? null,
         genres: musician.genres.length ? musician.genres : [musician.genre],
         city: musician.city,
+        rating: musician.rating,
+        ratingCount: musician.ratingCount,
+        price: musician.price,
+        socialUrls: [
+            musician.instagramUrl,
+            musician.facebookUrl,
+            musician.tiktokUrl,
+            musician.youtubeChannelUrl,
+            musician.spotifyUrl,
+            musician.websiteUrl
+        ].filter(Boolean) as string[],
     });
 
     return (

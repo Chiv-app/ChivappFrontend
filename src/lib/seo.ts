@@ -138,8 +138,19 @@ export function musicianJsonLd(input: {
     image?: string | null;
     genres?: string[];
     city?: string | null;
+    rating?: number | null;
+    ratingCount?: number | null;
+    price?: number | null;
+    socialUrls?: string[];
 }) {
     const image = absoluteImageUrl(input.image) ?? absoluteUrl("/logo-chivapp.png");
+    
+    // Solo mostramos calificación si hay al menos 1 reseña válida
+    const hasRating = input.rating != null && input.ratingCount != null && input.ratingCount > 0;
+    
+    // Redes sociales válidas (no nulas/vacías)
+    const sameAs = input.socialUrls?.filter(Boolean) || [];
+
     return {
         "@context": "https://schema.org",
         "@type": "MusicGroup",
@@ -157,5 +168,26 @@ export function musicianJsonLd(input: {
                   },
               }
             : {}),
+        ...(hasRating
+            ? {
+                  aggregateRating: {
+                      "@type": "AggregateRating",
+                      ratingValue: input.rating?.toFixed(1),
+                      reviewCount: input.ratingCount,
+                      bestRating: "5",
+                      worstRating: "1"
+                  },
+              }
+            : {}),
+        ...(input.price
+            ? {
+                  offers: {
+                      "@type": "Offer",
+                      price: input.price,
+                      priceCurrency: "PEN",
+                  },
+              }
+            : {}),
+        ...(sameAs.length > 0 ? { sameAs } : {}),
     };
 }

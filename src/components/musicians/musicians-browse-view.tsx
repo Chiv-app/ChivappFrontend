@@ -81,14 +81,27 @@ function FilterPill({ icon, placeholder, value, onChange, type = "text" }: Filte
     );
 }
 
-export default function MusiciansBrowseView() {
-    const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-    const [musicians, setMusicians] = useState<MusicianCardModel[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+type Props = {
+    initialFilters?: Partial<Filters>;
+    initialMusicians?: MusicianCardModel[];
+};
+
+export default function MusiciansBrowseView({ initialFilters, initialMusicians }: Props = {}) {
+    const [filters, setFilters] = useState<Filters>({ ...EMPTY_FILTERS, ...initialFilters });
+    const [musicians, setMusicians] = useState<MusicianCardModel[]>(initialMusicians || []);
+    
+    // Si ya nos pasaron músicos iniciales desde el servidor, no necesitamos cargar
+    const hasInitialData = initialMusicians && initialMusicians.length > 0;
+    const [isLoading, setIsLoading] = useState(!hasInitialData);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    
+    // Asumimos que si hay datos iniciales y son == PAGE_SIZE, podría haber más.
+    const [hasMore, setHasMore] = useState(hasInitialData ? initialMusicians.length === PAGE_SIZE : true);
+    
     const sentinelRef = useRef<HTMLDivElement | null>(null);
     const requestIdRef = useRef(0);
+    // Para evitar que el efecto de cambio de filtros dispare una carga inútil en el primer render si ya hay datos
+    const isFirstRender = useRef(true);
 
     const loadPage = useCallback(async (activeFilters: Filters, skip: number) => {
         const requestId = ++requestIdRef.current;
@@ -129,11 +142,17 @@ export default function MusiciansBrowseView() {
 
     // Recarga desde cero cuando cambian los filtros (con debounce).
     useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            // Si ya hay datos iniciales y son los filtros por defecto (o los iniciales), no cargamos
+            if (hasInitialData) return;
+        }
+        
         const t = window.setTimeout(() => {
             void loadPage(filters, 0);
         }, 300);
         return () => window.clearTimeout(t);
-    }, [filters, loadPage]);
+    }, [filters, loadPage, hasInitialData]);
 
     // Scroll infinito: al acercarse al final, pide la siguiente página.
     useEffect(() => {
