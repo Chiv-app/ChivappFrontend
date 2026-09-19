@@ -36,11 +36,28 @@ const faqs = [
 ];
 
 export default function FaqSection() {
+    const faqSchema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: {
+                "@type": "Answer",
+                text: faq.answer,
+            },
+        })),
+    };
+
     return (
         <section
             id="faq"
             className="scroll-mt-24 border-t border-default-200/60 bg-content1/40 py-14 sm:py-20 md:py-24"
         >
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+            />
             <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8">
                 <div className="text-center mb-10 sm:mb-14">
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary text-[11px] sm:text-xs font-semibold uppercase tracking-wide mb-4 sm:mb-5">

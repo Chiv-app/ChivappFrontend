@@ -15,9 +15,9 @@ export default function HeroView() {
                 Reserva segura
             </span>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight text-balance max-w-3xl mx-auto px-1">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground tracking-tight leading-tight text-balance max-w-3xl mx-auto px-1">
                 Contrata al músico perfecto para tu evento.
-            </h1>
+            </h2>
 
             <p className="text-default-600 text-base sm:text-lg max-w-2xl mx-auto mt-4 sm:mt-5 text-pretty px-1">
                 Explora músicos, cotiza directo con ellos y paga

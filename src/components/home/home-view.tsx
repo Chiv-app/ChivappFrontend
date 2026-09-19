@@ -9,6 +9,7 @@ import WhyChivappSection from "@/components/home/why-chivapp-view";
 import MusicianCtaSection from "@/components/home/musician-cta-view";
 import FaqSection from "@/components/home/faq-view";
 import ProfileCompletionBanner from "@/components/profile/profile-completion-banner";
+import SeoLinksView from "@/components/home/seo-links-view";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
 import type { PlatformStatsOut } from "@/types/api";
 
@@ -53,6 +54,8 @@ export default function HomeView({ musicians, hasMoreMusicians = false, stats }:
                 <ProfileCompletionBanner />
 
                 <HeroView />
+                
+                <SeoLinksView />
             </div>
 
             <StatsSection stats={stats} />

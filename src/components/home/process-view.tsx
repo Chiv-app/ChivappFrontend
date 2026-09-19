@@ -63,25 +63,27 @@ export default function ProcessSection() {
                                 />
                             ) : null}
 
-                            <div className="size-12 sm:size-14 shrink-0 rounded-full bg-content2 text-foreground ring-1 ring-default-200/80 flex items-center justify-center font-bold text-base sm:text-lg leading-none tabular-nums transition-colors duration-300 group-hover:bg-gradient-brand group-hover:text-white group-hover:ring-transparent group-hover:shadow-glow relative z-10">
+                            <div className="size-12 sm:size-14 shrink-0 rounded-full bg-content2 text-foreground ring-1 ring-default-200/80 flex items-center justify-center font-bold text-base sm:text-lg leading-none tabular-nums transition-colors duration-300 group-hover:bg-primary group-hover:text-white group-hover:ring-transparent group-hover:shadow-glow relative z-10">
                                 {index + 1}
                             </div>
 
-                            <div className="p-5 sm:p-6 flex flex-col items-center rounded-3xl sm:rounded-4xl border border-default-200/70 bg-content1 shadow-soft w-full max-w-md md:max-w-none mx-auto hover:-translate-y-1 hover:shadow-elevated hover:border-primary/30 transition-all duration-300 relative z-10">
-                                <div className="flex size-10 sm:size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary mb-3">
+                            <div className="p-6 sm:p-8 flex flex-col items-center rounded-3xl sm:rounded-4xl border border-default-200/70 bg-content1 shadow-soft w-full max-w-md md:max-w-none mx-auto hover:-translate-y-2 hover:shadow-xl hover:border-primary/40 transition-all duration-300 relative z-10 overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-150 transition-transform duration-500">
+                                    <Icon icon={step.icon} width={120} height={120} />
+                                </div>
+                                <div className="flex size-12 sm:size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground relative z-10">
                                     <Icon
                                         icon={step.icon}
-                                        width={22}
-                                        height={22}
-                                        className="sm:w-6 sm:h-6"
+                                        width={26}
+                                        height={26}
                                     />
                                 </div>
 
-                                <h3 className="text-foreground font-bold text-base sm:text-lg mb-2">
+                                <h3 className="text-foreground font-bold text-lg sm:text-xl mb-3 relative z-10">
                                     {step.title}
                                 </h3>
 
-                                <p className="text-default-600 text-sm leading-relaxed text-pretty">
+                                <p className="text-default-600 text-sm sm:text-base leading-relaxed text-pretty relative z-10">
                                     {step.description}
                                 </p>
                             </div>

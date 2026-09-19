@@ -76,11 +76,16 @@ export default function RotatingMessageCard() {
             <div className="pointer-events-none absolute -bottom-12 -left-8 size-32 sm:size-40 rounded-full bg-secondary-900/20 blur-3xl" />
 
             <div className="relative flex-1 flex flex-col justify-center min-h-0">
+                {/* H1 Oficial para Google (Invisible para el usuario pero perfecto para SEO) */}
+                <h1 className="sr-only">
+                    Contrata mariachis, orquestas y músicos para tu evento en Chivapp
+                </h1>
+                
                 <div key={index} className="animate-fade-in-up flex flex-col gap-3 sm:gap-4">
                     <div>
-                        <h1 className="text-lg min-[400px]:text-xl sm:text-2xl md:text-[1.75rem] font-bold leading-snug tracking-tight text-white text-balance">
+                        <h2 className="text-lg min-[400px]:text-xl sm:text-2xl md:text-[1.75rem] font-bold leading-snug tracking-tight text-white text-balance">
                             {current.title}
-                        </h1>
+                        </h2>
                         <p className="text-white/85 text-sm sm:text-[0.95rem] md:text-base max-w-xs text-pretty leading-relaxed mt-1.5 sm:mt-2">
                             {current.subtitle}
                         </p>

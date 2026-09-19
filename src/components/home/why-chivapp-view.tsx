@@ -58,19 +58,19 @@ export default function WhyChivappSection() {
                     Todo lo que necesitas para reservar con confianza, de principio a fin.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
                     {features.map((feature) => (
                         <div
                             key={feature.title}
-                            className="flex flex-col items-center text-center gap-3 p-6 sm:p-7 rounded-3xl sm:rounded-4xl border border-default-200/70 bg-content1 shadow-soft hover:-translate-y-1 hover:shadow-elevated hover:border-primary/30 transition-all duration-300"
+                            className="group flex flex-col items-center text-center gap-4 p-7 sm:p-8 rounded-3xl sm:rounded-4xl border border-default-200/70 bg-content1 shadow-soft hover:-translate-y-2 hover:shadow-xl hover:border-primary/40 hover:bg-gradient-to-b from-content1 to-primary/5 transition-all duration-300 relative overflow-hidden"
                         >
-                            <div className="flex size-11 sm:size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                                <Icon icon={feature.icon} width={24} height={24} />
+                            <div className="flex size-14 sm:size-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground shadow-inner">
+                                <Icon icon={feature.icon} width={28} height={28} />
                             </div>
-                            <h3 className="text-foreground font-bold text-base sm:text-lg">
+                            <h3 className="text-foreground font-bold text-lg sm:text-xl">
                                 {feature.title}
                             </h3>
-                            <p className="text-default-600 text-sm leading-relaxed text-pretty">
+                            <p className="text-default-600 text-sm sm:text-base leading-relaxed text-pretty">
                                 {feature.description}
                             </p>
                         </div>
