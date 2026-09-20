@@ -47,6 +47,8 @@ export default function RegisterForm({
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [role, setRole] = useState<UserRole>(defaultRole ?? "contractor");
+    const [fullname, setFullname] = useState("");
+    const [phone, setPhone] = useState("");
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formAlert, setFormAlert] = useState<{ title: string; description: string } | null>(null);
@@ -82,17 +84,28 @@ export default function RegisterForm({
         setIsSubmitting(true);
 
         try {
-            const registered = await register({
+            const payload: any = {
                 email: email.trim(),
                 password,
                 role,
                 accepted_terms: acceptedTerms,
-            });
-            const destination = resolveAuthRedirect(
+            };
+
+            if (role === "contractor") {
+                payload.fullname = fullname.trim();
+                payload.phone = phone.trim();
+            }
+
+            const registered = await register(payload);
+            let destination = resolveAuthRedirect(
                 registered.role,
                 redirect,
                 registered.is_verified,
             );
+
+            if (registered.role === "musician") {
+                destination = "/musician/onboarding";
+            }
 
             addToast({
                 title: "Cuenta creada",
@@ -275,6 +288,39 @@ export default function RegisterForm({
                     autoComplete="email"
                     classNames={UI.authInput}
                 />
+
+                {role === "contractor" && (
+                    <>
+                        <Input
+                            label="Nombre completo"
+                            type="text"
+                            placeholder="Ej. Juan Pérez"
+                            variant="bordered"
+                            value={fullname}
+                            onValueChange={(val) => {
+                                setFullname(val);
+                                setFormAlert(null);
+                            }}
+                            isRequired
+                            autoComplete="name"
+                            classNames={UI.authInput}
+                        />
+                        <Input
+                            label="Número de celular"
+                            type="tel"
+                            placeholder="Ej. 987654321"
+                            variant="bordered"
+                            value={phone}
+                            onValueChange={(val) => {
+                                setPhone(val);
+                                setFormAlert(null);
+                            }}
+                            isRequired
+                            autoComplete="tel"
+                            classNames={UI.authInput}
+                        />
+                    </>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <PasswordInput

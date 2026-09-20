@@ -30,6 +30,12 @@ export function submitMusicianProfile() {
     });
 }
 
+export function onboardMusicianProfile() {
+    return apiFetch<MusicianProfileOut>("/profiles/musician/onboard", {
+        method: "POST",
+    });
+}
+
 export function generateMusicianContractPdf() {
     return apiFetch<MusicianContractGenerateOut>("/profiles/musician/contract/generate", {
         method: "POST",

@@ -67,30 +67,36 @@ export default function LocationMapPicker({ value, onChange }: Props) {
     const [isSearching, setIsSearching] = useState(false);
     const [isResolving, setIsResolving] = useState(false);
 
-    useEffect(() => {
-        if (!value && typeof window !== "undefined" && navigator.geolocation) {
-            const consent = window.confirm("¿Deseas usar tu ubicación actual en el mapa?");
-            if (consent) {
-                navigator.geolocation.getCurrentPosition(async (pos) => {
+    const requestCurrentLocation = () => {
+        if (typeof window !== "undefined" && navigator.geolocation) {
+            setIsResolving(true);
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
-                    setIsResolving(true);
                     try {
                         const loc = await reverseGeocode(lat, lng);
                         if (loc) {
                             onChange(loc);
+                            setSearchQuery(loc.address);
+                        } else {
+                            const fallback = buildFallbackLocation(lat, lng);
+                            onChange(fallback);
+                            setSearchQuery(fallback.address);
                         }
                     } catch (e) {
                         console.error("Error obtiendo ubicación", e);
                     } finally {
                         setIsResolving(false);
                     }
-                }, (err) => {
+                },
+                (err) => {
                     console.error("Ubicación denegada", err);
-                });
-            }
+                    setIsResolving(false);
+                }
+            );
         }
-    }, []);
+    };
 
     const center = useMemo<[number, number]>(() => {
         if (value) return [value.lat, value.lng];
@@ -144,30 +150,42 @@ export default function LocationMapPicker({ value, onChange }: Props) {
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="relative z-30">
-                <Input
-                    label="Buscar lugar"
-                    placeholder="Escribe una dirección o zona..."
-                    value={searchQuery}
-                    onValueChange={setSearchQuery}
-                    variant="bordered"
-                    endContent={isSearching ? <Spinner size="sm" color="primary" /> : null}
-                />
-                {suggestions.length > 0 ? (
-                    <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-2xl border border-default-200 bg-content1 shadow-lg">
-                        {suggestions.map((suggestion) => (
-                            <li key={`${suggestion.lat}-${suggestion.lng}`}>
-                                <button
-                                    type="button"
-                                    className="w-full px-4 py-3 text-left text-sm hover:bg-default-100 transition-colors"
-                                    onClick={() => handleSuggestionSelect(suggestion)}
-                                >
-                                    {suggestion.address}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : null}
+            <div className="relative z-30 flex gap-2 items-start">
+                <div className="flex-1 relative">
+                    <Input
+                        label="Buscar lugar"
+                        placeholder="Escribe una dirección o zona..."
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                        variant="bordered"
+                        endContent={isSearching ? <Spinner size="sm" color="primary" /> : null}
+                    />
+                    {suggestions.length > 0 ? (
+                        <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-2xl border border-default-200 bg-content1 shadow-lg">
+                            {suggestions.map((suggestion) => (
+                                <li key={`${suggestion.lat}-${suggestion.lng}`}>
+                                    <button
+                                        type="button"
+                                        className="w-full px-4 py-3 text-left text-sm hover:bg-default-100 transition-colors"
+                                        onClick={() => handleSuggestionSelect(suggestion)}
+                                    >
+                                        {suggestion.address}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : null}
+                </div>
+                <Button 
+                    isIconOnly
+                    color="primary"
+                    variant="flat"
+                    className="h-14 w-14 shrink-0"
+                    onPress={requestCurrentLocation}
+                    title="Usar mi ubicación actual"
+                >
+                    📍
+                </Button>
             </div>
 
             {searchQuery.trim().length >= 3 && (!value || value.address !== searchQuery.trim()) ? (

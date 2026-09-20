@@ -12,11 +12,13 @@ import {
     Spinner,
     Textarea,
     addToast,
+    TimeInput,
 } from "@heroui/react";
 import {
     getLocalTimeZone,
     parseDate,
     today,
+    Time,
     type DateValue,
 } from "@internationalized/date";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
@@ -279,41 +281,50 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                     }
                 />
                 <div className="flex flex-col gap-2">
-                    <Input
-                        label="Hora del evento"
-                        type="time"
-                        value={startTime}
-                        onValueChange={setStartTime}
-                        variant="bordered"
-                        isRequired
-                        isDisabled={!eventDate || (slots.length > 0 && daySlots.length === 0)}
-                        description={
-                            slots.length > 0
-                                ? (daySlots.length > 0
-                                      ? `Horario del día: ${daySlots
-                                            .map(
-                                                (s) =>
-                                                    `${formatTimeLabel(s.start_time)}–${formatTimeLabel(s.end_time)}`,
-                                            )
-                                            .join(", ")}`
-                                      : eventDate
-                                        ? "Este día no está dentro de los horarios publicados."
-                                        : "Primero elige una fecha disponible.")
-                                : eventDate
-                                  ? "Ingresa la hora tentativa de inicio de tu evento."
-                                  : "Primero elige una fecha."
-                        }
-                    />
-                    {daySlots.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                            {daySlots.map((slot) => (
-                                <Chip key={slot.id} size="sm" variant="flat" color="primary">
-                                    {formatTimeLabel(slot.start_time)}–
-                                    {formatTimeLabel(slot.end_time)}
-                                </Chip>
-                            ))}
+                    {slots.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium">Hora del evento</label>
+                            {daySlots.length === 0 ? (
+                                <div className="p-3 border border-default-200 rounded-xl bg-default-50 text-sm text-default-500">
+                                    {!eventDate 
+                                        ? "Primero elige una fecha." 
+                                        : "Este día no está dentro de los horarios publicados."}
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {timeOptions.filter(o => !o.disabled).map(option => (
+                                        <Button
+                                            key={option.value}
+                                            size="sm"
+                                            variant={startTime === option.value ? "solid" : "flat"}
+                                            color={startTime === option.value ? "primary" : "default"}
+                                            onPress={() => setStartTime(option.value)}
+                                            className="font-medium"
+                                        >
+                                            {option.label}
+                                        </Button>
+                                    ))}
+                                </div>
+                            )}
+                            <p className="text-xs text-default-500">
+                                Horario del día: {daySlots.map((s) => `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`).join(", ")}
+                            </p>
                         </div>
-                    ) : null}
+                    ) : (
+                        <TimeInput
+                            label="Hora del evento"
+                            variant="bordered"
+                            isRequired
+                            isDisabled={!eventDate}
+                            value={startTime ? new Time(parseInt(startTime.split(':')[0]), parseInt(startTime.split(':')[1])) : null}
+                            onChange={(time) => setStartTime(time ? `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}` : "")}
+                            description={
+                                eventDate
+                                    ? "Ingresa la hora tentativa de inicio de tu evento."
+                                    : "Primero elige una fecha."
+                            }
+                        />
+                    )}
                 </div>
             </div>
 

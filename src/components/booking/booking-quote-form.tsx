@@ -16,6 +16,8 @@ import { quoteBooking, rejectBooking } from "@/lib/bookings";
 import { formatCurrency, formatQuotedAt } from "@/lib/booking-labels";
 import { getPlatformPaymentInstructions } from "@/lib/payments";
 import { platformFeeAmount } from "@/lib/platform-fee";
+import { useAuth } from "@/contexts/auth-context";
+import { useProfileVerification } from "@/hooks/use-profile-verification";
 import type { BookingOut } from "@/types/api";
 
 function roundMoney(value: number): number {
@@ -28,6 +30,10 @@ type Props = {
 };
 
 export default function BookingQuoteForm({ booking, onUpdated }: Props) {
+    const { user } = useAuth();
+    const { isVerified: profileIsVerified, isLoading } = useProfileVerification("musician", true, user?.is_verified);
+    const isLocked = !isLoading && !profileIsVerified;
+
     const isEditMode = booking.status === "accepted";
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
@@ -38,6 +44,31 @@ export default function BookingQuoteForm({ booking, onUpdated }: Props) {
     const [locationReference, setLocationReference] = useState(
         booking.location_reference ?? "",
     );
+
+    if (isLocked) {
+        return (
+            <Card className="border border-warning-200 bg-warning-50/50 shadow-soft">
+                <CardBody className="gap-3 p-6 text-center items-center justify-center">
+                    <div className="w-12 h-12 bg-warning-100 text-warning-600 rounded-full flex items-center justify-center mb-1">
+                        <Icon icon="material-symbols:edit-document" width={28} />
+                    </div>
+                    <h3 className="text-lg font-bold">Verificación requerida</h3>
+                    <p className="text-sm text-default-600 max-w-sm">
+                        Para poder aceptar contratos y fijar precios, debes completar tu perfil al 100% y ser validado por nuestro equipo.
+                    </p>
+                    <Button
+                        as="a"
+                        href="/musician/profile"
+                        color="warning"
+                        variant="flat"
+                        className="mt-2 font-semibold"
+                    >
+                        Completar mi perfil
+                    </Button>
+                </CardBody>
+            </Card>
+        );
+    }
     const [platformFeePercent, setPlatformFeePercent] = useState<number>(
         booking.platform_fee_percent != null
             ? Number(booking.platform_fee_percent)

@@ -21,6 +21,7 @@ import BookingReviewsTimeline from "@/components/booking/booking-reviews-timelin
 import BookingShareCard from "@/components/booking/booking-share-card";
 import RecommendContractorCard from "@/components/booking/recommend-contractor-card";
 import { useAuth } from "@/contexts/auth-context";
+import { useProfileVerification } from "@/hooks/use-profile-verification";
 import { formatCurrency } from "@/lib/booking-labels";
 import { createMercadoPagoPreference } from "@/lib/payments";
 import { formatDateTime } from "@/lib/date-utils";
@@ -50,6 +51,31 @@ type Props = {
     onReviewsChanged?: (count: number, hasFinal: boolean) => void;
 };
 
+function LockedFeatureCard({ title, icon, actionText }: { title: string, icon: string, actionText: string }) {
+    return (
+        <Card className="border border-warning-200 bg-warning-50/50 shadow-soft">
+            <CardBody className="gap-3 p-6 text-center items-center justify-center">
+                <div className="w-12 h-12 bg-warning-100 text-warning-600 rounded-full flex items-center justify-center mb-1">
+                    <Icon icon={icon} width={28} />
+                </div>
+                <h3 className="text-lg font-bold">{title}</h3>
+                <p className="text-sm text-default-600 max-w-sm">
+                    Para usar esta función, necesitas completar tu perfil y esperar la validación del administrador.
+                </p>
+                <Button
+                    as="a"
+                    href="/contractor/profile"
+                    color="warning"
+                    variant="flat"
+                    className="mt-2 font-semibold"
+                >
+                    {actionText}
+                </Button>
+            </CardBody>
+        </Card>
+    );
+}
+
 export default function BookingConfirmedWorkspace({
     booking,
     role,
@@ -60,6 +86,14 @@ export default function BookingConfirmedWorkspace({
 }: Props) {
     const isMemberMode = mode === "member";
     const { user } = useAuth();
+    const { isVerified: profileIsVerified } = useProfileVerification(
+        role,
+        true,
+        user?.is_verified
+    );
+
+    const isLocked = role === "contractor" && !profileIsVerified;
+
     const [messages, setMessages] = useState<BookingMessageOut[]>([]);
     const [messageBody, setMessageBody] = useState("");
     const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -243,7 +277,11 @@ export default function BookingConfirmedWorkspace({
             ) : null}
 
             {booking.status === "in_progress" ? (
-                <BookingLiveLocationCard bookingId={booking.id} role={role} />
+                isLocked ? (
+                    <LockedFeatureCard title="Ubicación en vivo" icon="material-symbols:location-on" actionText="Completar mi perfil" />
+                ) : (
+                    <BookingLiveLocationCard bookingId={booking.id} role={role} />
+                )
             ) : null}
 
             {/* Acciones de pago / habilitación del evento */}
@@ -283,7 +321,9 @@ export default function BookingConfirmedWorkspace({
             ) : null}
 
             {/* 3. Conversación */}
-            {canChat ? (
+            {isLocked && canChat ? (
+                <LockedFeatureCard title="Conversación" icon="material-symbols:chat" actionText="Completar mi perfil" />
+            ) : canChat ? (
                 <Card className="border border-default-200/70 shadow-soft">
                     <CardBody className="gap-4 p-6">
                         <div className="flex items-center gap-2">
@@ -357,7 +397,11 @@ export default function BookingConfirmedWorkspace({
             ) : null}
 
             {/* 5. Compartir con invitados */}
-            <BookingShareCard booking={booking} />
+            {isLocked ? (
+                <LockedFeatureCard title="Compartir con invitados" icon="material-symbols:share" actionText="Completar mi perfil" />
+            ) : (
+                <BookingShareCard booking={booking} />
+            )}
 
             {/* 6. Reseñas y recomendación */}
             {showReview ? (

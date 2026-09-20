@@ -69,6 +69,11 @@ export default function RoleDashboardShell({
         if (isLoading || isCheckingVerification || !user) return;
         if (user.role !== role) return;
 
+        if (role === "musician" && status?.status === "draft" && pathname !== "/musician/onboarding") {
+            router.replace("/musician/onboarding");
+            return;
+        }
+
         if (!isVerified && !ensembleBypass && isVerifiedOnlyPath(pathname, navItems)) {
             router.replace(profilePath);
         }
@@ -83,6 +88,7 @@ export default function RoleDashboardShell({
         router,
         role,
         user,
+        status,
     ]);
 
     if (isLoading || isCheckingVerification || !user || user.role !== role) {

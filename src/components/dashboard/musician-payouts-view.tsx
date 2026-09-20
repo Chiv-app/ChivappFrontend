@@ -23,6 +23,8 @@ import {
     markBookingMemberPayoutPaid,
     upsertBookingMemberPayouts,
 } from "@/lib/ensemble-members";
+import { useAuth } from "@/contexts/auth-context";
+import { useProfileVerification } from "@/hooks/use-profile-verification";
 import type {
     BookingStatus,
     MemberSettlementBookingOut,
@@ -31,6 +33,9 @@ import type {
 type FilterKey = "pending" | "ready" | "paid" | "all";
 
 export default function MusicianPayoutsView() {
+    const { user } = useAuth();
+    const { isVerified: profileIsVerified, isLoading: isVerificationLoading } = useProfileVerification("musician", true, user?.is_verified);
+
     const [rows, setRows] = useState<MemberSettlementBookingOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<FilterKey>("pending");
@@ -42,6 +47,7 @@ export default function MusicianPayoutsView() {
     const refresh = useCallback(async () => {
         const data = await listMemberSettlements();
         setRows(data);
+        setIsLoading(false);
         const next: Record<string, Record<string, string>> = {};
         for (const row of data) {
             next[row.booking_id] = {};
@@ -91,6 +97,42 @@ export default function MusicianPayoutsView() {
             return true;
         });
     }, [rows, filter]);
+
+    if (!isVerificationLoading && !profileIsVerified) {
+        return (
+            <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+                <div className="flex flex-col items-start gap-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                        Pagos a integrantes
+                    </h1>
+                    <p className="text-sm text-default-500">
+                        Gestiona los cobros de tus eventos finalizados
+                    </p>
+                </div>
+                <Card className="border border-warning-200 bg-warning-50/50 shadow-soft">
+                    <CardBody className="gap-3 p-10 text-center items-center justify-center">
+                        <div className="w-16 h-16 bg-warning-100 text-warning-600 rounded-full flex items-center justify-center mb-2">
+                            <Icon icon="material-symbols:payments-outline-rounded" width={36} />
+                        </div>
+                        <h3 className="text-xl font-bold">Verificación requerida</h3>
+                        <p className="text-base text-default-600 max-w-lg">
+                            Para poder gestionar y recibir cobros de la plataforma, necesitas completar tu perfil de músico al 100% y ser validado por nuestro equipo.
+                        </p>
+                        <Button
+                            as="a"
+                            href="/musician/profile"
+                            color="warning"
+                            variant="flat"
+                            size="lg"
+                            className="mt-4 font-semibold"
+                        >
+                            Completar mi perfil
+                        </Button>
+                    </CardBody>
+                </Card>
+            </div>
+        );
+    }
 
     const stats = useMemo(() => {
         let pendingAmount = 0;

@@ -38,11 +38,25 @@ export default function LoginForm({
 
         try {
             const loggedIn = await login({ email, password });
-            const destination = resolveAuthRedirect(
+            let destination = resolveAuthRedirect(
                 loggedIn.role,
                 redirect,
                 loggedIn.is_verified,
             );
+
+            if (loggedIn.role === "musician") {
+                try {
+                    const { getMusicianProfileStatus } = await import("@/lib/profiles");
+                    const status = await getMusicianProfileStatus();
+                    if (status.status === "draft") {
+                        destination = "/musician/onboarding";
+                    } else if (destination === "/") {
+                        destination = "/musician/bookings";
+                    }
+                } catch (e) {
+                    // Ignore errors, proceed to normal destination
+                }
+            }
 
             addToast({
                 title: "Bienvenido",

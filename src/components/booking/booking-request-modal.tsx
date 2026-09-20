@@ -1,12 +1,17 @@
 "use client";
 
 import {
+    Button,
     Modal,
     ModalBody,
     ModalContent,
     ModalHeader,
+    addToast,
 } from "@heroui/react";
+import { Icon } from "@iconify/react";
 import BookingRequestForm from "@/components/booking/booking-request-form";
+import { useAuth } from "@/contexts/auth-context";
+import { resendVerificationEmail } from "@/lib/auth";
 
 type MusicianRef = {
     id: string;
@@ -40,7 +45,7 @@ export default function BookingRequestModal({ musician, isOpen, onOpenChange }: 
                         <ModalHeader className="flex flex-col items-start gap-1 pb-2">
                             <span className="text-xl font-bold">Solicitar reserva</span>
                             <span className="text-sm font-normal text-default-500">
-                                Envía los datos de tu evento a {musician.name}
+                                con {musician.name}
                             </span>
                         </ModalHeader>
                         <ModalBody className="pb-6">
