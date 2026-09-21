@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
@@ -39,12 +39,12 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     applicationName: SITE_NAME,
     keywords: [
-        "músicos",
-        "contratar músicos",
-        "música para eventos",
+        "mÃºsicos",
+        "contratar mÃºsicos",
+        "mÃºsica para eventos",
         "mariachi",
         "banda para fiesta",
-        "músico para boda",
+        "mÃºsico para boda",
         "Chivapp",
     ],
     authors: [{ name: SITE_NAME }],
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
                 url: "/logo-chivapp.png",
                 width: 900,
                 height: 287,
-                alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
+                alt: `${SITE_NAME} â€” ${SITE_TAGLINE}`,
             },
             {
                 url: "/opengraph-image",
