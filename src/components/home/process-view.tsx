@@ -1,98 +1,78 @@
 "use client";
 
-import { Icon } from "@iconify/react";
-import StartBookingButton from "@/components/auth/start-booking-button";
+import { motion } from "framer-motion";
+
+const steps = [
+    {
+        title: "Explora",
+        description: "Busca por g\u00e9nero, precio o ciudad. Mira videos reales y lee rese\u00f1as aut\u00e9nticas.",
+        icon: "🔍",
+    },
+    {
+        title: "Cotiza",
+        description: "Pide cotizaciones a m\u00faltiples artistas al mismo tiempo, sin compromisos.",
+        icon: "📝",
+    },
+    {
+        title: "Reserva Seguro",
+        description: "Realiza el pago protegido. El dinero se libera solo cuando el evento termina.",
+        icon: "🔒",
+    },
+    {
+        title: "Disfruta",
+        description: "Sigue la llegada del m\u00fasico por GPS en vivo y conc\u00e9ntrate en disfrutar la fiesta.",
+        icon: "🎉",
+    },
+];
 
 export default function ProcessSection() {
-    const steps = [
-        {
-            title: "Solicita tu reserva",
-            description:
-                "Comparte la fecha, el lugar y los detalles de tu evento. El músico responde directo, sin intermediarios.",
-            icon: "material-symbols:edit-note",
-        },
-        {
-            title: "Firma el contrato",
-            description:
-                "Acuerden el precio final y firmen el contrato digital antes del evento. Todo queda por escrito.",
-            icon: "material-symbols:contract-edit-outline",
-        },
-        {
-            title: "Disfruta tu evento",
-            description:
-                "Tu pago queda retenido de forma segura y se libera al músico solo cuando el show termina.",
-            icon: "material-symbols:payments",
-        },
-    ];
-
     return (
         <section
             id="how-it-works"
-            className="scroll-mt-24 border-t border-default-200/60 bg-content1/40 py-14 sm:py-20 md:py-24"
+            className="scroll-mt-24 border-t border-default-200/60 bg-content1/40 py-24 md:py-32 overflow-hidden"
         >
-            <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 text-center">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 text-primary text-[11px] sm:text-xs font-semibold uppercase tracking-wide mb-4 sm:mb-5">
-                    Confianza de principio a fin
-                </span>
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="text-center max-w-3xl mx-auto mb-20"
+                >
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 tracking-tight text-foreground">
+                        Tu evento perfecto, en 4 pasos
+                    </h2>
+                    <p className="text-default-500 text-lg md:text-xl text-pretty">
+                        Olv\u00eddate de las agendas complicadas. Hemos simplificado la contrataci\u00f3n de m\u00fasica en vivo.
+                    </p>
+                </motion.div>
 
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4 tracking-tight text-balance px-1">
-                    El estándar seguro para contratar músicos
-                </h2>
-
-                <p className="text-default-600 max-w-xl mx-auto mb-10 sm:mb-14 md:mb-16 text-sm sm:text-base text-pretty px-1">
-                    Desde la solicitud hasta el aplauso final, cada paso queda
-                    documentado, firmado y protegido — para que sepas siempre en
-                    qué punto está tu evento.
-                </p>
-
-                <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 lg:gap-8">
-                    <div
-                        aria-hidden
-                        className="hidden md:block absolute top-7 left-[16%] right-[16%] h-px bg-linear-to-r from-transparent via-default-300 to-transparent -z-10"
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-10 relative">
+                    {/* L\u00ednea conectora (Desktop) */}
+                    <div className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-[2px] bg-gradient-to-r from-transparent via-default-200 to-transparent z-0" />
 
                     {steps.map((step, index) => (
-                        <div
+                        <motion.div
                             key={step.title}
-                            className="group relative flex flex-col items-center gap-3 sm:gap-4"
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.5, delay: index * 0.15 }}
+                            className="relative z-10 flex flex-col items-center text-center group"
                         >
-                            {index < steps.length - 1 ? (
-                                <div
-                                    aria-hidden
-                                    className="md:hidden absolute left-1/2 top-[3.5rem] bottom-[-2rem] w-px -translate-x-1/2 bg-linear-to-b from-default-300 via-default-200 to-transparent"
-                                />
-                            ) : null}
-
-                            <div className="size-12 sm:size-14 shrink-0 rounded-full bg-content2 text-foreground ring-1 ring-default-200/80 flex items-center justify-center font-bold text-base sm:text-lg leading-none tabular-nums transition-colors duration-300 group-hover:bg-primary group-hover:text-white group-hover:ring-transparent group-hover:shadow-glow relative z-10">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-background border-4 border-content1 shadow-soft flex items-center justify-center text-3xl sm:text-4xl mb-6 group-hover:scale-110 group-hover:border-primary transition-all duration-300">
+                                {step.icon}
+                            </div>
+                            <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3">
                                 {index + 1}
                             </div>
-
-                            <div className="p-6 sm:p-8 flex flex-col items-center rounded-3xl sm:rounded-4xl border border-default-200/70 bg-content1 shadow-soft w-full max-w-md md:max-w-none mx-auto hover:-translate-y-2 hover:shadow-xl hover:border-primary/40 transition-all duration-300 relative z-10 overflow-hidden">
-                                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-150 transition-transform duration-500">
-                                    <Icon icon={step.icon} width={120} height={120} />
-                                </div>
-                                <div className="flex size-12 sm:size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground relative z-10">
-                                    <Icon
-                                        icon={step.icon}
-                                        width={26}
-                                        height={26}
-                                    />
-                                </div>
-
-                                <h3 className="text-foreground font-bold text-lg sm:text-xl mb-3 relative z-10">
-                                    {step.title}
-                                </h3>
-
-                                <p className="text-default-600 text-sm sm:text-base leading-relaxed text-pretty relative z-10">
-                                    {step.description}
-                                </p>
-                            </div>
-                        </div>
+                            <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">
+                                {step.title}
+                            </h3>
+                            <p className="text-default-500 text-sm sm:text-base text-pretty">
+                                {step.description}
+                            </p>
+                        </motion.div>
                     ))}
-                </div>
-
-                <div className="mt-12 sm:mt-16 flex justify-center px-1">
-                    <StartBookingButton />
                 </div>
             </div>
         </section>

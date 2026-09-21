@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import HeroSearchSection from "@/components/home/hero-search-section";
 import HomeIntroSection from "@/components/home/home-intro-section";
-import HeroView from "@/components/home/hero-view";
-import StatsSection from "@/components/home/stats-view";
 import ProcessSection from "@/components/home/process-view";
 import WhyChivappSection from "@/components/home/why-chivapp-view";
-import MusicianCtaSection from "@/components/home/musician-cta-view";
 import FaqSection from "@/components/home/faq-view";
+import MusicianCtaSection from "@/components/home/musician-cta-view";
 import ProfileCompletionBanner from "@/components/profile/profile-completion-banner";
 import SeoLinksView from "@/components/home/seo-links-view";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
@@ -19,11 +18,7 @@ type Props = {
     stats: PlatformStatsOut | null;
 };
 
-export default function HomeView({ musicians, hasMoreMusicians = false, stats }: Props) {
-    // Oculta la barra de scroll solo en el home (la intro a pantalla completa
-    // se ve más limpia sin ella); se restaura al salir de la página.
-    // Se inyecta como <style> propio en vez de una clase en <html> porque
-    // next-themes reescribe el atributo class del root y la borraría.
+export default function HomeView({ musicians, hasMoreMusicians = false }: Props) {
     useEffect(() => {
         const style = document.createElement("style");
         style.textContent = `
@@ -45,24 +40,22 @@ export default function HomeView({ musicians, hasMoreMusicians = false, stats }:
 
     return (
         <main className="relative w-full overflow-x-clip">
-            <HomeIntroSection musicians={musicians} hasMoreMusicians={hasMoreMusicians} />
-
-            <div
-                id="home-content"
-                className="max-w-content mx-auto px-4 sm:px-6 md:px-8 pt-[var(--app-navbar-height)] pb-16 sm:pb-24 scroll-mt-[var(--app-navbar-height)]"
-            >
-                <ProfileCompletionBanner />
-
-                <HeroView />
-                
-                <SeoLinksView />
+            <div className="absolute top-[var(--app-navbar-height)] left-0 right-0 z-50 px-4 sm:px-6">
+                <div className="max-w-[1400px] mx-auto">
+                    <ProfileCompletionBanner />
+                </div>
             </div>
 
-            <StatsSection stats={stats} />
+            <HeroSearchSection />
+            <HomeIntroSection musicians={musicians} hasMoreMusicians={hasMoreMusicians} />
             <ProcessSection />
             <WhyChivappSection />
-            <MusicianCtaSection />
             <FaqSection />
+            <MusicianCtaSection />
+
+            <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 pb-16">
+                <SeoLinksView />
+            </div>
         </main>
     );
 }
