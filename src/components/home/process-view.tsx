@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 const steps = [
     {
         title: "Explora",
-        description: "Busca por g\u00e9nero, precio o ciudad. Mira videos reales y lee rese\u00f1as aut\u00e9nticas.",
+        description: "Busca por género, precio o ciudad. Mira videos reales y lee reseñas auténticas.",
         icon: "🔍",
     },
     {
         title: "Cotiza",
-        description: "Pide cotizaciones a m\u00faltiples artistas al mismo tiempo, sin compromisos.",
+        description: "Pide cotizaciones a múltiples artistas al mismo tiempo, sin compromisos.",
         icon: "📝",
     },
     {
@@ -20,7 +20,7 @@ const steps = [
     },
     {
         title: "Disfruta",
-        description: "Sigue la llegada del m\u00fasico por GPS en vivo y conc\u00e9ntrate en disfrutar la fiesta.",
+        description: "Sigue la llegada del músico por GPS en vivo y concéntrate en disfrutar la fiesta.",
         icon: "🎉",
     },
 ];
@@ -42,12 +42,12 @@ export default function ProcessSection() {
                         Tu evento perfecto, en 4 pasos
                     </h2>
                     <p className="text-default-500 text-lg md:text-xl text-pretty">
-                        Olv\u00eddate de las agendas complicadas. Hemos simplificado la contrataci\u00f3n de m\u00fasica en vivo.
+                        Olvídate de las agendas complicadas. Hemos simplificado la contratación de música en vivo.
                     </p>
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-10 relative">
-                    {/* L\u00ednea conectora (Desktop) */}
+                    {/* Línea conectora (Desktop) */}
                     <div className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-[2px] bg-gradient-to-r from-transparent via-default-200 to-transparent z-0" />
 
                     {steps.map((step, index) => (

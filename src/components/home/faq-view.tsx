@@ -6,33 +6,33 @@ import { motion } from "framer-motion";
 const faqs = [
     {
         key: "pago",
-        question: "\u00bfC\u00f3mo funciona el pago protegido?",
+        question: "¿Cómo funciona el pago protegido?",
         answer: "Al reservar, tu pago se guarda en una cuenta segura. El artista solo recibe el dinero una vez que el evento ha finalizado satisfactoriamente. Si el artista no se presenta, se te devuelve el 100% de tu dinero.",
     },
     {
         key: "cancelar",
-        question: "\u00bfPuedo cancelar una reserva?",
-        answer: "S\u00ed, puedes cancelar. Dependiendo de la anticipaci\u00f3n con la que canceles y las pol\u00edticas espec\u00edficas del m\u00fasico (visibles al momento de reservar), podr\u00edas recibir un reembolso completo o parcial.",
+        question: "¿Puedo cancelar una reserva?",
+        answer: "Sí, puedes cancelar. Dependiendo de la anticipación con la que canceles y las políticas específicas del músico (visibles al momento de reservar), podrías recibir un reembolso completo o parcial.",
     },
     {
         key: "cotizar",
-        question: "\u00bfC\u00f3mo cotizo sin compromiso?",
-        answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Solicitar cotizaci\u00f3n'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviar\u00e1n sus propuestas de precio. Es totalmente gratis.",
+        question: "¿Cómo cotizo sin compromiso?",
+        answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Solicitar cotización'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviarán sus propuestas de precio. Es totalmente gratis.",
     },
     {
         key: "verificado",
-        question: "\u00bfC\u00f3mo s\u00e9 que el m\u00fasico es real?",
-        answer: "Cada perfil pasa por un proceso de verificaci\u00f3n e incluye fotos, videos y repertorio propio, para que veas exactamente lo que vas a contratar antes de reservar.",
+        question: "¿Cómo sé que el músico es real?",
+        answer: "Cada perfil pasa por un proceso de verificación e incluye fotos, videos y repertorio propio, para que veas exactamente lo que vas a contratar antes de reservar.",
     },
     {
         key: "contrato",
-        question: "\u00bfHay un contrato de por medio?",
-        answer: "S\u00ed. Antes del evento se genera un contrato con los t\u00e9rminos acordados, firmado digitalmente por ambas partes desde la plataforma para proteger a ambos.",
+        question: "¿Hay un contrato de por medio?",
+        answer: "Sí. Antes del evento se genera un contrato con los términos acordados, firmado digitalmente por ambas partes desde la plataforma para proteger a ambos.",
     },
     {
         key: "musico",
-        question: "\u00bfC\u00f3mo me uno como m\u00fasico?",
-        answer: "Publica tu perfil gratis con tu bio, g\u00e9neros, fotos y videos. En cuanto est\u00e9 listo, empiezas a recibir solicitudes de contratistas de tu ciudad.",
+        question: "¿Cómo me uno como músico?",
+        answer: "Publica tu perfil gratis con tu bio, géneros, fotos y videos. En cuanto esté listo, empiezas a recibir solicitudes de contratistas de tu ciudad.",
     },
 ];
 
@@ -70,7 +70,7 @@ export default function FaqSection() {
                         Preguntas frecuentes
                     </h2>
                     <p className="text-default-500 text-lg text-pretty">
-                        Lo que m\u00e1s preguntan contratistas y m\u00fasicos antes de empezar.
+                        Lo que más preguntan contratistas y músicos antes de empezar.
                     </p>
                 </motion.div>
 

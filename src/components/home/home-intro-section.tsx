@@ -77,7 +77,7 @@ export default function HomeIntroSection({ musicians, hasMoreMusicians = false }
             {hasMoreMusicians ? (
                 <div className="flex justify-center mt-12 sm:mt-16">
                     <Link
-                        href="/musicos"
+                        href="/musicians"
                         className="inline-flex items-center gap-2 rounded-full border border-default-200/70 bg-content1/80 backdrop-blur-md px-8 py-4 font-bold text-foreground shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all"
                     >
                         Explorar todos los artistas
