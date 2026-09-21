@@ -57,6 +57,14 @@ export async function getPlatformStats(): Promise<PlatformStatsOut | null> {
     }
 }
 
+export async function getLatestReviews(limit: number = 6): Promise<any[]> {
+    try {
+        return await apiFetch<any[]>(`/profiles/reviews/latest?limit=${limit}`);
+    } catch {
+        return [];
+    }
+}
+
 export async function searchMusicians(
     filters: MusicianSearchFilters,
 ): Promise<MusicianCard[]> {

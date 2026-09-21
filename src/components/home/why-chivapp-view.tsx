@@ -1,8 +1,32 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function WhyChivappSection() {
+type Review = {
+    id: string;
+    rating: number;
+    comment: string;
+    author_label: string;
+    event_type: string | null;
+    created_at: string;
+};
+
+type Props = {
+    reviews?: Review[];
+};
+
+export default function WhyChivappSection({ reviews = [] }: Props) {
+    const [reviewIndex, setReviewIndex] = useState(0);
+
+    useEffect(() => {
+        if (reviews.length <= 1) return;
+        const interval = setInterval(() => {
+            setReviewIndex((current) => (current + 1) % reviews.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [reviews]);
+
     return (
         <section
             id="why-chivapp"
@@ -99,20 +123,47 @@ export default function WhyChivappSection() {
                             ))}
                         </div>
                         <h3 className="text-2xl md:text-3xl font-bold mb-4 tracking-tight text-foreground">
-                            Reseñas 100% Reales
+                            Reseñas
                         </h3>
                         <p className="text-default-500 text-base md:text-lg mb-8 max-w-lg text-pretty">
                             Solo los contratistas que han completado un evento pagado a través de Chivapp pueden dejar una valoración. Calidad garantizada.
                         </p>
 
-                        <div className="mt-auto bg-background border border-default-200 rounded-2xl p-4 flex gap-4 items-center w-full max-w-[400px]">
-                            <div className="w-12 h-12 rounded-full bg-default-200 shrink-0 flex items-center justify-center text-default-500 font-bold">
-                                💬
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <div className="h-4 bg-default-200 rounded w-3/4 mb-2 animate-pulse" />
-                                <div className="h-3 bg-default-100 rounded w-1/2 animate-pulse" />
-                            </div>
+                        <div className="mt-auto h-[120px] w-full max-w-[500px] relative">
+                            {reviews.length > 0 ? (
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={reviewIndex}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.4 }}
+                                        className="absolute inset-0 bg-background border border-default-200 rounded-2xl p-4 flex gap-4 items-center"
+                                    >
+                                        <div className="w-12 h-12 rounded-full bg-primary/10 text-primary shrink-0 flex items-center justify-center text-xl font-bold uppercase">
+                                            {reviews[reviewIndex].author_label.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold text-foreground line-clamp-2">
+                                                "{reviews[reviewIndex].comment}"
+                                            </p>
+                                            <p className="text-xs text-default-500 mt-1">
+                                                {reviews[reviewIndex].author_label} • {reviews[reviewIndex].event_type || "Evento privado"}
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                </AnimatePresence>
+                            ) : (
+                                <div className="absolute inset-0 bg-background border border-default-200 rounded-2xl p-4 flex gap-4 items-center">
+                                    <div className="w-12 h-12 rounded-full bg-default-200 shrink-0 flex items-center justify-center text-default-500 font-bold">
+                                        💬
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="h-4 bg-default-200 rounded w-3/4 mb-2 animate-pulse" />
+                                        <div className="h-3 bg-default-100 rounded w-1/2 animate-pulse" />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
 

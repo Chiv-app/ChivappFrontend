@@ -16,9 +16,10 @@ type Props = {
     musicians: MusicianCardModel[];
     hasMoreMusicians?: boolean;
     stats: PlatformStatsOut | null;
+    reviews?: any[];
 };
 
-export default function HomeView({ musicians, hasMoreMusicians = false }: Props) {
+export default function HomeView({ musicians, hasMoreMusicians = false, reviews = [] }: Props) {
     useEffect(() => {
         const style = document.createElement("style");
         style.textContent = `
@@ -49,7 +50,7 @@ export default function HomeView({ musicians, hasMoreMusicians = false }: Props)
             <HeroSearchSection />
             <HomeIntroSection musicians={musicians} hasMoreMusicians={hasMoreMusicians} />
             <ProcessSection />
-            <WhyChivappSection />
+            <WhyChivappSection reviews={reviews} />
             <FaqSection />
             <MusicianCtaSection />
 
