@@ -118,10 +118,13 @@ export default function AdminMusiciansPage() {
         setRejectionReason("");
         await load();
     }
-
     async function openDetail(id: string) {
-        setSelected(await getMusicianAdminDetail(id));
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        try {
+            setSelected(await getMusicianAdminDetail(id));
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (error: any) {
+            addToast({ title: "Error al cargar detalle", description: error.message, color: "danger" });
+        }
     }
 
     return (

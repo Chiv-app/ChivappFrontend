@@ -310,6 +310,8 @@ export function isVerifiedOnlyPath(
 /** Rutas que un integrante (sin perfil publicado) sí puede usar. */
 export function isEnsembleMemberAllowedPath(pathname: string): boolean {
     return (
+        pathname === "/musician" ||
+        pathname === "/musician/profile" ||
         pathname === "/musician/bookings" ||
         pathname.startsWith("/musician/bookings/") ||
         pathname === "/musician/earnings" ||
@@ -322,6 +324,8 @@ export function isEnsembleMemberAllowedPath(pathname: string): boolean {
 /** Nav visible/desbloqueada para integrantes sin verificación completa. */
 export function isEnsembleMemberNavItem(href: string): boolean {
     return (
+        href === "/musician" ||
+        href === "/musician/profile" ||
         href === "/musician/bookings" ||
         href === "/musician/earnings" ||
         href === "/musician/notifications"

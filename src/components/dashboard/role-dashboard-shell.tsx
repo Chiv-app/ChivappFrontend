@@ -69,7 +69,7 @@ export default function RoleDashboardShell({
         if (isLoading || isCheckingVerification || !user) return;
         if (user.role !== role) return;
 
-        if (role === "musician" && status?.status === "draft" && pathname !== "/musician/onboarding") {
+        if (role === "musician" && status?.status === "draft" && !status?.is_ensemble_only && pathname !== "/musician/onboarding") {
             router.replace("/musician/onboarding");
             return;
         }

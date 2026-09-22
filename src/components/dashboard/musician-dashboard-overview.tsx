@@ -15,6 +15,7 @@ import type { NotificationOut } from "@/types/api";
 
 type Props = {
     isVerified: boolean;
+    isEnsembleMember?: boolean;
     pendingBookings?: number;
     unreadNotifications?: number;
     bookingNotifications?: NotificationOut[];
@@ -24,6 +25,7 @@ type Props = {
 
 export default function MusicianDashboardOverview({
     isVerified,
+    isEnsembleMember = false,
     pendingBookings = 0,
     unreadNotifications = 0,
     bookingNotifications = [],
@@ -328,11 +330,14 @@ export default function MusicianDashboardOverview({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {MUSICIAN_MODULES.map((module) => (
-                        <DashboardModuleCard
-                            key={module.title}
-                            module={module}
-                            locked={!!module.requiresVerification && !isVerified}
-                        />
+                                                    <DashboardModuleCard
+                                key={module.title}
+                                module={module}
+                                locked={
+                                    (!!module.requiresVerification && !isVerified) ||
+                                    (isEnsembleMember && !["Reservas", "Ingresos", "Notificaciones"].includes(module.title))
+                                }
+                            />
                     ))}
                 </div>
             </section>

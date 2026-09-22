@@ -27,6 +27,7 @@ export type ProfileValidationOut = {
     steps: ValidationStepOut[];
     can_submit: boolean;
     is_public: boolean;
+    is_ensemble_only?: boolean;
 };
 
 export type MusicianProfileListOut = {
@@ -69,6 +70,7 @@ export type MusicianPublicReviewOut = {
 
 export type MusicianProfilePublicOut = {
     id: string;
+    is_ensemble_only?: boolean;
     stage_name?: string | null;
     slug?: string | null;
     bio: string | null;
@@ -150,6 +152,7 @@ export type MusicianProfileOut = MusicianProfilePublicOut & {
 };
 
 export type MusicianProfileCreate = {
+    is_ensemble_only?: boolean;
     stage_name: string;
     username?: string | null;
     fullname?: string | null;

@@ -54,8 +54,8 @@ function actionLabel(booking: BookingOut) {
     if (booking.complaint_status === "open") return "Responder queja";
     const status = booking.status;
     if (status === "requested") return "Cotizar";
-    if (status === "payment_pending") return "Validar anticipo";
-    if (status === "balance_review") return "Validar abono";
+    if (status === "payment_pending") return "Esperando pago";
+    if (status === "balance_review") return "Esperando pago";
     if (status === "change_pending") return "Revisar cambio";
     return "Gestionar";
 }

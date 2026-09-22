@@ -33,8 +33,11 @@ export default function MusicianDashboardPage() {
         isBookingNotification(notification.type),
     );
 
+    const isEnsemble = Boolean(user?.is_ensemble_member);
+    const hasAccess = isVerified || isEnsemble;
+
     useEffect(() => {
-        if (!isVerified) return;
+        if (!hasAccess) return;
 
         listBookings()
             .then((bookings) => {
@@ -55,11 +58,12 @@ export default function MusicianDashboardPage() {
                 setReleasedEarnings(0);
                 setRetainedEarnings(0);
             });
-    }, [isVerified]);
+    }, [hasAccess]);
 
     return (
         <MusicianDashboardOverview
-            isVerified={isVerified}
+            isVerified={hasAccess}
+            isEnsembleMember={isEnsemble}
             pendingBookings={pendingBookings}
             unreadNotifications={unreadCount}
             bookingNotifications={bookingNotifications}
