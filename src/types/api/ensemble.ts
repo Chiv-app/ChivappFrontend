@@ -68,6 +68,7 @@ export type BookingMemberInvitePreviewOut = {
     member_fullname: string;
     status: BookingMemberInviteStatus;
     can_respond: boolean;
+    needs_password?: boolean;
 };
 
 export type BookingMemberPayoutStatus = "draft" | "locked" | "paid";

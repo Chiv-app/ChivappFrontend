@@ -101,10 +101,11 @@ export function previewBookingMemberInvite(
 export function respondBookingMemberInvite(
     token: string,
     action: "accept" | "decline",
+    password?: string,
 ): Promise<BookingMemberInvitePreviewOut> {
     return apiFetch(`/invites/member/${encodeURIComponent(token)}/respond`, {
         method: "POST",
-        body: JSON.stringify({ action }),
+        body: JSON.stringify(password ? { action, password } : { action }),
     });
 }
 

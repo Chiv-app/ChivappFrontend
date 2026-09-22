@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardBody, Chip, addToast } from "@heroui/react";
+import { Button, Card, CardBody, Chip, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AppLogo from "@/components/layout/app-logo";
 import { ApiError } from "@/lib/api";
@@ -28,6 +28,7 @@ export default function MemberInviteRespondPage({ params }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isWorking, setIsWorking] = useState<"accept" | "decline" | null>(null);
+    const [password, setPassword] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -69,9 +70,17 @@ export default function MemberInviteRespondPage({ params }: Props) {
     }, [token, router]);
 
     async function respond(action: "accept" | "decline") {
+        if (action === "accept" && preview?.needs_password && password.length < 8) {
+            addToast({
+                title: "Contraseña inválida",
+                description: "La contraseña debe tener al menos 8 caracteres.",
+                color: "warning",
+            });
+            return;
+        }
         setIsWorking(action);
         try {
-            const updated = await respondBookingMemberInvite(token, action);
+            const updated = await respondBookingMemberInvite(token, action, action === "accept" && preview?.needs_password ? password : undefined);
             setPreview(updated);
             addToast({
                 title: action === "accept" ? "Asistencia confirmada" : "Convocatoria rechazada",
@@ -167,7 +176,23 @@ export default function MemberInviteRespondPage({ params }: Props) {
                         </div>
 
                         {preview.can_respond ? (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-4">
+                                {preview.needs_password && (
+                                    <div className="bg-primary-50 text-primary-800 p-4 rounded-xl text-sm mb-2">
+                                        <p className="font-semibold mb-2">Crea tu contraseña para aceptar</p>
+                                        <p className="opacity-90 mb-4">Para confirmar tu asistencia y acceder a tu perfil en Chivapp, necesitas crear una contraseña.</p>
+                                        <Input
+                                            type="password"
+                                            label="Nueva contraseña"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="Mínimo 8 caracteres"
+                                            variant="bordered"
+                                            color="primary"
+                                        />
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-2 gap-3">
                                 <Button
                                     color="danger"
                                     variant="flat"
@@ -188,6 +213,7 @@ export default function MemberInviteRespondPage({ params }: Props) {
                                 >
                                     Aceptar
                                 </Button>
+                            </div>
                             </div>
                         ) : (
                             <p className="text-sm text-default-600 text-center">
