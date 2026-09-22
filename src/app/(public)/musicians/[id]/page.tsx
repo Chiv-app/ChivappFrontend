@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         return buildPageMetadata({
             title: musician.name,
             description,
-            path: `/musicians/${id}`,
+            path: `/musicians/${musician.slug || id}`,
         });
     } catch {
         return buildPageMetadata({
@@ -63,7 +63,7 @@ export default async function MusicianDetailPage({ params }: PageProps) {
     const jsonLd = musicianJsonLd({
         name: musician.name,
         description,
-        path: `/musicians/${id}`,
+        path: `/musicians/${musician.slug || id}`,
         image: musician.image ?? musician.galleryImages[0] ?? null,
         genres: musician.genres.length ? musician.genres : [musician.genre],
         city: musician.city,

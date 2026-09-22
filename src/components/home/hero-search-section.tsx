@@ -49,7 +49,7 @@ export default function HeroSearchSection() {
             >
                 {/* H1 para indexación y lectores de pantalla */}
                 <h1 className="sr-only">
-                    La banda sonora de tus mejores momentos. Encuentra y reserva mariachis, orquestas, djs y más.
+                    Chivapp – Contrata mariachis y músicos para tu evento en Perú
                 </h1>
                 
                 <div aria-hidden="true" className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6 min-h-[160px] sm:min-h-[180px] md:min-h-[220px] lg:min-h-[240px] flex items-center justify-center w-full">

@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
 }
 
+import { notFound } from "next/navigation";
 import type { MusicianCard } from "@/types/ui/musician";
 
 export default async function GenreCityPage({ params }: Props) {
@@ -40,6 +41,10 @@ export default async function GenreCityPage({ params }: Props) {
         });
     } catch {
         // Fallback a cliente
+    }
+
+    if (initialMusicians.length === 0) {
+        notFound();
     }
 
     return (

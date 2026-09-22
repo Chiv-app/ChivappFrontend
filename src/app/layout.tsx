@@ -1,4 +1,4 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
@@ -15,8 +15,8 @@ import {
 export const viewport: Viewport = {
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    maximumScale: 5,
+    userScalable: true,
     viewportFit: "cover",
 };
 
@@ -33,18 +33,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     metadataBase: new URL(getSiteUrl()),
     title: {
-        default: SITE_NAME,
+        default: "Chivapp – Contrata mariachis y músicos para tu evento en Perú",
         template: `${SITE_NAME} - %s`,
     },
     description: SITE_DESCRIPTION,
     applicationName: SITE_NAME,
     keywords: [
-        "mÃºsicos",
-        "contratar mÃºsicos",
-        "mÃºsica para eventos",
+        "músicos",
+        "contratar músicos",
+        "música para eventos",
         "mariachi",
         "banda para fiesta",
-        "mÃºsico para boda",
+        "músico para boda",
         "Chivapp",
     ],
     authors: [{ name: SITE_NAME }],
@@ -73,9 +73,9 @@ export const metadata: Metadata = {
     manifest: "/manifest.json",
     openGraph: {
         type: "website",
-        locale: "es_ES",
+        locale: "es_PE",
         siteName: SITE_NAME,
-        title: SITE_NAME,
+        title: "Chivapp – Contrata mariachis y músicos para tu evento en Perú",
         description: SITE_TAGLINE,
         url: "/",
         images: [
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
                 url: "/logo-chivapp.png",
                 width: 900,
                 height: 287,
-                alt: `${SITE_NAME} â€” ${SITE_TAGLINE}`,
+                alt: `${SITE_NAME} - ${SITE_TAGLINE}`,
             },
             {
                 url: "/opengraph-image",

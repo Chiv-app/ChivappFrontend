@@ -11,6 +11,7 @@ export const metadata: Metadata = buildPageMetadata({
 export default function MusiciansPage() {
     return (
         <div className="pt-3 sm:pt-4 pb-16 sm:pb-24">
+            <h1 className="sr-only">Explora Músicos y Mariachis para tu Evento</h1>
             <MusiciansBrowseView />
         </div>
     );

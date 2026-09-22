@@ -6,25 +6,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticRoutes: MetadataRoute.Sitemap = [
         {
             url: absoluteUrl("/"),
-            lastModified: new Date(),
             changeFrequency: "daily",
             priority: 1,
         },
         {
             url: absoluteUrl("/musicians"),
-            lastModified: new Date(),
             changeFrequency: "daily",
             priority: 0.9,
         },
         {
             url: absoluteUrl("/legal/terminos"),
-            lastModified: new Date(),
             changeFrequency: "monthly",
             priority: 0.3,
         },
         {
             url: absoluteUrl("/legal/privacidad"),
-            lastModified: new Date(),
             changeFrequency: "monthly",
             priority: 0.3,
         },
@@ -39,7 +35,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // 1. Perfiles de músicos
         musicianRoutes = musicians.map((musician) => ({
             url: absoluteUrl(`/musicians/${musician.slug || musician.id}`),
-            lastModified: new Date(),
             changeFrequency: "weekly" as const,
             priority: 0.8,
         }));
@@ -66,7 +61,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // Generar URLs para géneros puros (ej: /musicos/mariachi)
         const genreRoutes: MetadataRoute.Sitemap = Array.from(uniqueGenres).map(genre => ({
             url: absoluteUrl(`/musicos/${genre}`),
-            lastModified: new Date(),
             changeFrequency: "weekly" as const,
             priority: 0.85,
         }));
@@ -74,7 +68,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // Generar URLs para combinaciones (ej: /musicos/mariachi/ayacucho)
         const combinationRoutes: MetadataRoute.Sitemap = Array.from(uniqueCombinations).map(combo => ({
             url: absoluteUrl(`/musicos/${combo}`),
-            lastModified: new Date(),
             changeFrequency: "weekly" as const,
             priority: 0.9,
         }));

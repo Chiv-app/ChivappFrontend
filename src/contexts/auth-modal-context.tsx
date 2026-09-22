@@ -7,6 +7,7 @@ import {
     useEffect,
     useMemo,
     useState,
+    Suspense,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import AuthModal, { type AuthModalMode } from "@/components/auth/auth-modal";
@@ -31,43 +32,24 @@ type AuthModalContextValue = {
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
 
-export function AuthModalProvider({ children }: { children: React.ReactNode }) {
+function AuthModalUrlSync({
+    setMode,
+    setRedirect,
+    setOauthError,
+    setIsOpen,
+}: {
+    setMode: (m: AuthModalMode) => void;
+    setRedirect: (r: string | null) => void;
+    setOauthError: (e: string | null) => void;
+    setIsOpen: (o: boolean) => void;
+}) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    const [isOpen, setIsOpen] = useState(false);
-    const [mode, setMode] = useState<AuthModalMode>("login");
-    const [redirect, setRedirect] = useState<string | null>(null);
-    const [oauthError, setOauthError] = useState<string | null>(null);
-    const [defaultRole, setDefaultRole] = useState<UserRole | undefined>(
-        undefined,
-    );
-
     const authParam = searchParams.get("auth");
     const urlMode: AuthModalMode | null =
         authParam === "login" || authParam === "register" ? authParam : null;
-
-    const openLogin = useCallback((options?: OpenAuthOptions) => {
-        setMode("login");
-        setRedirect(options?.redirect ?? null);
-        setOauthError(options?.oauthError ?? null);
-        setDefaultRole(undefined);
-        setIsOpen(true);
-    }, []);
-
-    const openRegister = useCallback((options?: OpenRegisterOptions) => {
-        setMode("register");
-        setRedirect(options?.redirect ?? null);
-        setOauthError(null);
-        setDefaultRole(options?.defaultRole);
-        setIsOpen(true);
-    }, []);
-
-    const close = useCallback(() => {
-        setIsOpen(false);
-        setOauthError(null);
-    }, []);
 
     useEffect(() => {
         if (!urlMode) return;
@@ -94,7 +76,42 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
         return () => {
             cancelled = true;
         };
-    }, [urlMode, searchParams, pathname, router]);
+    }, [urlMode, searchParams, pathname, router, setMode, setRedirect, setOauthError, setIsOpen]);
+
+    return null;
+}
+
+export function AuthModalProvider({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [mode, setMode] = useState<AuthModalMode>("login");
+    const [redirect, setRedirect] = useState<string | null>(null);
+    const [oauthError, setOauthError] = useState<string | null>(null);
+    const [defaultRole, setDefaultRole] = useState<UserRole | undefined>(
+        undefined,
+    );
+
+    const openLogin = useCallback((options?: OpenAuthOptions) => {
+        setMode("login");
+        setRedirect(options?.redirect ?? null);
+        setOauthError(options?.oauthError ?? null);
+        setDefaultRole(undefined);
+        setIsOpen(true);
+    }, []);
+
+    const openRegister = useCallback((options?: OpenRegisterOptions) => {
+        setMode("register");
+        setRedirect(options?.redirect ?? null);
+        setOauthError(null);
+        setDefaultRole(options?.defaultRole);
+        setIsOpen(true);
+    }, []);
+
+    const close = useCallback(() => {
+        setIsOpen(false);
+        setOauthError(null);
+    }, []);
 
     function handleOpenChange(open: boolean) {
         if (!open) close();
@@ -123,6 +140,14 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     return (
         <AuthModalContext.Provider value={value}>
             {children}
+            <Suspense fallback={null}>
+                <AuthModalUrlSync
+                    setMode={setMode}
+                    setRedirect={setRedirect}
+                    setOauthError={setOauthError}
+                    setIsOpen={setIsOpen}
+                />
+            </Suspense>
             <AuthModal
                 isOpen={isOpen}
                 mode={mode}

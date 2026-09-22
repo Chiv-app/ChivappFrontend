@@ -1,10 +1,10 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { resolveUploadUrl } from "@/lib/uploads";
 
 export const SITE_NAME = "Chivapp";
-export const SITE_TAGLINE = "Encuentra y contrata mÃºsicos para tu evento.";
+export const SITE_TAGLINE = "Encuentra y contrata músicos para tu evento.";
 export const SITE_DESCRIPTION =
-    "Chivapp conecta personas con mÃºsicos verificados para bodas, fiestas y eventos. Descubre perfiles, escucha su estilo y reserva en minutos.";
+    "Chivapp conecta personas con músicos verificados para bodas, fiestas y eventos. Descubre perfiles, escucha su estilo y reserva en minutos.";
 
 export function getSiteUrl(): string {
     const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -14,7 +14,7 @@ export function getSiteUrl(): string {
     if (vercel) return `https://${vercel.replace(/\/$/, "")}`;
 
     if (process.env.NODE_ENV === "production") {
-        return "https://Chivapp.com";
+        return "https://chiv.app";
     }
 
     return "http://localhost:3000";
@@ -69,7 +69,7 @@ export function buildPageMetadata({
             : { index: true, follow: true },
         openGraph: {
             type: "website",
-            locale: "es_ES",
+            locale: "es_PE",
             siteName: SITE_NAME,
             title: fullTitle,
             description,
@@ -145,10 +145,10 @@ export function musicianJsonLd(input: {
 }) {
     const image = absoluteImageUrl(input.image) ?? absoluteUrl("/logo-chivapp.png");
     
-    // Solo mostramos calificaciÃ³n si hay al menos 1 reseÃ±a vÃ¡lida
+    // Solo mostramos calificación si hay al menos 1 reseña válida
     const hasRating = input.rating != null && input.ratingCount != null && input.ratingCount > 0;
     
-    // Redes sociales vÃ¡lidas (no nulas/vacÃ­as)
+    // Redes sociales válidas (no nulas/vacías)
     const sameAs = input.socialUrls?.filter(Boolean) || [];
 
     return {

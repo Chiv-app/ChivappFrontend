@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
         destination: "/complete-role",
         permanent: false,
       },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.chiv.app' }],
+        destination: 'https://chiv.app/:path*',
+        permanent: true,
+      },
     ];
   },
   images: {

@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisiÃ³n", published: "Publicado", rejected: "Rechazado" };
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };
 
 const STATUS_COLOR: Record<
     string,
@@ -111,7 +111,7 @@ export default function AdminMusiciansPage() {
             reason: rejectionReason || null,
         });
         addToast({
-            title: action === "unpublish" ? "Perfil despublicado" : "ReenvÃ­o solicitado",
+            title: action === "unpublish" ? "Perfil despublicado" : "Reenvío solicitado",
             color: "warning",
         });
         setSelected(null);
@@ -130,7 +130,7 @@ export default function AdminMusiciansPage() {
     return (
         <div className="flex flex-col gap-6">
             <AdminPageHeader
-                title="ModeraciÃ³n de mÃºsicos"
+                title="Moderación de músicos"
                 description="Aprueba, rechaza, despublica o solicita correcciones sobre cualquier perfil."
                 actions={
                     <Chip color="primary" variant="flat">
@@ -142,7 +142,7 @@ export default function AdminMusiciansPage() {
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                     label="Buscar"
-                    placeholder="Nombre artÃ­stico, emailâ€¦"
+                    placeholder="Nombre artístico, email…"
                     value={q}
                     onValueChange={setQ}
                     variant="bordered"

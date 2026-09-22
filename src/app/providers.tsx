@@ -1,6 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import PasswordSetupGate from "@/components/auth/password-setup-gate";
@@ -27,11 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <NotificationsProvider>
                         <CookieConsentBanner />
                         <HelpWidget />
-                        <Suspense fallback={null}>
-                            <AuthModalProvider>
-                                <PasswordSetupGate>{children}</PasswordSetupGate>
-                            </AuthModalProvider>
-                        </Suspense>
+                        <AuthModalProvider>
+                            <PasswordSetupGate>{children}</PasswordSetupGate>
+                        </AuthModalProvider>
                     </NotificationsProvider>
                 </AuthProvider>
             </HeroUIProvider>

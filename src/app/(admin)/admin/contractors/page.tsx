@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisiÃ³n", published: "Publicado", rejected: "Rechazado" };
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };
 
 const STATUS_COLOR: Record<
     string,
@@ -208,10 +208,10 @@ export default function AdminContractorsPage() {
                                     </div>
                                 </div>
                                 <p className="text-sm text-default-600 line-clamp-3">
-                                    {profile.bio || "Sin biografÃ­a"}
+                                    {profile.bio || "Sin biografía"}
                                 </p>
                                 <p className="text-xs text-default-500">
-                                    {profile.document_type} {profile.document_number} Â·{" "}
+                                    {profile.document_type} {profile.document_number} ·{" "}
                                     {profile.city || "Sin ciudad"}
                                 </p>
                                 {profile.status === "rejected" && profile.rejection_reason ? (
