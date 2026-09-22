@@ -241,7 +241,7 @@ export function useMercadoPago() {
     return {
         isLoaded,
         loadError,
-        mp: mpInstanceRef.current,
+        getMp: () => mpInstanceRef.current,
         createYapeToken,
         renderPaymentBrick,
         getDeviceSessionId,
