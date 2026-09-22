@@ -244,79 +244,31 @@ export default function BookingContractConfirmCard({
                         </>
                     )}
 
-                    {/* Selector de Modalidad de Pago */}
+                    {/* Selector de Modalidad de Pago - ÚNICA OPCIÓN */}
                     <div className="flex flex-col gap-3">
                         <p className="text-sm font-semibold text-foreground">
-                            Modalidad de pago inicial
+                            Modalidad de pago
                         </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                             <div
-                                onClick={() => setPaymentType("advance")}
-                                className={`cursor-pointer rounded-2xl border p-4 transition-all ${
-                                    paymentType === "advance"
-                                        ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
-                                        : "border-default-200 bg-content1 hover:border-default-300"
-                                }`}
+                                className="cursor-default rounded-2xl border p-4 transition-all border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                                        Opción recomendada
+                                        Pago completo del show
                                     </span>
                                     <div
-                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                            paymentType === "advance"
-                                                ? "border-primary bg-primary"
-                                                : "border-default-300"
-                                        }`}
+                                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center border-primary bg-primary"
                                     >
-                                        {paymentType === "advance" && (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                        )}
-                                    </div>
-                                </div>
-                                <p className="font-bold text-foreground text-lg">
-                                    {advanceDue != null ? formatCurrency(advanceDue) : "Anticipo"}
-                                </p>
-                                <div className="text-xs text-default-500 mt-1">
-                                    Paga solo el anticipo requerido ahora para confirmar la fecha.
-                                    {remainingAfterAdvance != null && (
-                                        <span className="block mt-0.5 text-default-600">
-                                            Saldo restante ({formatCurrency(remainingAfterAdvance)}) antes del evento.
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div
-                                onClick={() => setPaymentType("full")}
-                                className={`cursor-pointer rounded-2xl border p-4 transition-all ${
-                                    paymentType === "full"
-                                        ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
-                                        : "border-default-200 bg-content1 hover:border-default-300"
-                                }`}
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-default-500">
-                                        Pago completo
-                                    </span>
-                                    <div
-                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                            paymentType === "full"
-                                                ? "border-primary bg-primary"
-                                                : "border-default-300"
-                                        }`}
-                                    >
-                                        {paymentType === "full" && (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                        )}
+                                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
                                     </div>
                                 </div>
                                 <p className="font-bold text-foreground text-lg">
                                     {contractorTotal != null ? formatCurrency(contractorTotal) : "Total"}
                                 </p>
-                                <p className="text-xs text-default-500 mt-1">
-                                    Cancela el 100% del servicio y tarifa de plataforma hoy y despreocúpate del saldo.
-                                </p>
+                                <div className="text-xs text-default-500 mt-1">
+                                    Cancela el 100% del servicio hoy. Despreocúpate de realizar abonos posteriores.
+                                </div>
                             </div>
                         </div>
                     </div>

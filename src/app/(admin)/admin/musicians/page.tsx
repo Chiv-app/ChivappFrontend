@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisiÃ³n", published: "Publicado", rejected: "Rechazado" };
 
 const STATUS_COLOR: Record<
     string,
@@ -111,7 +111,7 @@ export default function AdminMusiciansPage() {
             reason: rejectionReason || null,
         });
         addToast({
-            title: action === "unpublish" ? "Perfil despublicado" : "Reenvío solicitado",
+            title: action === "unpublish" ? "Perfil despublicado" : "ReenvÃ­o solicitado",
             color: "warning",
         });
         setSelected(null);
@@ -121,12 +121,13 @@ export default function AdminMusiciansPage() {
 
     async function openDetail(id: string) {
         setSelected(await getMusicianAdminDetail(id));
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     return (
         <div className="flex flex-col gap-6">
             <AdminPageHeader
-                title="Moderación de músicos"
+                title="ModeraciÃ³n de mÃºsicos"
                 description="Aprueba, rechaza, despublica o solicita correcciones sobre cualquier perfil."
                 actions={
                     <Chip color="primary" variant="flat">
@@ -138,7 +139,7 @@ export default function AdminMusiciansPage() {
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                     label="Buscar"
-                    placeholder="Nombre artístico, email…"
+                    placeholder="Nombre artÃ­stico, emailâ€¦"
                     value={q}
                     onValueChange={setQ}
                     variant="bordered"
@@ -185,7 +186,7 @@ export default function AdminMusiciansPage() {
                                             {profile.stage_name}
                                         </h3>
                                         <p className="text-sm text-default-500 truncate">
-                                            {profile.user_fullname} · {profile.user_email}
+                                            {profile.user_fullname} Â· {profile.user_email}
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
@@ -262,138 +263,135 @@ export default function AdminMusiciansPage() {
                 </div>
             )}
 
-            {selected && !rejectModal.isOpen ? (
-                <Card className="border border-default-200/70 shadow-soft">
-                    <CardBody className="p-6 gap-4">
-                        <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-2xl font-semibold text-foreground min-w-0 truncate">
-                                {selected.stage_name}
-                            </h3>
-                            <Button
-                                size="sm"
-                                variant="light"
-                                className="shrink-0"
-                                onPress={() => setSelected(null)}
-                            >
-                                Cerrar
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-default-600">
-                            <p>
-                                <strong className="text-foreground">Ciudad:</strong>{" "}
-                                {selected.location_city}
-                            </p>
-                            <p>
-                                <strong className="text-foreground">Zona:</strong>{" "}
-                                {selected.location_zone}
-                            </p>
-                            <p>
-                                <strong className="text-foreground">Géneros:</strong>{" "}
-                                {selected.genres.join(", ")}
-                            </p>
-                            <p>
-                                <strong className="text-foreground">Instrumentos:</strong>{" "}
-                                {selected.instruments.join(", ")}
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap gap-3 pt-2">
-                            {selected.id_document_url ? (
-                                <a
-                                    href={resolveUploadUrl(selected.id_document_url) ?? "#"}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
-                                >
-                                    <Icon icon="material-symbols:badge-outline" width={18} />
-                                    <span>Ver documento de identidad</span>
-                                    <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
-                                </a>
-                            ) : null}
-                            {selected.contract_pdf_url ? (
-                                <a
-                                    href={resolveUploadUrl(selected.contract_pdf_url) ?? "#"}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
-                                >
-                                    <Icon icon="material-symbols:picture-as-pdf" width={18} className="text-danger" />
-                                    <span>Ver contrato PDF</span>
-                                    <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
-                                </a>
-                            ) : null}
-                            {selected.profile_image_url ? (
-                                <a
-                                    href={resolveUploadUrl(selected.profile_image_url) ?? "#"}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
-                                >
-                                    <Icon icon="material-symbols:image-outline" width={18} />
-                                    <span>Ver foto de perfil</span>
-                                    <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
-                                </a>
-                            ) : null}
-                        </div>
-                        {selected.gallery_images && selected.gallery_images.length > 0 ? (
-                            <div className="flex flex-col gap-1.5 pt-2">
-                                <p className="text-xs font-semibold text-default-500 uppercase tracking-wide">
-                                    Galería ({selected.gallery_images.length})
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {selected.gallery_images.map((gUrl, idx) => {
-                                        const resolvedGUrl = resolveUploadUrl(gUrl);
-                                        if (!resolvedGUrl) return null;
-                                        return (
-                                            <a
-                                                key={`${gUrl}-${idx}`}
-                                                href={resolvedGUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="group relative h-14 w-14 overflow-hidden rounded-lg border border-default-200"
-                                                title="Ver foto en tamaño completo"
-                                            >
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src={resolvedGUrl}
-                                                    alt={`Galería ${idx + 1}`}
-                                                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                                                />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
-                                                    <Icon icon="material-symbols:open-in-new" width={14} className="text-white" />
-                                                </div>
-                                            </a>
-                                        );
-                                    })}
+                        <Modal isOpen={!!selected && !rejectModal.isOpen} onOpenChange={(open) => { if (!open) setSelected(null); }} size="2xl">
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-1">
+                                {selected?.stage_name}
+                            </ModalHeader>
+                            <ModalBody>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-default-600">
+                                    <p>
+                                        <strong className="text-foreground">Ciudad:</strong>{" "}
+                                        {selected?.location_city}
+                                    </p>
+                                    <p>
+                                        <strong className="text-foreground">Zona:</strong>{" "}
+                                        {selected?.location_zone}
+                                    </p>
+                                    <p>
+                                        <strong className="text-foreground">Géneros:</strong>{" "}
+                                        {selected?.genres?.join(", ") || "Ninguno"}
+                                    </p>
+                                    <p>
+                                        <strong className="text-foreground">Instrumentos:</strong>{" "}
+                                        {selected?.instruments?.join(", ") || "Ninguno"}
+                                    </p>
                                 </div>
-                            </div>
-                        ) : null}
-                        {selected.status === "published" ? (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                <Button
-                                    size="sm"
-                                    color="warning"
-                                    variant="flat"
-                                    onPress={() =>
-                                        handleModerate(selected.id, "unpublish")
-                                    }
-                                >
-                                    Despublicar
+                                <div className="flex flex-wrap gap-3 pt-2">
+                                    {selected?.id_document_url ? (
+                                        <a
+                                            href={resolveUploadUrl(selected.id_document_url) ?? "#"}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
+                                        >
+                                            <Icon icon="material-symbols:badge-outline" width={18} />
+                                            <span>Ver documento de identidad</span>
+                                            <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
+                                        </a>
+                                    ) : null}
+                                    {selected?.contract_pdf_url ? (
+                                        <a
+                                            href={resolveUploadUrl(selected.contract_pdf_url) ?? "#"}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
+                                        >
+                                            <Icon icon="material-symbols:picture-as-pdf" width={18} className="text-danger" />
+                                            <span>Ver contrato PDF</span>
+                                            <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
+                                        </a>
+                                    ) : null}
+                                    {selected?.profile_image_url ? (
+                                        <a
+                                            href={resolveUploadUrl(selected.profile_image_url) ?? "#"}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
+                                        >
+                                            <Icon icon="material-symbols:image-outline" width={18} />
+                                            <span>Ver foto de perfil</span>
+                                            <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
+                                        </a>
+                                    ) : null}
+                                </div>
+                                {selected?.gallery_images && selected.gallery_images.length > 0 ? (
+                                    <div className="flex flex-col gap-1.5 pt-2">
+                                        <p className="text-xs font-semibold text-default-500 uppercase tracking-wide">
+                                            Galería ({selected.gallery_images.length})
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {selected.gallery_images.map((gUrl, idx) => {
+                                                const resolvedGUrl = resolveUploadUrl(gUrl);
+                                                if (!resolvedGUrl) return null;
+                                                    return (
+                                                        <a
+                                                            key={`${gUrl}-${idx}`}
+                                                            href={resolvedGUrl}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="group relative h-14 w-14 overflow-hidden rounded-lg border border-default-200"
+                                                        title="Ver foto en tamaño completo"
+                                                    >
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={resolvedGUrl}
+                                                            alt={`Galería ${idx + 1}`}
+                                                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                                        />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+                                                            <Icon icon="material-symbols:open-in-new" width={14} className="text-white" />
+                                                        </div>
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </ModalBody>
+                            <ModalFooter className="flex-wrap justify-between">
+                                <div className="flex gap-2">
+                                    {selected?.status === "published" ? (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                color="warning"
+                                                variant="flat"
+                                                onPress={() => handleModerate(selected.id, "unpublish")}
+                                            >
+                                                Despublicar
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                color="secondary"
+                                                variant="flat"
+                                                onPress={() => handleModerate(selected.id, "request_resubmit")}
+                                            >
+                                                Pedir reenvío
+                                            </Button>
+                                        </>
+                                    ) : null}
+                                </div>
+                                <Button color="primary" variant="light" onPress={onClose}>
+                                    Cerrar
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    color="secondary"
-                                    variant="flat"
-                                    onPress={() =>
-                                        handleModerate(selected.id, "request_resubmit")
-                                    }
-                                >
-                                    Pedir reenvío
-                                </Button>
-                            </div>
-                        ) : null}
-                    </CardBody>
-                </Card>
-            ) : null}
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
 
             <Modal isOpen={rejectModal.isOpen} onOpenChange={rejectModal.onOpenChange}>
                 <ModalContent>
@@ -419,5 +417,6 @@ export default function AdminMusiciansPage() {
         </div>
     );
 }
+
 
 

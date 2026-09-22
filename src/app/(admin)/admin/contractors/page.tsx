@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisiÃ³n", published: "Publicado", rejected: "Rechazado" };
 
 const STATUS_COLOR: Record<
     string,
@@ -121,6 +121,7 @@ export default function AdminContractorsPage() {
 
     async function openDetail(id: string) {
         setSelected(await getContractorAdminDetail(id));
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     return (
@@ -138,7 +139,7 @@ export default function AdminContractorsPage() {
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                     label="Buscar"
-                    placeholder="Nombre o email…"
+                    placeholder="Nombre o email..."
                     value={q}
                     onValueChange={setQ}
                     variant="bordered"
@@ -204,10 +205,10 @@ export default function AdminContractorsPage() {
                                     </div>
                                 </div>
                                 <p className="text-sm text-default-600 line-clamp-3">
-                                    {profile.bio || "Sin biografía"}
+                                    {profile.bio || "Sin biografÃ­a"}
                                 </p>
                                 <p className="text-xs text-default-500">
-                                    {profile.document_type} {profile.document_number} ·{" "}
+                                    {profile.document_type} {profile.document_number} Â·{" "}
                                     {profile.city || "Sin ciudad"}
                                 </p>
                                 {profile.status === "rejected" && profile.rejection_reason ? (
@@ -266,85 +267,82 @@ export default function AdminContractorsPage() {
                 </div>
             )}
 
-            {selected && !rejectModal.isOpen ? (
-                <Card className="border border-default-200/70 shadow-soft">
-                    <CardBody className="p-6 gap-4">
-                        <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-2xl font-semibold text-foreground min-w-0 truncate">
-                                {selected.user_fullname}
-                            </h3>
-                            <Button
-                                size="sm"
-                                variant="light"
-                                className="shrink-0"
-                                onPress={() => setSelected(null)}
-                            >
-                                Cerrar
-                            </Button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-default-600">
-                            <p>
-                                <strong className="text-foreground">Email:</strong>{" "}
-                                {selected.user_email}
-                            </p>
-                            <p>
-                                <strong className="text-foreground">Teléfono:</strong>{" "}
-                                {selected.user_phone || "—"}
-                            </p>
-                            <p>
-                                <strong className="text-foreground">Documento:</strong>{" "}
-                                {selected.document_type} {selected.document_number}
-                            </p>
-                            <p>
-                                <strong className="text-foreground">Ciudad:</strong>{" "}
-                                {selected.city || "—"}
-                            </p>
-                            <p className="md:col-span-2">
-                                <strong className="text-foreground">Dirección:</strong>{" "}
-                                {selected.address || "—"}
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap gap-3 pt-2">
-                            {selected.id_document_url ? (
-                                <a
-                                    href={resolveUploadUrl(selected.id_document_url) ?? "#"}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
-                                >
-                                    <Icon icon="material-symbols:badge-outline" width={18} />
-                                    <span>Ver documento de identidad</span>
-                                    <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
-                                </a>
-                            ) : null}
-                        </div>
-                        {selected.status === "published" ? (
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                <Button
-                                    size="sm"
-                                    color="warning"
-                                    variant="flat"
-                                    onPress={() =>
-                                        handleModerate(selected.id, "unpublish")
-                                    }
-                                >
-                                    Despublicar
+                        <Modal isOpen={!!selected && !rejectModal.isOpen} onOpenChange={(open) => { if (!open) setSelected(null); }} size="2xl">
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-1">
+                                {selected?.user_fullname}
+                            </ModalHeader>
+                            <ModalBody>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-default-600">
+                                    <p>
+                                        <strong className="text-foreground">Email:</strong>{" "}
+                                        {selected?.user_email}
+                                    </p>
+                                    <p>
+                                        <strong className="text-foreground">Teléfono:</strong>{" "}
+                                        {selected?.user_phone || "—"}
+                                    </p>
+                                    <p>
+                                        <strong className="text-foreground">Documento:</strong>{" "}
+                                        {selected?.document_type} {selected?.document_number}
+                                    </p>
+                                    <p>
+                                        <strong className="text-foreground">Ciudad:</strong>{" "}
+                                        {selected?.city || "—"}
+                                    </p>
+                                    <p className="md:col-span-2">
+                                        <strong className="text-foreground">Dirección:</strong>{" "}
+                                        {selected?.address || "—"}
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap gap-3 pt-2">
+                                    {selected?.id_document_url ? (
+                                        <a
+                                            href={resolveUploadUrl(selected.id_document_url) ?? "#"}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl border border-default-200 bg-default-50 px-3 py-2 text-sm font-medium text-primary hover:bg-default-100 transition-colors"
+                                        >
+                                            <Icon icon="material-symbols:badge-outline" width={18} />
+                                            <span>Ver documento de identidad</span>
+                                            <Icon icon="material-symbols:open-in-new" width={14} className="text-default-400" />
+                                        </a>
+                                    ) : null}
+                                </div>
+                            </ModalBody>
+                            <ModalFooter className="flex-wrap justify-between">
+                                <div className="flex gap-2">
+                                    {selected?.status === "published" ? (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                color="warning"
+                                                variant="flat"
+                                                onPress={() => handleModerate(selected.id, "unpublish")}
+                                            >
+                                                Despublicar
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                color="secondary"
+                                                variant="flat"
+                                                onPress={() => handleModerate(selected.id, "request_resubmit")}
+                                            >
+                                                Pedir reenvío
+                                            </Button>
+                                        </>
+                                    ) : null}
+                                </div>
+                                <Button color="primary" variant="light" onPress={onClose}>
+                                    Cerrar
                                 </Button>
-                                <Button
-                                    size="sm"
-                                    color="secondary"
-                                    variant="flat"
-                                    onPress={() =>
-                                        handleModerate(selected.id, "request_resubmit")
-                                    }
-                                >
-                                    Pedir reenvío
-                                </Button>
-                            </div>
-                        ) : null}
-                    </CardBody>
-                </Card>
-            ) : null}
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
 
             <Modal isOpen={rejectModal.isOpen} onOpenChange={rejectModal.onOpenChange}>
                 <ModalContent>
@@ -370,5 +368,7 @@ export default function AdminContractorsPage() {
         </div>
     );
 }
+
+
 
 

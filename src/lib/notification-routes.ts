@@ -243,7 +243,7 @@ export function getNotificationActionLabel(
     if ((type === "booking_quoted" || type === "booking_quote_updated") && role === "contractor") {
         return "Ver cotización";
     }
-    if (type === "booking_confirmed" && role === "musician") return "Validar pago";
+    if (type === "booking_confirmed" && role === "musician") return "Ver reserva";
     if (type === "booking_change_requested" && role === "musician") return "Revisar cambios";
     if (type === "booking_commitment_updated" && role === "contractor") return "Ver reserva";
     if (type === "booking_change_rejected" && role === "contractor") return "Ver reserva";
