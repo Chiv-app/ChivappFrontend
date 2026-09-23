@@ -205,7 +205,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
                         setSuggestions([]);
                     }}
                 >
-                    Usar "{searchQuery.trim()}" como lugar del evento
+                    Usar &quot;{searchQuery.trim()}&quot; como lugar del evento
                 </Button>
             ) : null}
 

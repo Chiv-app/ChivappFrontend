@@ -46,11 +46,11 @@ function CalendarCallbackContent() {
         if (isMounted) {
           setStatus("success");
         }
-      } catch (error: any) {
+      } catch (error) {
         if (isMounted) {
           setStatus("error");
           setErrorMessage(
-            error?.response?.data?.detail || 
+            (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 
             "Hubo un problema al conectar con Google. Por favor intenta nuevamente."
           );
         }

@@ -80,7 +80,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     const timeOptions = useMemo(() => {
         const options = [];
         for (let h = 0; h < 24; h++) {
-            for (let m of [0, 30]) {
+            for (const m of [0, 30]) {
                 const hh = h.toString().padStart(2, "0");
                 const mm = m.toString().padStart(2, "0");
                 const value = hh + ":" + mm;

@@ -84,6 +84,7 @@ export function useMercadoPago() {
             if (!mpInstanceRef.current) {
                 mpInstanceRef.current = new window.MercadoPago(publicKey, { locale: "es-PE" });
             }
+            // eslint-disable-next-line
             setIsLoaded(true);
             return;
         }

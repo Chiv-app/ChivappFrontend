@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Button, Card, CardBody, CardHeader, Chip, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { apiClient } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 export default function CalendarConnectionCard() {
     const [loading, setLoading] = useState(false);
@@ -11,9 +11,9 @@ export default function CalendarConnectionCard() {
     async function handleConnect() {
         setLoading(true);
         try {
-            const res = await apiClient.get('/api/v1/calendar-auth/url');
-            if (res.data && res.data.auth_url) {
-                window.location.href = res.data.auth_url;
+            const res = await apiFetch<{auth_url: string}>('/calendar-auth/url');
+            if (res && res.auth_url) {
+                window.location.href = res.auth_url;
             } else {
                 throw new Error("No se recibio URL de Google");
             }
