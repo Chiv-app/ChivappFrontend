@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -14,6 +14,7 @@ import BookingEditCommitmentModal from "@/components/booking/booking-edit-commit
 import BookingMemberInviteCard from "@/components/booking/booking-member-invite-card";
 import BookingPaymentStatusCard from "@/components/booking/booking-payment-status-card";
 import BookingPendingChangesModal from "@/components/booking/booking-pending-changes-modal";
+import BookingCalendarSyncModal from "@/components/booking/booking-calendar-sync-modal";
 import BookingQuoteForm from "@/components/booking/booking-quote-form";
 import BookingTimeline from "@/components/booking/booking-timeline";
 import MusicianAttachSignatureCard from "@/components/booking/musician-attach-signature-card";
@@ -41,6 +42,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
     const [hasReview, setHasReview] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isPendingOpen, setIsPendingOpen] = useState(false);
+    const [isCalendarSyncOpen, setIsCalendarSyncOpen] = useState(false);
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -270,7 +272,26 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                 validatedAdvance={amountPaid}
             />
 
-            <div className="flex justify-end mb-2">
+                        <BookingCalendarSyncModal
+                booking={booking}
+                isOpen={isCalendarSyncOpen}
+                onOpenChange={setIsCalendarSyncOpen}
+                onUpdated={handleUpdated}
+            />
+
+            <div className="flex justify-end gap-2 mb-2">
+                {!isMemberView && role === "musician" && (
+                    <Button
+                        variant="flat"
+                        color="primary"
+                        radius="lg"
+                        size="sm"
+                        onPress={() => setIsCalendarSyncOpen(true)}
+                        startContent={<Icon icon="lucide:calendar-sync" width={16} />}
+                    >
+                        {booking.calendar_event_id ? "Actualizar Agenda" : "Generar Agenda"}
+                    </Button>
+                )}
                 <Button
                     variant="flat"
                     radius="lg"
@@ -398,3 +419,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         </div>
     );
 }
+
+
+
+

@@ -1,4 +1,4 @@
-import type { BookingStatus } from "./enums";
+﻿import type { BookingStatus } from "./enums";
 
 export type BookingCreate = {
     musician_id: string;
@@ -204,6 +204,7 @@ export type BookingSharePublicOut = {
     location_city: string | null;
     musician_name: string | null;
     status: BookingStatus;
+    calendar_event_id?: string | null;
     reactions_open: boolean;
     message: string;
 };
@@ -252,6 +253,7 @@ export type BookingOut = {
     change_requested_by: "contractor" | "musician" | string | null;
     change_requested_at: string | null;
     status: BookingStatus;
+    calendar_event_id?: string | null;
     created_at: string;
     updated_at: string;
     musician_name?: string | null;
@@ -265,3 +267,4 @@ export type BookingOut = {
     complaint_status?: string | null;
     complaint_reason?: string | null;
 };
+
