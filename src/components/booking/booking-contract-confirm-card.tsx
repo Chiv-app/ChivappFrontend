@@ -50,7 +50,6 @@ export default function BookingContractConfirmCard({
 }: Props) {
     const { user } = useAuth();
     const { isVerified, isLoading: isLoadingVerification } = useContractorVerification(true, user?.is_verified ?? false);
-    const { addToast } = useToast();
     const [isConfirming, setIsConfirming] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);

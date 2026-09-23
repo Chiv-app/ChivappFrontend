@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { Button } from "@heroui/react";
+import { Icon } from "@iconify/react";
+import { apiFetch } from "@/lib/api";
 
 function CalendarCallbackContent() {
   const router = useRouter();
@@ -42,7 +42,7 @@ function CalendarCallbackContent() {
 
     const exchangeToken = async () => {
       try {
-        await apiClient.post(/api/v1/calendar-auth/callback?code= + encodeURIComponent(code));
+        await apiFetch(`/calendar-auth/callback?code=${encodeURIComponent(code)}`, { method: "POST" });
         if (isMounted) {
           setStatus("success");
         }
@@ -69,7 +69,7 @@ function CalendarCallbackContent() {
       <div className="w-full max-w-md p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 text-center">
         {status === "loading" && (
           <div className="flex flex-col items-center space-y-4">
-            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            <Icon icon="lucide:loader-2" className="w-12 h-12 text-primary animate-spin" />
             <h2 className="text-xl font-semibold">Conectando tu Calendario...</h2>
             <p className="text-zinc-500 text-sm">
               Por favor, no cierres esta ventana. Estamos enlazando tu cuenta de Google.
@@ -79,7 +79,7 @@ function CalendarCallbackContent() {
 
         {status === "success" && (
           <div className="flex flex-col items-center space-y-4">
-            <CheckCircle2 className="w-16 h-16 text-green-500" />
+            <Icon icon="lucide:check-circle-2" className="w-16 h-16 text-green-500" />
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               ¡Conexión Exitosa!
             </h2>
@@ -98,7 +98,7 @@ function CalendarCallbackContent() {
 
         {status === "error" && (
           <div className="flex flex-col items-center space-y-4">
-            <XCircle className="w-16 h-16 text-red-500" />
+            <Icon icon="lucide:x-circle" className="w-16 h-16 text-red-500" />
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               Ocurrió un error
             </h2>
@@ -107,7 +107,7 @@ function CalendarCallbackContent() {
             </p>
             <Button 
               onClick={() => router.push("/panel/perfil")} // Cambiar a la ruta de tu panel/perfil
-              variant="outline"
+              variant="bordered"
               className="w-full"
             >
               Volver y reintentar
@@ -121,7 +121,7 @@ function CalendarCallbackContent() {
 
 export default function CalendarCallbackPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="animate-spin w-8 h-8" /></div>}>
+    <Suspense fallback={<div className="flex justify-center p-12"><Icon icon="lucide:loader-2" className="animate-spin w-8 h-8" /></div>}>
       <CalendarCallbackContent />
     </Suspense>
   );
