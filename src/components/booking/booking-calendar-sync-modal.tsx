@@ -35,7 +35,7 @@ export default function BookingCalendarSyncModal({
     // actually we might not have the list of members in BookingOut.
     // We would need to fetch the ensemble members to list them.
     // To keep it simple, we can fetch them when the modal opens.
-    const [members, setMembers] = useState<{id: string; name: string; user_id: string}[]>([]);
+    const [members, setMembers] = useState<{id: string; name: string; }[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const [membersLoading, setMembersLoading] = useState(false);
 
@@ -47,12 +47,12 @@ export default function BookingCalendarSyncModal({
         // Fetch ensemble members
         let cancelled = false;
         setMembersLoading(true);
-        apiFetch<{id: string, stage_name: string, user_id: string}[]>("/musician/members")
+        apiFetch<{id: string, fullname: string}[]>("/musician/members")
             .then(data => {
                 if (!cancelled) {
-                    setMembers(data.map(d => ({id: d.id, name: d.stage_name, user_id: d.user_id})));
+                    setMembers(data.map(d => ({id: d.id, name: d.fullname})));
                     // select all by default
-                    setSelectedMembers(data.map(d => d.user_id));
+                    setSelectedMembers(data.map(d => d.id));
                 }
             })
             .catch(() => {})
@@ -70,7 +70,7 @@ export default function BookingCalendarSyncModal({
                 method: "POST",
                 body: JSON.stringify({
                     include_contractor: includeContractor,
-                    member_user_ids: selectedMembers,
+                    ensemble_member_ids: selectedMembers,
                 }),
             });
             onUpdated(updated);
@@ -120,7 +120,7 @@ export default function BookingCalendarSyncModal({
                                         onValueChange={setSelectedMembers}
                                     >
                                         {members.map(m => (
-                                            <Checkbox key={m.id} value={m.user_id}>
+                                            <Checkbox key={m.id} value={m.id}>
                                                 {m.name}
                                             </Checkbox>
                                         ))}
@@ -149,6 +149,8 @@ export default function BookingCalendarSyncModal({
         </Modal>
     );
 }
+
+
 
 
 
