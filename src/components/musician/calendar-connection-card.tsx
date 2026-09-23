@@ -7,7 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function CalendarConnectionCard() {
-    const { user, setUser } = useAuth();
+    const { user, refresh } = useAuth();
     const [loading, setLoading] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
 
@@ -36,9 +36,7 @@ export default function CalendarConnectionCard() {
         setDisconnecting(true);
         try {
             await apiFetch('/calendar-auth/disconnect', { method: "DELETE" });
-            if (user) {
-                setUser({ ...user, has_connected_calendar: false });
-            }
+            await refresh();
             addToast({
                 title: "Calendario desvinculado",
                 description: "Ya no se sincronizarán nuevas reservas.",
@@ -106,5 +104,6 @@ export default function CalendarConnectionCard() {
         </Card>
     );
 }
+
 
 

@@ -45,7 +45,7 @@ export default function ConnectedAccountsCard() {
         void refresh();
     }, [refresh]);
 
-    async function handleUnlink(provider: "google" | "facebook") {
+    async function handleUnlink(provider: "google") {
         setBusy(provider);
         try {
             await unlinkOAuthAccount(provider);
@@ -137,6 +137,7 @@ export default function ConnectedAccountsCard() {
         </Card>
     );
 }
+
 
 
 
