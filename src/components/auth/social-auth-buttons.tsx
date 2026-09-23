@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
@@ -29,16 +29,9 @@ export default function SocialAuthButtons({
             >
                 Continuar con Google
             </Button>
-            <Button
-                as="a"
-                href={oauthStartUrl("facebook", intent)}
-                variant="bordered"
-                radius="lg"
-                className="font-semibold border-default-300"
-                startContent={<Icon icon="logos:facebook" width={18} />}
-            >
-                Continuar con Facebook
-            </Button>
+            
         </div>
     );
 }
+
+

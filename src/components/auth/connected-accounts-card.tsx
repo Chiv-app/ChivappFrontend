@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { Button, Card, CardBody, CardHeader, Chip, addToast } from "@heroui/react";
@@ -12,7 +12,6 @@ import {
 
 const PROVIDER_META = {
     google: { label: "Google", icon: "logos:google-icon" },
-    facebook: { label: "Facebook", icon: "logos:facebook" },
 } as const;
 
 function oauthStartUrl(provider: "google" | "facebook") {
@@ -75,14 +74,14 @@ export default function ConnectedAccountsCard() {
             <CardHeader className="flex flex-col items-start gap-1 px-6 pt-6">
                 <h2 className="text-lg font-bold text-foreground">Cuentas conectadas</h2>
                 <p className="text-sm text-default-500">
-                    Vincula Google o Facebook para iniciar sesión más rápido.
+                    Vincula Google para iniciar sesión más rápido.
                 </p>
             </CardHeader>
             <CardBody className="gap-3 px-6 pb-6">
                 {loading || !data ? (
                     <div className="h-20 rounded-2xl bg-default-100 animate-pulse" />
                 ) : (
-                    (["google", "facebook"] as const).map((provider) => {
+                    (["google"] as const).map((provider) => {
                         const meta = PROVIDER_META[provider];
                         const account = data.accounts.find((item) => item.provider === provider);
                         const linked = Boolean(account?.linked);
@@ -138,3 +137,6 @@ export default function ConnectedAccountsCard() {
         </Card>
     );
 }
+
+
+
