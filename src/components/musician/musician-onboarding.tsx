@@ -48,7 +48,7 @@ export default function MusicianOnboarding() {
     useEffect(() => {
         getMusicianProfile()
             .then((profile) => {
-                if (profile.status === "published" || profile.status === "rejected") {
+                if (profile.status === "published" || profile.status === "rejected" || profile.is_ensemble_only) {
                     router.replace("/musician");
                     return;
                 }

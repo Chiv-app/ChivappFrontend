@@ -45,16 +45,14 @@ export default function LoginForm({
             );
 
             if (loggedIn.role === "musician") {
-                try {
-                    const { getMusicianProfileStatus } = await import("@/lib/profiles");
-                    const status = await getMusicianProfileStatus();
-                    if (status.status === "draft") {
-                        destination = "/musician/onboarding";
+                if (!loggedIn.is_verified && !loggedIn.is_ensemble_member) {
+                    destination = "/musician/onboarding";
+                } else {
+                    if (destination === "/musician/onboarding" && (loggedIn.is_verified || loggedIn.is_ensemble_member)) {
+                        destination = "/musician/bookings";
                     } else if (destination === "/") {
                         destination = "/musician/bookings";
                     }
-                } catch (e) {
-                    // Ignore errors, proceed to normal destination
                 }
             }
 
