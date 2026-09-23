@@ -31,6 +31,7 @@ export type UserOut = {
     is_verified: boolean;
     is_active?: boolean;
     is_email_verified?: boolean;
+    has_connected_calendar?: boolean;
     has_password?: boolean;
     /** Integrante de alguna agrupación (puede ver Reservas en solo lectura) */
     is_ensemble_member?: boolean;
@@ -38,3 +39,6 @@ export type UserOut = {
     updated_at: string;
     last_login_at: string | null;
 };
+
+
+
