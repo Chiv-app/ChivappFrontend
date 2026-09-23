@@ -15,6 +15,7 @@ import {
     createBookingMemberInvites,
     listBookingMemberInvites,
     listEnsembleMembers,
+    resendBookingMemberInviteEmail,
 } from "@/lib/ensemble-members";
 import type {
     BookingMemberInviteOut,
@@ -50,6 +51,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
     const [selected, setSelected] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isInviting, setIsInviting] = useState(false);
+    const [workingId, setWorkingId] = useState<string | null>(null);
 
     const canInvite = INVITE_OPEN_STATUSES.has(booking.status);
 
@@ -127,6 +129,28 @@ export default function BookingEnsemblePanel({ booking }: Props) {
             });
         } finally {
             setIsInviting(false);
+        }
+    }
+
+    async function handleResend(memberId: string) {
+        setWorkingId(memberId);
+        try {
+            const updated = await resendBookingMemberInviteEmail(booking.id, memberId);
+            setInvites((prev) => prev.map((i) => (i.ensemble_member_id === memberId ? updated : i)));
+            addToast({
+                title: "Correo reenviado",
+                description: "Se ha enviado un nuevo enlace al integrante.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo reenviar el correo",
+                description:
+                    error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setWorkingId(null);
         }
     }
 
@@ -274,7 +298,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                                         {invite.member_email}
                                                     </p>
                                                 </div>
-                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <div className="flex flex-wrap items-center gap-2">
                                                     <Chip
                                                         size="sm"
                                                         color={meta.color}
@@ -284,16 +308,30 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                                     </Chip>
                                                     {invite.respond_url &&
                                                     invite.status === "pending" ? (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="flat"
-                                                            radius="lg"
-                                                            onPress={() =>
-                                                                copyLink(invite.respond_url)
-                                                            }
-                                                        >
-                                                            Copiar link RSVP
-                                                        </Button>
+                                                        <>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                radius="lg"
+                                                                onPress={() =>
+                                                                    copyLink(invite.respond_url)
+                                                                }
+                                                            >
+                                                                Copiar link
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="flat"
+                                                                color="primary"
+                                                                radius="lg"
+                                                                isLoading={workingId === invite.ensemble_member_id}
+                                                                onPress={() =>
+                                                                    handleResend(invite.ensemble_member_id)
+                                                                }
+                                                            >
+                                                                Reenviar correo
+                                                            </Button>
+                                                        </>
                                                     ) : null}
                                                 </div>
                                             </li>

@@ -109,6 +109,15 @@ export function respondBookingMemberInvite(
     });
 }
 
+export function resendBookingMemberInviteEmail(
+    bookingId: string,
+    memberId: string,
+): Promise<BookingMemberInviteOut> {
+    return apiFetch(`/bookings/${bookingId}/member-invites/${memberId}/resend`, {
+        method: "POST",
+    });
+}
+
 export function respondMyBookingMemberInvite(
     bookingId: string,
     action: "accept" | "decline",
