@@ -4,9 +4,13 @@ import { useState } from "react";
 import { Button, Card, CardBody, CardHeader, Chip, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function CalendarConnectionCard() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
+
+    const isConnected = user?.has_connected_calendar;
 
     async function handleConnect() {
         setLoading(true);
@@ -19,8 +23,8 @@ export default function CalendarConnectionCard() {
             }
         } catch (error) {
             addToast({
-                title: "Error de conexin",
-                description: "No se pudo iniciar la conexin con Google Calendar.",
+                title: "Error de conexión",
+                description: "No se pudo iniciar la conexión con Google Calendar.",
                 color: "danger",
             });
             setLoading(false);
@@ -32,31 +36,46 @@ export default function CalendarConnectionCard() {
             <CardHeader className="flex flex-col items-start gap-1 px-6 pt-6">
                 <h2 className="text-lg font-bold text-foreground">Google Calendar (Agendas)</h2>
                 <p className="text-sm text-default-500">
-                    Conecta tu calendario para sincronizar automticamente las agendas de tus eventos pagados y enviarlas a tus integrantes.
+                    Conecta tu calendario para sincronizar automáticamente las agendas de tus eventos pagados y enviarlas a tus integrantes.
                 </p>
             </CardHeader>
             <CardBody className="gap-3 px-6 pb-6">
                 <div className="flex items-center justify-between gap-3 rounded-2xl border border-default-200 px-4 py-3">
                     <div className="flex items-center gap-3 min-w-0">
                         <Icon icon="logos:google-calendar" width={22} />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex items-center gap-2">
                             <p className="font-semibold text-foreground">Google Calendar</p>
-                            <p className="text-xs text-default-500 truncate">
-                                Sincronizacin de Agendas
-                            </p>
+                            {isConnected && (
+                                <Chip size="sm" color="success" variant="flat">
+                                    Conectado
+                                </Chip>
+                            )}
                         </div>
                     </div>
                     
-                    <Button
-                        size="sm"
-                        color="primary"
-                        variant="flat"
-                        radius="lg"
-                        isLoading={loading}
-                        onPress={handleConnect}
-                    >
-                        Conectar
-                    </Button>
+                    {!isConnected && (
+                        <Button
+                            size="sm"
+                            color="primary"
+                            variant="flat"
+                            radius="lg"
+                            isLoading={loading}
+                            onPress={handleConnect}
+                        >
+                            Conectar
+                        </Button>
+                    )}
+                    {isConnected && (
+                        <Button
+                            size="sm"
+                            color="danger"
+                            variant="light"
+                            radius="lg"
+                            isDisabled={true}
+                        >
+                            Integrado
+                        </Button>
+                    )}
                 </div>
             </CardBody>
         </Card>

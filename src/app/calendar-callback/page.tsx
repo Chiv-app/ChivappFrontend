@@ -88,7 +88,7 @@ function CalendarCallbackContent() {
               todas las agendas que generes se guardarán automáticamente en tu calendario.
             </p>
             <Button 
-              onClick={() => router.push("/panel/perfil")} // Cambiar a la ruta de tu panel/perfil
+              onClick={() => router.push("/musician/profile")}
               className="w-full"
             >
               Volver a mi Panel
@@ -106,7 +106,7 @@ function CalendarCallbackContent() {
               {errorMessage}
             </p>
             <Button 
-              onClick={() => router.push("/panel/perfil")} // Cambiar a la ruta de tu panel/perfil
+              onClick={() => router.push("/musician/profile")}
               variant="bordered"
               className="w-full"
             >
