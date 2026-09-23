@@ -1,5 +1,6 @@
 import ConnectedAccountsCard from "@/components/auth/connected-accounts-card";
 import ContractorProfileEditor from "@/components/contractor/contractor-profile-editor";
+import CalendarConnectionCard from "@/components/musician/calendar-connection-card";
 
 export default function ContractorProfilePage() {
     return (
@@ -7,7 +8,11 @@ export default function ContractorProfilePage() {
             <ContractorProfileEditor />
             <div className="max-w-3xl mx-auto w-full px-4 md:px-0 pb-10">
                 <ConnectedAccountsCard />
+                <CalendarConnectionCard />
             </div>
         </div>
     );
 }
+
+
+

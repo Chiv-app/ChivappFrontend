@@ -88,7 +88,7 @@ function CalendarCallbackContent() {
               todas las agendas que generes se guardarán automáticamente en tu calendario.
             </p>
             <Button 
-              onClick={() => router.push("/musician/profile")}
+              onClick={() => { if (user?.role === "contractor") { router.push("/contractor/profile"); } else { router.push("/musician/profile"); } } }
               className="w-full"
             >
               Volver a mi Panel
@@ -106,7 +106,7 @@ function CalendarCallbackContent() {
               {errorMessage}
             </p>
             <Button 
-              onClick={() => router.push("/musician/profile")}
+              onClick={() => { if (user?.role === "contractor") { router.push("/contractor/profile"); } else { router.push("/musician/profile"); } } }
               variant="bordered"
               className="w-full"
             >
@@ -126,3 +126,5 @@ export default function CalendarCallbackPage() {
     </Suspense>
   );
 }
+
+
