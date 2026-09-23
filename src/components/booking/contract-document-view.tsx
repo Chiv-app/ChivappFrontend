@@ -237,7 +237,7 @@ export default function ContractDocumentView({
                                 Pendiente de firma del artista en su perfil
                             </p>
                         )}
-                        {contract.contractor_signed ? (
+                        {(contract.contractor_signed || contract.contract_signed_pdf_url) ? (
                             <p className="text-sm text-success mt-1">
                                 Firmado digitalmente por el contratista
                                 {contract.contractor_sign_timestamp
