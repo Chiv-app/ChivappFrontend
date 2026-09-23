@@ -17,6 +17,8 @@ import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-mo
 import ContractDocumentView from "@/components/booking/contract-document-view";
 import SignaturePad from "@/components/ui/signature-pad";
 import { formatCurrency } from "@/lib/booking-labels";
+import { useAuth } from "@/contexts/auth-context";
+import { useContractorVerification } from "@/hooks/use-contractor-verification";
 import { createMercadoPagoPreference } from "@/lib/payments";
 import {
     contractorAdvanceDue,
@@ -46,6 +48,9 @@ export default function BookingContractConfirmCard({
     isLoadingContract,
     onUpdated,
 }: Props) {
+    const { user } = useAuth();
+    const { isVerified, isLoading: isLoadingVerification } = useContractorVerification(true, user?.is_verified ?? false);
+    const { addToast } = useToast();
     const [isConfirming, setIsConfirming] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -64,6 +69,19 @@ export default function BookingContractConfirmCard({
 
     async function handleConfirm(event: FormEvent) {
         event.preventDefault();
+
+        if (isLoadingVerification) {
+            return;
+        }
+
+        if (!isVerified) {
+            addToast({
+                title: "Perfil incompleto",
+                description: "Debes completar y verificar tu perfil antes de poder realizar pagos.",
+                color: "danger",
+            });
+            return;
+        }
 
         if (isAlreadySigned) {
             if (contract?.contractor_signature_url && !uploadedSignatureUrl) {
