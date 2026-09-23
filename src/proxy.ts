@@ -49,7 +49,7 @@ export function proxy(request: NextRequest) {
         return NextResponse.redirect(url, 308); // 308 Permanent Redirect for SEO
     }
 
-    // 2. Control de Autenticación y Autorización
+    // 2. Control de Autenticacion y Autorizacion
     const { pathname, search } = url;
     const token = request.cookies.get("access_token")?.value;
 
@@ -73,10 +73,10 @@ export function proxy(request: NextRequest) {
     const isProtectedDashboard =
         isMusicianDashboard || isContractorDashboard || isAdminDashboard;
 
-    // Redirigir a login si intenta ingresar a un dashboard sin sesión válida
+    // Redirigir a login si intenta ingresar a un dashboard sin sesion valida
     if (isProtectedDashboard && !isAuthenticated) {
         const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", ${pathname});
+        loginUrl.searchParams.set("redirect", pathname + search);
         return NextResponse.redirect(loginUrl);
     }
 
@@ -115,10 +115,10 @@ export const config = {
         /*
          * Coincide con todas las rutas excepto:
          * - api (endpoints API)
-         * - _next/static (archivos estáticos compilados)
-         * - _next/image (optimización de imágenes)
+         * - _next/static (archivos estaticos compilados)
+         * - _next/image (optimizacion de imagenes)
          * - favicon.ico, sitemap.xml, robots.txt
-         * - archivos estáticos de multimedia
+         * - archivos estaticos de multimedia
          */
         "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
     ],
