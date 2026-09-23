@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Button, Card, CardBody, CardHeader, Chip, addToast } from "@heroui/react";
@@ -7,8 +7,9 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function CalendarConnectionCard() {
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [disconnecting, setDisconnecting] = useState(false);
 
     const isConnected = user?.has_connected_calendar;
 
@@ -28,6 +29,29 @@ export default function CalendarConnectionCard() {
                 color: "danger",
             });
             setLoading(false);
+        }
+    }
+
+    async function handleDisconnect() {
+        setDisconnecting(true);
+        try {
+            await apiFetch('/calendar-auth/disconnect', { method: "DELETE" });
+            if (user) {
+                setUser({ ...user, has_connected_calendar: false });
+            }
+            addToast({
+                title: "Calendario desvinculado",
+                description: "Ya no se sincronizarán nuevas reservas.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "Error al desvincular",
+                description: "Ocurrió un error al intentar desconectar Google Calendar.",
+                color: "danger",
+            });
+        } finally {
+            setDisconnecting(false);
         }
     }
 
@@ -71,9 +95,10 @@ export default function CalendarConnectionCard() {
                             color="danger"
                             variant="light"
                             radius="lg"
-                            isDisabled={true}
+                            isLoading={disconnecting}
+                            onPress={handleDisconnect}
                         >
-                            Integrado
+                            Desvincular
                         </Button>
                     )}
                 </div>
@@ -81,3 +106,5 @@ export default function CalendarConnectionCard() {
         </Card>
     );
 }
+
+
