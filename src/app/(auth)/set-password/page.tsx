@@ -107,7 +107,11 @@ function SetPasswordForm() {
                 description: "Ya puedes usar la app con tu correo y contraseña.",
                 color: "success",
             });
-            router.replace(getPostLoginPath(updated.role, updated.is_verified));
+            if (updated.is_ensemble_member) {
+                router.replace("/musician/bookings");
+            } else {
+                router.replace(getPostLoginPath(updated.role, updated.is_verified));
+            }
         } catch (error) {
             addToast({
                 title: "No se pudo guardar",

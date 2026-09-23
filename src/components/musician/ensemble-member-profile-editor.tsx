@@ -70,6 +70,9 @@ export default function EnsembleMemberProfileEditor({
     };
 
     const handleUpgrade = async () => {
+        if (!window.confirm("¿Estás seguro que deseas convertir tu perfil a PRO? Deberás completar información adicional como precios y fotos para recibir reservaciones.")) {
+            return;
+        }
         setIsUpgrading(true);
         try {
             await updateMusicianProfile({

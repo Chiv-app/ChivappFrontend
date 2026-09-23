@@ -1505,8 +1505,30 @@ export default function MusicianProfileWizard() {
 
     return (
         <div className="max-w-6xl mx-auto flex flex-col gap-8">
-            {profile?.status === "published" && isEditingVerified ? (
-                <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+                {user?.is_ensemble_member && profile?.status === "draft" && !profile?.is_ensemble_only ? (
+                    <Button
+                        size="sm"
+                        variant="bordered"
+                        color="danger"
+                        radius="lg"
+                        isLoading={isSaving}
+                        onPress={async () => {
+                            if (!window.confirm("¿Estás seguro que deseas descartar el Perfil PRO y volver a tu perfil básico de integrante?")) return;
+                            try {
+                                setIsSaving(true);
+                                await updateMusicianProfile({ is_ensemble_only: true });
+                                window.location.reload();
+                            } catch (e) {
+                                addToast({ title: "Error", description: "No se pudo volver a perfil básico", color: "danger" });
+                                setIsSaving(false);
+                            }
+                        }}
+                    >
+                        Volver a perfil básico
+                    </Button>
+                ) : null}
+                {profile?.status === "published" && isEditingVerified ? (
                     <Button
                         size="sm"
                         variant="light"
@@ -1518,8 +1540,8 @@ export default function MusicianProfileWizard() {
                     >
                         Volver a vista previa
                     </Button>
-                </div>
-            ) : null}
+                ) : null}
+            </div>
 
             <ProfileWizardStepper
                 activeStep={activeStep}
