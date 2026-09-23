@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import type { MusicianCard } from "@/types/ui/musician";
@@ -129,14 +129,14 @@ export default function MusicianCardComponent({
                             key={`${musician.id}-${src}-${slideIndex}`}
                             src={src}
                             alt={`${musician.name} — foto ${slideIndex + 1}`}
-                            fill
+                            fill={true}
                             className={[
                                 "object-cover",
                                 "transition-opacity duration-700 ease-in-out",
                                 isActive ? "opacity-100" : "opacity-0",
                             ].join(" ")}
                             sizes="(max-width: 479px) 100vw, (max-width: 1023px) 50vw, 33vw"
-                            priority={slideIndex === 0}
+                            priority={slideIndex === 0 ? true : undefined}
                         />
                     );
                 })}
@@ -268,3 +268,4 @@ export default function MusicianCardComponent({
         </Link>
     );
 }
+

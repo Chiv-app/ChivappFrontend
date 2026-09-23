@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom/vitest";
+﻿import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import React from "react";
 import { afterEach, vi } from "vitest";
@@ -9,7 +9,7 @@ afterEach(() => {
 
 // jsdom no soporta la optimización de imágenes de next/image; se renderiza como <img> plano.
 vi.mock("next/image", () => ({
-  default: (props: Record<string, unknown>) => React.createElement("img", props),
+  default: ({ fill, priority, ...props }: Record<string, unknown>) => React.createElement("img", props),
 }));
 
 // jsdom no implementa matchMedia; lo necesitan next-themes y otros hooks de UI.
@@ -26,3 +26,4 @@ if (!window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
+
