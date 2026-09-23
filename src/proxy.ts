@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 type JWTPayload = {
@@ -26,7 +26,31 @@ function parseJwt(token: string): JWTPayload | null {
 }
 
 export function proxy(request: NextRequest) {
-    const { pathname, search } = request.nextUrl;
+    const url = request.nextUrl.clone();
+    let urlChanged = false;
+
+    // 1. Redirecciones SEO: Forzar HTTPS y redirigir www a dominio base
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    const isHttp = url.protocol === "http:" || forwardedProto === "http";
+
+    if ((url.hostname === "chiv.app" || url.hostname === "www.chiv.app") && isHttp) {
+        url.protocol = "https:";
+        url.port = "";
+        urlChanged = true;
+    }
+
+    if (url.hostname === "www.chiv.app") {
+        url.hostname = "chiv.app";
+        url.port = "";
+        urlChanged = true;
+    }
+
+    if (urlChanged) {
+        return NextResponse.redirect(url, 308); // 308 Permanent Redirect for SEO
+    }
+
+    // 2. Control de Autenticación y Autorización
+    const { pathname, search } = url;
     const token = request.cookies.get("access_token")?.value;
 
     const payload = token ? parseJwt(token) : null;
@@ -49,14 +73,14 @@ export function proxy(request: NextRequest) {
     const isProtectedDashboard =
         isMusicianDashboard || isContractorDashboard || isAdminDashboard;
 
-    // 1. Redirigir a login si intenta ingresar a un dashboard sin sesión válida
+    // Redirigir a login si intenta ingresar a un dashboard sin sesión válida
     if (isProtectedDashboard && !isAuthenticated) {
         const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", `${pathname}${search}`);
+        loginUrl.searchParams.set("redirect", ${pathname});
         return NextResponse.redirect(loginUrl);
     }
 
-    // 2. Redirigir usuarios autenticados que visitan login/registro
+    // Redirigir usuarios autenticados que visitan login/registro
     if (isAuthRoute && isAuthenticated) {
         if (userRole === "admin") {
             return NextResponse.redirect(new URL("/admin", request.url));
@@ -64,7 +88,7 @@ export function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL("/", request.url));
     }
 
-    // 3. Control de acceso por rol para evitar cruce de dashboards
+    // Control de acceso por rol para evitar cruce de dashboards
     if (isAuthenticated && userRole) {
         if (isMusicianDashboard && userRole !== "musician") {
             const redirectUrl =
@@ -96,6 +120,6 @@ export const config = {
          * - favicon.ico, sitemap.xml, robots.txt
          * - archivos estáticos de multimedia
          */
-        "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
     ],
 };
