@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -35,6 +35,32 @@ const INVITE_STATUS: Record<
     accepted: { label: "Aceptó", color: "success" },
     declined: { label: "Rechazó", color: "danger" },
 };
+
+const INSTRUMENT_ICONS: Record<string, string> = {
+    "trompeta": "mdi:trumpet",
+    "violin": "mdi:violin",
+    "violín": "mdi:violin",
+    "guitarron": "mdi:guitar-acoustic",
+    "guitarrón": "mdi:guitar-acoustic",
+    "vihuela": "mdi:guitar-acoustic",
+    "guitarra": "mdi:guitar-acoustic",
+    "arpa": "mdi:music-clef-treble",
+    "voz": "mdi:microphone",
+    "cantante": "mdi:microphone",
+    "piano": "mdi:piano",
+    "teclado": "mdi:piano",
+    "saxofon": "mdi:saxophone",
+    "saxofón": "mdi:saxophone",
+    "bajo": "mdi:guitar-electric",
+};
+
+function getInstrumentIcon(name: string) {
+    const key = name.toLowerCase().trim();
+    for (const [k, v] of Object.entries(INSTRUMENT_ICONS)) {
+        if (key.includes(k)) return v;
+    }
+    return "mdi:music";
+}
 
 const INVITE_OPEN_STATUSES = new Set([
     "payment_retained",
@@ -282,42 +308,83 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                         {invites.length > 0 ? (
                             <div className="flex flex-col gap-3">
                                 <p className="text-sm font-medium">Asociados a esta reserva</p>
-                                <ul className="divide-y divide-default-200 rounded-2xl border border-default-200">
+                                                                <ul className="divide-y divide-default-200 rounded-2xl border border-default-200">
                                     {invites.map((invite) => {
                                         const meta = INVITE_STATUS[invite.status];
+                                        const fullMember = members.find(m => m.id === invite.ensemble_member_id);
                                         return (
-                                            <li
-                                                key={invite.id}
-                                                className="px-3 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-                                            >
-                                                <div>
-                                                    <p className="font-medium">
-                                                        {invite.member_fullname}
-                                                    </p>
-                                                    <p className="text-xs text-default-500">
-                                                        {invite.member_email}
-                                                    </p>
+                                            <li key={invite.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                                        {invite.specialties.length > 0 ? (
+                                                            <Icon icon={getInstrumentIcon(invite.specialties[0])} width={20} />
+                                                        ) : (
+                                                            <Icon icon="mdi:music" width={20} />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-foreground">
+                                                            {invite.member_fullname}
+                                                        </p>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                            {invite.specialties.map(spec => (
+                                                                <Chip key={spec} size="sm" variant="flat" className="text-[10px] h-5">
+                                                                    {spec}
+                                                                </Chip>
+                                                            ))}
+                                                            {fullMember?.phone && (
+                                                                <span className="text-xs text-default-500">{fullMember.phone}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                    <Chip
-                                                        size="sm"
-                                                        color={meta.color}
-                                                        variant="flat"
-                                                    >
+                                                
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Chip size="sm" color={meta.color} variant="flat">
                                                         {meta.label}
                                                     </Chip>
-                                                    {invite.respond_url &&
-                                                    invite.status === "pending" ? (
-                                                        <>
+                                                    
+                                                    {invite.status === "accepted" && (
+                                                        <div className="flex items-center gap-2 ml-2">
+                                                            {fullMember?.phone && (
+                                                                <Button
+                                                                    as="a"
+                                                                    href={`https://wa.me/${fullMember.phone.replace(/[^0-9]/g, "")}`}
+                                                                    target="_blank"
+                                                                    size="sm"
+                                                                    variant="flat"
+                                                                    color="success"
+                                                                    isIconOnly
+                                                                    aria-label="WhatsApp"
+                                                                >
+                                                                    <Icon icon="mdi:whatsapp" width={18} />
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                as="a"
+                                                                href={`mailto:${invite.member_email}`}
+                                                                size="sm"
+                                                                variant="flat"
+                                                                color="primary"
+                                                                isIconOnly
+                                                                aria-label="Email"
+                                                            >
+                                                                <Icon icon="mdi:email-outline" width={18} />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+
+                                                    {invite.respond_url && invite.status === "pending" && (
+                                                        <div className="flex items-center gap-2 ml-2">
                                                             <Button
                                                                 size="sm"
                                                                 variant="flat"
                                                                 radius="lg"
-                                                                onPress={() =>
-                                                                    copyLink(invite.respond_url)
-                                                                }
+                                                                isIconOnly
+                                                                aria-label="Copiar link"
+                                                                onPress={() => copyLink(invite.respond_url)}
                                                             >
-                                                                Copiar link
+                                                                <Icon icon="lucide:link" width={16} />
                                                             </Button>
                                                             <Button
                                                                 size="sm"
@@ -325,14 +392,12 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                                                 color="primary"
                                                                 radius="lg"
                                                                 isLoading={workingId === invite.ensemble_member_id}
-                                                                onPress={() =>
-                                                                    handleResend(invite.ensemble_member_id)
-                                                                }
+                                                                onPress={() => handleResend(invite.ensemble_member_id)}
                                                             >
-                                                                Reenviar correo
+                                                                Reenviar
                                                             </Button>
-                                                        </>
-                                                    ) : null}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </li>
                                         );
@@ -346,3 +411,5 @@ export default function BookingEnsemblePanel({ booking }: Props) {
         </Card>
     );
 }
+
+

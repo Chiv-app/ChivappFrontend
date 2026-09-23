@@ -38,21 +38,20 @@ export default function BookingCalendarSyncModal({
     const [members, setMembers] = useState<{id: string; name: string; }[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const [membersLoading, setMembersLoading] = useState(false);
-
     useEffect(() => {
         if (!isOpen) return;
         setIncludeContractor(true);
         setSelectedMembers([]);
         
-        // Fetch ensemble members
+        // Fetch booking members
         let cancelled = false;
         setMembersLoading(true);
-        apiFetch<{id: string, fullname: string}[]>("/musician/members")
+        apiFetch<any[]>(`/bookings/${booking.id}/member-invites`)
             .then(data => {
                 if (!cancelled) {
-                    setMembers(data.map(d => ({id: d.id, name: d.fullname})));
-                    // select all by default
-                    setSelectedMembers(data.map(d => d.id));
+                    const acceptedMembers = data.filter(d => d.status === "accepted");
+                    setMembers(acceptedMembers.map(d => ({id: d.ensemble_member_id, name: d.member_fullname})));
+                    setSelectedMembers(acceptedMembers.map(d => d.ensemble_member_id));
                 }
             })
             .catch(() => {})
@@ -61,7 +60,7 @@ export default function BookingCalendarSyncModal({
             });
             
         return () => { cancelled = true; };
-    }, [isOpen]);
+    }, [isOpen, booking.id]);
 
     async function handleSync() {
         setIsLoading(true);
@@ -99,8 +98,8 @@ export default function BookingCalendarSyncModal({
                         </ModalHeader>
                         <ModalBody>
                             <p className="text-default-500 text-sm">
-                                Esto crear\u00e1 o actualizar\u00e1 un evento en tu Google Calendar.
-                                Selecciona a qui\u00e9nes deseas incluir como invitados para que tambi\u00e9n reciban la invitaci\u00f3n en su calendario.
+                                Esto creará o actualizará un evento en tu Google Calendar.
+                                Selecciona a quiénes deseas incluir como invitados para que también reciban la invitación en su calendario.
                             </p>
                             
                             <div className="mt-4 flex flex-col gap-4">
@@ -126,7 +125,7 @@ export default function BookingCalendarSyncModal({
                                         ))}
                                     </CheckboxGroup>
                                 ) : (
-                                    <div className="text-sm text-default-400">No tienes integrantes registrados en tu perfil.</div>
+                                    <div className="text-sm text-default-400">No hay integrantes que hayan aceptado esta convocatoria.</div>
                                 )}
                             </div>
                         </ModalBody>
@@ -149,6 +148,8 @@ export default function BookingCalendarSyncModal({
         </Modal>
     );
 }
+
+
 
 
 

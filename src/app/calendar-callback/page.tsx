@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/api";
 function CalendarCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -43,6 +43,7 @@ function CalendarCallbackContent() {
     const exchangeToken = async () => {
       try {
         await apiFetch(`/calendar-auth/callback?code=${encodeURIComponent(code)}`, { method: "POST" });
+        await refresh();
         if (isMounted) {
           setStatus("success");
         }
@@ -126,5 +127,6 @@ export default function CalendarCallbackPage() {
     </Suspense>
   );
 }
+
 
 
