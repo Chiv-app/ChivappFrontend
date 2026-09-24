@@ -360,7 +360,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                     {!isMemberView &&
                     role === "musician" &&
                     booking.status === "payment_pending" ? (
-                        <BookingPaymentStatusCard booking={booking} kind="advance" />
+                        <BookingPaymentStatusCard booking={booking} kind="full" />
                     ) : null}
 
                     {!isMemberView && role === "contractor" && !confirmed ? (
@@ -419,6 +419,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         </div>
     );
 }
+
 
 
 

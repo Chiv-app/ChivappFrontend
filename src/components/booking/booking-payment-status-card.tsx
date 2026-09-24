@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Card, CardBody, Chip } from "@heroui/react";
@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/booking-labels";
 import { listBookingPayments } from "@/lib/payments";
 import type { BookingOut, PaymentOut } from "@/types/api";
 
-type Kind = "advance" | "balance";
+type Kind = "advance" | "balance" | "full";
 
 type Props = {
     booking: BookingOut;
@@ -56,7 +56,7 @@ export default function BookingPaymentStatusCard({ booking, kind }: Props) {
     }, [booking.id, booking.status]);
 
     const relevant = payments.filter((item) =>
-        kind === "balance" ? item.payment_type === "balance" : item.payment_type !== "balance",
+        kind === "balance" ? item.payment_type === "balance" : kind === "advance" ? item.payment_type === "advance" : item.payment_type === "full",
     );
     const payment = relevant[relevant.length - 1] ?? null;
 
@@ -64,13 +64,13 @@ export default function BookingPaymentStatusCard({ booking, kind }: Props) {
         <Card className="border border-warning/30 shadow-soft overflow-hidden">
             <div className="bg-gradient-to-br from-warning/10 via-warning/5 to-transparent px-6 py-6">
                 <Chip color="warning" variant="flat" size="sm" className="mb-3">
-                    {kind === "advance" ? "Anticipo" : "Abono final"}
+                    {kind === "advance" ? "Anticipo" : kind === "full" ? "Pago total" : "Abono final"}
                 </Chip>
                 <h2 className="text-2xl font-bold text-foreground">
                     Pago en procesamiento
                 </h2>
                 <p className="text-sm text-default-600 mt-2 max-w-2xl">
-                    El pago del {kind === "advance" ? "anticipo" : "abono final"} está siendo procesado a través de Mercado Pago.
+                    El pago {kind === "advance" ? "del anticipo" : kind === "full" ? "total" : "del abono final"} está siendo procesado a través de Mercado Pago.
                     Pulsa &quot;Actualizar&quot; arriba para verificar si ya fue acreditado.
                 </p>
             </div>
@@ -137,3 +137,5 @@ export default function BookingPaymentStatusCard({ booking, kind }: Props) {
         </Card>
     );
 }
+
+
