@@ -1,8 +1,11 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+
 import {
     Button,
+    Card,
+    CardBody,
     Chip,
     Input,
     Modal,
@@ -13,6 +16,7 @@ import {
     Textarea,
     Tooltip,
     addToast,
+    Avatar,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import ChipListInput from "@/components/ui/chip-list-input";
@@ -539,12 +543,17 @@ export default function MusicianMembersView() {
                                         <p className="text-xs font-medium uppercase tracking-wide text-default-400 md:hidden mb-1">
                                             Integrante
                                         </p>
-                                        <p className="font-semibold text-foreground truncate">
-                                            {member.fullname}
-                                        </p>
-                                        <p className="text-sm text-default-500 truncate">
-                                            {member.email}
-                                        </p>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar name={member.fullname} size="sm" className="flex-shrink-0" />
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-foreground truncate">
+                                                    {member.fullname}
+                                                </p>
+                                                <p className="text-sm text-default-500 truncate">
+                                                    {member.email}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-xs font-medium uppercase tracking-wide text-default-400 md:hidden mb-1">

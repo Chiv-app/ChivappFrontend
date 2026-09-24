@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -826,32 +826,33 @@ export default function MusicianDetailView({
                     </div>
 
                     {isOwner ? (
-                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2 shrink-0">
                             <Button
                                 as={Link}
                                 href={`/musicians/${musician.slug || musician.id}`}
                                 target="_blank"
                                 variant="flat"
                                 radius="full"
-                                size="md"
-                                className="font-semibold"
+                                size="sm"
+                                className="font-semibold px-2 sm:px-4 sm:h-10 sm:text-sm"
                                 startContent={
                                     <Icon
                                         icon="material-symbols:open-in-new"
-                                        width={18}
+                                        className="text-base sm:text-lg"
                                     />
                                 }
                             >
-                                Ver página pública
+                                <span className="hidden sm:inline">Ver página pública</span>
+                                <span className="sm:hidden">Ver público</span>
                             </Button>
                             <Button
                                 color="primary"
                                 radius="full"
-                                size="md"
-                                className="font-semibold shadow-glow"
+                                size="sm"
+                                className="font-semibold shadow-glow px-3 sm:px-4 sm:h-10 sm:text-sm"
                                 onPress={onEdit}
                                 startContent={
-                                    <Icon icon="material-symbols:edit" width={18} />
+                                    <Icon icon="material-symbols:edit" className="text-base sm:text-lg" />
                                 }
                             >
                                 Editar perfil
@@ -895,3 +896,4 @@ export default function MusicianDetailView({
         </>
     );
 }
+

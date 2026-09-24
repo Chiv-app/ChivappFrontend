@@ -9,6 +9,7 @@ import {
     Checkbox,
     Chip,
     addToast,
+    Avatar,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import {
@@ -315,20 +316,14 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                         return (
                                             <li key={invite.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                                 <div className="flex items-start gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                                        {invite.specialties.length > 0 ? (
-                                                            <Icon icon={getInstrumentIcon(invite.specialties[0])} width={20} />
-                                                        ) : (
-                                                            <Icon icon="mdi:music" width={20} />
-                                                        )}
-                                                    </div>
+                                                    <Avatar name={invite.member_fullname} size="sm" className="flex-shrink-0" />
                                                     <div>
                                                         <p className="font-semibold text-foreground">
                                                             {invite.member_fullname}
                                                         </p>
                                                         <div className="flex flex-wrap items-center gap-2 mt-1">
                                                             {invite.specialties.map(spec => (
-                                                                <Chip key={spec} size="sm" variant="flat" className="text-[10px] h-5">
+                                                                <Chip key={spec} size="sm" variant="flat" className="text-[10px] h-5" startContent={<Icon icon={getInstrumentIcon(spec)} className="mr-1" />}>
                                                                     {spec}
                                                                 </Chip>
                                                             ))}
@@ -411,5 +406,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
         </Card>
     );
 }
+
+
 
 
