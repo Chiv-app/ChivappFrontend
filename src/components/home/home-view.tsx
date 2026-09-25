@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import HeroSearchSection from "@/components/home/hero-search-section";
@@ -8,7 +8,6 @@ import WhyChivappSection from "@/components/home/why-chivapp-view";
 import FaqSection from "@/components/home/faq-view";
 import MusicianCtaSection from "@/components/home/musician-cta-view";
 import ProfileCompletionBanner from "@/components/profile/profile-completion-banner";
-import SeoLinksView from "@/components/home/seo-links-view";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
 import type { PlatformStatsOut } from "@/types/api";
 
@@ -54,9 +53,7 @@ export default function HomeView({ musicians, hasMoreMusicians = false, reviews 
             <FaqSection />
             <MusicianCtaSection />
 
-            <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 pb-16">
-                <SeoLinksView />
-            </div>
         </main>
     );
 }
+
