@@ -93,9 +93,8 @@ export default function BookingQuoteForm({ booking, onUpdated }: Props) {
         getPlatformPaymentInstructions()
             .then((data) => {
                 if (cancelled) return;
-                if (booking.platform_fee_percent == null) {
-                    setPlatformFeePercent(Number(data.platform_fee_percent ?? 2));
-                }
+                // Al cotizar siempre usamos la comisin más reciente del administrador
+                setPlatformFeePercent(Number(data.platform_fee_percent ?? 2));
             })
             .catch(() => {
                 // Keep local/default percent if instructions are unavailable.
@@ -103,7 +102,7 @@ export default function BookingQuoteForm({ booking, onUpdated }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [booking.platform_fee_percent]);
+    }, []);
 
     const pricePreview = Number(priceAgreed);
     const feePreview = useMemo(() => {
