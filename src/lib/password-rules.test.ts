@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { evaluatePasswordRules, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "./password-rules";
 
 describe("evaluatePasswordRules", () => {

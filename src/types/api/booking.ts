@@ -1,4 +1,4 @@
-﻿import type { BookingStatus } from "./enums";
+import type { BookingStatus } from "./enums";
 
 export type BookingCreate = {
     musician_id: string;

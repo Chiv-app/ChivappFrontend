@@ -1,4 +1,4 @@
-﻿import type { BookingOut } from "@/types/api";
+import type { BookingOut } from "@/types/api";
 
 /** Comisión de plataforma sobre el precio del músico (solo la paga el contratista). */
 

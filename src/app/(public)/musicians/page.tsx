@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import MusiciansBrowseView from "@/components/musicians/musicians-browse-view";
 import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
 

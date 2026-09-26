@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
