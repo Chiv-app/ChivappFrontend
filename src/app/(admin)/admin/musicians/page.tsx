@@ -189,7 +189,7 @@ export default function AdminMusiciansPage() {
                                             {profile.stage_name}
                                         </h3>
                                         <p className="text-sm text-default-500 truncate">
-                                            {profile.user_fullname} Â· {profile.user_email}
+                                            {profile.user_fullname} · {profile.user_email}
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
