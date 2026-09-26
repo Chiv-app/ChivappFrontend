@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -113,7 +113,7 @@ export default function HelpWidget() {
             <Modal
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
-                placement="center"
+                placement="bottom-center" scrollBehavior="inside"
                 backdrop="blur"
                 classNames={{
                     base: "border border-default-200/80 bg-content1 shadow-2xl rounded-3xl",
@@ -227,3 +227,4 @@ export default function HelpWidget() {
         </>
     );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -742,7 +742,7 @@ function PaymentDetailModal({
     onClose: () => void;
 }) {
     return (
-        <Modal isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()}>
+        <Modal isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()} scrollBehavior="inside" placement="bottom-center">
             <ModalContent>
                 {(close) => (
                     <>
@@ -839,7 +839,7 @@ function MemberIncomeDetailModal({
     onClose: () => void;
 }) {
     return (
-        <Modal isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()}>
+        <Modal isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()} scrollBehavior="inside" placement="bottom-center">
             <ModalContent>
                 {(close) => (
                     <>
@@ -952,4 +952,5 @@ function EmptyState({
         </Card>
     );
 }
+
 

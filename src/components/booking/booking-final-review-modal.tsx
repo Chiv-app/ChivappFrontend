@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import {
@@ -148,7 +148,7 @@ export default function BookingFinalReviewModal({
         >
             <ModalContent>
                 {(onClose) => (
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} className="contents">
                         <ModalHeader className="flex flex-col items-start gap-1 pb-2">
                             <span className="text-xl font-bold tracking-tight">
                                 {withComplaint
@@ -303,3 +303,4 @@ export default function BookingFinalReviewModal({
         </Modal>
     );
 }
+

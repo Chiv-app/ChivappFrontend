@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import {
@@ -93,7 +93,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
             onOpenChange={(open) => {
                 if (!open) handleClose();
             }}
-            size="lg"
+            size="lg" scrollBehavior="inside" placement="bottom-center"
             backdrop="blur"
             classNames={{
                 base: "border border-default-200/80 bg-content1 shadow-2xl rounded-3xl",
@@ -103,7 +103,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
             }}
         >
             <ModalContent>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="contents">
                     <ModalHeader className="flex items-center gap-2 text-foreground font-semibold">
                         <Icon icon="solar:lock-password-bold-duotone" className="text-xl text-primary" />
                         <span>{hasExistingPassword ? "Cambiar contraseña" : "Crear contraseña"}</span>
@@ -192,3 +192,5 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
         </Modal>
     );
 }
+
+

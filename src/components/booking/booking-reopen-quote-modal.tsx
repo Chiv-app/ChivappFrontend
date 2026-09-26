@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
@@ -177,7 +177,7 @@ export default function BookingReopenQuoteModal({
         >
             <ModalContent>
                 {(onClose) => (
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} className="contents">
                         <ModalHeader className="flex flex-col items-start gap-1">
                             <span className="text-xl font-bold">Editar solicitud</span>
                             <span className="text-sm font-normal text-default-500">
@@ -304,3 +304,4 @@ export default function BookingReopenQuoteModal({
         </Modal>
     );
 }
+

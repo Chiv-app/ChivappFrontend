@@ -89,7 +89,7 @@ export default function BookingCalendarSyncModal({
     const title = booking.calendar_event_id ? "Actualizar Agenda" : "Generar Agenda";
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md">
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md" scrollBehavior="inside" placement="bottom-center">
             <ModalContent>
                 {(onClose) => (
                     <>
@@ -148,6 +148,7 @@ export default function BookingCalendarSyncModal({
         </Modal>
     );
 }
+
 
 
 

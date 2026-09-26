@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -760,12 +760,12 @@ export default function MusicianMembersView() {
                     }
                 }}
                 size="2xl"
-                scrollBehavior="inside"
+                scrollBehavior="inside" placement="bottom-center"
                 backdrop="blur"
             >
                 <ModalContent>
                     {(onClose) => (
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={handleSubmit} className="contents">
                             <ModalHeader className="flex flex-col gap-1">
                                 <span>
                                     {showCreateSuccess
@@ -1169,4 +1169,6 @@ export default function MusicianMembersView() {
         </div>
     );
 }
+
+
 
