@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { Button, Input, Spinner } from "@heroui/react";
+import { Button, Input, Spinner, addToast } from "@heroui/react";
 import {
     reverseGeocode,
     searchPlaces,
@@ -86,15 +86,20 @@ export default function LocationMapPicker({ value, onChange }: Props) {
                         }
                     } catch (e) {
                         console.error("Error obtiendo ubicación", e);
+                        addToast({ title: "Error", description: "No se pudo obtener la dirección.", color: "danger" });
                     } finally {
                         setIsResolving(false);
                     }
                 },
                 (err) => {
                     console.error("Ubicación denegada", err);
+                    addToast({ title: "Permiso denegado", description: "Por favor permite el acceso a tu ubicación en tu navegador.", color: "warning" });
                     setIsResolving(false);
-                }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
+        } else {
+            addToast({ title: "No soportado", description: "Tu navegador no soporta geolocalización.", color: "danger" });
         }
     };
 
@@ -177,14 +182,13 @@ export default function LocationMapPicker({ value, onChange }: Props) {
                     ) : null}
                 </div>
                 <Button 
-                    isIconOnly
                     color="primary"
                     variant="flat"
-                    className="h-14 w-14 shrink-0"
+                    className="h-14 shrink-0 font-medium"
                     onPress={requestCurrentLocation}
-                    title="Usar mi ubicación actual"
+                    startContent={<span>🎯</span>}
                 >
-                    📍
+                    Mi ubicación actual
                 </Button>
             </div>
 

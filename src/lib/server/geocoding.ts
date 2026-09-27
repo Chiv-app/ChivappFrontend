@@ -76,5 +76,11 @@ export async function reverseGeocode(lat: number, lng: number): Promise<MapLocat
 
     const result = (await response.json()) as NominatimResult;
     if (!result.display_name) return null;
-    return toMapLocation(result);
+    
+    const loc = toMapLocation(result);
+    // Force the exact coordinates requested to avoid "snapping" to nearby buildings
+    loc.lat = lat;
+    loc.lng = lng;
+    
+    return loc;
 }

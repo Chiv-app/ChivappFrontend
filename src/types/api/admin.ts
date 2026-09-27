@@ -26,6 +26,7 @@ export type AdminStatsOut = {
 
 export type AdminUserOut = UserOut & {
     is_active?: boolean;
+    registration_type?: string | null;
 };
 
 export type AdminUserUpdate = {

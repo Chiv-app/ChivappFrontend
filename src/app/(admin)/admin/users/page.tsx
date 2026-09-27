@@ -129,6 +129,7 @@ export default function AdminUsersPage() {
                         <TableColumn>Estado</TableColumn>
                         <TableColumn>Verificado</TableColumn>
                         <TableColumn>Activo</TableColumn>
+                        <TableColumn>Origen</TableColumn>
                         <TableColumn>Registro</TableColumn>
                     </TableHeader>
                     <TableBody
@@ -182,6 +183,15 @@ export default function AdminUsersPage() {
                                             patchUser(user.id, { is_active: value })
                                         }
                                     />
+                                </TableCell>
+                                <TableCell>
+                                    <Chip
+                                        size="sm"
+                                        variant="flat"
+                                        color={user.registration_type === "google" ? "primary" : "secondary"}
+                                    >
+                                        {user.registration_type === "google" ? "Google" : "Chivapp"}
+                                    </Chip>
                                 </TableCell>
                                 <TableCell className="text-xs text-default-500">
                                     {formatDateTime(user.created_at)}
