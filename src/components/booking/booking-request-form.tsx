@@ -137,11 +137,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     };
   }, [musician.id]);
 
-  function isDateUnavailable(date: DateValue): boolean {
-    if (availableDays.size === 0) return false;
-    const jsDay = date.toDate(getLocalTimeZone()).getDay();
-    return !availableDays.has(jsDay);
-  }
+  
 
   function handleDateChange(value: DateValue | null) {
     if (!value) {
@@ -248,7 +244,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
             minValue={minCalendarValue}
             value={calendarValue}
             onChange={handleDateChange}
-            isDateUnavailable={isDateUnavailable}
+            
             isDisabled={isLoadingSlots}
             classNames={{
               label: "uppercase font-bold tracking-wider text-[0.55rem]",
@@ -277,71 +273,68 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
               </div>
             </div>
           </PopoverTrigger>
-          <PopoverContent className="w-[240px] p-3">
+          <PopoverContent className="w-[280px] p-4">
             <div className="flex flex-col w-full">
-              <div className="flex gap-2 mb-3 bg-default-100 p-1 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setTimePart("p", "AM")}
-                  className={`flex-1 py-1 rounded-md text-xs transition ${currentP === "AM" ? "bg-background shadow-sm text-primary font-bold" : "text-default-500"}`}
-                >
-                  AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTimePart("p", "PM")}
-                  className={`flex-1 py-1 rounded-md text-xs transition ${currentP === "PM" ? "bg-background shadow-sm text-primary font-bold" : "text-default-500"}`}
-                >
-                  PM
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5 mb-3">
-                {[
-                  "01",
-                  "02",
-                  "03",
-                  "04",
-                  "05",
-                  "06",
-                  "07",
-                  "08",
-                  "09",
-                  "10",
-                  "11",
-                  "12",
-                ].map((h) => (
-                  <button
-                    type="button"
-                    key={h}
-                    onClick={() => setTimePart("h", h)}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition ${currentH === h ? "bg-primary text-primary-foreground" : "bg-default-100 text-default-600 hover:bg-default-200"}`}
-                  >
-                    {h}
-                  </button>
-                ))}
-              </div>
-              <div className="h-px w-full bg-default-200 mb-3"></div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {["00", "15", "30", "45"].map((m) => (
-                  <button
-                    type="button"
-                    key={m}
-                    onClick={() => setTimePart("m", m)}
-                    className={`py-1 rounded-lg text-xs font-bold transition ${currentM === m ? "bg-primary text-primary-foreground" : "bg-default-100 text-default-600 hover:bg-default-200"}`}
-                  >
-                    {m}
-                  </button>
-                ))}
+              <div className="flex gap-2 w-full h-[180px] bg-default-50 rounded-xl p-2 border border-default-200">
+                {/* Column 1: AM/PM */}
+                <div className="flex-1 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth snap-y snap-mandatory border-r border-default-200 pr-2">
+                  <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
+                  {["AM", "PM"].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setTimePart("p", p)}
+                      className={`h-10 w-full shrink-0 snap-center rounded-lg text-sm font-bold transition-all ${currentP === p ? "bg-primary text-primary-foreground shadow-md scale-105" : "text-default-500 hover:bg-default-200"}`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
+                </div>
+
+                {/* Column 2: Hour */}
+                <div className="flex-1 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth snap-y snap-mandatory border-r border-default-200 px-1">
+                  <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
+                  {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setTimePart("h", h)}
+                      className={`h-10 w-full shrink-0 snap-center rounded-lg text-sm font-bold transition-all ${currentH === h ? "bg-primary text-primary-foreground shadow-md scale-105" : "text-default-500 hover:bg-default-200"}`}
+                    >
+                      {h}
+                    </button>
+                  ))}
+                  <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
+                </div>
+
+                {/* Column 3: Minute */}
+                <div className="flex-1 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth snap-y snap-mandatory pl-2">
+                  <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
+                  {["00", "15", "30", "45"].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setTimePart("m", m)}
+                      className={`h-10 w-full shrink-0 snap-center rounded-lg text-sm font-bold transition-all ${currentM === m ? "bg-primary text-primary-foreground shadow-md scale-105" : "text-default-500 hover:bg-default-200"}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                  <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
+                </div>
               </div>
               {daySlots.length > 0 && (
-                <p className="text-[0.65rem] text-default-500 mt-3 text-center">
-                  Disp:{" "}
-                  {daySlots
-                    .map(
-                      (s) =>
-                        `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
-                    )
-                    .join(", ")}
+                <p className="text-[0.65rem] text-default-500 mt-3 text-center bg-default-100 p-1.5 rounded-lg">
+                  Disponibilidad:{" "}
+                  <span className="font-bold text-foreground">
+                    {daySlots
+                      .map(
+                        (s) =>
+                          `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
+                      )
+                      .join(", ")}
+                  </span>
                 </p>
               )}
             </div>
