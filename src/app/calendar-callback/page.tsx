@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@heroui/react";
@@ -14,6 +14,7 @@ function CalendarCallbackContent() {
   
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const exchangedRef = useRef(false);
 
   const code = searchParams?.get("code");
   const errorParam = searchParams?.get("error");
@@ -37,6 +38,9 @@ function CalendarCallbackContent() {
       setErrorMessage("Debes iniciar sesión para conectar tu calendario.");
       return;
     }
+
+    if (exchangedRef.current) return;
+    exchangedRef.current = true;
 
     let isMounted = true;
 
