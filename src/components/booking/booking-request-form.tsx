@@ -233,6 +233,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <style>{".hide-scroll::-webkit-scrollbar { display: none !important; }"}</style>
       {/* Ultra-dense Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* 1. Fecha */}
@@ -277,7 +278,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
             <div className="flex flex-col w-full">
               <div className="flex gap-2 w-full h-[180px] bg-default-50 rounded-xl p-2 border border-default-200">
                 {/* Column 1: AM/PM */}
-                <div className="flex-1 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth snap-y snap-mandatory border-r border-default-200 pr-2">
+                <div style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scroll flex-1 flex flex-col gap-1 overflow-y-auto scroll-smooth snap-y snap-mandatory border-r border-default-200 pr-2">
                   <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
                   {["AM", "PM"].map((p) => (
                     <button
@@ -293,7 +294,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                 </div>
 
                 {/* Column 2: Hour */}
-                <div className="flex-1 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth snap-y snap-mandatory border-r border-default-200 px-1">
+                <div style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scroll flex-1 flex flex-col gap-1 overflow-y-auto scroll-smooth snap-y snap-mandatory border-r border-default-200 px-1">
                   <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
                   {["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((h) => (
                     <button
@@ -309,7 +310,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                 </div>
 
                 {/* Column 3: Minute */}
-                <div className="flex-1 flex flex-col gap-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth snap-y snap-mandatory pl-2">
+                <div style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} className="hide-scroll flex-1 flex flex-col gap-1 overflow-y-auto scroll-smooth snap-y snap-mandatory pl-2">
                   <div className="h-[calc(50%-1.25rem)] shrink-0 pointer-events-none"></div>
                   {["00", "15", "30", "45"].map((m) => (
                     <button

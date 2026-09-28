@@ -181,11 +181,25 @@ export default function LocationMapPicker({ value, onChange }: Props) {
           <Input
             label="Buscar lugar"
             placeholder="Escribe una dirección o zona..."
+            description="Busca una dirección o toca el mapa para marcar el lugar exacto."
             value={searchQuery}
             onValueChange={setSearchQuery}
             variant="bordered"
             endContent={
-              isSearching ? <Spinner size="sm" color="primary" /> : null
+              <div className="flex items-center gap-1">
+                {isSearching ? <Spinner size="sm" color="primary" /> : null}
+                <Button
+                  color="primary"
+                  variant="light"
+                  size="sm"
+                  isIconOnly
+                  onPress={requestCurrentLocation}
+                  title="Mi ubicación actual"
+                  className="text-primary hover:bg-primary-50"
+                >
+                  <Icon icon="lucide:crosshair" className="w-5 h-5" />
+                </Button>
+              </div>
             }
           />
           {suggestions.length > 0 ? (
@@ -204,16 +218,6 @@ export default function LocationMapPicker({ value, onChange }: Props) {
             </ul>
           ) : null}
         </div>
-        <Button
-          color="primary"
-          variant="flat"
-          className="h-14 w-14 shrink-0"
-          isIconOnly
-          onPress={requestCurrentLocation}
-          title="Mi ubicación actual"
-        >
-          <Icon icon="lucide:crosshair" className="w-6 h-6" />
-        </Button>
       </div>
 
       {searchQuery.trim().length >= 3 &&
@@ -260,26 +264,24 @@ export default function LocationMapPicker({ value, onChange }: Props) {
           {value ? (
             <Marker position={[value.lat, value.lng]} icon={markerIcon} />
           ) : null}
+          {value ? (
+            <div className="absolute bottom-2 left-2 right-2 z-[400] rounded-xl border border-primary/20 bg-background/90 backdrop-blur-sm px-3 py-2 shadow-sm">
+              <p className="text-[0.65rem] font-bold text-primary uppercase tracking-wider mb-0.5">
+                Lugar seleccionado
+              </p>
+              <p className="text-xs font-medium text-foreground truncate">
+                {value.address}
+              </p>
+            </div>
+          ) : (
+            <div className="absolute bottom-2 left-2 right-2 z-[400] rounded-xl border border-warning/20 bg-warning-50/90 backdrop-blur-sm px-3 py-2 shadow-sm">
+              <p className="text-xs font-medium text-warning-700">
+                Toca el mapa para seleccionar un punto.
+              </p>
+            </div>
+          )}
         </MapContainer>
       </div>
-
-      <p className="text-xs text-default-500">
-        Busca una dirección o toca el mapa para marcar el lugar exacto del
-        evento.
-      </p>
-
-      {value ? (
-        <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
-          <p className="text-xs font-semibold text-primary mb-1">
-            Lugar seleccionado
-          </p>
-          <p className="text-sm text-foreground">{value.address}</p>
-        </div>
-      ) : (
-        <p className="text-sm text-warning">
-          Selecciona un punto en el mapa para continuar.
-        </p>
-      )}
     </div>
   );
 }
