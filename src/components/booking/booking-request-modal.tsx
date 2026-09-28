@@ -1,12 +1,12 @@
 "use client";
 
 import {
-    Button,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalHeader,
-    addToast,
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import BookingRequestForm from "@/components/booking/booking-request-form";
@@ -14,49 +14,64 @@ import { useAuth } from "@/contexts/auth-context";
 import { resendVerificationEmail } from "@/lib/auth";
 
 type MusicianRef = {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 };
 
 type Props = {
-    musician: MusicianRef;
-    isOpen: boolean;
-    onOpenChange: (open: boolean) => void;
+  musician: MusicianRef;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
-export default function BookingRequestModal({ musician, isOpen, onOpenChange }: Props) {
-    return (
-        <Modal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            size="3xl"
-            scrollBehavior="inside"
-            placement="center"
-            classNames={{
-                base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-3xl max-h-[calc(100dvh-4rem)] sm:max-h-[92dvh]",
-                wrapper: "items-end sm:items-center",
-                body: "px-4 sm:px-6 overflow-y-auto",
-                header: "px-4 sm:px-6",
-            }}
-        >
-            <ModalContent>
-                {(onClose) => (
-                    <>
-                        <ModalHeader className="flex flex-col items-start gap-1 pb-2">
-                            <span className="text-xl font-bold">Solicitar reserva</span>
-                            <span className="text-sm font-normal text-default-500">
-                                con {musician.name}
-                            </span>
-                        </ModalHeader>
-                        <ModalBody className="pb-6">
-                            <BookingRequestForm
-                                musician={musician}
-                                onSuccess={onClose}
-                            />
-                        </ModalBody>
-                    </>
-                )}
-            </ModalContent>
-        </Modal>
-    );
+export default function BookingRequestModal({
+  musician,
+  isOpen,
+  onOpenChange,
+}: Props) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      size="3xl"
+      scrollBehavior="inside"
+      placement="center"
+      classNames={{
+        base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-3xl max-h-[calc(100dvh-4rem)] sm:max-h-[92dvh]",
+        wrapper: "items-end sm:items-center",
+        body: "px-4 sm:px-6 overflow-y-auto",
+        header: "px-4 sm:px-6",
+      }}
+    >
+      <ModalContent>
+        {(onClose) => (
+          <>
+            <ModalHeader className="flex flex-col items-stretch px-0 pb-0 pt-0">
+              <div className="px-5 py-4 border-b border-divider">
+                <div className="flex items-center gap-4 bg-default-50 dark:bg-default-100 p-2.5 rounded-xl border border-divider">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=0891b2&color=fff&rounded=true&bold=true&size=128`}
+                    alt={musician.name}
+                    className="w-10 h-10 rounded-full shadow-sm"
+                  />
+                  <div className="flex-1">
+                    <h2 className="text-sm font-bold leading-tight text-foreground">
+                      {musician.name}
+                    </h2>
+                    <p className="text-[0.65rem] text-primary font-bold tracking-wide uppercase mt-0.5">
+                      Solicitar Reserva
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </ModalHeader>
+            <ModalBody className="pb-6 pt-5 px-5">
+              <BookingRequestForm musician={musician} onSuccess={onClose} />
+            </ModalBody>
+          </>
+        )}
+      </ModalContent>
+    </Modal>
+  );
 }
