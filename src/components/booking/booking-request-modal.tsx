@@ -55,18 +55,18 @@ export default function BookingRequestModal({
                 >
                   <Icon icon="lucide:x" className="w-5 h-5" />
                 </Button>
-                <div className="flex items-center gap-4 bg-default-50 dark:bg-default-100 p-2.5 rounded-xl border border-divider mr-8">
+                <div className="flex items-center gap-3.5 mr-8">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=0891b2&color=fff&rounded=true&bold=true&size=128`}
                     alt={musician.name}
-                    className="w-10 h-10 rounded-full shadow-sm"
+                    className="w-11 h-11 rounded-full shadow-sm border border-default-200"
                   />
                   <div className="flex-1">
-                    <h2 className="text-sm font-bold leading-tight text-foreground">
+                    <h2 className="text-base font-bold leading-tight text-foreground">
                       {musician.name}
                     </h2>
-                    <p className="text-[0.65rem] text-primary font-bold tracking-wide uppercase mt-0.5">
+                    <p className="text-[0.7rem] text-primary font-bold tracking-wide uppercase mt-0.5">
                       Solicitar Reserva
                     </p>
                   </div>
