@@ -99,26 +99,7 @@ export default function BookActionButton({
         );
     }
 
-    if (!user.is_verified) {
-        return (
-            <div className={fullWidth ? "w-full" : "flex flex-col gap-2"}>
-                <Button
-                    isDisabled
-                    color="primary"
-                    radius={radius}
-                    size={size}
-                    className={`${className} ${widthClass}`}
-                >
-                    {label}
-                </Button>
-                {showHelper && (
-                    <p className="text-sm text-warning-600 dark:text-warning-500 font-medium max-w-xs leading-snug">
-                        Debes verificar tus datos en "Mi Perfil" para poder reservar.
-                    </p>
-                )}
-            </div>
-        );
-    }
+
 
     return (
         <Button
