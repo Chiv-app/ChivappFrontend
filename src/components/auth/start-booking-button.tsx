@@ -30,16 +30,16 @@ export default function StartBookingButton() {
     if (!user) {
         return (
             <Button
+                as={Link}
+                href="/musicians"
                 variant="flat"
                 radius="full"
                 className="w-full sm:w-auto max-w-sm bg-content1 text-foreground font-semibold hover:bg-primary sm:hover:scale-105 transition-all duration-300"
-                onPress={() => openLogin({ redirect: "/musicians" })}
                 endContent={
                     <Icon icon="material-symbols:arrow-right" width={22} height={22} />
                 }
             >
-                <span className="sm:hidden">Inicia sesión</span>
-                <span className="hidden sm:inline">Inicia sesión para reservar</span>
+                Comenzar reserva
             </Button>
         );
     }
@@ -63,23 +63,7 @@ export default function StartBookingButton() {
         );
     }
 
-    if (!user.is_verified) {
-        return (
-            <div className="flex flex-col items-center gap-3 w-full max-w-sm">
-                <Button
-                    isDisabled
-                    variant="flat"
-                    radius="full"
-                    className="w-full bg-content1 text-foreground font-semibold"
-                >
-                    Comenzar reserva
-                </Button>
-                <p className="text-sm text-warning-600 dark:text-warning-500 font-medium text-pretty px-1">
-                    Verifica tus datos en tu perfil para poder hacer reservas.
-                </p>
-            </div>
-        );
-    }
+
 
     return (
         <Button
