@@ -9,11 +9,12 @@ const ALLOWED_PREFIXES = [
     "/set-password",
     "/invite/",
     "/complete-role",
+    "/contractor/bookings",
     "/api/",
 ];
 
 /**
- * Si el usuario autenticado no tiene contraseña, obliga a crearla
+ * Si el usuario autenticado no tiene contrasea, obliga a crearla
  * antes de seguir usando la app (p. ej. OAuth o integrante invitado).
  */
 export default function PasswordSetupGate({
