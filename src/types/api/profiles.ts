@@ -1,4 +1,4 @@
-import type { AvailabilityType, ProfileStatus } from "./enums";
+﻿import type { AvailabilityType, ProfileStatus } from "./enums";
 
 export type RepertoireItem = {
     title: string;
@@ -255,3 +255,4 @@ export type MusicianContractGenerateOut = {
 export type ContractorContractGenerateOut = {
     contract_pdf_url: string;
 };
+

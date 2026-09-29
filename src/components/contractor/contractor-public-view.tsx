@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Icon } from "@iconify/react";
 import type { ContractorProfilePublicOut } from "@/types/api";
@@ -40,9 +40,9 @@ export default function ContractorPublicView({
                                 {contractor.rating_avg.toFixed(1)}
                             </span>
                             <span className="text-sm text-default-500">
-                                · {contractor.rating_count ?? 0}{" "}
+                                Â· {contractor.rating_count ?? 0}{" "}
                                 {(contractor.rating_count ?? 0) === 1
-                                    ? "recomendación"
+                                    ? "recomendaciÃ³n"
                                     : "recomendaciones"}
                             </span>
                         </div>
@@ -51,11 +51,11 @@ export default function ContractorPublicView({
 
                 <section>
                     <h2 className="text-2xl font-bold tracking-tight mb-4">
-                        Recomendaciones de músicos
+                        Recomendaciones de mÃºsicos
                     </h2>
                     {contractor.recommendations.length === 0 ? (
                         <div className="rounded-4xl border border-dashed border-default-300 px-6 py-10 text-center text-default-500">
-                            Aún no hay recomendaciones públicas.
+                            AÃºn no hay recomendaciones pÃºblicas.
                         </div>
                     ) : (
                         <ul className="flex flex-col gap-4">
@@ -88,3 +88,4 @@ export default function ContractorPublicView({
         </main>
     );
 }
+
