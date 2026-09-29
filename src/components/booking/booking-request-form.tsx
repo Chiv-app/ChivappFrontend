@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { useAuthModal } from "@/contexts/auth-modal-context";
 import { Icon } from "@iconify/react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
@@ -36,6 +37,7 @@ import {
   validateBookingAgainstAvailability,
 } from "@/lib/availability-calendar";
 import { createBooking } from "@/lib/bookings";
+import { apiFetch } from "@/lib/api";
 import {
   formatLocationReference,
   normalizeStartTime,
@@ -64,7 +66,8 @@ type Props = {
 };
 
 export default function BookingRequestForm({ musician, onSuccess }: Props) {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
+  const { openLogin } = useAuthModal();
   const [showAuthSection, setShowAuthSection] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -181,16 +184,41 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
 
     if (!user) {
       if (!contactName || !contactPhone || !contactEmail) {
-         addToast({ title: "Faltan datos de contacto", description: "Completa tus datos para enviar la cotización.", color: "warning" });
+         addToast({ title: "Faltan datos de contacto", description: "Completa tus datos para enviar la cotizaci\u00f3n.", color: "warning" });
          return;
       }
-      // TODO: Here we should call a backend endpoint for silent registration / guest booking
-      addToast({ title: "Modo invitado", description: "Enviaremos la cotización a tu correo (Simulación).", color: "success" });
-      onSuccess?.();
-      return;
+      
+      setIsSubmitting(true);
+      try {
+          await apiFetch("/auth/guest-register", {
+              method: "POST",
+              body: JSON.stringify({
+                  fullname: contactName,
+                  email: contactEmail,
+                  phone: contactPhone,
+              }),
+              headers: { "Content-Type": "application/json" }
+          });
+          
+          await refresh(); // Load the newly created/logged-in user session
+          
+      } catch (error: any) {
+          setIsSubmitting(false);
+          if (error.status === 400 || error.status === 409) {
+              addToast({
+                  title: "Cuenta existente",
+                  description: "Este correo ya est\u00e1 registrado con contrase\u00f1a. Por favor, inicia sesi\u00f3n para continuar.",
+                  color: "warning"
+              });
+              openLogin({ redirect: window.location.pathname });
+          } else {
+              addToast({ title: "Error", description: "Ocurri\u00f3 un error al registrar tus datos.", color: "danger" });
+          }
+          return;
+      }
+    } else {
+      setIsSubmitting(true);
     }
-    
-    setIsSubmitting(true);
 
     try {
       const booking = await createBooking({
