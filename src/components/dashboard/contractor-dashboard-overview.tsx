@@ -31,15 +31,12 @@ export default function ContractorDashboardOverview({
                     Panel de contratista
                 </Chip>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                    {isVerified ? "Tu espacio de gestión" : "Completa tu verificación"}
+                    Tu espacio de gestión
                 </h1>
                 <p className="text-default-500 mt-2 max-w-2xl">
-                    {isVerified
-                        ? "Gestiona tus reservas, operaciones, dinero y notificaciones en un solo panel."
-                        : "Valida tu identidad para habilitar reservas y el resto de módulos."}
+                    Gestiona tus reservas, operaciones, dinero y notificaciones en un solo panel.
                 </p>
-                {isVerified ? (
-                    <div className="flex flex-wrap gap-2 mt-5">
+                <div className="flex flex-wrap gap-2 mt-5">
                         <Button
                             as={Link}
                             href="/contractor/bookings"
@@ -65,11 +62,29 @@ export default function ContractorDashboardOverview({
                             Ver operaciones
                         </Button>
                     </div>
-                ) : null}
             </div>
 
-            {isVerified ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            
+            {!isVerified && (
+                <Card className="border border-warning/30 bg-warning/5 shadow-soft mb-4">
+                    <CardBody className="gap-4 p-6">
+                        <h2 className="text-lg font-bold text-foreground">
+                            Verificación de identidad pendiente
+                        </h2>
+                        <p className="text-sm text-default-500">
+                            Puedes explorar músicos y solicitar reservas libremente. Sin embargo, para <b>chatear directamente</b> y <b>compartir tu ubicación</b> con los músicos, necesitas completar tu verificación de identidad.
+                        </p>
+                        <Link
+                            href="/contractor/profile"
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
+                        >
+                            Completar perfil
+                            <Icon icon="material-symbols:arrow-forward" width={18} height={18} />
+                        </Link>
+                    </CardBody>
+                </Card>
+            )}
+<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     <Card
                         as={Link}
                         href="/contractor/bookings"
@@ -141,26 +156,6 @@ export default function ContractorDashboardOverview({
                         </CardBody>
                     </Card>
                 </div>
-            ) : (
-                <Card className="border border-warning/30 bg-warning/5 shadow-soft">
-                    <CardBody className="gap-4 p-6">
-                        <h2 className="text-lg font-bold text-foreground">
-                            Verificación requerida
-                        </h2>
-                        <p className="text-sm text-default-500">
-                            Una vez verificado podrás reservar músicos, gestionar presentaciones,
-                            operaciones y notificaciones de tus eventos.
-                        </p>
-                        <Link
-                            href="/contractor/profile"
-                            className="inline-flex items-center gap-2 text-sm font-semibold text-primary"
-                        >
-                            Completar verificación
-                            <Icon icon="material-symbols:arrow-forward" width={18} height={18} />
-                        </Link>
-                    </CardBody>
-                </Card>
-            )}
 
             <div>
                 <h2 className="text-xl font-bold text-foreground mb-4">Módulos</h2>

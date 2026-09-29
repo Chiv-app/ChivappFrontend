@@ -154,7 +154,6 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
         href: "/contractor",
         label: "Resumen",
         icon: "material-symbols:dashboard",
-        requiresVerification: true,
     },
     {
         href: "/contractor/profile",
@@ -165,19 +164,16 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
         href: "/contractor/bookings",
         label: "Mis reservas",
         icon: "material-symbols:event-available",
-        requiresVerification: true,
     },
     {
         href: "/contractor/operations",
         label: "Operaciones",
         icon: "material-symbols:receipt-long",
-        requiresVerification: true,
     },
     {
         href: "/contractor/notifications",
         label: "Notificaciones",
         icon: "material-symbols:notifications",
-        requiresVerification: true,
     },
 ];
 
@@ -245,7 +241,6 @@ export const CONTRACTOR_MODULES: DashboardModule[] = [
         title: "Reservas y presentaciones",
         description: "Administra tus eventos contratados y el estado de cada reserva.",
         icon: "material-symbols:celebration",
-        requiresVerification: true,
     },
     {
         href: "/contractor/operations",
@@ -253,21 +248,18 @@ export const CONTRACTOR_MODULES: DashboardModule[] = [
         description:
             "Pendientes, pagos, disputas y reembolsos de tus reservas en un solo lugar.",
         icon: "material-symbols:receipt-long",
-        requiresVerification: true,
     },
     {
         href: "/contractor/notifications",
         title: "Notificaciones",
         description: "Recibe alertas sobre reservas, pagos y contratos.",
         icon: "material-symbols:notifications-active",
-        requiresVerification: true,
     },
     {
         href: "/musicians",
         title: "Explorar músicos",
         description: "Encuentra artistas verificados para tu próximo evento.",
         icon: "material-symbols:search",
-        requiresVerification: true,
     },
 ];
 

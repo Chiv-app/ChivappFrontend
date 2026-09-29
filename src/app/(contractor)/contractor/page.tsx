@@ -22,7 +22,7 @@ export default function ContractorDashboardPage() {
     const [retainedExpenses, setRetainedExpenses] = useState(0);
 
     useEffect(() => {
-        if (!isVerified) return;
+        // !isVerified is no longer a blocker for fetching stats
 
         listBookings()
             .then((bookings) => {
@@ -45,7 +45,7 @@ export default function ContractorDashboardPage() {
                 setNetOut(0);
                 setRetainedExpenses(0);
             });
-    }, [isVerified]);
+    }, []);
 
     return (
         <ContractorDashboardOverview
