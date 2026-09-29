@@ -5,6 +5,7 @@ export type DashboardNavItem = {
     label: string;
     icon: string;
     requiresVerification?: boolean;
+    requiresEmailVerification?: boolean;
 };
 
 export type DashboardModule = {
@@ -71,7 +72,7 @@ export const ADMIN_NAV: DashboardNavItem[] = [
     { href: "/admin/users", label: "Usuarios", icon: "material-symbols:group" },
     {
         href: "/admin/musicians",
-        label: "Músicos",
+        label: "MÃºsicos",
         icon: "material-symbols:music-note",
     },
     {
@@ -107,14 +108,14 @@ export const ADMIN_MODULES: DashboardModule[] = [
     },
     {
         href: "/admin/musicians",
-        title: "Moderación de músicos",
-        description: "Aprueba, rechaza, despublica o solicita reenvío de perfiles.",
+        title: "ModeraciÃ³n de mÃºsicos",
+        description: "Aprueba, rechaza, despublica o solicita reenvÃ­o de perfiles.",
         icon: "material-symbols:music-note",
     },
     {
         href: "/admin/contractors",
-        title: "Moderación de contratistas",
-        description: "Controla identidad y publicación de perfiles contratistas.",
+        title: "ModeraciÃ³n de contratistas",
+        description: "Controla identidad y publicaciÃ³n de perfiles contratistas.",
         icon: "material-symbols:business-center",
     },
     {
@@ -125,7 +126,7 @@ export const ADMIN_MODULES: DashboardModule[] = [
     },
     {
         href: "/admin/payments",
-        title: "Tesorería y pagos",
+        title: "TesorerÃ­a y pagos",
         description: "Sigue retenciones, liberaciones y evidencias de pago.",
         icon: "material-symbols:payments",
     },
@@ -138,7 +139,7 @@ export const ADMIN_MODULES: DashboardModule[] = [
     {
         href: "/admin/emails",
         title: "Correos y plantillas",
-        description: "Edita plantillas transaccionales y revisa el historial de envíos.",
+        description: "Edita plantillas transaccionales y revisa el historial de envÃ­os.",
         icon: "material-symbols:mail",
     },
     {
@@ -164,11 +165,13 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
         href: "/contractor/bookings",
         label: "Mis reservas",
         icon: "material-symbols:event-available",
+        requiresEmailVerification: true,
     },
     {
         href: "/contractor/operations",
         label: "Operaciones",
         icon: "material-symbols:receipt-long",
+        requiresEmailVerification: true,
     },
     {
         href: "/contractor/notifications",
@@ -181,14 +184,14 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/bookings",
         title: "Reservas",
-        description: "Atiende cotizaciones, valida pagos y sigue cada presentación.",
+        description: "Atiende cotizaciones, valida pagos y sigue cada presentaciÃ³n.",
         icon: "material-symbols:calendar-month",
         requiresVerification: true,
     },
     {
         href: "/musician/members",
         title: "Integrantes",
-        description: "Gestiona tu agrupación, especialidades, convocatorias y repartos.",
+        description: "Gestiona tu agrupaciÃ³n, especialidades, convocatorias y repartos.",
         icon: "material-symbols:groups",
         requiresVerification: true,
     },
@@ -210,20 +213,20 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
         href: "/musician/reports",
         title: "Reportes",
         description:
-            "Gráficas y tablas de reservas, ingresos, integrantes y quejas con filtros.",
+            "GrÃ¡ficas y tablas de reservas, ingresos, integrantes y quejas con filtros.",
         icon: "material-symbols:analytics",
         requiresVerification: true,
     },
     {
         href: "/musician/profile",
         title: "Mi perfil",
-        description: "Actualiza tu información artística, fotos, videos y tarifas.",
+        description: "Actualiza tu informaciÃ³n artÃ­stica, fotos, videos y tarifas.",
         icon: "material-symbols:edit-document",
     },
     {
         href: "/musician/notifications",
         title: "Notificaciones",
-        description: "Mantente al día con novedades sobre tus reservas y pagos.",
+        description: "Mantente al dÃ­a con novedades sobre tus reservas y pagos.",
         icon: "material-symbols:notifications-active",
         requiresVerification: true,
     },
@@ -233,7 +236,7 @@ export const CONTRACTOR_MODULES: DashboardModule[] = [
     {
         href: "/contractor/profile",
         title: "Gestionar perfil",
-        description: "Actualiza tus datos personales y documentos de verificación.",
+        description: "Actualiza tus datos personales y documentos de verificaciÃ³n.",
         icon: "material-symbols:badge",
     },
     {
@@ -257,15 +260,15 @@ export const CONTRACTOR_MODULES: DashboardModule[] = [
     },
     {
         href: "/musicians",
-        title: "Explorar músicos",
-        description: "Encuentra artistas verificados para tu próximo evento.",
+        title: "Explorar mÃºsicos",
+        description: "Encuentra artistas verificados para tu prÃ³ximo evento.",
         icon: "material-symbols:search",
     },
 ];
 
 export function getRoleHomePath(role: UserRole): string {
     if (role === "admin") return "/admin";
-    // Landing público como home para músico y contratista.
+    // Landing pÃºblico como home para mÃºsico y contratista.
     if (role === "musician" || role === "contractor") return "/";
     return "/";
 }
@@ -299,7 +302,21 @@ export function isVerifiedOnlyPath(
     return match?.requiresVerification === true;
 }
 
-/** Rutas que un integrante (sin perfil publicado) sí puede usar. */
+export function isEmailVerifiedOnlyPath(
+    pathname: string,
+    navItems: DashboardNavItem[],
+): boolean {
+    const match = navItems.find((item) => isNavItemActive(pathname, item.href));
+    
+    // Rutas permitidas incluso sin verificar correo (ver reserva especifica para shadow accounts)
+    if (pathname.match(/^\/contractor\/bookings\/[a-zA-Z0-9-]+$/)) {
+        return false;
+    }
+
+    return match?.requiresEmailVerification === true;
+}
+
+/** Rutas que un integrante (sin perfil publicado) sÃ­ puede usar. */
 export function isEnsembleMemberAllowedPath(pathname: string): boolean {
     return (
         pathname === "/musician" ||
@@ -313,7 +330,7 @@ export function isEnsembleMemberAllowedPath(pathname: string): boolean {
     );
 }
 
-/** Nav visible/desbloqueada para integrantes sin verificación completa. */
+/** Nav visible/desbloqueada para integrantes sin verificaciÃ³n completa. */
 export function isEnsembleMemberNavItem(href: string): boolean {
     return (
         href === "/musician" ||
@@ -323,3 +340,4 @@ export function isEnsembleMemberNavItem(href: string): boolean {
         href === "/musician/notifications"
     );
 }
+

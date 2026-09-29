@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -10,6 +10,7 @@ import { useProfileVerification } from "@/hooks/use-profile-verification";
 import {
     isEnsembleMemberAllowedPath,
     isVerifiedOnlyPath,
+    isEmailVerifiedOnlyPath,
     type DashboardNavItem,
 } from "@/lib/dashboard-nav";
 import { getPostLoginPath } from "@/lib/profiles";
@@ -75,6 +76,11 @@ export default function RoleDashboardShell({
             return;
         }
 
+        if (!user.is_verified && isEmailVerifiedOnlyPath(pathname, navItems)) {
+            router.replace(profilePath);
+            return;
+        }
+
         if (!isVerified && !ensembleBypass && isVerifiedOnlyPath(pathname, navItems)) {
             router.replace(profilePath);
         }
@@ -102,24 +108,33 @@ export default function RoleDashboardShell({
 
             <div className="pt-[var(--app-navbar-height)]">
                 <EmailVerificationBanner className="px-4 lg:px-8 pt-3" />
+                {/* Email Verification Warning */}
+                {!user.is_verified && pathname !== profilePath && isEmailVerifiedOnlyPath(pathname, navItems) ? (
+                    <div className="flex flex-col gap-3 px-4 lg:px-8 pt-4">
+                        <div className="rounded-4xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-default-700 shadow-soft">
+                            Verifica tu correo electrónico para acceder a este módulo.
+                        </div>
+                    </div>
+                ) : null}
+
                 {!isVerified && (pathname !== profilePath || status?.status === "pending_review") ? (
                     <div className="flex flex-col gap-3 px-4 lg:px-8 pt-4">
                         {!isVerified && pathname !== profilePath && !ensembleBypass ? (
                             <div className="rounded-4xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-default-700 shadow-soft">
-                                Completa tu verificación para habilitar todos los módulos de gestión.
+                                Completa tu verificaciÃ³n para habilitar todos los mÃ³dulos de gestiÃ³n.
                             </div>
                         ) : null}
 
                         {!isVerified && ensembleBypass ? (
                             <div className="rounded-4xl border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm text-default-700 shadow-soft">
                                 Acceso como integrante: puedes ver tus reservas y gestionar
-                                tus ingresos asignados por el líder.
+                                tus ingresos asignados por el lÃ­der.
                             </div>
                         ) : null}
 
                         {!isVerified && status?.status === "pending_review" ? (
                             <div className="rounded-4xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-default-700 shadow-soft">
-                                Tu perfil está en revisión. Te avisaremos cuando sea aprobado.
+                                Tu perfil estÃ¡ en revisiÃ³n. Te avisaremos cuando sea aprobado.
                             </div>
                         ) : null}
                     </div>
@@ -130,3 +145,7 @@ export default function RoleDashboardShell({
         </div>
     );
 }
+
+
+
+
