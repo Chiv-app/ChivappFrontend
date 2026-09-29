@@ -26,7 +26,7 @@ export default function AuthLayout({
                 aria-label="Chivapp"
                 className="mb-8 hover:opacity-80 transition-opacity"
             >
-                <AppLogo height={34} priority />
+                <AppLogo height={34} priority color="dynamic" />
             </Link>
             <Suspense
                 fallback={

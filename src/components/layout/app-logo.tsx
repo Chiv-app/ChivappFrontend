@@ -6,13 +6,15 @@ type Props = {
     className?: string;
     priority?: boolean;
     /** Si es "white", aplica un filtro para volver el logo completamente blanco (ideal para fondos oscuros) */
-    color?: "default" | "white";
+    color?: "default" | "white" | "dynamic";
 };
 
 const LOGO_ASPECT_RATIO = 900 / 287;
 
 export default function AppLogo({ height = 28, className = "", priority, color = "default" }: Props) {
-    const filterClass = color === "white" ? "brightness-0 invert" : "";
+    let filterClass = "";
+    if (color === "white") filterClass = "brightness-0 invert";
+    if (color === "dynamic") filterClass = "dark:brightness-0 dark:invert";
     return (
         <Image
             src="/logo-chivapp.png"
