@@ -5,24 +5,53 @@ type Props = {
     height?: number;
     className?: string;
     priority?: boolean;
-    /** Si es "white", aplica un filtro para volver el logo completamente blanco (ideal para fondos oscuros) */
+    /**
+     * default: Muestra el logo original (texto oscuro)
+     * white: Muestra el logo para fondos oscuros (texto blanco)
+     * dynamic: Cambia automáticamente usando CSS (dark mode)
+     */
     color?: "default" | "white" | "dynamic";
 };
 
-const LOGO_ASPECT_RATIO = 900 / 287;
+const RATIO_V1 = 900 / 287;
+const RATIO_V2 = 2170 / 725;
 
 export default function AppLogo({ height = 28, className = "", priority, color = "default" }: Props) {
-    let filterClass = "";
-    if (color === "white") filterClass = "brightness-0 invert";
-    if (color === "dynamic") filterClass = "dark:brightness-0 dark:invert";
+    if (color === "dynamic") {
+        return (
+            <>
+                <Image
+                    src="/logo-chivapp.png"
+                    alt="Chivapp"
+                    width={Math.round(height * RATIO_V1)}
+                    height={height}
+                    priority={priority}
+                    className={`dark:hidden ${className}`.trim()}
+                />
+                <Image
+                    src="/logo-chivappv2.png"
+                    alt="Chivapp"
+                    width={Math.round(height * RATIO_V2)}
+                    height={height}
+                    priority={priority}
+                    className={`hidden dark:block ${className}`.trim()}
+                />
+            </>
+        );
+    }
+
+    const isWhite = color === "white";
+    const src = isWhite ? "/logo-chivappv2.png" : "/logo-chivapp.png";
+    const width = Math.round(height * (isWhite ? RATIO_V2 : RATIO_V1));
+
     return (
         <Image
-            src="/logo-chivapp.png"
+            src={src}
             alt="Chivapp"
-            width={Math.round(height * LOGO_ASPECT_RATIO)}
+            width={width}
             height={height}
             priority={priority}
-            className={`${filterClass} ${className}`.trim()}
+            className={className.trim()}
         />
     );
 }
