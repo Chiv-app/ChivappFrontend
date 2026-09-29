@@ -14,6 +14,7 @@ import { Icon } from "@iconify/react";
 import BookingReopenQuoteModal from "@/components/booking/booking-reopen-quote-modal";
 import BookingRepertoirePicker from "@/components/booking/booking-repertoire-picker";
 import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-modal";
+import BookingGuestUpsellModal from "@/components/booking/booking-guest-upsell-modal";
 import ContractDocumentView from "@/components/booking/contract-document-view";
 import SignaturePad from "@/components/ui/signature-pad";
 import { formatCurrency } from "@/lib/booking-labels";
@@ -55,6 +56,7 @@ export default function BookingContractConfirmCard({
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
     const [uploadedSignatureUrl, setUploadedSignatureUrl] = useState<string | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isUpsellModalOpen, setIsUpsellModalOpen] = useState(false);
     const [paymentType, setPaymentType] = useState<"advance" | "full">(
         booking.advance_amount != null ? "advance" : "full",
     );
@@ -86,7 +88,11 @@ export default function BookingContractConfirmCard({
             if (contract?.contractor_signature_url && !uploadedSignatureUrl) {
                 setUploadedSignatureUrl(contract.contractor_signature_url);
             }
-            setIsPaymentModalOpen(true);
+            if (user && user.has_password === false) {
+                setIsUpsellModalOpen(true);
+            } else {
+                setIsPaymentModalOpen(true);
+            }
             return;
         }
 
@@ -114,7 +120,11 @@ export default function BookingContractConfirmCard({
                 "firma-contrato",
             );
             setUploadedSignatureUrl(signatureImageUrl);
-            setIsPaymentModalOpen(true);
+            if (user && user.has_password === false) {
+                setIsUpsellModalOpen(true);
+            } else {
+                setIsPaymentModalOpen(true);
+            }
         } catch (error) {
             addToast({
                 title: "Error al registrar firma",
@@ -346,6 +356,20 @@ export default function BookingContractConfirmCard({
                     </Button>
                 </form>
             </CardBody>
+
+            <BookingGuestUpsellModal
+                isOpen={isUpsellModalOpen}
+                onClose={() => setIsUpsellModalOpen(false)}
+                onSkip={() => {
+                    setIsUpsellModalOpen(false);
+                    setIsPaymentModalOpen(true);
+                }}
+                onSuccess={() => {
+                    setIsUpsellModalOpen(false);
+                    setIsPaymentModalOpen(true);
+                    // Update local user state if possible, but redirecting to MercadoPago is fine
+                }}
+            />
 
             <BookingMercadoPagoModal
                 isOpen={isPaymentModalOpen}
