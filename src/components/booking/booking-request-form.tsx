@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 import { Icon } from "@iconify/react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
@@ -11,6 +12,10 @@ import {
   Textarea,
   addToast,
   TimeInput,
+  Input,
+  Card,
+  CardBody,
+  Divider,
 } from "@heroui/react";
 import {
   getLocalTimeZone,
@@ -59,6 +64,12 @@ type Props = {
 };
 
 export default function BookingRequestForm({ musician, onSuccess }: Props) {
+  const { user } = useAuth();
+  const [showAuthSection, setShowAuthSection] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slots, setSlots] = useState<AvailabilityOut[]>([]);
@@ -162,7 +173,25 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       return;
     }
 
+    
+    if (!user && !showAuthSection) {
+      setShowAuthSection(true);
+      return;
+    }
+
+    if (!user) {
+      if (!contactName || !contactPhone || !contactEmail) {
+         addToast({ title: "Faltan datos de contacto", description: "Completa tus datos para enviar la cotización.", color: "warning" });
+         return;
+      }
+      // TODO: Here we should call a backend endpoint for silent registration / guest booking
+      addToast({ title: "Modo invitado", description: "Enviaremos la cotización a tu correo (Simulación).", color: "success" });
+      onSuccess?.();
+      return;
+    }
+    
     setIsSubmitting(true);
+
     try {
       const booking = await createBooking({
         musician_id: musician.id,
@@ -304,36 +333,144 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         }}
       />
 
-      {/* Footer con Trust Badge (Mercado Pago) */}
-      <div className="pt-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full shrink-0">
-            <Icon icon="lucide:shield-check" className="w-4 h-4" />
+      {/* Footer / Continue / Auth Section */}
+      {(!user && !showAuthSection) && (
+        <div className="pt-2 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full shrink-0">
+              <Icon icon="lucide:shield-check" className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <p className="text-[0.65rem] text-foreground font-bold leading-tight">
+                Pago Protegido
+              </p>
+              <p className="text-[0.6rem] text-default-500 leading-tight mt-0.5">
+                por <span className="font-bold text-blue-500">mercado</span>
+                <span className="font-bold text-blue-900 dark:text-blue-400">
+                  pago
+                </span>
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <p className="text-[0.65rem] text-foreground font-bold leading-tight">
-              Pago Protegido
-            </p>
-            <p className="text-[0.6rem] text-default-500 leading-tight mt-0.5">
-              por <span className="font-bold text-blue-500">mercado</span>
-              <span className="font-bold text-blue-900 dark:text-blue-400">
-                pago
-              </span>
-            </p>
-          </div>
+          <Button
+            color="primary"
+            radius="lg"
+            size="md"
+            onPress={() => setShowAuthSection(true)}
+            isDisabled={!canSubmit}
+            className="w-full md:w-auto font-bold shadow-md"
+            endContent={<Icon icon="lucide:arrow-right" className="w-4 h-4" />}
+          >
+            Continuar
+          </Button>
         </div>
-        <Button
-          type="submit"
-          color="primary"
-          radius="lg"
-          size="md"
-          isLoading={isSubmitting}
-          isDisabled={!canSubmit}
-          className="font-bold shadow-md"
-        >
-          Solicitar Reserva
-        </Button>
-      </div>
+      )}
+
+      {(!user && showAuthSection) && (
+        <div className="flex flex-col gap-3 mt-2 border-t border-divider pt-4 animate-appearance-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Icon icon="lucide:user-circle" className="text-primary w-5 h-5" />
+              <h3 className="text-sm font-bold m-0 uppercase tracking-wide">Tus Datos de Contacto</h3>
+            </div>
+            <Button
+              as="a"
+              href={(process.env.NEXT_PUBLIC_API_URL || "/api/v1") + "/auth/oauth/google/start?intent=login"}
+              variant="flat"
+              radius="md"
+              size="sm"
+              className="bg-default-100 text-foreground font-bold shadow-sm"
+              startContent={<Icon icon="logos:google-icon" width={14} />}
+            >
+              Usar Google
+            </Button>
+          </div>
+
+          <Card className="bg-default-50/50 border border-default-200 shadow-none overflow-visible">
+            <CardBody className="p-4 flex flex-col gap-3 relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <Input
+                  label="Nombre completo"
+                  placeholder="Ej. Juan Pérez"
+                  variant="bordered"
+                  value={contactName}
+                  onValueChange={setContactName}
+                  classNames={{ label: "uppercase font-bold tracking-wider text-[0.55rem]", input: "font-bold text-xs" }}
+                />
+                <Input
+                  label="Celular"
+                  placeholder="+51 999 999 999"
+                  type="tel"
+                  variant="bordered"
+                  value={contactPhone}
+                  onValueChange={setContactPhone}
+                  classNames={{ label: "uppercase font-bold tracking-wider text-[0.55rem]", input: "font-bold text-xs" }}
+                />
+                <Input
+                  label="Correo"
+                  placeholder="correo@ejemplo.com"
+                  type="email"
+                  variant="bordered"
+                  value={contactEmail}
+                  onValueChange={setContactEmail}
+                  classNames={{ label: "uppercase font-bold tracking-wider text-[0.55rem]", input: "font-bold text-xs" }}
+                />
+              </div>
+
+              <div className="pt-1 flex justify-end items-center gap-4">
+                <p className="text-[10px] text-default-500 text-right leading-tight m-0 hidden md:block">
+                  Crearemos tu cuenta automáticamente.<br /><b>Sin contraseñas.</b>
+                </p>
+                <Button
+                  type="submit"
+                  color="primary"
+                  radius="lg"
+                  size="md"
+                  isLoading={isSubmitting}
+                  className="w-full md:w-auto font-bold shadow-md"
+                  endContent={<Icon icon="lucide:send" className="w-4 h-4" />}
+                >
+                  Solicitar Reserva
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {user && (
+        <div className="pt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full shrink-0">
+              <Icon icon="lucide:shield-check" className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col">
+              <p className="text-[0.65rem] text-foreground font-bold leading-tight">
+                Pago Protegido
+              </p>
+              <p className="text-[0.6rem] text-default-500 leading-tight mt-0.5">
+                por <span className="font-bold text-blue-500">mercado</span>
+                <span className="font-bold text-blue-900 dark:text-blue-400">
+                  pago
+                </span>
+              </p>
+            </div>
+          </div>
+          <Button
+            type="submit"
+            color="primary"
+            radius="lg"
+            size="md"
+            isLoading={isSubmitting}
+            isDisabled={!canSubmit}
+            className="font-bold shadow-md"
+          >
+            Solicitar Reserva
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
