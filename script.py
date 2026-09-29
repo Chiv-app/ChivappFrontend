@@ -1,49 +1,49 @@
 import re
 
-with open("src/components/home/stats-view.tsx", "r", encoding="utf-8") as f:
+with open("src/components/musician/musician-profile-wizard.tsx", "r", encoding="utf-8") as f:
     content = f.read()
 
-# Add Card imports
-if "Card" not in content:
+if "Form," not in content:
     content = content.replace(
-        'import type { PlatformStatsOut } from "@/types/api";',
-        'import type { PlatformStatsOut } from "@/types/api";\nimport { Card, CardBody } from "@heroui/react";'
+        'Button,\n    Card,',
+        'Button,\n    Card,\n    Form,'
     )
 
-old_stat = """<div
-                            key={item.label}
-                            className="flex flex-col items-center text-center gap-2 sm:gap-3"
+old_body_start = '<CardBody className="p-6">{renderStepContent()}</CardBody>'
+new_body_start = '<CardBody className="p-6"><Form onSubmit={(e) => { e.preventDefault(); handleNext(); }} validationBehavior="native" className="w-full">{renderStepContent()}</Form></CardBody>'
+
+content = content.replace(old_body_start, new_body_start)
+
+# Change the "Guardar y Continuar" button to be a submit button instead of directly calling handleNext on press.
+# Wait, actually since the button is outside the Card (in sticky bottom footer), we need to link it using form="wizard-form"
+old_body_start = '<CardBody className="p-6"><Form onSubmit={(e) => { e.preventDefault(); handleNext(); }} validationBehavior="native" className="w-full">{renderStepContent()}</Form></CardBody>'
+new_body_start_2 = '<CardBody className="p-6"><Form id="wizard-form" onSubmit={(e) => { e.preventDefault(); handleNext(); }} validationBehavior="native" className="w-full">{renderStepContent()}</Form></CardBody>'
+content = content.replace(old_body_start, new_body_start_2)
+
+old_button = """                        <Button
+                            color="primary"
+                            variant="solid"
+                            onPress={handleNext}
+                            isLoading={isSaving}
+                            className="font-semibold shadow-soft hover:shadow-elevated px-6"
+                            endContent={<Icon icon="material-symbols:arrow-forward" width={20} />}
                         >
-                            <div className="flex size-11 sm:size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                                <Icon icon={item.icon} width={24} height={24} />
-                            </div>
-                            <div className="text-3xl sm:text-4xl font-bold tabular-nums leading-none text-foreground">
-                                {item.value}
-                            </div>
-                            <div className="text-sm text-default-500 font-medium">
-                                {item.label}
-                            </div>
-                        </div>"""
+                            {activeStep < WIZARD_STEPS.length - 1 ? "Guardar y Continuar" : "Guardar Perfil"}
+                        </Button>"""
 
-new_stat = """<Card
-                            key={item.label}
-                            shadow="sm"
-                            className="border border-default-200/60 bg-content1/50 backdrop-blur-md"
+new_button = """                        <Button
+                            type="submit"
+                            form="wizard-form"
+                            color="primary"
+                            variant="solid"
+                            isLoading={isSaving}
+                            className="font-semibold shadow-soft hover:shadow-elevated px-6"
+                            endContent={<Icon icon="material-symbols:arrow-forward" width={20} />}
                         >
-                            <CardBody className="flex flex-col items-center text-center gap-2 sm:gap-3 p-6 sm:p-8">
-                                <div className="flex size-11 sm:size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                                    <Icon icon={item.icon} width={24} height={24} />
-                                </div>
-                                <div className="text-3xl sm:text-4xl font-bold tabular-nums leading-none text-foreground">
-                                    {item.value}
-                                </div>
-                                <div className="text-sm text-default-500 font-medium">
-                                    {item.label}
-                                </div>
-                            </CardBody>
-                        </Card>"""
+                            {activeStep < WIZARD_STEPS.length - 1 ? "Guardar y Continuar" : "Guardar Perfil"}
+                        </Button>"""
 
-content = content.replace(old_stat, new_stat)
+content = content.replace(old_button, new_button)
 
-with open("src/components/home/stats-view.tsx", "w", encoding="utf-8") as f:
+with open("src/components/musician/musician-profile-wizard.tsx", "w", encoding="utf-8") as f:
     f.write(content)
