@@ -874,7 +874,7 @@ export default function MusicianDetailView({
 
             {!isOwner ? (
                 <BookingRequestModal
-                    musician={{ id: musician.id, name: musician.name }}
+                    musician={{ id: musician.id, name: musician.name, image: musician.image ?? undefined }}
                     isOpen={isBookingOpen}
                     onOpenChange={onBookingOpenChange}
                 />

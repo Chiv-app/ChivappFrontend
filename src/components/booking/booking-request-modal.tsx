@@ -13,6 +13,7 @@ import BookingRequestForm from "@/components/booking/booking-request-form";
 type MusicianRef = {
   id: string;
   name: string;
+  image?: string | null;
 };
 
 type Props = {
@@ -58,9 +59,9 @@ export default function BookingRequestModal({
                 <div className="flex items-center gap-3.5 mr-8">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=0891b2&color=fff&rounded=true&bold=true&size=128`}
+                    src={musician.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=0891b2&color=fff&rounded=true&bold=true&size=128`}
                     alt={musician.name}
-                    className="w-11 h-11 rounded-full shadow-sm border border-default-200"
+                    className="w-11 h-11 rounded-full shadow-sm border border-default-200 object-cover"
                   />
                   <div className="flex-1">
                     <h2 className="text-base font-bold leading-tight text-foreground">

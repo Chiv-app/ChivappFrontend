@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 import MusicianDetailView from "@/components/musician/musician-detail-view";
 import { ApiError } from "@/lib/api";
@@ -56,6 +56,10 @@ async function loadMusician(id: string): Promise<MusicianDetail> {
 export default async function MusicianDetailPage({ params }: PageProps) {
     const { id } = await params;
     const musician = await loadMusician(id);
+    const decodedId = decodeURIComponent(id);
+    if (musician.slug && musician.slug !== decodedId) {
+        permanentRedirect(`/musicians/${musician.slug}`);
+    }
     const description =
         musician.bio ??
         musician.portfolioDescription ??
