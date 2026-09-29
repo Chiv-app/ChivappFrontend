@@ -46,6 +46,13 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    function handleCopyPaymentLink() {
+        const link = `${window.location.origin}/contractor/bookings/${booking!.id}`;
+        navigator.clipboard.writeText(link);
+        addToast({ title: "Enlace copiado", description: "Enlace de pago copiado al portapapeles.", color: "success" });
+    }
+
     const pathname = usePathname();
     const checkedMpRef = useRef(false);
 
@@ -360,7 +367,17 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                     {!isMemberView &&
                     role === "musician" &&
                     booking.status === "payment_pending" ? (
-                        <BookingPaymentStatusCard booking={booking} kind="full" />
+                        <div className="flex flex-col gap-4">
+                            <BookingPaymentStatusCard booking={booking} kind="full" />
+                            <Button 
+                                color="primary" 
+                                variant="flat" 
+                                startContent={<Icon icon="lucide:link" width={18} />}
+                                onPress={handleCopyPaymentLink}
+                            >
+                                Copiar Link de Pago para el Cliente
+                            </Button>
+                        </div>
                     ) : null}
 
                     {!isMemberView && role === "contractor" && !confirmed ? (
