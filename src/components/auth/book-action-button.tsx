@@ -62,37 +62,16 @@ export default function BookActionButton({
                     radius={radius}
                     size={size}
                     className={`${className} ${widthClass}`}
-                    onPress={() => openLogin({ redirect: bookRedirect })}
+                    onPress={onBook}
                     endContent={
-                        <Icon icon="material-symbols:login" width={20} height={20} />
+                        <Icon icon="material-symbols:calendar-month" width={22} height={22} />
                     }
-                >
-                    Inicia sesión para contratar
-                </Button>
-                {showHelper && (
-                    <p className="text-sm text-default-500 max-w-xs leading-snug">
-                        Debes iniciar sesión y verificar tus datos para poder generar una reserva.
-                    </p>
-                )}
-            </div>
-        );
-    }
-
-    if (user.role !== "contractor") {
-        return (
-            <div className={fullWidth ? "w-full" : "flex flex-col gap-2"}>
-                <Button
-                    isDisabled
-                    color="primary"
-                    radius={radius}
-                    size={size}
-                    className={`${className} ${widthClass}`}
                 >
                     {label}
                 </Button>
                 {showHelper && (
                     <p className="text-sm text-default-500 max-w-xs leading-snug">
-                        Solo los contratistas pueden enviar solicitudes de reserva.
+                        Reserva en segundos sin necesidad de crear cuenta.
                     </p>
                 )}
             </div>
