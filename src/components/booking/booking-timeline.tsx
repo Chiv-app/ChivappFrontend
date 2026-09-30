@@ -171,7 +171,7 @@ function PhaseRail({
     const trackTop = compact ? "top-4" : "top-[1.125rem] sm:top-5";
 
     return (
-        <nav aria-label="Fases de la reserva" className="w-full overflow-x-auto pb-1.5 scrollbar-none">
+        <nav aria-label="Fases de la reserva" className={`w-full overflow-x-auto scrollbar-none ${compact ? "pb-0" : "pb-1.5"}`}>
             <ol
                 className={`relative grid gap-x-1 sm:gap-x-1.5 ${
                     compact ? "min-w-[480px] sm:min-w-0" : "min-w-[560px] sm:min-w-0"
@@ -209,7 +209,7 @@ function PhaseRail({
                             <PhaseMarker step={step} size={markerSize} />
                         </div>
                         <span
-                            className={`mt-2 w-full font-semibold leading-tight line-clamp-2 ${
+                            className={`${compact ? "mt-0.5" : "mt-2"} w-full font-semibold leading-tight line-clamp-2 ${
                                 compact
                                     ? "text-[9px] sm:text-[10px] md:text-xs"
                                     : "text-[10px] sm:text-xs"
@@ -462,7 +462,7 @@ function StickyCollapsingHorizontalTimeline({
     const navbarPill = (
         <div
             ref={pillRef}
-            className="flex items-center gap-2 max-w-full rounded-[2rem] border border-white/5 bg-[#0b1118]/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] px-5 py-2.5 opacity-0 pointer-events-auto"
+            className="flex items-center gap-3 max-w-full rounded-full bg-content2/40 shadow-[inset_0_1px_4px_rgba(0,0,0,0.2)] border border-default-200/50 px-4 py-1 opacity-0 pointer-events-auto h-12"
             aria-hidden={!collapsed}
         >
             {backHref ? <TimelineBackButton href={backHref} /> : null}
@@ -492,7 +492,7 @@ function StickyCollapsingHorizontalTimeline({
                 className={`xl:hidden fixed z-40 left-0 right-0 pointer-events-none flex justify-center px-4 top-[calc(var(--app-navbar-height)+0.75rem)] opacity-0`}
                 aria-hidden={!collapsed}
             >
-                <div className="pointer-events-auto flex items-center gap-2 max-w-full rounded-[2rem] border border-white/5 bg-[#0b1118]/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] px-5 py-2.5">
+                <div className="pointer-events-auto flex items-center gap-2 max-w-full rounded-[2rem] border border-default-200/60 bg-content1/85 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] px-5 py-2.5">
                     {backHref ? <TimelineBackButton href={backHref} /> : null}
                     <div className="min-w-0 flex-1">
                         <CollapsedPhaseRail steps={timeline.steps} />
