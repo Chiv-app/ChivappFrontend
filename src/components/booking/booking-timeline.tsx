@@ -196,50 +196,56 @@ function PhaseRail({
                     />
                 </li>
 
-                {steps.map((step, index) => (
+                                {steps.map((step, index) => (
                     <li
                         key={step.id}
                         className="relative z-10 flex flex-col items-center text-center min-w-0 px-1"
                     >
-                        <div
-                            className={`flex items-center justify-center ${
-                                compact ? "h-8" : "h-9 sm:h-10"
-                            }`}
+                        <button
+                            type="button"
+                            className="flex flex-col items-center group focus:outline-none transition-transform active:scale-95 cursor-pointer w-full"
+                            aria-label={`Ver fase ${step.title}`}
                         >
-                            <PhaseMarker step={step} size={markerSize} />
-                        </div>
-                        <span
-                            className={`${compact ? "mt-0.5" : "mt-2"} w-full font-semibold leading-tight line-clamp-2 ${
-                                compact
-                                    ? "text-[9px] sm:text-[10px] md:text-xs"
-                                    : "text-[10px] sm:text-xs"
-                            } ${
-                                step.state === "current"
-                                    ? "text-primary"
-                                    : step.state === "done"
-                                      ? "text-success"
-                                      : step.state === "skipped"
-                                        ? "text-default-400"
-                                        : "text-default-600"
-                            }`}
-                            title={step.title}
-                        >
-                            {compact ? (
-                                phaseLabel(step, true)
-                            ) : (
-                                <>
-                                    <span className="hidden sm:inline">{step.title}</span>
-                                    <span className="sm:hidden">
-                                        {phaseLabel(step, true)}
-                                    </span>
-                                </>
-                            )}
-                        </span>
-                        {!compact ? (
-                            <span className="mt-1 text-[9px] sm:text-[10px] tabular-nums text-default-400">
-                                {index + 1}/{steps.length}
+                            <div
+                                className={`flex items-center justify-center transition-transform group-hover:scale-110 ${
+                                    compact ? "h-8" : "h-9 sm:h-10"
+                                }`}
+                            >
+                                <PhaseMarker step={step} size={markerSize} />
+                            </div>
+                            <span
+                                className={`${compact ? "mt-0.5" : "mt-2"} w-full font-semibold leading-tight line-clamp-2 transition-colors group-hover:text-foreground ${
+                                    compact
+                                        ? "text-[9px] sm:text-[10px] md:text-xs"
+                                        : "text-[10px] sm:text-xs"
+                                } ${
+                                    step.state === "current"
+                                        ? "text-primary group-hover:text-primary-500"
+                                        : step.state === "done"
+                                          ? "text-success group-hover:text-success-500"
+                                          : step.state === "skipped"
+                                            ? "text-default-400 group-hover:text-default-600"
+                                            : "text-default-600 group-hover:text-default-800"
+                                }`}
+                                title={step.title}
+                            >
+                                {compact ? (
+                                    phaseLabel(step, true)
+                                ) : (
+                                    <>
+                                        <span className="hidden sm:inline">{step.title}</span>
+                                        <span className="sm:hidden">
+                                            {phaseLabel(step, true)}
+                                        </span>
+                                    </>
+                                )}
                             </span>
-                        ) : null}
+                            {!compact ? (
+                                <span className="mt-1 text-[9px] sm:text-[10px] tabular-nums text-default-400 group-hover:text-default-500 transition-colors opacity-0">
+                                    -
+                                </span>
+                            ) : null}
+                        </button>
                     </li>
                 ))}
             </ol>

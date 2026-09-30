@@ -217,6 +217,20 @@ export default function BookingCommitmentCard({
                                 ) : null}
                             </div>
                         )}
+                        {coords ? (
+                            <div className="mt-4 rounded-xl overflow-hidden border border-default-200/60 aspect-video w-full bg-default-100">
+                                <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    frameBorder="0" 
+                                    scrolling="no" 
+                                    marginHeight={0} 
+                                    marginWidth={0} 
+                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.005},${coords.lat - 0.005},${coords.lng + 0.005},${coords.lat + 0.005}&layer=mapnik&marker=${coords.lat},${coords.lng}`} 
+                                    className="w-full h-full grayscale-[0.2] contrast-125 dark:opacity-80 transition-opacity"
+                                />
+                            </div>
+                        ) : null}
                     </div>
                 </section>
 
