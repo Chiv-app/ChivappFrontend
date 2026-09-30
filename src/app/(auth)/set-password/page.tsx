@@ -27,6 +27,7 @@ function SetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
+    const callbackUrl = searchParams.get("callbackUrl");
     const { user, isLoading: authLoading, refresh } = useAuth();
 
     const [preview, setPreview] = useState<PasswordSetupPreviewOut | null>(null);
@@ -71,7 +72,7 @@ function SetPasswordForm() {
             return;
         }
         if (user.has_password) {
-            router.replace(getPostLoginPath(user.role, user.is_verified));
+            router.replace(callbackUrl || getPostLoginPath(user.role, user.is_verified));
         }
     }, [authLoading, user, token, router]);
 
@@ -107,7 +108,9 @@ function SetPasswordForm() {
                 description: "Ya puedes usar la app con tu correo y contraseña.",
                 color: "success",
             });
-            if (updated.is_ensemble_member) {
+            if (callbackUrl) {
+                router.replace(callbackUrl);
+            } else if (updated.is_ensemble_member) {
                 router.replace("/musician/bookings");
             } else {
                 router.replace(getPostLoginPath(updated.role, updated.is_verified));

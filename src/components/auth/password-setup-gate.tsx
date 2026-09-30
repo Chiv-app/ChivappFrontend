@@ -9,7 +9,7 @@ const ALLOWED_PREFIXES = [
     "/set-password",
     "/invite/",
     "/complete-role",
-    "/contractor/bookings",
+    
     "/api/",
 ];
 
@@ -35,7 +35,7 @@ export default function PasswordSetupGate({
         if (!isClient || isLoading || !user) return;
         if (user.has_password !== false) return;
         if (isAllowed) return;
-        router.replace("/set-password");
+        router.replace("/set-password?callbackUrl=" + encodeURIComponent(pathname));
     }, [isClient, isLoading, user, isAllowed, router]);
 
     // Keep children during SSR/hydration so auth cannot swap the tree early.
