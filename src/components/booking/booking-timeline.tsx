@@ -258,7 +258,54 @@ function CollapsedPhaseRail({
 }: {
     steps: BookingTimelineStep[];
 }) {
-    return <PhaseRail steps={steps} compact />;
+    return (
+        <nav aria-label="Fases de la reserva" className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
+            {steps.map((step, index) => {
+                const isLast = index === steps.length - 1;
+                const isDone = step.state === "done";
+                const isCurrent = step.state === "current";
+                const isSkipped = step.state === "skipped";
+
+                return (
+                    <div key={step.id} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <button
+                            type="button"
+                            className={`flex items-center gap-1.5 focus:outline-none transition-transform active:scale-95 cursor-pointer rounded-full px-2 sm:px-3 py-1 sm:py-1.5 ${
+                                isCurrent
+                                    ? "bg-primary/20 text-primary border border-primary/30"
+                                    : isDone
+                                      ? "text-success hover:bg-success/10"
+                                      : "text-default-500 hover:text-default-700"
+                            }`}
+                            title={step.title}
+                        >
+                            <span
+                                className={`flex items-center justify-center size-5 sm:size-6 rounded-full text-[10px] sm:text-xs font-bold ${
+                                    isDone
+                                        ? "bg-success text-success-foreground"
+                                        : isCurrent
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-default-200 text-default-600"
+                                }`}
+                            >
+                                {isDone ? (
+                                    <Icon icon="lucide:check" width={12} strokeWidth={3} />
+                                ) : (
+                                    index + 1
+                                )}
+                            </span>
+                            <span className="text-xs sm:text-sm font-semibold tracking-wide">
+                                {step.title}
+                            </span>
+                        </button>
+                        {!isLast ? (
+                            <Icon icon="lucide:chevron-right" width={14} className="text-default-400" />
+                        ) : null}
+                    </div>
+                );
+            })}
+        </nav>
+    );
 }
 
 function ExpandedPhaseStepper({
@@ -468,7 +515,7 @@ function StickyCollapsingHorizontalTimeline({
     const navbarPill = (
         <div
             ref={pillRef}
-            className="flex items-center gap-3 max-w-full rounded-full bg-content2/40 shadow-[inset_0_1px_4px_rgba(0,0,0,0.2)] border border-default-200/50 px-4 py-1 opacity-0 pointer-events-auto h-12"
+            className="flex items-center gap-3 max-w-full px-2 opacity-0 pointer-events-auto h-12"
             aria-hidden={!collapsed}
         >
             {backHref ? <TimelineBackButton href={backHref} /> : null}

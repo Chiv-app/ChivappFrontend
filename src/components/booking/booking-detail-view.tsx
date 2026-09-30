@@ -331,15 +331,8 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
             <div className="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
                 <aside className="order-2 lg:order-1 lg:col-span-5 lg:sticky lg:top-[calc(var(--app-navbar-height)+var(--booking-timeline-height,0px)+0.75rem)] lg:self-start min-w-0">
-                    <BookingCommitmentCard
+                                        <BookingCommitmentCard
                         booking={booking}
-                        confirmed={confirmed}
-                        canEdit={canEditCommitment}
-                        hasPendingChanges={hasPendingChanges}
-                        role={role}
-                        onEdit={() => setIsEditOpen(true)}
-                        onReviewPending={() => setIsPendingOpen(true)}
-                        layout="sidebar"
                     />
                 </aside>
 

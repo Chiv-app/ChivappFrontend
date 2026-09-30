@@ -1,348 +1,212 @@
-"use client";
-
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-    Button,
-    Card,
-    CardBody,
-    CardHeader,
-    Chip,
-    Input,
-    Textarea,
-    addToast,
-} from "@heroui/react";
-import { Icon } from "@iconify/react";
-import { quoteBooking, rejectBooking } from "@/lib/bookings";
-import { formatCurrency, formatQuotedAt } from "@/lib/booking-labels";
-import { getPlatformPaymentInstructions } from "@/lib/payments";
-import { platformFeeAmount } from "@/lib/platform-fee";
-import { useAuth } from "@/contexts/auth-context";
-import { useProfileVerification } from "@/hooks/use-profile-verification";
+import { useState, useTransition } from "react";
+import { formatCurrency } from "@/lib/booking-labels";
 import type { BookingOut } from "@/types/api";
+import { Icon } from "@iconify/react";
+import { Button, Checkbox, Textarea, Chip } from "@heroui/react";
+import { quoteBooking, rejectBooking } from "@/lib/bookings";
+import { addToast } from "@heroui/react";
 
-function roundMoney(value: number): number {
-    return Math.round(value * 100) / 100;
-}
-
-type Props = {
+export default function BookingQuoteForm({
+    booking,
+    onUpdated,
+}: {
     booking: BookingOut;
-    onUpdated: (booking: BookingOut) => void;
-};
-
-export default function BookingQuoteForm({ booking, onUpdated }: Props) {
-    const { user } = useAuth();
-    const { isVerified: profileIsVerified, isLoading } = useProfileVerification("musician", true, user?.is_verified);
-    const isLocked = !isLoading && !profileIsVerified;
-
-    const isEditMode = booking.status === "accepted";
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isRejecting, setIsRejecting] = useState(false);
-    const [priceAgreed, setPriceAgreed] = useState("");
-    const [quoteNotes, setQuoteNotes] = useState("");
-    const [locationAddress, setLocationAddress] = useState(booking.location_address);
-    const [locationCity, setLocationCity] = useState(booking.location_city ?? "");
-    const [locationReference, setLocationReference] = useState(
-        booking.location_reference ?? "",
+    onUpdated?: (updated: BookingOut) => void;
+}) {
+    const isEditMode =
+        booking.status === "accepted" ||
+        (booking.status === "requested" && booking.price_agreed != null);
+        
+    const [priceAgreed, setPriceAgreed] = useState<string>(
+        booking.price_agreed?.toString() ?? "",
     );
+    const [quoteNotes, setQuoteNotes] = useState(booking.musician_quote_notes ?? "");
+    const [includesTravel, setIncludesTravel] = useState(true);
 
-    if (isLocked) {
-        return (
-            <Card className="border border-warning-200 bg-warning-50/50 shadow-soft">
-                <CardBody className="gap-3 p-6 text-center items-center justify-center">
-                    <div className="w-12 h-12 bg-warning-100 text-warning-600 rounded-full flex items-center justify-center mb-1">
-                        <Icon icon="material-symbols:edit-document" width={28} />
-                    </div>
-                    <h3 className="text-lg font-bold">Verificación requerida</h3>
-                    <p className="text-sm text-default-600 max-w-sm">
-                        Para poder aceptar contratos y fijar precios, debes completar tu perfil al 100% y ser validado por nuestro equipo.
-                    </p>
-                    <Button
-                        as="a"
-                        href="/musician/profile"
-                        color="warning"
-                        variant="flat"
-                        className="mt-2 font-semibold"
-                    >
-                        Completar mi perfil
-                    </Button>
-                </CardBody>
-            </Card>
-        );
-    }
-    const [platformFeePercent, setPlatformFeePercent] = useState<number>(
-        booking.platform_fee_percent != null
-            ? Number(booking.platform_fee_percent)
-            : 2,
-    );
+    const [isPendingSubmit, startSubmit] = useTransition();
+    const [isPendingReject, startReject] = useTransition();
+    const isSubmitting = isPendingSubmit;
+    const isRejecting = isPendingReject;
 
-    useEffect(() => {
-        setPriceAgreed(
-            booking.price_agreed != null ? String(Number(booking.price_agreed)) : "",
-        );
-        setQuoteNotes(booking.musician_quote_notes ?? "");
-        setLocationAddress(booking.location_address);
-        setLocationCity(booking.location_city ?? "");
-        setLocationReference(booking.location_reference ?? "");
-        if (booking.platform_fee_percent != null) {
-            setPlatformFeePercent(Number(booking.platform_fee_percent));
+    const priceNum = Number(priceAgreed) || 0;
+    // According to wireframe logic, platform takes 5% from total.
+    const netAmount = priceNum * 0.95;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!priceAgreed || isNaN(Number(priceAgreed))) return;
+
+        let finalNotes = quoteNotes;
+        if (includesTravel) {
+            const travelText = `Incluye traslado y viáticos a ${booking.location_city || "la ciudad"}.`;
+            if (!finalNotes.includes(travelText)) {
+                finalNotes = finalNotes ? `${finalNotes}\n${travelText}` : travelText;
+            }
         }
-    }, [booking]);
 
-    useEffect(() => {
-        let cancelled = false;
-        getPlatformPaymentInstructions()
-            .then((data) => {
-                if (cancelled) return;
-                // Al cotizar siempre usamos la comisin más reciente del administrador
-                setPlatformFeePercent(Number(data.platform_fee_percent ?? 2));
-            })
-            .catch(() => {
-                // Keep local/default percent if instructions are unavailable.
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    const pricePreview = Number(priceAgreed);
-    const feePreview = useMemo(() => {
-        if (!pricePreview || pricePreview <= 0) return 0;
-        return platformFeeAmount({
-            price_agreed: pricePreview,
-            platform_fee_percent: platformFeePercent,
+        startSubmit(async () => {
+            try {
+                const res = await quoteBooking(booking.id, {
+                    price_agreed: Number(priceAgreed),
+                    musician_quote_notes: finalNotes,
+                    location_address: booking.location_address,
+                    location_city: booking.location_city ?? undefined,
+                    location_reference: booking.location_reference ?? undefined,
+                });
+                onUpdated?.(res);
+                addToast({ title: "Propuesta enviada", color: "success" });
+            } catch (err: any) {
+                addToast({ title: err.message || "Error al enviar", color: "danger" });
+            }
         });
-    }, [pricePreview, platformFeePercent]);
-    const contractorTotalPreview =
-        pricePreview > 0 ? roundMoney(pricePreview + feePreview) : null;
+    };
 
-    async function handleSubmit(event: FormEvent) {
-        event.preventDefault();
-        const price = Number(priceAgreed);
-        if (!price || price <= 0) {
-            addToast({
-                title: "Precio requerido",
-                description: "Indica un precio válido para tu cotización.",
-                color: "warning",
-            });
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const updated = await quoteBooking(booking.id, {
-                price_agreed: price,
-                advance_amount: price,
-                musician_quote_notes: quoteNotes.trim() || null,
-                location_address: locationAddress.trim() || null,
-                location_city: locationCity.trim() || null,
-                location_reference: locationReference.trim() || null,
-            });
-            onUpdated(updated);
-            addToast({
-                title: isEditMode ? "Cotización actualizada" : "Cotización enviada",
-                description: isEditMode
-                    ? "El contratista fue notificado sobre los cambios en tu propuesta."
-                    : "El contratista fue notificado para revisar tu propuesta.",
-                color: "success",
-            });
-        } catch (error) {
-            addToast({
-                title: "No se pudo enviar",
-                description: error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
-    async function handleReject() {
-        if (isEditMode) return;
-
-        setIsRejecting(true);
-        try {
-            const updated = await rejectBooking(booking.id);
-            onUpdated(updated);
-            addToast({ title: "Solicitud rechazada", color: "success" });
-        } catch (error) {
-            addToast({
-                title: "Error",
-                description: error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setIsRejecting(false);
-        }
-    }
-
-    const quotedAtLabel = formatQuotedAt(booking.quoted_at);
+    const handleReject = () => {
+        if (!window.confirm("¿Seguro que deseas rechazar/cancelar esta reserva?")) return;
+        startReject(async () => {
+            try {
+                const res = await rejectBooking(booking.id, { rejection_reason: "No puedo atender la solicitud." });
+                onUpdated?.(res);
+                addToast({ title: "Reserva rechazada", color: "success" });
+            } catch (err: any) {
+                addToast({ title: err.message || "Error al rechazar", color: "danger" });
+            }
+        });
+    };
 
     return (
-        <Card className="shadow-soft border border-default-200 bg-content1 rounded-[2rem] p-5 sm:p-7 flex flex-col gap-6">
-            {/* Header */}
-            <div className="flex justify-between items-start gap-4">
+        <div className="w-full h-full flex flex-col rounded-2xl border border-default-200/50 bg-[#0C121A] p-6 sm:p-8">
+            <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-                        {isEditMode ? "Editar cotización" : "Responder solicitud"}
+                    <h2 className="text-2xl font-bold text-white">
+                        {isEditMode ? "Editar propuesta" : "Enviar propuesta"}
                     </h2>
-                    {isEditMode && quotedAtLabel ? (
-                        <p className="text-xs text-default-400 mt-1">
-                            Última actualización: {quotedAtLabel}
-                        </p>
-                    ) : null}
+                    <p className="text-sm text-default-400 mt-1">
+                        Ingresa el precio total para el evento.
+                    </p>
                 </div>
-                {isEditMode ? (
-                    <Chip size="sm" color="primary" variant="flat" className="px-1 font-medium">
-                        En revisión del contratista
-                    </Chip>
-                ) : null}
+                <div className="flex items-center gap-1.5 text-primary text-sm font-medium">
+                    <Icon icon="lucide:shield-check" width={16} />
+                    Pago protegido
+                </div>
             </div>
 
-            <p className="text-sm text-default-500 leading-relaxed -mt-3">
-                {isEditMode
-                    ? "Puedes ajustar tu propuesta mientras el contratista no la haya aceptado. Cada cambio genera una nueva alerta."
-                    : "Indica tu precio y qué información adicional necesitas del contratista."}
-            </p>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <div className="flex flex-col gap-4">
-                    <Input
-                        label="Precio del servicio (S/)"
-                        type="number"
-                        min="1"
-                        value={priceAgreed}
-                        onValueChange={setPriceAgreed}
-                        variant="bordered"
-                        isRequired
-                        description="Lo que tú recibes por el servicio."
-                        classNames={{ inputWrapper: "border-default-200" }}
-                    />
+            <form onSubmit={handleSubmit} className="flex flex-col gap-8 mt-6">
+                {/* PRECIO SECTION */}
+                <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-end">
+                        <label className="text-xs font-bold text-default-500 tracking-wider">
+                            TU PRECIO TOTAL (PEN)
+                        </label>
+                        <span className="text-xs text-default-500">Moneda: Soles (S/)</span>
+                    </div>
                     
-                    {contractorTotalPreview != null ? (
-                        <div className="rounded-xl border border-default-200 bg-content2/30 px-4 py-3 flex flex-col gap-1.5">
-                            <p className="font-semibold text-foreground text-sm">
-                                El contratista pagará{" "}
-                                <span className="text-primary font-bold">
-                                    {formatCurrency(contractorTotalPreview)}
-                                </span>
-                            </p>
-                            <p className="text-xs text-default-500">
-                                Servicio {formatCurrency(pricePreview)}
-                                {feePreview > 0
-                                    ? ` + comisión plataforma y pasarela de pagos (${formatCurrency(feePreview)})`
-                                    : " – sin comisión de plataforma"}
-                                . Tú recibes el precio del servicio íntegro.
-                            </p>
-                        </div>
-                    ) : null}
+                    <div className="flex items-center rounded-xl border border-default-200/40 bg-[#151D28] px-5 py-2 h-[72px] focus-within:border-primary transition-colors">
+                        <span className="text-default-400 text-2xl font-medium mr-3">S/</span>
+                        <input 
+                            type="number"
+                            min="1"
+                            required
+                            value={priceAgreed}
+                            onChange={(e) => setPriceAgreed(e.target.value)}
+                            className="bg-transparent text-white text-3xl font-bold flex-1 outline-none w-full"
+                            placeholder="0.00"
+                        />
+                    </div>
+
+                    <div className="rounded-xl border border-default-200/20 bg-transparent px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-2">
+                        <p className="text-sm font-medium text-default-400">
+                            Recibes neto: <span className="text-success font-bold text-base tracking-wide">S/ {netAmount.toFixed(2)}</span>
+                        </p>
+                        <p className="text-xs text-default-500">Comisión Shivapp: 5% ya calculada</p>
+                    </div>
                 </div>
 
-                <div className="flex flex-col gap-2 mt-2">
+                {/* MENSAJE SECTION */}
+                <div className="flex flex-col gap-3">
+                    <label className="text-xs font-bold text-default-500 tracking-wider">
+                        MENSAJE O CONDICIONES PARA EL CLIENTE <span className="font-normal opacity-70">(opcional)</span>
+                    </label>
+                    
                     <Textarea
-                        label="Mensaje o condiciones para el cliente"
-                        placeholder="Ej. Necesito la dirección exacta con referencia, acceso para equipo, número de asistentes..."
+                        placeholder="Escribe un mensaje o indicaciones para el cliente (opcional)..."
                         value={quoteNotes}
                         onValueChange={setQuoteNotes}
-                        variant="bordered"
-                        minRows={3}
-                        classNames={{ inputWrapper: "border-default-200" }}
+                        minRows={4}
+                        classNames={{
+                            inputWrapper: "border border-default-200/40 bg-[#151D28] hover:bg-[#151D28] hover:border-default-200/60 focus-within:!bg-[#151D28] focus-within:!border-primary",
+                            input: "text-white text-[15px]"
+                        }}
                     />
+                    
                     <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <Button 
-                            size="sm" 
-                            variant="flat" 
-                            radius="full" 
-                            className="bg-default-100 text-default-600 font-medium"
-                            onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
+                        <button 
+                            type="button"
+                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
+                            onClick={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
                         >
                             + ¿Hay estacionamiento disponible?
-                        </Button>
-                        <Button 
-                            size="sm" 
-                            variant="flat" 
-                            radius="full" 
-                            className="bg-default-100 text-default-600 font-medium"
-                            onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "El precio incluye amplificación.")}
+                        </button>
+                        <button 
+                            type="button"
+                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
+                            onClick={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "Incluye amplificación.")}
                         >
                             + Incluye amplificación
-                        </Button>
+                        </button>
                     </div>
-                </div>
 
-                <div className="rounded-2xl border border-default-200 bg-content1 p-5 flex flex-col gap-4 mt-2">
-                    <h4 className="text-sm font-bold text-foreground">
-                        Ubicación del evento <span className="text-default-400 font-normal">(puedes solicitar más detalle)</span>
-                    </h4>
-                    <Input
-                        label="Dirección"
-                        value={locationAddress}
-                        onValueChange={setLocationAddress}
-                        variant="bordered"
-                        classNames={{ inputWrapper: "border-default-200" }}
-                    />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Input
-                            label="Ciudad"
-                            value={locationCity}
-                            onValueChange={setLocationCity}
-                            variant="bordered"
-                            classNames={{ inputWrapper: "border-default-200" }}
-                        />
-                        <Input
-                            label="Referencia"
-                            value={locationReference}
-                            onValueChange={setLocationReference}
-                            variant="bordered"
-                            description="Coordenadas o referencia adicional."
-                            classNames={{ inputWrapper: "border-default-200" }}
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-between items-center mt-4">
-                    <Button
-                        type="submit"
-                        color="primary"
-                        radius="full"
-                        size="lg"
-                        isLoading={isSubmitting}
-                        className="font-bold px-8 shadow-md"
-                        startContent={
-                            <Icon
-                                icon={isEditMode ? "material-symbols:save" : "material-symbols:send"}
-                                width={18}
-                            />
-                        }
-                    >
-                        {isEditMode ? "Actualizar cotización" : "Enviar cotización"}
-                    </Button>
-                    {!isEditMode ? (
-                        <Button
-                            color="danger"
-                            variant="light"
-                            radius="full"
-                            size="sm"
-                            className="font-medium"
-                            isLoading={isRejecting}
-                            onPress={handleReject}
+                    {booking.location_city && (
+                        <Checkbox 
+                            size="sm" 
+                            isSelected={includesTravel}
+                            onValueChange={setIncludesTravel}
+                            classNames={{
+                                label: "text-sm text-default-300",
+                                wrapper: "before:border-default-400"
+                            }}
+                            className="mt-3"
                         >
-                            Rechazar solicitud
-                        </Button>
-                    ) : (
-                        <Button
-                            color="danger"
-                            variant="light"
-                            radius="full"
-                            size="sm"
-                            className="font-medium"
-                            isLoading={isRejecting}
-                            onPress={handleReject}
-                        >
-                            Cancelar reserva
-                        </Button>
+                            Incluye traslado y viáticos a {booking.location_city}
+                        </Checkbox>
                     )}
                 </div>
+
+                {/* BOTONES ACTION */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-6 border-t border-default-200/20">
+                    <button
+                        type="button"
+                        onClick={handleReject}
+                        disabled={isRejecting || isSubmitting}
+                        className="text-sm font-medium text-danger hover:text-danger-400 transition-colors self-start sm:self-auto px-2"
+                    >
+                        {isEditMode ? "Cancelar reserva" : "Rechazar solicitud"}
+                    </button>
+                    
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Button
+                            type="button"
+                            variant="bordered"
+                            radius="full"
+                            className="border-default-200/40 text-white font-medium flex-1 sm:flex-none hover:bg-default-200/10"
+                        >
+                            Guardar borrador
+                        </Button>
+                        <Button
+                            type="submit"
+                            color="primary"
+                            radius="full"
+                            isLoading={isSubmitting}
+                            className="font-bold px-6 shadow-[0_0_20px_rgba(0,212,255,0.3)] flex-1 sm:flex-none"
+                            startContent={
+                                !isSubmitting && <Icon icon="lucide:send" width={16} />
+                            }
+                        >
+                            {isEditMode ? "Actualizar" : "Enviar cotización"}
+                        </Button>
+                    </div>
+                </div>
             </form>
-        </Card>
+        </div>
     );
 }
