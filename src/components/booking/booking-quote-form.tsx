@@ -2,9 +2,10 @@ import { useState, useTransition } from "react";
 import { formatCurrency } from "@/lib/booking-labels";
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
-import { Button, Checkbox, Textarea, Chip } from "@heroui/react";
+import { Button, Checkbox, Textarea } from "@heroui/react";
 import { quoteBooking, rejectBooking } from "@/lib/bookings";
 import { addToast } from "@heroui/react";
+import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 
 export default function BookingQuoteForm({
     booking,
@@ -29,8 +30,17 @@ export default function BookingQuoteForm({
     const isRejecting = isPendingReject;
 
     const priceNum = Number(priceAgreed) || 0;
-    // According to wireframe logic, platform takes 5% from total.
-    const netAmount = priceNum * 0.95;
+    
+    // Restauramos la lógica original de cobro usando platform-fee.ts
+    const contractorTotalPreview = contractorPayableTotal({
+        price_agreed: priceNum,
+        platform_fee_percent: booking.platform_fee_percent
+    });
+    
+    const feePreview = platformFeeAmount({
+        price_agreed: priceNum,
+        platform_fee_percent: booking.platform_fee_percent
+    });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,7 +92,7 @@ export default function BookingQuoteForm({
                         {isEditMode ? "Editar propuesta" : "Enviar propuesta"}
                     </h2>
                     <p className="text-sm text-default-400 mt-1">
-                        Ingresa el precio total para el evento.
+                        Ingresa lo que tú deseas recibir por el evento.
                     </p>
                 </div>
                 <div className="flex items-center gap-1.5 text-primary text-sm font-medium">
@@ -96,7 +106,7 @@ export default function BookingQuoteForm({
                 <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-end">
                         <label className="text-xs font-bold text-default-500 tracking-wider">
-                            TU PRECIO TOTAL (PEN)
+                            LO QUE TÚ RECIBES (PEN)
                         </label>
                         <span className="text-xs text-default-500">Moneda: Soles (S/)</span>
                     </div>
@@ -114,11 +124,16 @@ export default function BookingQuoteForm({
                         />
                     </div>
 
-                    <div className="rounded-xl border border-default-200/20 bg-transparent px-5 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mt-2">
-                        <p className="text-sm font-medium text-default-400">
-                            Recibes neto: <span className="text-success font-bold text-base tracking-wide">S/ {netAmount.toFixed(2)}</span>
+                    <div className="rounded-xl border border-default-200/20 bg-transparent px-5 py-4 flex flex-col gap-1 mt-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                            <p className="text-sm font-medium text-default-400">
+                                El contratista pagará: <span className="text-white font-bold text-base tracking-wide">S/ {contractorTotalPreview?.toFixed(2) || "0.00"}</span>
+                            </p>
+                        </div>
+                        <p className="text-xs text-default-500">
+                            Servicio (S/ {priceNum.toFixed(2)}) 
+                            {feePreview > 0 ? ` + comisión plataforma y pasarela (S/ ${feePreview.toFixed(2)})` : " — sin comisiones adicionales"}
                         </p>
-                        <p className="text-xs text-default-500">Comisión Shivapp: 5% ya calculada</p>
                     </div>
                 </div>
 
