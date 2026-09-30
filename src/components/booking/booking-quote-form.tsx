@@ -232,14 +232,34 @@ export default function BookingQuoteForm({ booking, onUpdated }: Props) {
                             </p>
                         </div>
                     ) : null}
-                    <Textarea
-                        label="Información adicional requerida"
-                        placeholder="Ej. Necesito la dirección exacta con referencia, acceso para equipo, número de asistentes..."
-                        value={quoteNotes}
-                        onValueChange={setQuoteNotes}
-                        variant="bordered"
-                        minRows={3}
-                    />
+                                        <div className="flex flex-col gap-2">
+                        <Textarea
+                            label="Mensaje o condiciones para el cliente"
+                            placeholder="Ej. Necesito la dirección exacta con referencia, acceso para equipo, número de asistentes..."
+                            value={quoteNotes}
+                            onValueChange={setQuoteNotes}
+                            variant="bordered"
+                            minRows={3}
+                        />
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <Button 
+                                size="sm" 
+                                variant="flat" 
+                                radius="full" 
+                                onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
+                            >
+                                + ¿Hay estacionamiento disponible?
+                            </Button>
+                            <Button 
+                                size="sm" 
+                                variant="flat" 
+                                radius="full" 
+                                onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "El precio incluye amplificación.")}
+                            >
+                                + Incluye amplificación
+                            </Button>
+                        </div>
+                    </div>
                     <div className="rounded-2xl border border-default-200 bg-content1 p-4 flex flex-col gap-3">
                         <p className="text-sm font-semibold text-foreground">
                             Ubicación del evento (puedes solicitar más detalle)

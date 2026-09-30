@@ -329,8 +329,8 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                 backHref={listHref}
             />
 
-            <div className="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] gap-4 sm:gap-6 items-start">
-                <aside className="order-2 lg:order-1 lg:sticky lg:top-[calc(var(--app-navbar-height)+var(--booking-timeline-height,0px)+0.75rem)] lg:self-start min-w-0">
+            <div className="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                <aside className="order-2 lg:order-1 lg:col-span-5 lg:sticky lg:top-[calc(var(--app-navbar-height)+var(--booking-timeline-height,0px)+0.75rem)] lg:self-start min-w-0">
                     <BookingCommitmentCard
                         booking={booking}
                         confirmed={confirmed}
@@ -343,7 +343,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                     />
                 </aside>
 
-                <section className="order-1 lg:order-2 flex flex-col gap-6 min-w-0">
+                <section className="order-1 lg:order-2 lg:col-span-7 flex flex-col gap-6 min-w-0">
                     {isMemberView ? (
                         <BookingMemberInviteCard
                             booking={booking}

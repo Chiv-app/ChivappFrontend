@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button, Card, CardBody, Chip, Progress } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import {
@@ -390,6 +391,11 @@ function StickyCollapsingHorizontalTimeline({
 }) {
     const sentinelRef = useRef<HTMLDivElement | null>(null);
     const [collapsed, setCollapsed] = useState(false);
+    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+    useEffect(() => {
+        setPortalTarget(document.getElementById("navbar-center-slot"));
+    }, []);
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
@@ -399,13 +405,11 @@ function StickyCollapsingHorizontalTimeline({
             (entries) => {
                 const entry = entries[0];
                 if (!entry) return;
-                // Si el sentinel (ancla del Expanded card) deja de ser visible arriba, colapsamos
                 setCollapsed(!entry.isIntersecting);
             },
             {
                 root: null,
                 threshold: 0,
-                // intersection observer rootMargin no soporta calc() ni var(), debe ser px o %
                 rootMargin: "-64px 0px 0px 0px",
             },
         );
@@ -418,9 +422,26 @@ function StickyCollapsingHorizontalTimeline({
         const height = collapsed ? 64 : 0;
         document.documentElement.style.setProperty(
             "--booking-timeline-height",
-            `${height}px`,
+            // Remove the 64px offset since it's now in the navbar or we don't have a floating pill below.
+            // But we might still want to adjust the sidebar top.
+            `0px`,
         );
     }, [collapsed]);
+
+    // Pill for the navbar (only visible on large screens when collapsed)
+    const navbarPill = (
+        <div
+            className={`flex items-center gap-2 max-w-full rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-soft px-4 py-2 transition-all duration-300 ease-out ${
+                collapsed ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
+            }`}
+            aria-hidden={!collapsed}
+        >
+            {backHref ? <TimelineBackButton href={backHref} /> : null}
+            <div className="min-w-0 flex-1">
+                <CollapsedPhaseRail steps={timeline.steps} />
+            </div>
+        </div>
+    );
 
     return (
         <div className="relative w-full">
@@ -441,9 +462,9 @@ function StickyCollapsingHorizontalTimeline({
                 />
             </div>
 
-            {/* Versión Colapsada Flotante (Filtros Style) */}
+            {/* Versión Flotante en Móvil (debajo del navbar) porque el navbar-center-slot se oculta en móvil (hidden xl:flex) */}
             <div
-                className={`fixed z-40 left-0 right-0 pointer-events-none flex justify-center transition-all duration-300 ease-out px-4 ${
+                className={`xl:hidden fixed z-40 left-0 right-0 pointer-events-none flex justify-center transition-all duration-300 ease-out px-4 ${
                     collapsed
                         ? "top-[calc(var(--app-navbar-height)+0.75rem)] opacity-100 translate-y-0"
                         : "top-[calc(var(--app-navbar-height)-2rem)] opacity-0 -translate-y-4"
@@ -451,14 +472,15 @@ function StickyCollapsingHorizontalTimeline({
                 aria-hidden={!collapsed}
             >
                 <div className="pointer-events-auto flex items-center gap-2 max-w-full rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-soft px-4 py-2">
-                    {backHref ? (
-                        <TimelineBackButton href={backHref} />
-                    ) : null}
+                    {backHref ? <TimelineBackButton href={backHref} /> : null}
                     <div className="min-w-0 flex-1">
                         <CollapsedPhaseRail steps={timeline.steps} />
                     </div>
                 </div>
             </div>
+
+            {/* Portal to Navbar (Desktop) */}
+            {portalTarget ? createPortal(navbarPill, portalTarget) : null}
         </div>
     );
 }

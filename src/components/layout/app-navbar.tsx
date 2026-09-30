@@ -287,6 +287,8 @@ export default function AppNavbar({ revealOnScroll = false }: Props) {
                     <AppLogo height={compact ? 28 : 40} priority color="dynamic" />
                 </Link>
 
+                <div id="navbar-center-slot" className="hidden xl:flex flex-1 justify-center px-4" />
+
                 <div
                     className={`flex items-center min-w-0 ${
                         compact ? "gap-1 sm:gap-1.5" : "gap-1.5 sm:gap-3"

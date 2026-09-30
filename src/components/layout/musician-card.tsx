@@ -74,9 +74,7 @@ export default function MusicianCardComponent({
   const [paused, setPaused] = useState(false);
   const canRotate = slides.length > 1;
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [musician.id, slides.length]);
+
 
   useEffect(() => {
     if (!canRotate || paused) return;
