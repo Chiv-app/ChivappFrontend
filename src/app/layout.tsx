@@ -80,7 +80,7 @@ export const metadata: Metadata = {
         url: "/",
         images: [
             {
-                url: "/logo-chivapp.png",
+                url: "/logo-chivappv2.png",
                 width: 900,
                 height: 287,
                 alt: `${SITE_NAME} - ${SITE_TAGLINE}`,
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: SITE_NAME,
         description: SITE_TAGLINE,
-        images: ["/logo-chivapp.png"],
+        images: ["/logo-chivappv2.png"],
     },
     robots: {
         index: true,

@@ -10,7 +10,7 @@ export default function Footer() {
             <div className="relative max-w-footer mx-auto px-4 sm:px-6 md:px-8 py-10 sm:py-14 md:py-16">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-8 sm:gap-10 mb-10 sm:mb-12">
                     <div className="max-w-sm">
-                        <AppLogo height={26} className="mb-3 sm:mb-4" color="white" />
+                        <AppLogo height={42} className="mb-3 sm:mb-4" color="white" />
                         <p className="text-white/65 text-sm leading-relaxed text-pretty">
                             Conectamos personas con músicos excepcionales para
                             eventos inolvidables.

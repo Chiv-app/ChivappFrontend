@@ -10,7 +10,7 @@ export const contentType = "image/png";
 export default function OpenGraphImage() {
     let logoDataUrl = "";
     try {
-        const logoPath = path.join(process.cwd(), "public", "logo-chivapp.png");
+        const logoPath = path.join(process.cwd(), "public", "logo-chivappv2.png");
         const logoBuffer = fs.readFileSync(logoPath);
         logoDataUrl = `data:image/png;base64,${logoBuffer.toString("base64")}`;
     } catch {

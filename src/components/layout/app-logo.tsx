@@ -13,12 +13,12 @@ type Props = {
 
 const RATIO = 865 / 289;
 
-export default function AppLogo({ height = 28, className = "", priority }: Props) {
+export default function AppLogo({ height = 36, className = "", priority }: Props) {
     const width = Math.round(height * RATIO);
 
     return (
         <Image
-            src="/logo-chivapp.png"
+            src="/logo-chivappv2.png"
             alt="Chivapp"
             width={width}
             height={height}

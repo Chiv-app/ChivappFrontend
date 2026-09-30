@@ -108,7 +108,7 @@ export function websiteJsonLd() {
             "@type": "Organization",
             name: SITE_NAME,
             url,
-            logo: absoluteUrl("/logo-chivapp.png"),
+            logo: absoluteUrl("/logo-chivappv2.png"),
         },
     };
 }
@@ -120,7 +120,7 @@ export function organizationJsonLd() {
         "@type": "Organization",
         name: SITE_NAME,
         url,
-        logo: absoluteUrl("/logo-chivapp.png"),
+        logo: absoluteUrl("/logo-chivappv2.png"),
         description: SITE_DESCRIPTION,
         contactPoint: {
             "@type": "ContactPoint",
@@ -143,7 +143,7 @@ export function musicianJsonLd(input: {
     price?: number | null;
     socialUrls?: string[];
 }) {
-    const image = absoluteImageUrl(input.image) ?? absoluteUrl("/logo-chivapp.png");
+    const image = absoluteImageUrl(input.image) ?? absoluteUrl("/logo-chivappv2.png");
     
     // Solo mostramos calificación si hay al menos 1 reseña válida
     const hasRating = input.rating != null && input.ratingCount != null && input.ratingCount > 0;
