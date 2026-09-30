@@ -266,7 +266,7 @@ export default function AppNavbar({ revealOnScroll = false }: Props) {
                 onMouseLeave={hiddenUntilScroll ? handleHoverLeave : undefined}
                 onClick={hiddenUntilScroll ? handleHoverEnter : undefined}
                 className={[
-                    "fixed z-50 inset-x-3 sm:inset-x-6 top-3 sm:top-4 rounded-full bg-content1/70 backdrop-blur-md shadow-soft border border-default-200/60",
+                    "fixed z-50 inset-x-3 sm:inset-x-6 top-3 sm:top-4 rounded-full bg-content1/80 backdrop-blur-xl shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-default-200/50",
                     "transition-all duration-300 ease-out",
                     compact ? "h-14" : "h-16",
                     effectivelyHidden

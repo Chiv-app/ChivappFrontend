@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { Button, Card, CardBody, Chip, Progress } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import {
@@ -392,6 +394,9 @@ function StickyCollapsingHorizontalTimeline({
     const sentinelRef = useRef<HTMLDivElement | null>(null);
     const [collapsed, setCollapsed] = useState(false);
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+    const pillRef = useRef<HTMLDivElement | null>(null);
+    const mobilePillRef = useRef<HTMLDivElement | null>(null);
+    const expandedRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         setPortalTarget(document.getElementById("navbar-center-slot"));
@@ -419,21 +424,45 @@ function StickyCollapsingHorizontalTimeline({
     }, []);
 
     useEffect(() => {
-        const height = collapsed ? 64 : 0;
-        document.documentElement.style.setProperty(
-            "--booking-timeline-height",
-            // Remove the 64px offset since it's now in the navbar or we don't have a floating pill below.
-            // But we might still want to adjust the sidebar top.
-            `0px`,
-        );
+        document.documentElement.style.setProperty("--booking-timeline-height", "0px");
+    }, []);
+
+    useGSAP(() => {
+        // Animate expanded view out, pill in
+        if (collapsed) {
+            if (expandedRef.current) {
+                gsap.to(expandedRef.current, { opacity: 0, y: -10, duration: 0.3, ease: "power2.inOut" });
+            }
+            if (pillRef.current) {
+                gsap.fromTo(pillRef.current, 
+                    { opacity: 0, y: -20, scale: 0.95 },
+                    { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.5)", delay: 0.1 }
+                );
+            }
+            if (mobilePillRef.current) {
+                gsap.fromTo(mobilePillRef.current, 
+                    { opacity: 0, y: -20, scale: 0.95 },
+                    { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.5)", delay: 0.1 }
+                );
+            }
+        } else {
+            if (expandedRef.current) {
+                gsap.to(expandedRef.current, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" });
+            }
+            if (pillRef.current) {
+                gsap.to(pillRef.current, { opacity: 0, y: -15, scale: 0.95, duration: 0.2, ease: "power2.in" });
+            }
+            if (mobilePillRef.current) {
+                gsap.to(mobilePillRef.current, { opacity: 0, y: -15, scale: 0.95, duration: 0.2, ease: "power2.in" });
+            }
+        }
     }, [collapsed]);
 
     // Pill for the navbar (only visible on large screens when collapsed)
     const navbarPill = (
         <div
-            className={`flex items-center gap-2 max-w-full rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-soft px-4 py-2 transition-all duration-300 ease-out ${
-                collapsed ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
-            }`}
+            ref={pillRef}
+            className="flex items-center gap-2 max-w-full rounded-[2rem] border border-white/5 bg-[#0b1118]/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] px-5 py-2.5 opacity-0 pointer-events-auto"
             aria-hidden={!collapsed}
         >
             {backHref ? <TimelineBackButton href={backHref} /> : null}
@@ -448,13 +477,8 @@ function StickyCollapsingHorizontalTimeline({
             {/* Ancla para observar el scroll */}
             <div ref={sentinelRef} className="absolute top-0 w-full h-px pointer-events-none" />
 
-            {/* Versión Expandida Estática (Flujo Normal) */}
-            <div
-                className={`transition-opacity duration-300 ${
-                    collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-                }`}
-                aria-hidden={collapsed}
-            >
+            {/* Versión Expandida */}
+            <div ref={expandedRef} className="will-change-transform" aria-hidden={collapsed}>
                 <ExpandedTimelineCard
                     status={status}
                     timeline={timeline}
@@ -462,16 +486,13 @@ function StickyCollapsingHorizontalTimeline({
                 />
             </div>
 
-            {/* Versión Flotante en Móvil (debajo del navbar) porque el navbar-center-slot se oculta en móvil (hidden xl:flex) */}
+            {/* Versión Flotante en Móvil */}
             <div
-                className={`xl:hidden fixed z-40 left-0 right-0 pointer-events-none flex justify-center transition-all duration-300 ease-out px-4 ${
-                    collapsed
-                        ? "top-[calc(var(--app-navbar-height)+0.75rem)] opacity-100 translate-y-0"
-                        : "top-[calc(var(--app-navbar-height)-2rem)] opacity-0 -translate-y-4"
-                }`}
+                ref={mobilePillRef}
+                className={`xl:hidden fixed z-40 left-0 right-0 pointer-events-none flex justify-center px-4 top-[calc(var(--app-navbar-height)+0.75rem)] opacity-0`}
                 aria-hidden={!collapsed}
             >
-                <div className="pointer-events-auto flex items-center gap-2 max-w-full rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-soft px-4 py-2">
+                <div className="pointer-events-auto flex items-center gap-2 max-w-full rounded-[2rem] border border-white/5 bg-[#0b1118]/80 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] px-5 py-2.5">
                     {backHref ? <TimelineBackButton href={backHref} /> : null}
                     <div className="min-w-0 flex-1">
                         <CollapsedPhaseRail steps={timeline.steps} />
@@ -484,7 +505,6 @@ function StickyCollapsingHorizontalTimeline({
         </div>
     );
 }
-
 function VerticalTimeline({
     status,
     timeline,

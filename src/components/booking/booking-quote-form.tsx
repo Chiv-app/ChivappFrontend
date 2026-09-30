@@ -178,148 +178,171 @@ export default function BookingQuoteForm({ booking, onUpdated }: Props) {
     const quotedAtLabel = formatQuotedAt(booking.quoted_at);
 
     return (
-        <Card className="border border-primary/20 bg-primary/5 shadow-soft">
-            <CardHeader className="flex flex-col items-start gap-2 px-6 pt-6 pb-0">
-                <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-bold text-foreground">
+        <Card className="shadow-soft border border-default-200 bg-content1 rounded-[2rem] p-5 sm:p-7 flex flex-col gap-6">
+            {/* Header */}
+            <div className="flex justify-between items-start gap-4">
+                <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                         {isEditMode ? "Editar cotización" : "Responder solicitud"}
                     </h2>
-                    {isEditMode ? (
-                        <Chip size="sm" color="primary" variant="flat">
-                            En revisión del contratista
-                        </Chip>
+                    {isEditMode && quotedAtLabel ? (
+                        <p className="text-xs text-default-400 mt-1">
+                            Última actualización: {quotedAtLabel}
+                        </p>
                     ) : null}
                 </div>
-                <p className="text-sm text-default-500">
-                    {isEditMode
-                        ? "Puedes ajustar tu propuesta mientras el contratista no la haya aceptado. Cada cambio genera una nueva alerta."
-                        : "Indica tu precio y qué información adicional necesitas del contratista."}
-                </p>
-                {isEditMode && quotedAtLabel ? (
-                    <p className="text-xs text-default-400">
-                        Última actualización: {quotedAtLabel}
-                    </p>
+                {isEditMode ? (
+                    <Chip size="sm" color="primary" variant="flat" className="px-1 font-medium">
+                        En revisión del contratista
+                    </Chip>
                 ) : null}
-            </CardHeader>
-            <CardBody className="px-6 pb-6">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="grid grid-cols-1">
-                        <Input
-                            label="Precio del servicio (S/)"
-                            type="number"
-                            min="1"
-                            value={priceAgreed}
-                            onValueChange={setPriceAgreed}
-                            variant="bordered"
-                            isRequired
-                            description="Lo que tú recibes por el servicio."
-                        />
-                    </div>
+            </div>
+
+            <p className="text-sm text-default-500 leading-relaxed -mt-3">
+                {isEditMode
+                    ? "Puedes ajustar tu propuesta mientras el contratista no la haya aceptado. Cada cambio genera una nueva alerta."
+                    : "Indica tu precio y qué información adicional necesitas del contratista."}
+            </p>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-4">
+                    <Input
+                        label="Precio del servicio (S/)"
+                        type="number"
+                        min="1"
+                        value={priceAgreed}
+                        onValueChange={setPriceAgreed}
+                        variant="bordered"
+                        isRequired
+                        description="Lo que tú recibes por el servicio."
+                        classNames={{ inputWrapper: "border-default-200" }}
+                    />
+                    
                     {contractorTotalPreview != null ? (
-                        <div className="rounded-2xl border border-primary/20 bg-content1 px-4 py-3 text-sm flex flex-col gap-2">
-                            <p className="font-semibold text-foreground">
+                        <div className="rounded-xl border border-default-200 bg-content2/30 px-4 py-3 flex flex-col gap-1.5">
+                            <p className="font-semibold text-foreground text-sm">
                                 El contratista pagará{" "}
-                                <span className="text-primary">
+                                <span className="text-primary font-bold">
                                     {formatCurrency(contractorTotalPreview)}
                                 </span>
                             </p>
-                            <p className="text-default-500">
+                            <p className="text-xs text-default-500">
                                 Servicio {formatCurrency(pricePreview)}
                                 {feePreview > 0
                                     ? ` + comisión plataforma y pasarela de pagos (${formatCurrency(feePreview)})`
-                                    : " · sin comisión de plataforma"}
+                                    : " – sin comisión de plataforma"}
                                 . Tú recibes el precio del servicio íntegro.
                             </p>
                         </div>
                     ) : null}
-                                        <div className="flex flex-col gap-2">
-                        <Textarea
-                            label="Mensaje o condiciones para el cliente"
-                            placeholder="Ej. Necesito la dirección exacta con referencia, acceso para equipo, número de asistentes..."
-                            value={quoteNotes}
-                            onValueChange={setQuoteNotes}
-                            variant="bordered"
-                            minRows={3}
-                        />
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                            <Button 
-                                size="sm" 
-                                variant="flat" 
-                                radius="full" 
-                                onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
-                            >
-                                + ¿Hay estacionamiento disponible?
-                            </Button>
-                            <Button 
-                                size="sm" 
-                                variant="flat" 
-                                radius="full" 
-                                onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "El precio incluye amplificación.")}
-                            >
-                                + Incluye amplificación
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="rounded-2xl border border-default-200 bg-content1 p-4 flex flex-col gap-3">
-                        <p className="text-sm font-semibold text-foreground">
-                            Ubicación del evento (puedes solicitar más detalle)
-                        </p>
-                        <Input
-                            label="Dirección"
-                            value={locationAddress}
-                            onValueChange={setLocationAddress}
-                            variant="bordered"
-                        />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Input
-                                label="Ciudad"
-                                value={locationCity}
-                                onValueChange={setLocationCity}
-                                variant="bordered"
-                            />
-                            <Input
-                                label="Referencia"
-                                value={locationReference}
-                                onValueChange={setLocationReference}
-                                variant="bordered"
-                                description="Coordenadas o referencia adicional."
-                            />
-                        </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        <Button
-                            type="submit"
-                            color="primary"
-                            radius="lg"
-                            isLoading={isSubmitting}
-                            className="font-semibold"
-                            startContent={
-                                <Icon
-                                    icon={
-                                        isEditMode
-                                            ? "material-symbols:save"
-                                            : "material-symbols:send"
-                                    }
-                                    width={18}
-                                />
-                            }
+                </div>
+
+                <div className="flex flex-col gap-2 mt-2">
+                    <Textarea
+                        label="Mensaje o condiciones para el cliente"
+                        placeholder="Ej. Necesito la dirección exacta con referencia, acceso para equipo, número de asistentes..."
+                        value={quoteNotes}
+                        onValueChange={setQuoteNotes}
+                        variant="bordered"
+                        minRows={3}
+                        classNames={{ inputWrapper: "border-default-200" }}
+                    />
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <Button 
+                            size="sm" 
+                            variant="flat" 
+                            radius="full" 
+                            className="bg-default-100 text-default-600 font-medium"
+                            onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
                         >
-                            {isEditMode ? "Actualizar cotización" : "Enviar cotización"}
+                            + ¿Hay estacionamiento disponible?
                         </Button>
-                        {!isEditMode ? (
-                            <Button
-                                color="danger"
-                                variant="flat"
-                                radius="lg"
-                                isLoading={isRejecting}
-                                onPress={handleReject}
-                            >
-                                Rechazar solicitud
-                            </Button>
-                        ) : null}
+                        <Button 
+                            size="sm" 
+                            variant="flat" 
+                            radius="full" 
+                            className="bg-default-100 text-default-600 font-medium"
+                            onPress={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "El precio incluye amplificación.")}
+                        >
+                            + Incluye amplificación
+                        </Button>
                     </div>
-                </form>
-            </CardBody>
+                </div>
+
+                <div className="rounded-2xl border border-default-200 bg-content1 p-5 flex flex-col gap-4 mt-2">
+                    <h4 className="text-sm font-bold text-foreground">
+                        Ubicación del evento <span className="text-default-400 font-normal">(puedes solicitar más detalle)</span>
+                    </h4>
+                    <Input
+                        label="Dirección"
+                        value={locationAddress}
+                        onValueChange={setLocationAddress}
+                        variant="bordered"
+                        classNames={{ inputWrapper: "border-default-200" }}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Input
+                            label="Ciudad"
+                            value={locationCity}
+                            onValueChange={setLocationCity}
+                            variant="bordered"
+                            classNames={{ inputWrapper: "border-default-200" }}
+                        />
+                        <Input
+                            label="Referencia"
+                            value={locationReference}
+                            onValueChange={setLocationReference}
+                            variant="bordered"
+                            description="Coordenadas o referencia adicional."
+                            classNames={{ inputWrapper: "border-default-200" }}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-4">
+                    <Button
+                        type="submit"
+                        color="primary"
+                        radius="full"
+                        size="lg"
+                        isLoading={isSubmitting}
+                        className="font-bold px-8 shadow-md"
+                        startContent={
+                            <Icon
+                                icon={isEditMode ? "material-symbols:save" : "material-symbols:send"}
+                                width={18}
+                            />
+                        }
+                    >
+                        {isEditMode ? "Actualizar cotización" : "Enviar cotización"}
+                    </Button>
+                    {!isEditMode ? (
+                        <Button
+                            color="danger"
+                            variant="light"
+                            radius="full"
+                            size="sm"
+                            className="font-medium"
+                            isLoading={isRejecting}
+                            onPress={handleReject}
+                        >
+                            Rechazar solicitud
+                        </Button>
+                    ) : (
+                        <Button
+                            color="danger"
+                            variant="light"
+                            radius="full"
+                            size="sm"
+                            className="font-medium"
+                            isLoading={isRejecting}
+                            onPress={handleReject}
+                        >
+                            Cancelar reserva
+                        </Button>
+                    )}
+                </div>
+            </form>
         </Card>
     );
 }
