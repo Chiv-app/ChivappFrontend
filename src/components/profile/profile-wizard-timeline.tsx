@@ -212,7 +212,7 @@ function PhaseRail({
                     return (
                         <li key={step.id} className="shrink-0">
                             <Tag
-                                // @ts-ignore dynamic tag
+                                // @ts-expect-error dynamic tag
                                 {...props}
                                 className={`group relative flex items-center h-10 sm:h-11 rounded-full border backdrop-blur-md shadow-soft transition-all duration-300 ease-out px-4 gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                                     onStepSelect ? "cursor-pointer" : ""

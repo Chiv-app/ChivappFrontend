@@ -1370,7 +1370,7 @@ export default function MusicianProfileWizard() {
                             </div>
                             {signatureImageUrl && !signatureDataUrl ? (
                                 <div className="flex flex-col gap-3">
-                                    <div className="overflow-hidden rounded-2xl border border-default-200 bg-white p-4 max-w-md">
+                                    <div className="overflow-hidden rounded-2xl border border-default-200 bg-content1 p-4 max-w-md">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={

@@ -94,7 +94,7 @@ export default function MusicianReportsView() {
 
     useEffect(() => {
         let cancelled = false;
-        setIsLoading(true);
+        queueMicrotask(() => setIsLoading(true));
         refresh()
             .catch((error) => {
                 if (cancelled) return;

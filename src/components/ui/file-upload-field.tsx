@@ -192,7 +192,7 @@ export default function FileUploadField(props: Props) {
                                         href={previewUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex h-16 w-16 items-center justify-center rounded-lg border border-default-200 bg-white shrink-0 hover:bg-default-100 transition-colors"
+                                        className="flex h-16 w-16 items-center justify-center rounded-lg border border-default-200 bg-content1 shrink-0 hover:bg-default-100 transition-colors"
                                         title="Clic para abrir documento"
                                     >
                                         <Icon

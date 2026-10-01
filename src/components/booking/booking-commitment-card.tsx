@@ -70,7 +70,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                             </span>
                         </Chip>
                     </div>
-                    <h2 className="text-3xl font-extrabold text-white mt-2">
+                    <h2 className="text-3xl font-extrabold text-foreground dark:text-white mt-2">
                         {booking.event_type}
                     </h2>
                 </div>
@@ -84,7 +84,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                         </div>
                         <div className="flex flex-col min-w-0">
                             <p className="text-xs text-default-500 font-medium mb-1">Fecha y Hora</p>
-                            <p className="text-base font-bold text-white text-balance leading-snug">
+                            <p className="text-base font-bold text-foreground dark:text-white text-balance leading-snug">
                                 {new Date(booking.event_date + "T00:00:00").toLocaleDateString("es-PE", {
                                     weekday: "long",
                                     day: "numeric",
@@ -93,7 +93,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                                 })}
                             </p>
                             <p className="text-sm text-default-400 mt-1 flex items-center gap-1.5">
-                                <span className="text-white font-medium">
+                                <span className="text-foreground dark:text-white font-medium">
                                     {booking.start_time.slice(0, 5)} hrs
                                 </span>
                                 {durationText ? (
@@ -126,7 +126,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                                     </a>
                                 )}
                             </div>
-                            <p className="text-base font-bold text-white text-balance leading-snug">
+                            <p className="text-base font-bold text-foreground dark:text-white text-balance leading-snug">
                                 {booking.location_address || "Dirección no especificada"}
                                 {booking.location_city ? `, ${booking.location_city}` : ""}
                             </p>
@@ -148,7 +148,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                                 {isMusician ? "Músico solicitado" : "Cliente solicitante"}
                             </p>
                             <div className="flex items-center gap-2">
-                                <p className="text-base font-bold text-white leading-snug">
+                                <p className="text-base font-bold text-foreground dark:text-white leading-snug">
                                     {isMusician
                                         ? booking.musician_name || "Músico"
                                         : booking.contractor_name || "Cliente particular"}
@@ -166,7 +166,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                     <div className="mt-4 flex flex-col gap-2">
                         <p className="text-xs text-default-500 font-medium">Mensaje del cliente:</p>
                         <div className="rounded-xl border border-default-100/5 bg-content2 p-4 relative">
-                            <p className="text-[15px] italic text-default-300 leading-relaxed">
+                            <p className="text-[15px] italic text-default-600 dark:text-default-300 leading-relaxed">
                                 "{booking.event_description}"
                             </p>
                         </div>

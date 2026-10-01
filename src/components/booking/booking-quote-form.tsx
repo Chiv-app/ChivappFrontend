@@ -113,7 +113,7 @@ export default function BookingQuoteForm({
     };
 
     return (
-        <div className="w-full h-full flex flex-col rounded-2xl border border-default-200/50 bg-[#0C121A] p-6 sm:p-8">
+        <div className="w-full h-full flex flex-col rounded-2xl border border-default-200/50 bg-content1 dark:bg-[#0C121A] p-6 sm:p-8">
             <CancelBookingModal
                 bookingId={booking.id}
                 isOpen={isCancelOpen}
@@ -122,7 +122,7 @@ export default function BookingQuoteForm({
             />
             <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
-                    <h2 className="text-2xl font-bold text-white">
+                    <h2 className="text-2xl font-bold text-foreground dark:text-white">
                         {isEditMode ? "Editar propuesta" : "Enviar propuesta"}
                     </h2>
                     <p className="text-sm text-default-400 mt-1">
@@ -170,7 +170,7 @@ export default function BookingQuoteForm({
                         <span className="text-xs text-default-500">Moneda: Soles (S/)</span>
                     </div>
                     
-                    <div className="flex items-center rounded-xl border border-default-200/40 bg-[#151D28] px-5 py-2 h-[72px] focus-within:border-primary transition-colors">
+                    <div className="flex items-center rounded-xl border border-default-200/40 bg-default-100 dark:bg-[#151D28] px-5 py-2 h-[72px] focus-within:border-primary transition-colors">
                         <span className="text-default-400 text-2xl font-medium mr-3">S/</span>
                         <input 
                             type="number"
@@ -178,7 +178,7 @@ export default function BookingQuoteForm({
                             required
                             value={priceAgreed}
                             onChange={(e) => setPriceAgreed(e.target.value)}
-                            className="bg-transparent text-white text-3xl font-bold flex-1 outline-none w-full"
+                            className="bg-transparent text-foreground dark:text-white text-3xl font-bold flex-1 outline-none w-full"
                             placeholder="0.00"
                         />
                     </div>
@@ -186,7 +186,7 @@ export default function BookingQuoteForm({
                     <div className="rounded-xl border border-default-200/20 bg-transparent px-5 py-4 flex flex-col gap-1 mt-2">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                             <p className="text-sm font-medium text-default-400">
-                                El contratista pagará: <span className="text-white font-bold text-base tracking-wide">S/ {contractorTotalPreview?.toFixed(2) || "0.00"}</span>
+                                El contratista pagará: <span className="text-foreground dark:text-white font-bold text-base tracking-wide">S/ {contractorTotalPreview?.toFixed(2) || "0.00"}</span>
                             </p>
                         </div>
                         <p className="text-xs text-default-500">
@@ -208,22 +208,22 @@ export default function BookingQuoteForm({
                         onValueChange={setQuoteNotes}
                         minRows={4}
                         classNames={{
-                            inputWrapper: "border border-default-200/40 bg-[#151D28] hover:bg-[#151D28] hover:border-default-200/60 focus-within:!bg-[#151D28] focus-within:!border-primary",
-                            input: "text-white text-[15px]"
+                            inputWrapper: "border border-default-200/40 bg-default-100 dark:bg-[#151D28] hover:bg-default-200 dark:hover:bg-[#151D28] hover:border-default-200/60 focus-within:!bg-default-100 dark:focus-within:!bg-[#151D28] focus-within:!border-primary",
+                            input: "text-foreground dark:text-white text-[15px]"
                         }}
                     />
                     
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                         <button 
                             type="button"
-                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
+                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-foreground dark:hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
                             onClick={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
                         >
                             + ¿Hay estacionamiento disponible?
                         </button>
                         <button 
                             type="button"
-                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
+                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-foreground dark:hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
                             onClick={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "Incluye amplificación.")}
                         >
                             + Incluye amplificación
@@ -236,7 +236,7 @@ export default function BookingQuoteForm({
                             isSelected={includesTravel}
                             onValueChange={setIncludesTravel}
                             classNames={{
-                                label: "text-sm text-default-300",
+                                label: "text-sm text-default-600 dark:text-default-300",
                                 wrapper: "before:border-default-400"
                             }}
                             className="mt-3"
@@ -264,7 +264,7 @@ export default function BookingQuoteForm({
                             radius="full"
                             onClick={handleDraft}
                             disabled={isSubmitting}
-                            className="border-default-200/40 text-white font-medium flex-1 sm:flex-none hover:bg-default-200/10"
+                            className="border-default-200/40 text-foreground dark:text-white font-medium flex-1 sm:flex-none hover:bg-default-200/10"
                         >
                             Guardar borrador
                         </Button>
