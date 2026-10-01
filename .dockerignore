@@ -25,3 +25,8 @@ src/__smoke__
 *.py
 scripts/apply-ui-v2*.mjs
 .github/
+
+# Tests: no van en la imagen de producción (y sin vitest.setup.ts sus tipos no compilan)
+**/*.test.ts
+**/*.test.tsx
+**/__tests__/
