@@ -255,10 +255,19 @@ export default function BookingConfirmedWorkspace({
     return (
         <div className="flex flex-col gap-6">
             {!isMemberMode && role === "musician" ? (
-                <>
-                    {!isCompleted ? <BookingEnsemblePanel booking={booking} /> : null}
-                    <BookingMemberPayoutPanel booking={booking} />
-                </>
+                <CollapsiblePhaseSection
+                    icon="material-symbols:groups"
+                    title="Integrantes del evento"
+                    summary="Reparto y sincronización de músicos"
+                    customBadgeLabel="Opcional"
+                    customBadgeColor="default"
+                    defaultExpanded={!isCompleted}
+                >
+                    <div className="flex flex-col gap-6 pt-2">
+                        {!isCompleted ? <BookingEnsemblePanel booking={booking} /> : null}
+                        <BookingMemberPayoutPanel booking={booking} />
+                    </div>
+                </CollapsiblePhaseSection>
             ) : null}
 
             {waitingOwnChange ? (
@@ -284,98 +293,69 @@ export default function BookingConfirmedWorkspace({
                 )
             ) : null}
 
-            {/* Acciones de pago / habilitación del evento */}
-            {showPaymentActions ? (
-                <Card className="border border-warning/30 shadow-soft">
-                    <CardBody className="gap-5 p-6">
-                        <div className="flex items-center gap-2">
-                            <Icon icon="material-symbols:account-balance-wallet" width={22} />
-                            <h3 className="text-lg font-bold">Pagos del evento</h3>
-                        </div>
 
-                        {role === "musician" &&
-                        booking.status === "payment_retained" ? (
-                            <div className="flex flex-col gap-3">
-                                <div>
-                                    <h4 className="font-semibold text-foreground">
-                                        Pago total cubierto
-                                    </h4>
-                                    <p className="text-sm text-default-600 mt-1">
-                                        La reserva se pagó al 100 % con Mercado Pago. Puedes
-                                        habilitar la fase de evento para fotos y reseña.
-                                    </p>
-                                </div>
-                                <Button
-                                    color="primary"
-                                    radius="lg"
-                                    className="w-fit font-semibold"
-                                    isLoading={isStarting}
-                                    onPress={handleStartEvent}
-                                >
-                                    Habilitar fase de evento
-                                </Button>
-                            </div>
-                        ) : null}
-                    </CardBody>
-                </Card>
-            ) : null}
 
             {/* 3. Conversación */}
-            {isLocked && canChat ? (
-                <LockedFeatureCard title="Conversación" icon="material-symbols:chat" actionText="Completar mi perfil" />
-            ) : canChat ? (
-                <Card className="border border-default-200/70 shadow-soft">
-                    <CardBody className="gap-4 p-6">
-                        <div className="flex items-center gap-2">
-                            <Icon icon="material-symbols:chat" width={22} />
-                            <h3 className="text-lg font-bold">Conversación</h3>
+            {canChat ? (
+                <CollapsiblePhaseSection
+                    icon="material-symbols:chat"
+                    title="Conversación con el cliente"
+                    summary="Canal directo y notas de coordinación"
+                    customBadgeLabel={messages.length === 1 ? "1 mensaje nuevo" : `${messages.length} mensajes`}
+                    customBadgeColor="success"
+                    defaultExpanded={true}
+                >
+                    {isLocked ? (
+                        <LockedFeatureCard title="Conversación" icon="material-symbols:chat" actionText="Completar mi perfil" />
+                    ) : (
+                        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-4">
+                            <div className="max-h-72 overflow-y-auto rounded-xl border border-default-200 bg-default-50 p-4 flex flex-col gap-3">
+                                {messages.length === 0 ? (
+                                    <p className="text-sm text-default-500 text-center py-6">
+                                        Aún no hay mensajes. Coordina detalles del evento aquí.
+                                    </p>
+                                ) : (
+                                    messages.map((message) => {
+                                        const mine = message.sender_user_id === user?.id;
+                                        return (
+                                            <div
+                                                key={message.id}
+                                                className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                                                    mine
+                                                        ? "ml-auto bg-primary text-primary-foreground"
+                                                        : "bg-content1 border border-default-200"
+                                                }`}
+                                            >
+                                                <p className="text-[11px] opacity-80 mb-1">
+                                                    {message.sender_name ?? "Usuario"} • {" "}
+                                                    {formatDateTime(message.created_at)}
+                                                </p>
+                                                <p>{message.body}</p>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                            <form onSubmit={handleSendMessage} className="flex gap-2">
+                                <Input
+                                    value={messageBody}
+                                    onValueChange={setMessageBody}
+                                    placeholder="Escribe un mensaje…"
+                                    variant="bordered"
+                                    radius="lg"
+                                />
+                                <Button
+                                    type="submit"
+                                    color="primary"
+                                    radius="lg"
+                                    isLoading={isSendingMessage}
+                                >
+                                    Enviar
+                                </Button>
+                            </form>
                         </div>
-                        <div className="max-h-72 overflow-y-auto rounded-2xl border border-default-200 bg-default-50 p-4 flex flex-col gap-3">
-                            {messages.length === 0 ? (
-                                <p className="text-sm text-default-500 text-center py-6">
-                                    Aún no hay mensajes. Coordina detalles del evento aquí.
-                                </p>
-                            ) : (
-                                messages.map((message) => {
-                                    const mine = message.sender_user_id === user?.id;
-                                    return (
-                                        <div
-                                            key={message.id}
-                                            className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                                                mine
-                                                    ? "ml-auto bg-primary text-primary-foreground"
-                                                    : "bg-content1 border border-default-200"
-                                            }`}
-                                        >
-                                            <p className="text-[11px] opacity-80 mb-1">
-                                                {message.sender_name ?? "Usuario"} ·{" "}
-                                                {formatDateTime(message.created_at)}
-                                            </p>
-                                            <p>{message.body}</p>
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
-                        <form onSubmit={handleSendMessage} className="flex gap-2">
-                            <Input
-                                value={messageBody}
-                                onValueChange={setMessageBody}
-                                placeholder="Escribe un mensaje…"
-                                variant="bordered"
-                                radius="lg"
-                            />
-                            <Button
-                                type="submit"
-                                color="primary"
-                                radius="lg"
-                                isLoading={isSendingMessage}
-                            >
-                                Enviar
-                            </Button>
-                        </form>
-                    </CardBody>
-                </Card>
+                    )}
+                </CollapsiblePhaseSection>
             ) : null}
 
             {/* 4. Documentos contractuales — ya están listos en este punto del
@@ -385,23 +365,71 @@ export default function BookingConfirmedWorkspace({
                 <CollapsiblePhaseSection
                     icon="material-symbols:description"
                     title="Contrato y pagos"
-                    summary="Documentos firmados y registro de pagos"
-                    done
+                    summary="Fondos asegurados y términos de servicio"
+                    customBadgeLabel="Al día / Completado"
+                    customBadgeColor="success"
+                    defaultExpanded={false}
                 >
-                    <BookingDocumentsCard
-                        booking={booking}
-                        title="Contrato y pagos"
-                        description="Documentos firmados y registro de pagos asociados a esta reserva."
-                    />
+                    <div className="flex flex-col gap-6 pt-2">
+                        {showPaymentActions ? (
+                            <Card className="border border-warning/30 shadow-soft">
+                                <CardBody className="gap-5 p-6">
+                                    <div className="flex items-center gap-2">
+                                        <Icon icon="material-symbols:account-balance-wallet" width={22} />
+                                        <h3 className="text-lg font-bold">Pagos del evento</h3>
+                                    </div>
+                                    {role === "musician" &&
+                                    booking.status === "payment_retained" ? (
+                                        <div className="flex flex-col gap-3">
+                                            <div>
+                                                <h4 className="font-semibold text-foreground">
+                                                    Pago total cubierto
+                                                </h4>
+                                                <p className="text-sm text-default-600 mt-1">
+                                                    La reserva se pagó al 100 % con Mercado Pago. Puedes
+                                                    habilitar la fase de evento para fotos y reseña.
+                                                </p>
+                                            </div>
+                                            <Button
+                                                color="primary"
+                                                radius="lg"
+                                                className="w-fit font-semibold"
+                                                isLoading={isStarting}
+                                                onPress={handleStartEvent}
+                                            >
+                                                Habilitar fase de evento
+                                            </Button>
+                                        </div>
+                                    ) : null}
+                                </CardBody>
+                            </Card>
+                        ) : null}
+                        <BookingDocumentsCard
+                            booking={booking}
+                            title="Contrato y pagos"
+                            description="Documentos firmados y registro de pagos asociados a esta reserva."
+                        />
+                    </div>
                 </CollapsiblePhaseSection>
             ) : null}
 
             {/* 5. Compartir con invitados */}
-            {isLocked ? (
-                <LockedFeatureCard title="Compartir con invitados" icon="material-symbols:share" actionText="Completar mi perfil" />
-            ) : (
-                <BookingShareCard booking={booking} />
-            )}
+            <CollapsiblePhaseSection
+                icon="material-symbols:share"
+                title="Compartir con invitados"
+                summary="Enlace de cortesía en modo vista"
+                customBadgeLabel="Enlace disponible"
+                customBadgeColor="default"
+                defaultExpanded={false}
+            >
+                <div className="pt-2">
+                    {isLocked ? (
+                        <LockedFeatureCard title="Compartir con invitados" icon="material-symbols:share" actionText="Completar mi perfil" />
+                    ) : (
+                        <BookingShareCard booking={booking} />
+                    )}
+                </div>
+            </CollapsiblePhaseSection>
 
             {/* 6. Reseñas y recomendación */}
             {showReview ? (
@@ -414,18 +442,20 @@ export default function BookingConfirmedWorkspace({
                             : "Falta la reseña final del contratista"
                     }
                     done={reviewGateDone}
+                    pendingLabel="Pendiente de contratista"
                 >
-                    <BookingReviewsTimeline
-                        booking={booking}
-                        role={role}
-                        canAdd={canAddReview}
-                        onReviewsChanged={onReviewsChanged}
-                    />
+                    <div className="flex flex-col gap-6 pt-2">
+                        <BookingReviewsTimeline
+                            booking={booking}
+                            role={role}
+                            canAdd={canAddReview}
+                            onReviewsChanged={onReviewsChanged}
+                        />
+                        {showMusicianRecommend ? (
+                            <RecommendContractorCard booking={booking} />
+                        ) : null}
+                    </div>
                 </CollapsiblePhaseSection>
-            ) : null}
-
-            {showMusicianRecommend ? (
-                <RecommendContractorCard booking={booking} />
             ) : null}
 
             {/* 7. Cierre */}
