@@ -207,10 +207,10 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           if (error.status === 400 || error.status === 409) {
               addToast({
                   title: "Cuenta existente",
-                  description: "Este correo ya est\u00e1 registrado con contrase\u00f1a. Por favor, inicia sesi\u00f3n para continuar.",
+                  description: "Este correo ya tiene una cuenta. Inicia sesi\u00f3n para continuar (si nunca creaste contrase\u00f1a, usa \u00abOlvid\u00e9 mi contrase\u00f1a\u00bb).",
                   color: "warning"
               });
-              openLogin({ redirect: window.location.pathname });
+              openLogin({ redirect: `${window.location.pathname}?reservar=1` });
           } else {
               addToast({ title: "Error", description: "Ocurri\u00f3 un error al registrar tus datos.", color: "danger" });
           }

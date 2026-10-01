@@ -70,7 +70,8 @@ export function generateContractorContractPdf() {
 }
 
 function isSafeInternalPath(path: string): boolean {
-    return path.startsWith("/") && !path.startsWith("//");
+    // "/\evil.com" lo normalizan los navegadores a "//evil.com".
+    return path.startsWith("/") && !path.startsWith("//") && !path.includes("\\");
 }
 
 function matchesPathPrefix(path: string, prefix: string): boolean {

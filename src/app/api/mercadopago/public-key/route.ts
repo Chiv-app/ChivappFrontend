@@ -9,25 +9,11 @@ export async function GET() {
         process.env.MERCADO_PAGO_PUBLIC_KEY ||
         "";
 
-    if (!publicKey) {
-        for (const [key, value] of Object.entries(process.env)) {
-            if (
-                typeof value === "string" &&
-                (value.startsWith("APP_USR-") || value.startsWith("TEST-")) &&
-                (key.toUpperCase().includes("MERCADO") || key.toUpperCase().includes("MP") || key.toUpperCase().includes("PUBLIC"))
-            ) {
-                publicKey = value;
-                break;
-            }
-        }
-    }
-
-    if (!publicKey) {
+    // No recorrer process.env buscando valores "APP_USR-": los access tokens
+    // privados de Mercado Pago tienen el mismo prefijo y se publicarían.
+    const backendBase = process.env.API_PROXY_TARGET || process.env.BACKEND_URL;
+    if (!publicKey && backendBase) {
         try {
-            const backendBase =
-                process.env.API_PROXY_TARGET ||
-                process.env.BACKEND_URL ||
-                "https://chivappbackend-688017127648.us-central1.run.app";
             const res = await fetch(
                 `${backendBase.replace(/\/$/, "")}/api/v1/payments/mercadopago/public-key`,
                 { signal: AbortSignal.timeout(3000) }

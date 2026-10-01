@@ -48,7 +48,12 @@ export default function MusicianOnboarding() {
     useEffect(() => {
         getMusicianProfile()
             .then((profile) => {
-                if (profile.status === "published" || profile.status === "rejected" || profile.is_ensemble_only) {
+                if (
+                    profile.status === "published" ||
+                    profile.status === "pending_review" ||
+                    profile.status === "rejected" ||
+                    profile.is_ensemble_only
+                ) {
                     router.replace("/musician");
                     return;
                 }
@@ -135,7 +140,11 @@ export default function MusicianOnboarding() {
                 });
                 await onboardMusicianProfile();
                 await refresh();
-                addToast({ title: "¡Perfil publicado!", description: "Ahora los clientes pueden encontrarte en búsquedas.", color: "success" });
+                addToast({
+                    title: "¡Perfil enviado a revisión!",
+                    description: "Nuestro equipo lo revisará y te avisaremos cuando esté publicado.",
+                    color: "success",
+                });
                 router.replace("/musician");
             } catch (e) {
                 addToast({ title: "Error al completar", color: "danger" });

@@ -5,19 +5,25 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: "*",
             allow: "/",
+            // Los Disallow son por prefijo: usar barra final para no bloquear
+            // las rutas públicas /musicians/* y /contractors/*.
             disallow: [
-                "/admin",
                 "/admin/",
-                "/contractor",
                 "/contractor/",
-                "/musician",
                 "/musician/",
                 "/login",
                 "/register",
                 "/api/",
+                "/share/",
+                "/invite/",
+                "/calendar-callback",
+                "/complete-role",
+                "/set-password",
+                "/reset-password",
+                "/forgot-password",
+                "/verify-email",
             ],
         },
         sitemap: "https://chiv.app/sitemap.xml",
-        host: "https://chiv.app",
     };
 }

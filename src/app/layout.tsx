@@ -10,6 +10,7 @@ import {
     getSiteUrl,
     websiteJsonLd,
     organizationJsonLd,
+    serializeJsonLd,
 } from "@/lib/seo";
 
 export const viewport: Viewport = {
@@ -131,13 +132,13 @@ export default function RootLayout({
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(jsonLd),
+                        __html: serializeJsonLd(jsonLd),
                     }}
                 />
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(orgJsonLd),
+                        __html: serializeJsonLd(orgJsonLd),
                     }}
                 />
                 <Providers>

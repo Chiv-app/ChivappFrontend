@@ -14,3 +14,14 @@ DESIGN.md
 vitest.config.ts
 vitest.setup.ts
 src/__smoke__
+
+# Variables de entorno: los valores públicos se pasan como build-args
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Scripts locales
+*.py
+scripts/apply-ui-v2*.mjs
+.github/

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import MusicianDetailView from "@/components/musician/musician-detail-view";
 import { ApiError } from "@/lib/api";
 import { getMusicianById } from "@/lib/musicians";
-import { buildPageMetadata, musicianJsonLd } from "@/lib/seo";
+import { buildPageMetadata, musicianJsonLd, serializeJsonLd } from "@/lib/seo";
 import type { MusicianDetail } from "@/types/ui/musician";
 
 type PageProps = {
@@ -89,7 +89,7 @@ export default async function MusicianDetailPage({ params }: PageProps) {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(jsonLd),
+                    __html: serializeJsonLd(jsonLd),
                 }}
             />
             <Suspense fallback={detailFallback}>

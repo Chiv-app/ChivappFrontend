@@ -6,6 +6,19 @@ export const SITE_TAGLINE = "Encuentra y contrata músicos para tu evento.";
 export const SITE_DESCRIPTION =
     "Chivapp conecta personas con músicos verificados para bodas, fiestas y eventos. Descubre perfiles, escucha su estilo y reserva en minutos.";
 
+/**
+ * Serializa JSON-LD para un <script>. JSON.stringify no escapa "<", así que
+ * un texto con "</script>" (p. ej. la bio de un músico) inyectaría HTML.
+ */
+export function serializeJsonLd(data: unknown): string {
+    return JSON.stringify(data)
+        .replace(/</g, "\\u003c")
+        .replace(/>/g, "\\u003e")
+        .replace(/&/g, "\\u0026")
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
+}
+
 export function getSiteUrl(): string {
     const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
     if (explicit) return explicit.replace(/\/$/, "");

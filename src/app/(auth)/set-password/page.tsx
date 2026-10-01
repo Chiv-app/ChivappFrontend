@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { ApiError } from "@/lib/api";
 import { previewPasswordSetup, setPassword } from "@/lib/ensemble-members";
 import { evaluatePasswordRules } from "@/lib/password-rules";
-import { getPostLoginPath } from "@/lib/profiles";
+import { getPostLoginPath, resolveAuthRedirect } from "@/lib/profiles";
 import { UI } from "@/lib/ui-classes";
 import type { PasswordSetupPreviewOut } from "@/types/api";
 
@@ -72,9 +72,9 @@ function SetPasswordForm() {
             return;
         }
         if (user.has_password) {
-            router.replace(callbackUrl || getPostLoginPath(user.role, user.is_verified));
+            router.replace(resolveAuthRedirect(user.role, callbackUrl, user.is_verified));
         }
-    }, [authLoading, user, token, router]);
+    }, [authLoading, user, token, router, callbackUrl]);
 
     const passwordEvaluation = evaluatePasswordRules(password, confirm);
 
@@ -109,7 +109,7 @@ function SetPasswordForm() {
                 color: "success",
             });
             if (callbackUrl) {
-                router.replace(callbackUrl);
+                router.replace(resolveAuthRedirect(updated.role, callbackUrl, updated.is_verified));
             } else if (updated.is_ensemble_member) {
                 router.replace("/musician/bookings");
             } else {

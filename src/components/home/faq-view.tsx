@@ -1,6 +1,7 @@
 "use client";
 
 import { Accordion, AccordionItem } from "@heroui/react";
+import { serializeJsonLd } from "@/lib/seo";
 import { motion } from "framer-motion";
 
 const faqs = [
@@ -57,7 +58,7 @@ export default function FaqSection() {
         >
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+                dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }}
             />
             <div className="max-w-[800px] mx-auto px-4 sm:px-6 md:px-8">
                 <motion.div 
