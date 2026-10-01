@@ -63,7 +63,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                                     : booking.status === "accepted"
                                       ? "Cotización enviada"
                                       : booking.status === "contract_pending"
-                                        ? "Contratado"
+                                        ? "Contrato pendiente"
                                         : booking.status === "cancelled"
                                           ? "Cancelado"
                                           : booking.status}

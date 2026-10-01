@@ -3,7 +3,7 @@ import type { BookingStatus } from "@/types/api";
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
     requested: "Solicitud enviada",
     accepted: "Cotización pendiente",
-    contract_pending: "Firmar contrato",
+    contract_pending: "Contrato pendiente",
     contract_signed: "Contrato firmado",
     payment_pending: "Pago en procesamiento",
     payment_retained: "Reserva confirmada",
@@ -34,7 +34,7 @@ export const BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
     in_progress:
         "Pago completado. Comparte fotos, videos y una reseña del show.",
     payment_released: "Los pagos fueron liberados al músico.",
-    completed: "Finalizada. Servicio completado con éxito.",
+    completed: "Finalizada. Servicio completado con ééxito.",
     cancelled: "Esta reserva fue cancelada.",
 };
 

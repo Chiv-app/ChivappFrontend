@@ -69,7 +69,7 @@ function actionLabel(booking: BookingOut) {
     }
     const status = booking.status;
     if (status === "accepted") return "Revisar cotización";
-    if (status === "contract_pending") return "Firmar contrato";
+    if (status === "contract_pending") return "Contrato pendiente";
     if (status === "in_progress") return "Continuar";
     return "Gestionar";
 }
