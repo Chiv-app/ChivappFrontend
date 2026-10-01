@@ -98,6 +98,18 @@ export default function MusicianPayoutsView() {
         });
     }, [rows, filter]);
 
+    const stats = useMemo(() => {
+        let pendingAmount = 0;
+        let readyCount = 0;
+        let paidAmount = 0;
+        for (const row of rows) {
+            pendingAmount += Number(row.total_pending || 0);
+            paidAmount += Number(row.total_paid || 0);
+            if (row.can_pay && Number(row.total_pending) > 0) readyCount += 1;
+        }
+        return { pendingAmount, readyCount, paidAmount, total: rows.length };
+    }, [rows]);
+
     if (!isVerificationLoading && !profileIsVerified) {
         return (
             <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
@@ -134,17 +146,6 @@ export default function MusicianPayoutsView() {
         );
     }
 
-    const stats = useMemo(() => {
-        let pendingAmount = 0;
-        let readyCount = 0;
-        let paidAmount = 0;
-        for (const row of rows) {
-            pendingAmount += Number(row.total_pending || 0);
-            paidAmount += Number(row.total_paid || 0);
-            if (row.can_pay && Number(row.total_pending) > 0) readyCount += 1;
-        }
-        return { pendingAmount, readyCount, paidAmount, total: rows.length };
-    }, [rows]);
 
     async function saveRow(row: MemberSettlementBookingOut, lock: boolean) {
         const items = row.members.map((member) => ({
