@@ -29,8 +29,6 @@ type Props = {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdated: (booking: BookingOut) => void;
-    /** Adelanto ya validado (pagos retained/released). No editable. */
-    validatedAdvance?: number | null;
 };
 
 function locationFromBooking(booking: BookingOut): MapLocation | null {
@@ -50,7 +48,6 @@ export default function BookingEditCommitmentModal({
     isOpen,
     onOpenChange,
     onUpdated,
-    validatedAdvance = null,
 }: Props) {
     const isMusician = role === "musician";
     const formId = "edit-commitment-form";
@@ -59,12 +56,6 @@ export default function BookingEditCommitmentModal({
     const [reference, setReference] = useState("");
     const [location, setLocation] = useState<MapLocation | null>(null);
     const [description, setDescription] = useState(booking.event_description ?? "");
-    const [priceInput, setPriceInput] = useState(
-        booking.price_agreed != null ? String(Number(booking.price_agreed)) : "",
-    );
-    const [advanceInput, setAdvanceInput] = useState(
-        booking.advance_amount != null ? String(Number(booking.advance_amount)) : "",
-    );
     const [changeNotes, setChangeNotes] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [mapMountKey, setMapMountKey] = useState(0);
@@ -77,12 +68,6 @@ export default function BookingEditCommitmentModal({
         setReference(coords ? "" : (booking.location_reference ?? ""));
         setLocation(locationFromBooking(booking));
         setDescription(booking.event_description ?? "");
-        setPriceInput(
-            booking.price_agreed != null ? String(Number(booking.price_agreed)) : "",
-        );
-        setAdvanceInput(
-            booking.advance_amount != null ? String(Number(booking.advance_amount)) : "",
-        );
         setChangeNotes("");
         // Remonta el mapa al abrir para evitar tiles grises / área invisible en el modal.
         setMapMountKey((current) => current + 1);
@@ -106,40 +91,6 @@ export default function BookingEditCommitmentModal({
             return;
         }
 
-        if (isMusician) {
-            const price = priceInput ? Number(priceInput) : null;
-            const advance = advanceInput ? Number(advanceInput) : null;
-            if (price != null && (!Number.isFinite(price) || price <= 0)) {
-                addToast({
-                    title: "Precio inválido",
-                    description: "Indica un precio acordado válido.",
-                    color: "warning",
-                });
-                return;
-            }
-            if (
-                validatedAdvance != null &&
-                price != null &&
-                price < validatedAdvance
-            ) {
-                addToast({
-                    title: "Precio inválido",
-                    description:
-                        "El precio no puede ser menor al adelanto ya validado.",
-                    color: "warning",
-                });
-                return;
-            }
-            if (advance != null && price != null && advance > price) {
-                addToast({
-                    title: "Anticipo inválido",
-                    description: "El anticipo no puede superar el precio acordado.",
-                    color: "warning",
-                });
-                return;
-            }
-        }
-
         const locationReference = location
             ? formatLocationReference(location.lat, location.lng)
             : reference.trim() || null;
@@ -152,12 +103,6 @@ export default function BookingEditCommitmentModal({
                 location_reference: locationReference,
                 event_description: description.trim() || null,
                 change_notes: changeNotes.trim() || null,
-                ...(isMusician
-                    ? {
-                          price_agreed: priceInput ? Number(priceInput) : null,
-                          advance_amount: advanceInput ? Number(advanceInput) : null,
-                      }
-                    : {}),
             });
             onUpdated(updated);
             onOpenChange(false);
@@ -257,43 +202,19 @@ export default function BookingEditCommitmentModal({
                                     minRows={2}
                                 />
 
-                                {isMusician ? (
-                                    <>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <Input
-                                                label="Precio acordado (S/)"
-                                                type="number"
-                                                min="1"
-                                                value={priceInput}
-                                                onValueChange={setPriceInput}
-                                                variant="bordered"
-                                            />
-                                            <Input
-                                                label="Anticipo acordado (S/)"
-                                                type="number"
-                                                min="0"
-                                                value={advanceInput}
-                                                onValueChange={setAdvanceInput}
-                                                variant="bordered"
-                                                description="Figura contractual. No altera el adelanto ya validado."
-                                            />
-                                        </div>
-                                        {validatedAdvance != null &&
-                                        validatedAdvance > 0 ? (
-                                            <div className="rounded-2xl border border-success/30 bg-success/5 px-4 py-3">
-                                                <p className="text-xs font-semibold text-success mb-1">
-                                                    Adelanto validado (no editable)
-                                                </p>
-                                                <p className="text-sm text-foreground font-semibold">
-                                                    {formatCurrency(validatedAdvance)}
-                                                </p>
-                                                <p className="text-xs text-default-500 mt-1">
-                                                    Este monto ya fue retenido y no se
-                                                    puede modificar desde aquí.
-                                                </p>
-                                            </div>
-                                        ) : null}
-                                    </>
+                                {booking.price_agreed != null ? (
+                                    <div className="rounded-2xl border border-success/30 bg-success/5 px-4 py-3">
+                                        <p className="text-xs font-semibold text-success mb-1">
+                                            Precio acordado (no editable)
+                                        </p>
+                                        <p className="text-sm text-foreground font-semibold">
+                                            {formatCurrency(Number(booking.price_agreed))}
+                                        </p>
+                                        <p className="text-xs text-default-500 mt-1">
+                                            La reserva se pagó al 100 % con Mercado Pago, por
+                                            lo que el precio ya no se puede modificar.
+                                        </p>
+                                    </div>
                                 ) : null}
 
                                 <Textarea

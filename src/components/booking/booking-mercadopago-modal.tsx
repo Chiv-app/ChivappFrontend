@@ -27,7 +27,6 @@ type Props = {
     isOpen: boolean;
     onClose: () => void;
     booking: BookingOut;
-    paymentType: "advance" | "full" | "balance";
     amount: number;
     signatureImageUrl?: string | null;
     onSuccess: (booking?: BookingOut) => void;
@@ -37,7 +36,6 @@ export default function BookingMercadoPagoModal({
     isOpen,
     onClose,
     booking,
-    paymentType,
     amount,
     signatureImageUrl,
     onSuccess,
@@ -144,7 +142,7 @@ export default function BookingMercadoPagoModal({
                             try {
                                 const res = await processMercadoPagoPayment({
                                     booking_id: booking.id,
-                                    payment_type: paymentType,
+                                    payment_type: "full",
                                     token: token,
                                     payment_method_id: paymentMethodId,
                                     issuer_id: issuerId,
@@ -225,7 +223,6 @@ export default function BookingMercadoPagoModal({
         isLoaded,
         amount,
         booking.id,
-        paymentType,
         signatureImageUrl,
         renderPaymentBrick,
         onSuccess,
@@ -260,7 +257,7 @@ export default function BookingMercadoPagoModal({
             // 2. Procesar el pago en nuestro backend
             const res = await processMercadoPagoPayment({
                 booking_id: booking.id,
-                payment_type: paymentType,
+                payment_type: "full",
                 token: token,
                 payment_method_id: "yape",
                 payer_email: user?.email || undefined,
@@ -300,7 +297,7 @@ export default function BookingMercadoPagoModal({
         try {
             const pref = await createMercadoPagoPreference({
                 booking_id: booking.id,
-                payment_type: paymentType,
+                payment_type: "full",
                 signature_image_url: signatureImageUrl,
             });
             const redirectUrl = pref.init_point || pref.sandbox_init_point;
@@ -318,7 +315,7 @@ export default function BookingMercadoPagoModal({
         }
     }
 
-    const paymentLabel = paymentType === "balance" ? "Saldo Pendiente" : "Pago Total";
+    const paymentLabel = "Pago Total";
 
     return (
         <Modal

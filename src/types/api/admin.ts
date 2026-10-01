@@ -61,7 +61,6 @@ export type AdminBookingOut = {
     location_address: string;
     location_city: string | null;
     price_agreed: number | null;
-    advance_amount: number | null;
     share_enabled: boolean;
     change_requested_by: string | null;
     musician_id: string;
@@ -74,10 +73,23 @@ export type AdminBookingOut = {
     rejection_reason: string | null;
     cancellation_refund_percent?: number | string | null;
     cancellation_refund_amount?: number | string | null;
-    cancellation_refund_status?: "none" | "processing" | "completed" | "failed" | string | null;
+    cancellation_refund_status?:
+        | "pending_approval"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "rejected"
+        | "none"
+        | string
+        | null;
     cancellation_refund_error?: string | null;
     created_at: string;
     updated_at: string;
+};
+
+export type AdminApproveRefund = {
+    /** Monto a reembolsar. Omitido/null = monto de la política; 0 = rechazar. */
+    amount?: string | number | null;
 };
 
 export type AdminBookingCancel = {
@@ -89,7 +101,6 @@ export type AdminBookingCancel = {
 export type AdminBookingDetailOut = AdminBookingOut & {
     musician_phone: string | null;
     contractor_phone: string | null;
-    balance_due: number;
     amount_paid: number;
     contract: ContractOut | null;
     payments: PaymentOut[];
@@ -124,6 +135,8 @@ export type AdminListParams = {
     limit?: number;
     q?: string;
     status?: ProfileStatus | BookingStatus | PaymentStatus | string;
+    /** Solo reservas: filtra por estado del reembolso (p. ej. "pending_approval"). */
+    refund_status?: string;
     role?: string;
     is_verified?: boolean;
     is_active?: boolean;

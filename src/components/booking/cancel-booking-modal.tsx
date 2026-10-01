@@ -79,14 +79,9 @@ export default function CancelBookingModal({
                 rejection_reason: trimmed || null,
             });
             const refundAmount = toAmount(updated.cancellation_refund_amount);
-            const recipient =
-                quote.cancelled_by === "musician" ? "al cliente" : "a tu medio de pago";
             let description = "La reserva fue cancelada.";
             if (refundAmount > 0) {
-                description =
-                    updated.cancellation_refund_status === "failed"
-                        ? `El reembolso de ${formatCurrency(refundAmount)} quedó pendiente; el equipo de Chivapp lo está revisando.`
-                        : `Se reembolsará ${formatCurrency(refundAmount)} ${recipient}.`;
+                description = `La solicitud de reembolso de ${formatCurrency(refundAmount)} se envió a Chivapp para su revisión. Te avisaremos cuando sea aprobada.`;
             }
             addToast({ title: "Reserva cancelada", description, color: "success" });
             onCancelled(updated);
@@ -175,7 +170,7 @@ export default function CancelBookingModal({
                                         </div>
                                         <div className="rounded-xl border border-success/30 bg-success/5 p-3">
                                             <dt className="text-xs text-default-500">
-                                                Monto a reembolsar
+                                                Reembolso estimado
                                             </dt>
                                             <dd className="font-semibold text-success mt-0.5">
                                                 {formatCurrency(refundAmount)}
@@ -185,8 +180,9 @@ export default function CancelBookingModal({
 
                                     {refundAmount > 0 ? (
                                         <p className="text-xs text-default-500">
-                                            El reembolso se procesa automáticamente con
-                                            Mercado Pago al medio de pago que usó el cliente.
+                                            El reembolso será revisado y aprobado por
+                                            Chivapp antes de enviarse con Mercado Pago al
+                                            medio de pago que usó el cliente.
                                         </p>
                                     ) : null}
 

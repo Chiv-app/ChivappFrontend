@@ -301,8 +301,8 @@ export default function BookingConfirmedWorkspace({
                                         Pago total cubierto
                                     </h4>
                                     <p className="text-sm text-default-600 mt-1">
-                                        No hay saldo pendiente. Puedes habilitar la fase de
-                                        evento para fotos y reseña.
+                                        La reserva se pagó al 100 % con Mercado Pago. Puedes
+                                        habilitar la fase de evento para fotos y reseña.
                                     </p>
                                 </div>
                                 <Button
@@ -379,7 +379,7 @@ export default function BookingConfirmedWorkspace({
             ) : null}
 
             {/* 4. Documentos contractuales — ya están listos en este punto del
-                flujo (contrato firmado y anticipo validado), así que arranca
+                flujo (contrato firmado y pago confirmado), así que arranca
                 colapsado; se puede reabrir para revisarlos. */}
             {!isMemberMode ? (
                 <CollapsiblePhaseSection

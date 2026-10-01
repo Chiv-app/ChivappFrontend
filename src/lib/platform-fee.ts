@@ -49,17 +49,3 @@ export function platformGatewayFeeAmount(booking: Pick<
     if (total == null || total <= 0) return 0;
     return Math.round((total - price - appFee) * 100) / 100;
 }
-
-export function contractorAdvanceDue(booking: Pick<
-    BookingOut,
-    "price_agreed" | "platform_fee_percent"
->): number | null {
-    return contractorPayableTotal(booking);
-}
-
-export function contractorRemainingAfterAdvance(booking: Pick<
-    BookingOut,
-    "price_agreed" | "platform_fee_percent"
->): number | null {
-    return 0;
-}

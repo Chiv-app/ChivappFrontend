@@ -1,6 +1,5 @@
 import { apiFetch } from "@/lib/api";
 import type {
-    BookingBalanceDue,
     BookingChangeDecision,
     BookingCreate,
     BookingEventChangeRequest,
@@ -125,10 +124,6 @@ export function decideBookingChange(id: string, payload: BookingChangeDecision) 
         method: "POST",
         body: JSON.stringify(payload),
     });
-}
-
-export function getBookingBalanceDue(id: string) {
-    return apiFetch<BookingBalanceDue>(`/bookings/${id}/balance-due`);
 }
 
 export function startBookingEvent(id: string) {

@@ -4,7 +4,7 @@ export type TimelineStepId =
     | "request"
     | "quote"
     | "contract"
-    | "advance"
+    | "payment"
     | "confirmed"
     | "event"
     | "done";
@@ -23,7 +23,7 @@ const MAIN_FLOW: TimelineStepId[] = [
     "request",
     "quote",
     "contract",
-    "advance",
+    "payment",
     "confirmed",
     "event",
     "done",
@@ -51,7 +51,7 @@ const STEP_COPY: Record<
         musician: "Espera la firma del contratista.",
         contractor: "Elige repertorio, firma el contrato y confirma el pago.",
     },
-    advance: {
+    payment: {
         title: "Pago",
         description: "Cobro único y seguro con Mercado Pago.",
         musician: "Cobro acreditado en la plataforma.",
@@ -90,6 +90,9 @@ function statusToStepIndex(status: BookingStatus): number {
             return 3;
         case "payment_retained":
         case "change_pending":
+        // Legacy (inalcanzables): equivalen a una reserva confirmada.
+        case "balance_pending":
+        case "balance_review":
             return 4;
         case "in_progress":
         case "payment_released":
@@ -106,7 +109,7 @@ function statusToStepIndex(status: BookingStatus): number {
 export function buildBookingTimeline(
     status: BookingStatus,
     role: Extract<UserRole, "musician" | "contractor">,
-    options?: { balanceDue?: number | null; hasReview?: boolean },
+    options?: { hasReview?: boolean },
 ): {
     steps: BookingTimelineStep[];
     currentIndex: number;

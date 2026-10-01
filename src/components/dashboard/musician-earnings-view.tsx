@@ -450,7 +450,7 @@ function PlatformPaymentsSection({
                         Historial de pagos
                     </h2>
                     <p className="text-sm text-default-500 mt-1">
-                        Cada anticipo, saldo o pago total asociado a tus reservas.
+                        Cada pago total asociado a tus reservas.
                     </p>
                 </div>
                 <Tabs

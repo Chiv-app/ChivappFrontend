@@ -28,18 +28,18 @@ export function getContractorExpenses() {
     return apiFetch<ContractorExpensesSummary>("/payments/contractor/expenses");
 }
 
+/** Pago único (100 %). "advance" es metadata antigua equivalente al pago total. */
+function isFullPaymentType(type: string | null | undefined): boolean {
+    return type === "full" || type === "advance";
+}
+
 function expensesToOperations(
     summary: ContractorExpensesSummary,
 ): ContractorOperationsSummary {
     const items: ContractorOperationItem[] = summary.items.map((item) => ({
         id: `payment:${item.payment_id}`,
         booking_id: item.booking_id,
-        kind:
-            item.payment_type === "balance"
-                ? "payment_balance"
-                : item.payment_type === "advance" || item.payment_type === "full"
-                  ? "payment_advance"
-                  : "payment_out",
+        kind: isFullPaymentType(item.payment_type) ? "payment_full" : "payment_out",
         status:
             item.status === "initiated"
                 ? "pending_other"
@@ -49,14 +49,7 @@ function expensesToOperations(
                     ? "rejected"
                     : "done",
         direction: "out",
-        title:
-            item.payment_type === "advance"
-                ? "Anticipo"
-                : item.payment_type === "full"
-                  ? "Pago total"
-                  : item.payment_type === "balance"
-                    ? "Abono final"
-                    : "Pago",
+        title: isFullPaymentType(item.payment_type) ? "Pago total" : "Pago",
         subtitle: null,
         cta_label: "Ver reserva",
         amount: item.amount,

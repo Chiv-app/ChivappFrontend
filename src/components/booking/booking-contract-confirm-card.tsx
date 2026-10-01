@@ -281,7 +281,7 @@ export default function BookingContractConfirmCard({
                                     {contractorTotal != null ? formatCurrency(contractorTotal) : "Total"}
                                 </p>
                                 <div className="text-xs text-default-500 mt-1">
-                                    Cancela el 100% del servicio hoy. Despreocúpate de realizar abonos posteriores.
+                                    Paga el 100% del servicio hoy en un solo pago seguro. No hay pagos posteriores.
                                 </div>
                             </div>
                         </div>
@@ -350,7 +350,6 @@ export default function BookingContractConfirmCard({
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 booking={booking}
-                paymentType="full"
                 amount={contractorTotal ?? 0}
                 signatureImageUrl={uploadedSignatureUrl}
                 onSuccess={() => {

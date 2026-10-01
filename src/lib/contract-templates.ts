@@ -36,9 +36,15 @@ export const CONTRACT_PLACEHOLDERS: ContractPlaceholder[] = [
     { key: "{{lugar_evento}}", label: "Lugar del evento", sample: "Salón Los Jardines, Lima" },
     { key: "{{duracion_servicio}}", label: "Duración", sample: "2 horas" },
     { key: "{{monto_total}}", label: "Monto total", sample: "S/ 1,200" },
-    { key: "{{anticipo}}", label: "Anticipo", sample: "S/ 400" },
     { key: "{{fecha_contrato}}", label: "Fecha del contrato", sample: "23/07/2026" },
 ];
+
+/**
+ * Compatibilidad: plantillas guardadas antes del pago único (100 %) pueden usar
+ * el marcador del antiguo anticipo. Ya no se ofrece, pero se sigue
+ * reemplazando (con el monto total) para que nunca se muestre crudo.
+ */
+export const LEGACY_ADVANCE_PLACEHOLDER = "{{anticipo}}";
 
 /** Coincide con un span de resaltado de variable generado por el editor tipo Word. */
 const VARIABLE_SPAN_PATTERN =
@@ -162,6 +168,8 @@ export function replaceContractPlaceholders(
     const sampleMap = Object.fromEntries(
         CONTRACT_PLACEHOLDERS.map((item) => [item.key, item.sample]),
     ) as Record<string, string>;
+    // Plantillas antiguas: el "anticipo" ahora es el pago único del total.
+    sampleMap[LEGACY_ADVANCE_PLACEHOLDER] = sampleMap["{{monto_total}}"];
 
     const artistMap: Record<string, string> = {
         "{{nombre_artista}}": context.artistName,
@@ -181,7 +189,7 @@ export function replaceContractPlaceholders(
         "{{lugar_evento}}",
         "{{duracion_servicio}}",
         "{{monto_total}}",
-        "{{anticipo}}",
+        LEGACY_ADVANCE_PLACEHOLDER,
     ]);
 
     return unwrapVariableSpans(html).replace(PLACEHOLDER_TOKEN_PATTERN, (token) => {
@@ -243,7 +251,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "El monto total acordado por el servicio es {{monto_total}}. EL CLIENTE entregará un anticipo de {{anticipo}} para confirmar la reserva y cancelará el saldo restante el mismo día del evento.\nTarifas de referencia de EL ARTISTA: {{tarifa_evento}} por evento completo o {{tarifa_hora}} por hora adicional. El tiempo extra al pactado se cobrará según esta tarifa y deberá acordarse el mismo día del evento.",
+                    "El monto total acordado por el servicio es {{monto_total}}. EL CLIENTE pagará el 100 % de dicho monto en un único pago a través de Chivapp (Mercado Pago) para confirmar la reserva; no existen pagos posteriores.\nTarifas de referencia de EL ARTISTA: {{tarifa_evento}} por evento completo o {{tarifa_hora}} por hora adicional. El tiempo extra al pactado se cobrará según esta tarifa y deberá acordarse el mismo día del evento.",
             },
             {
                 title: "Equipo técnico y logística",
@@ -263,7 +271,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Si EL CLIENTE cancela el servicio con menos de 7 días calendario de anticipación, el anticipo entregado no será reembolsable.\nSi EL ARTISTA no pudiera asistir por causas propias, deberá devolver el íntegro del anticipo recibido o, de común acuerdo, proponer una fecha alternativa o un reemplazo de igual o mejor calidad artística. Toda reprogramación deberá constar por escrito.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.\nSi EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o, de común acuerdo, se podrá proponer una fecha alternativa o un reemplazo de igual o mejor calidad artística. Toda reprogramación deberá constar por escrito.",
             },
             {
                 title: "Fuerza mayor y derechos de imagen",
@@ -301,7 +309,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios e inversión",
                 content:
-                    "El monto total del servicio es {{monto_total}}. Para confirmar la reserva, EL CLIENTE abonará un anticipo de {{anticipo}}, cancelando el saldo el día del evento.\nTarifa referencial de EL ARTISTA: {{tarifa_evento}} por presentación completa. Horas adicionales se cotizan a {{tarifa_hora}} cada una.",
+                    "El monto total del servicio es {{monto_total}}. Para confirmar la reserva, EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago).\nTarifa referencial de EL ARTISTA: {{tarifa_evento}} por presentación completa. Horas adicionales se cotizan a {{tarifa_hora}} cada una.",
             },
             {
                 title: "Equipo técnico y logística",
@@ -316,7 +324,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "En caso de cancelación por parte de EL CLIENTE con menos de 7 días de anticipación, el anticipo no será reembolsable. Si EL ARTISTA cancela por causas propias, devolverá el anticipo o coordinará una alternativa de mutuo acuerdo.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Si EL ARTISTA cancela por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o se coordinará una alternativa de mutuo acuerdo.",
             },
             {
                 title: "Disposiciones finales",
@@ -344,7 +352,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y facturación",
                 content:
-                    "Los honorarios acordados ascienden a {{monto_total}}. EL CLIENTE abonará un anticipo de {{anticipo}} para la reserva de la fecha, cancelando el saldo restante el día del evento.\nEL CLIENTE deberá remitir los datos de facturación (razón social, RUC y dirección fiscal) con un mínimo de 5 días hábiles de anticipación.",
+                    "Los honorarios acordados ascienden a {{monto_total}}. EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para la reserva de la fecha.\nEL CLIENTE deberá remitir los datos de facturación (razón social, RUC y dirección fiscal) con un mínimo de 5 días hábiles de anticipación.",
             },
             {
                 title: "Equipo técnico y producción",
@@ -397,7 +405,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "El monto total acordado es {{monto_total}}, del cual EL CLIENTE abonará un anticipo de {{anticipo}} para confirmar la fecha y hora, cancelando el saldo restante antes de iniciar la presentación.",
+                    "El monto total acordado es {{monto_total}}, que EL CLIENTE pagará al 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la fecha y hora.",
             },
             {
                 title: "Puntualidad y confidencialidad de la sorpresa",
@@ -407,7 +415,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Cancelaciones con menos de 48 horas de anticipación no darán lugar a devolución del anticipo.",
+                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.",
             },
             {
                 title: "Responsabilidad y permisos",
@@ -440,7 +448,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "El monto acordado por el servicio es {{monto_total}}. EL CLIENTE entregará un anticipo de {{anticipo}} para confirmar la reserva, cancelando el saldo restante el día del servicio.",
+                    "El monto acordado por el servicio es {{monto_total}}. EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la reserva.",
             },
             {
                 title: "Repertorio y sensibilidad del servicio",
@@ -483,7 +491,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "Los honorarios acordados son {{monto_total}}. EL ORGANIZADOR entregará un anticipo de {{anticipo}} para confirmar la participación de EL ARTISTA, cancelando el saldo el día del evento antes del inicio de la presentación, salvo acuerdo distinto por escrito.",
+                    "Los honorarios acordados son {{monto_total}}. EL ORGANIZADOR pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la participación de EL ARTISTA.",
             },
             {
                 title: "Rider técnico y producción",
@@ -536,7 +544,6 @@ export const CONTRACTOR_PLACEHOLDERS: ContractPlaceholder[] = [
     { key: "{{lugar_evento}}", label: "Lugar del evento", sample: "Salón Los Jardines, Lima" },
     { key: "{{duracion_servicio}}", label: "Duración", sample: "2 horas" },
     { key: "{{monto_total}}", label: "Monto total", sample: "S/ 1,200" },
-    { key: "{{anticipo}}", label: "Anticipo", sample: "S/ 400" },
     { key: "{{fecha_contrato}}", label: "Fecha del contrato", sample: "23/07/2026" },
 ];
 
@@ -560,7 +567,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "EL CLIENTE pagará {{monto_total}} por el servicio contratado. Se entregará un anticipo de {{anticipo}} para confirmar la reserva, cancelando el saldo restante el día del evento.",
+                    "EL CLIENTE pagará {{monto_total}} por el servicio contratado. El pago es del 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la reserva.",
             },
             {
                 title: "Requerimientos técnicos y logística",
@@ -580,7 +587,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Si EL CLIENTE cancela el servicio con menos de 7 días calendario de anticipación, el anticipo entregado no será reembolsable. Si EL ARTISTA no pudiera asistir por causas propias, se devolverá el anticipo íntegro o se reprogramará de común acuerdo.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Si EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o se reprogramará de común acuerdo.",
             },
             {
                 title: "Fuerza mayor y derechos de imagen",
@@ -618,7 +625,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Inversión y forma de pago",
                 content:
-                    "El monto total acordado es {{monto_total}}. EL CLIENTE entregará un anticipo de {{anticipo}} para reservar la fecha, cancelando el saldo restante el día del evento.",
+                    "El monto total acordado es {{monto_total}}. EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para reservar la fecha.",
             },
             {
                 title: "Logística del evento",
@@ -633,7 +640,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "En caso de cancelación por parte de EL CLIENTE con menos de 7 días de anticipación, el anticipo no será reembolsable. Toda reprogramación deberá coordinarse por escrito y quedará sujeta a la disponibilidad de EL ARTISTA.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Toda reprogramación deberá coordinarse por escrito y quedará sujeta a la disponibilidad de EL ARTISTA.",
             },
             {
                 title: "Disposiciones finales",
@@ -661,7 +668,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y facturación",
                 content:
-                    "Los honorarios totales acordados son {{monto_total}}. EL CLIENTE entregará un anticipo de {{anticipo}} para confirmar la reserva, cancelando el saldo el día del evento. Los datos de facturación serán enviados a {{correo_cliente}} con al menos 5 días hábiles de anticipación.",
+                    "Los honorarios totales acordados son {{monto_total}}. EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la reserva. Los datos de facturación serán enviados a {{correo_cliente}} con al menos 5 días hábiles de anticipación.",
             },
             {
                 title: "Rider técnico y producción",
@@ -714,7 +721,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "El monto total acordado es {{monto_total}}. EL CLIENTE entregará un anticipo de {{anticipo}} para confirmar la fecha y hora, cancelando el saldo antes de iniciar la presentación.",
+                    "El monto total acordado es {{monto_total}}. EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la fecha y hora.",
             },
             {
                 title: "Coordinación y confidencialidad de la sorpresa",
@@ -724,7 +731,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y cambios de horario",
                 content:
-                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Cancelaciones con menos de 48 horas no darán lugar a devolución del anticipo.",
+                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.",
             },
             {
                 title: "Disposiciones finales",
@@ -752,7 +759,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "El monto acordado es {{monto_total}}. EL CLIENTE entregará un anticipo de {{anticipo}} para confirmar la reserva, cancelando el saldo el día del servicio.",
+                    "El monto acordado es {{monto_total}}. EL CLIENTE pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la reserva.",
             },
             {
                 title: "Coordinación del servicio",
@@ -790,7 +797,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Honorarios y forma de pago",
                 content:
-                    "Los honorarios acordados son {{monto_total}}. EL ORGANIZADOR entregará un anticipo de {{anticipo}} para confirmar la participación de EL ARTISTA, cancelando el saldo el día del evento.",
+                    "Los honorarios acordados son {{monto_total}}. EL ORGANIZADOR pagará el 100 % en un único pago a través de Chivapp (Mercado Pago) para confirmar la participación de EL ARTISTA.",
             },
             {
                 title: "Rider técnico y producción",
@@ -861,6 +868,8 @@ export function replaceContractorPlaceholders(
     const sampleMap = Object.fromEntries(
         CONTRACTOR_PLACEHOLDERS.map((item) => [item.key, item.sample]),
     ) as Record<string, string>;
+    // Plantillas antiguas: el "anticipo" ahora es el pago único del total.
+    sampleMap[LEGACY_ADVANCE_PLACEHOLDER] = sampleMap["{{monto_total}}"];
 
     const clientMap: Record<string, string> = {
         "{{nombre_cliente}}": context.clientName,
@@ -881,7 +890,7 @@ export function replaceContractorPlaceholders(
         "{{lugar_evento}}",
         "{{duracion_servicio}}",
         "{{monto_total}}",
-        "{{anticipo}}",
+        LEGACY_ADVANCE_PLACEHOLDER,
     ]);
 
     return unwrapVariableSpans(html).replace(PLACEHOLDER_TOKEN_PATTERN, (token) => {

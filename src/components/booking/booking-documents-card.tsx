@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardBody, Chip, Divider } from "@heroui/react";
 import { PaymentEvidenceViewer } from "@/components/booking/contract-pdf-viewer";
 import ContractDocumentView from "@/components/booking/contract-document-view";
-import { formatCurrency } from "@/lib/booking-labels";
+import { PAYMENT_TYPE_LABELS, formatCurrency } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
 import { getBookingContract } from "@/lib/contracts";
 import { listBookingPayments } from "@/lib/payments";
@@ -18,10 +18,7 @@ type Props = {
 };
 
 function paymentTypeLabel(type: string | null): string {
-    if (type === "advance") return "Anticipo";
-    if (type === "balance") return "Abono final";
-    if (type === "full") return "Pago total";
-    return "Pago";
+    return (type && PAYMENT_TYPE_LABELS[type]) || "Pago";
 }
 
 function paymentStatusLabel(status: PaymentOut["status"]): string {

@@ -71,7 +71,6 @@ export default function ContractDocumentView({
             },
             { label: "Lugar", value: contextValue(ctx, "{{lugar_evento}}") },
             { label: "Monto", value: contextValue(ctx, "{{monto_total}}") },
-            { label: "Anticipo", value: contextValue(ctx, "{{anticipo}}") },
         ].filter((item) => item.value);
     }, [contract?.context]);
 

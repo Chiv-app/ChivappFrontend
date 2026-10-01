@@ -4,31 +4,24 @@ import { useEffect, useState } from "react";
 import { Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { PaymentEvidenceViewer } from "@/components/booking/contract-pdf-viewer";
-import { formatCurrency } from "@/lib/booking-labels";
+import { PAYMENT_TYPE_LABELS, formatCurrency } from "@/lib/booking-labels";
 import { listBookingPayments } from "@/lib/payments";
 import type { BookingOut, PaymentOut } from "@/types/api";
 
-type Kind = "advance" | "balance" | "full";
-
 type Props = {
     booking: BookingOut;
-    kind: Kind;
 };
 
 function paymentTypeLabel(type: string | null): string {
-    if (type === "advance") return "Anticipo";
-    if (type === "balance") return "Abono final";
-    if (type === "full") return "Pago total";
-    return "Pago";
+    return (type && PAYMENT_TYPE_LABELS[type]) || "Pago";
 }
 
 /**
- * Vista de solo lectura del anticipo/abono final: el músico ya no valida ni
- * rechaza comprobantes (eso lo resuelve un admin en Tesorería). Solo se
- * renderiza mientras el booking está en payment_pending/balance_review, así
- * que el pago más reciente relevante siempre está "initiated".
+ * Vista de solo lectura del pago único (100 %) con Mercado Pago. Solo se
+ * renderiza mientras el booking está en payment_pending, así que el pago más
+ * reciente siempre está "initiated".
  */
-export default function BookingPaymentStatusCard({ booking, kind }: Props) {
+export default function BookingPaymentStatusCard({ booking }: Props) {
     const [payments, setPayments] = useState<PaymentOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -55,8 +48,9 @@ export default function BookingPaymentStatusCard({ booking, kind }: Props) {
         };
     }, [booking.id, booking.status]);
 
-    const relevant = payments.filter((item) =>
-        kind === "balance" ? item.payment_type === "balance" : kind === "advance" ? item.payment_type === "advance" : item.payment_type === "full",
+    // Pago único; "advance" es metadata antigua equivalente al pago total.
+    const relevant = payments.filter(
+        (item) => item.payment_type === "full" || item.payment_type === "advance",
     );
     const payment = relevant[relevant.length - 1] ?? null;
 
@@ -64,13 +58,13 @@ export default function BookingPaymentStatusCard({ booking, kind }: Props) {
         <Card className="border border-warning/30 shadow-soft overflow-hidden">
             <div className="bg-gradient-to-br from-warning/10 via-warning/5 to-transparent px-6 py-6">
                 <Chip color="warning" variant="flat" size="sm" className="mb-3">
-                    {kind === "advance" ? "Anticipo" : kind === "full" ? "Pago total" : "Abono final"}
+                    Pago total
                 </Chip>
                 <h2 className="text-2xl font-bold text-foreground">
                     Pago en procesamiento
                 </h2>
                 <p className="text-sm text-default-600 mt-2 max-w-2xl">
-                    El pago {kind === "advance" ? "del anticipo" : kind === "full" ? "total" : "del abono final"} está siendo procesado a través de Mercado Pago.
+                    El pago total está siendo procesado a través de Mercado Pago.
                     Pulsa &quot;Actualizar&quot; arriba para verificar si ya fue acreditado.
                 </p>
             </div>

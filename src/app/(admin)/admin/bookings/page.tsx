@@ -37,7 +37,10 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
     { key: "in_progress", label: "En evento" },
     { key: "completed", label: "Completadas" },
     { key: "cancelled", label: "Canceladas" },
+    { key: "refund_pending_approval", label: "Reembolso por aprobar" },
 ];
+
+const REFUND_PENDING_FILTER = "refund_pending_approval";
 
 export default function AdminBookingsPage() {
     const [bookings, setBookings] = useState<AdminBookingOut[]>([]);
@@ -45,13 +48,28 @@ export default function AdminBookingsPage() {
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
     const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+    const [pendingRefundCount, setPendingRefundCount] = useState(0);
+
+    const loadPendingRefundCount = useCallback(async () => {
+        try {
+            const data = await getAdminBookings({
+                refund_status: "pending_approval",
+                limit: 200,
+            });
+            setPendingRefundCount(data.length);
+        } catch {
+            setPendingRefundCount(0);
+        }
+    }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
+        const refundPending = status === REFUND_PENDING_FILTER;
         try {
             const data = await getAdminBookings({
                 q: q.trim() || undefined,
-                status: status === "all" ? undefined : status,
+                status: status === "all" || refundPending ? undefined : status,
+                refund_status: refundPending ? "pending_approval" : undefined,
                 limit: 100,
             });
             setBookings(data);
@@ -60,7 +78,8 @@ export default function AdminBookingsPage() {
         } finally {
             setLoading(false);
         }
-    }, [q, status]);
+        void loadPendingRefundCount();
+    }, [q, status, loadPendingRefundCount]);
 
     useEffect(() => {
         const t = window.setTimeout(() => {
@@ -101,9 +120,19 @@ export default function AdminBookingsPage() {
                 title="Operaciones de reservas"
                 description="Controla el pipeline completo: avance, pagos con Mercado Pago, shares públicos, cancelaciones y reembolsos."
                 actions={
-                    <Chip color={failedRefundCount > 0 ? "danger" : "default"} variant="flat">
-                        {failedRefundCount} reembolsos con error
-                    </Chip>
+                    <div className="flex flex-wrap gap-2">
+                        <Chip
+                            as="button"
+                            color={pendingRefundCount > 0 ? "warning" : "default"}
+                            variant="flat"
+                            onClick={() => setStatus(REFUND_PENDING_FILTER)}
+                        >
+                            {pendingRefundCount} reembolsos por aprobar
+                        </Chip>
+                        <Chip color={failedRefundCount > 0 ? "danger" : "default"} variant="flat">
+                            {failedRefundCount} reembolsos con error
+                        </Chip>
+                    </div>
                 }
             />
 
@@ -213,7 +242,11 @@ export default function AdminBookingsPage() {
                                                     Cambio
                                                 </Chip>
                                             ) : null}
-                                            {booking.cancellation_refund_status === "failed" ? (
+                                            {booking.cancellation_refund_status === "pending_approval" ? (
+                                                <Chip size="sm" color="warning" variant="flat">
+                                                    Reembolso por aprobar
+                                                </Chip>
+                                            ) : booking.cancellation_refund_status === "failed" ? (
                                                 <Chip size="sm" color="danger" variant="flat">
                                                     Reembolso fallido
                                                 </Chip>

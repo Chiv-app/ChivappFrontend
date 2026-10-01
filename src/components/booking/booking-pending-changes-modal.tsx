@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Button,
     Chip,
-    Input,
     Modal,
     ModalBody,
     ModalContent,
@@ -14,7 +13,6 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import LocationMapPreview from "@/components/ui/location-map-preview";
-import { formatCurrency } from "@/lib/booking-labels";
 import { decideBookingChange } from "@/lib/bookings";
 import type { BookingOut } from "@/types/api";
 
@@ -23,7 +21,6 @@ type Props = {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdated: (booking: BookingOut) => void;
-    validatedAdvance?: number | null;
 };
 
 type DiffRow = {
@@ -39,11 +36,6 @@ function displayText(value: string | null | undefined): string {
     return trimmed ? trimmed : "—";
 }
 
-function displayMoney(value: number | null | undefined): string {
-    if (value == null || Number.isNaN(Number(value))) return "—";
-    return formatCurrency(Number(value));
-}
-
 function valuesEqual(
     before: string | null | undefined,
     after: string | null | undefined,
@@ -51,46 +43,15 @@ function valuesEqual(
     return (before ?? "").trim() === (after ?? "").trim();
 }
 
-function moneyEqual(
-    before: number | null | undefined,
-    after: number | null | undefined,
-): boolean {
-    if (before == null && after == null) return true;
-    if (before == null || after == null) return false;
-    return Number(before) === Number(after);
-}
-
 export default function BookingPendingChangesModal({
     booking,
     isOpen,
     onOpenChange,
     onUpdated,
-    validatedAdvance = null,
 }: Props) {
     const [isDeciding, setIsDeciding] = useState(false);
-    const [priceInput, setPriceInput] = useState("");
-    const [advanceInput, setAdvanceInput] = useState("");
-
-    useEffect(() => {
-        if (!isOpen) return;
-        setPriceInput(
-            booking.price_agreed != null ? String(Number(booking.price_agreed)) : "",
-        );
-        setAdvanceInput(
-            booking.advance_amount != null
-                ? String(Number(booking.advance_amount))
-                : "",
-        );
-    }, [booking, isOpen]);
 
     const historyRows = useMemo<DiffRow[]>(() => {
-        const nextPrice = priceInput.trim()
-            ? Number(priceInput)
-            : (booking.pending_price_agreed ?? booking.price_agreed);
-        const nextAdvance = advanceInput.trim()
-            ? Number(advanceInput)
-            : (booking.pending_advance_amount ?? booking.advance_amount);
-
         const rows: DiffRow[] = [
             {
                 key: "address",
@@ -132,20 +93,6 @@ export default function BookingPendingChangesModal({
                     booking.pending_event_description,
                 ),
             },
-            {
-                key: "price",
-                label: "Precio acordado",
-                before: displayMoney(booking.price_agreed),
-                after: displayMoney(nextPrice),
-                changed: !moneyEqual(booking.price_agreed, nextPrice),
-            },
-            {
-                key: "advance",
-                label: "Anticipo acordado",
-                before: displayMoney(booking.advance_amount),
-                after: displayMoney(nextAdvance),
-                changed: !moneyEqual(booking.advance_amount, nextAdvance),
-            },
         ];
 
         if (booking.pending_change_notes?.trim()) {
@@ -159,67 +106,12 @@ export default function BookingPendingChangesModal({
         }
 
         return rows;
-    }, [advanceInput, booking, priceInput]);
+    }, [booking]);
 
     async function handleDecide(accept: boolean) {
-        if (accept) {
-            const price = priceInput.trim() ? Number(priceInput) : null;
-            const advance = advanceInput.trim() ? Number(advanceInput) : null;
-
-            if (price != null && (!Number.isFinite(price) || price <= 0)) {
-                addToast({
-                    title: "Precio inválido",
-                    description: "Indica un precio válido o deja el valor actual.",
-                    color: "warning",
-                });
-                return;
-            }
-            if (
-                validatedAdvance != null &&
-                price != null &&
-                price < validatedAdvance
-            ) {
-                addToast({
-                    title: "Precio inválido",
-                    description:
-                        "El precio no puede ser menor al adelanto ya validado.",
-                    color: "warning",
-                });
-                return;
-            }
-            if (advance != null && (!Number.isFinite(advance) || advance < 0)) {
-                addToast({
-                    title: "Anticipo inválido",
-                    description: "Indica un anticipo válido o deja el valor actual.",
-                    color: "warning",
-                });
-                return;
-            }
-            if (advance != null && price != null && advance > price) {
-                addToast({
-                    title: "Anticipo inválido",
-                    description: "El anticipo no puede superar el precio acordado.",
-                    color: "warning",
-                });
-                return;
-            }
-        }
-
         setIsDeciding(true);
         try {
-            const updated = await decideBookingChange(booking.id, {
-                accept,
-                ...(accept
-                    ? {
-                          price_agreed: priceInput.trim()
-                              ? Number(priceInput)
-                              : null,
-                          advance_amount: advanceInput.trim()
-                              ? Number(advanceInput)
-                              : null,
-                      }
-                    : {}),
-            });
+            const updated = await decideBookingChange(booking.id, { accept });
             onUpdated(updated);
             onOpenChange(false);
             addToast({
@@ -260,8 +152,8 @@ export default function BookingPendingChangesModal({
                             </Chip>
                             <span className="text-xl font-bold">Cambios propuestos</span>
                             <span className="text-sm font-normal text-default-500">
-                                Compara el antes y después. Puedes ajustar precio o
-                                anticipo al aceptar, o dejarlos igual.
+                                Compara el antes y después. El precio ya fue pagado
+                                y no cambia.
                             </span>
                         </ModalHeader>
                         <ModalBody className="gap-5">
@@ -362,45 +254,6 @@ export default function BookingPendingChangesModal({
                                 </div>
                             </div>
 
-                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex flex-col gap-3">
-                                <div>
-                                    <p className="text-sm font-semibold text-foreground">
-                                        Precio y anticipo (opcional)
-                                    </p>
-                                    <p className="text-xs text-default-500 mt-1">
-                                        Puedes modificarlos al aceptar o dejar los
-                                        valores actuales.
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <Input
-                                        label="Precio acordado (S/)"
-                                        type="number"
-                                        min="1"
-                                        value={priceInput}
-                                        onValueChange={setPriceInput}
-                                        variant="bordered"
-                                        description="Opcional"
-                                    />
-                                    <Input
-                                        label="Anticipo acordado (S/)"
-                                        type="number"
-                                        min="0"
-                                        value={advanceInput}
-                                        onValueChange={setAdvanceInput}
-                                        variant="bordered"
-                                        description="Opcional. No altera el adelanto ya validado."
-                                    />
-                                </div>
-                                {validatedAdvance != null && validatedAdvance > 0 ? (
-                                    <p className="text-xs text-success">
-                                        Adelanto validado (no editable):{" "}
-                                        <span className="font-semibold">
-                                            {formatCurrency(validatedAdvance)}
-                                        </span>
-                                    </p>
-                                ) : null}
-                            </div>
                         </ModalBody>
                         <ModalFooter>
                             <Button

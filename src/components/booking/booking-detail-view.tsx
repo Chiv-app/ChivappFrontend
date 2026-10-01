@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import BookingCommitmentCard from "@/components/booking/booking-commitment-card";
@@ -19,8 +19,9 @@ import BookingQuoteForm from "@/components/booking/booking-quote-form";
 import BookingTimeline from "@/components/booking/booking-timeline";
 import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import CancellationRefundNotice from "@/components/booking/cancellation-refund-notice";
-import { getBooking, getBookingBalanceDue, listBookingReviews } from "@/lib/bookings";
+import { getBooking, listBookingReviews } from "@/lib/bookings";
 import { checkMercadoPagoPaymentStatus } from "@/lib/payments";
+import { usePendingPaymentPolling } from "@/hooks/use-pending-payment-polling";
 import {
     isCancellableBookingStatus,
     isConfirmedBookingStatus,
@@ -40,7 +41,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
     const [isLoading, setIsLoading] = useState(true);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [amountPaid, setAmountPaid] = useState<number | null>(null);
     const [hasReview, setHasReview] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isPendingOpen, setIsPendingOpen] = useState(false);
@@ -48,6 +48,15 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     const searchParams = useSearchParams();
     const router = useRouter();
+    // Retorno desde Mercado Pago con pago pendiente: activa el sondeo aunque la
+    // reserva aún no figure en payment_pending.
+    const [mpPendingReturn, setMpPendingReturn] = useState(() => {
+        const status =
+            searchParams.get("mp_status") ||
+            searchParams.get("collection_status") ||
+            searchParams.get("status");
+        return status === "pending" || status === "in_process";
+    });
 
     function handleCopyPaymentLink() {
         const link = `${window.location.origin}/contractor/bookings/${booking!.id}`;
@@ -57,25 +66,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     const pathname = usePathname();
     const checkedMpRef = useRef(false);
-
-    function refreshBalance(bookingData: BookingOut) {
-        if (
-            isConfirmedBookingStatus(bookingData.status) ||
-            bookingData.status === "payment_pending"
-        ) {
-            getBookingBalanceDue(bookingData.id)
-                .then((balance) => {
-                    setAmountPaid(
-                        balance.amount_paid != null ? balance.amount_paid : null,
-                    );
-                })
-                .catch(() => {
-                    setAmountPaid(null);
-                });
-        } else {
-            setAmountPaid(null);
-        }
-    }
 
     function refreshReviews(bookingId: string) {
         listBookingReviews(bookingId)
@@ -90,7 +80,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         getBooking(bookingId)
             .then((data) => {
                 setBooking(data);
-                refreshBalance(data);
                 refreshReviews(data.id);
             })
             .catch((error) => {
@@ -128,7 +117,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                         try {
                             const updated = await getBooking(bookingId);
                             setBooking(updated);
-                            refreshBalance(updated);
                             refreshReviews(updated.id);
                         } catch {
                             // Ignored if booking fetch fails
@@ -158,11 +146,11 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                             color: "warning",
                         });
                     });
-            } else if (mpStatus === "pending") {
+            } else if (mpStatus === "pending" || mpStatus === "in_process") {
                 addToast({
                     title: "Pago en proceso",
                     description:
-                        "Tu pago está siendo procesado por Mercado Pago. Te notificaremos cuando se acredite.",
+                        "Tu pago está siendo procesado por Mercado Pago. Verificaremos su estado automáticamente en los próximos minutos.",
                     color: "warning",
                 });
             } else if (mpStatus === "failure" || mpStatus === "rejected") {
@@ -178,7 +166,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     function handleUpdated(updated: BookingOut) {
         setBooking(updated);
-        refreshBalance(updated);
         refreshReviews(updated.id);
     }
 
@@ -198,6 +185,62 @@ export default function BookingDetailView({ bookingId, role }: Props) {
             setIsRefreshing(false);
         }
     }
+
+    // Misma lógica que "Actualizar", sin el toast de error (el sondeo reintenta).
+    const reloadBookingSilently = useCallback(async () => {
+        try {
+            const updated = await getBooking(bookingId);
+            setBooking(updated);
+            refreshReviews(updated.id);
+        } catch {
+            // Se ignora: el usuario puede pulsar "Actualizar".
+        }
+    }, [bookingId]);
+
+    const handlePollApproved = useCallback(() => {
+        setMpPendingReturn(false);
+        void reloadBookingSilently();
+        addToast({
+            title: "¡Pago completado con éxito!",
+            description:
+                "Tu pago con Mercado Pago fue confirmado y retenido de forma segura.",
+            color: "success",
+        });
+    }, [reloadBookingSilently]);
+
+    const handlePollRejected = useCallback(
+        (result: { message?: string | null }) => {
+            setMpPendingReturn(false);
+            void reloadBookingSilently();
+            addToast({
+                title: "Pago no realizado",
+                description:
+                    result.message ||
+                    "Mercado Pago rechazó el pago. Puedes intentarlo nuevamente.",
+                color: "danger",
+            });
+        },
+        [reloadBookingSilently],
+    );
+
+    const handlePollTimeout = useCallback(() => {
+        setMpPendingReturn(false);
+    }, []);
+
+    usePendingPaymentPolling({
+        bookingId: booking?.id,
+        enabled:
+            role === "contractor" &&
+            booking != null &&
+            booking.viewer_role !== "member" &&
+            (booking.status === "payment_pending" ||
+                (mpPendingReturn &&
+                    (booking.status === "contract_pending" ||
+                        booking.status === "contract_signed"))),
+        onApproved: handlePollApproved,
+        onRejected: handlePollRejected,
+        onTimeout: handlePollTimeout,
+    });
 
     function handleReviewsChanged(_count: number, hasFinal: boolean) {
         setHasReview(hasFinal);
@@ -254,7 +297,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
                 onUpdated={handleUpdated}
-                validatedAdvance={amountPaid}
             />
 
             <BookingPendingChangesModal
@@ -262,7 +304,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                 isOpen={isPendingOpen}
                 onOpenChange={setIsPendingOpen}
                 onUpdated={handleUpdated}
-                validatedAdvance={amountPaid}
             />
 
                         <BookingCalendarSyncModal
@@ -351,7 +392,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                     role === "musician" &&
                     booking.status === "payment_pending" ? (
                         <div className="flex flex-col gap-4">
-                            <BookingPaymentStatusCard booking={booking} kind="full" />
+                            <BookingPaymentStatusCard booking={booking} />
                             <Button 
                                 color="primary" 
                                 variant="flat" 

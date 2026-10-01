@@ -29,7 +29,6 @@ export type MusicianBookingCreate = {
     event_type: string;
     event_description?: string | null;
     price_agreed: number;
-    advance_amount?: number | null;
     musician_quote_notes?: string | null;
 };
 
@@ -62,7 +61,6 @@ export type BookingReopenQuote = {
 
 export type BookingQuote = {
     price_agreed: number;
-    advance_amount?: number | null;
     musician_quote_notes?: string | null;
     location_address?: string | null;
     location_city?: string | null;
@@ -85,7 +83,13 @@ export type CancellationQuoteOut = {
     rule: string;
 };
 
-export type CancellationRefundStatus = "none" | "processing" | "completed" | "failed";
+export type CancellationRefundStatus =
+    | "pending_approval"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "rejected"
+    | "none";
 
 export type BookingEventChangeRequest = {
     location_address?: string | null;
@@ -93,14 +97,10 @@ export type BookingEventChangeRequest = {
     location_reference?: string | null;
     event_description?: string | null;
     change_notes?: string | null;
-    price_agreed?: number | null;
-    advance_amount?: number | null;
 };
 
 export type BookingChangeDecision = {
     accept: boolean;
-    price_agreed?: number | null;
-    advance_amount?: number | null;
 };
 
 export type BookingMessageCreate = {
@@ -190,19 +190,6 @@ export type BookingSharePublicOut = {
     message: string;
 };
 
-export type BookingBalanceDue = {
-    booking_id: string;
-    price_agreed: number | null;
-    platform_fee_percent?: number | null;
-    platform_fee_amount?: number | null;
-    contractor_total?: number | null;
-    suggested_advance?: number | null;
-    suggested_remaining?: number | null;
-    balance_due: number;
-    amount_paid?: number;
-    currency: string;
-};
-
 export type BookingOut = {
     id: string;
     contractor_id: string;
@@ -217,7 +204,6 @@ export type BookingOut = {
     event_description: string | null;
     requested_repertoire?: string[] | null;
     price_agreed: number | null;
-    advance_amount: number | null;
     platform_fee_percent?: number | null;
     platform_fee_amount?: number | null;
     musician_quote_notes: string | null;
@@ -234,7 +220,6 @@ export type BookingOut = {
     pending_event_description: string | null;
     pending_change_notes: string | null;
     pending_price_agreed: number | null;
-    pending_advance_amount: number | null;
     change_requested_by: "contractor" | "musician" | string | null;
     change_requested_at: string | null;
     status: BookingStatus;

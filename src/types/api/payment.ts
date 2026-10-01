@@ -1,13 +1,5 @@
 import type { PaymentStatus } from "./enums";
 
-export type PaymentCreate = {
-    booking_id: string;
-    amount: number;
-    payment_type: "advance" | "full";
-    evidence_url?: string | null;
-    evidence_urls?: string[];
-};
-
 export type PaymentOut = {
     id: string;
     booking_id: string;
@@ -31,7 +23,7 @@ export type PaymentOut = {
 
 export type MercadoPagoPreferenceRequest = {
     booking_id: string;
-    payment_type: "advance" | "full" | "balance";
+    payment_type: "full";
     signature_image_url?: string | null;
     sign_ip?: string | null;
 };
@@ -43,11 +35,11 @@ export type MercadoPagoPreferenceResponse = {
     public_key: string;
     amount: number;
     currency: string;
-    payment_type: "advance" | "full" | "balance";
+    payment_type: "full";
 };
 
 export type MercadoPagoPaymentCheckResponse = {
-    status: string;
+    status: "approved" | "pending" | "rejected" | string;
     payment_id?: string | null;
     booking_status: string;
     is_approved: boolean;
@@ -56,7 +48,7 @@ export type MercadoPagoPaymentCheckResponse = {
 
 export type MercadoPagoProcessPaymentRequest = {
     booking_id: string;
-    payment_type: "advance" | "full" | "balance";
+    payment_type: "full";
     token: string;
     payment_method_id?: string;
     amount?: number;
@@ -238,11 +230,8 @@ export type ContractorOperationKind =
     | "quote_review"
     | "contract_sign"
     | "payment_review"
-    | "payment_advance"
-    | "payment_balance"
+    | "payment_full"
     | "payment_out"
-    | "balance_due"
-    | "balance_review"
     | "change_pending"
     | "event_active"
     | "finalize"

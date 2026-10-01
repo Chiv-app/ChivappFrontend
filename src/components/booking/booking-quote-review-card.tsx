@@ -10,9 +10,7 @@ import {
     formatQuotedAt,
 } from "@/lib/booking-labels";
 import {
-    contractorAdvanceDue,
     contractorPayableTotal,
-    contractorRemainingAfterAdvance,
     platformFeeAmount,
     platformAppFeeAmount,
     platformGatewayFeeAmount,
@@ -68,8 +66,6 @@ export default function BookingQuoteReviewCard({
     const appFee = platformAppFeeAmount(booking);
     const gatewayFee = platformGatewayFeeAmount(booking);
     const contractorTotal = contractorPayableTotal(booking);
-    const advanceDue = contractorAdvanceDue(booking);
-    const balance = contractorRemainingAfterAdvance(booking);
     const quotedAt = formatQuotedAt(booking.quoted_at);
 
     return (

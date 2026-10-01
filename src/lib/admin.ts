@@ -1,6 +1,7 @@
 import { ApiError, apiFetch } from "@/lib/api";
 import type {
     AdminActivityItem,
+    AdminApproveRefund,
     AdminBookingCancel,
     AdminBookingDetailOut,
     AdminBookingOut,
@@ -34,6 +35,7 @@ function toQuery(params: AdminListParams = {}) {
     if (params.limit != null) search.set("limit", String(params.limit));
     if (params.q) search.set("q", params.q);
     if (params.status) search.set("status", String(params.status));
+    if (params.refund_status) search.set("refund_status", params.refund_status);
     if (params.role) search.set("role", params.role);
     if (params.is_verified != null) search.set("is_verified", String(params.is_verified));
     if (params.is_active != null) search.set("is_active", String(params.is_active));
@@ -190,6 +192,22 @@ export async function getAdminBookingContractPdfBlob(bookingId: string): Promise
 
 export function cancelAdminBooking(bookingId: string, payload: AdminBookingCancel = {}) {
     return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/cancel`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+/**
+ * Aprueba el reembolso de una cancelación pendiente de aprobación.
+ * Sin `amount` (o null) se reembolsa el monto calculado por la política;
+ * `0` rechaza el reembolso. El backend responde 400 si supera lo retenido.
+ */
+export function approveAdminCancellationRefund(
+    bookingId: string,
+    amount?: string | number | null,
+) {
+    const payload: AdminApproveRefund = { amount: amount ?? null };
+    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/approve-refund`, {
         method: "POST",
         body: JSON.stringify(payload),
     });

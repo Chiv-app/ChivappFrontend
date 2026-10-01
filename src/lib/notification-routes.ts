@@ -17,6 +17,7 @@ const BOOKING_NOTIFICATION_TYPES = new Set([
     "booking_event_started",
     "live_location_requested",
     "live_location_sharing",
+    // Legacy: notificaciones antiguas del flujo de saldo; solo enlazan a la reserva.
     "balance_submitted",
     "balance_validated",
     "balance_rejected",
@@ -175,7 +176,6 @@ export function getNotificationIcon(type: string): string {
             return "material-symbols:check-circle";
         case "booking_confirmed":
         case "payment_validated":
-        case "balance_validated":
             return "material-symbols:verified";
         case "booking_rejected":
         case "profile_rejected":
@@ -191,10 +191,8 @@ export function getNotificationIcon(type: string): string {
             return "material-symbols:chat";
         case "booking_event_started":
             return "material-symbols:play-circle";
-        case "balance_submitted":
         case "payment_released":
             return "material-symbols:payments";
-        case "balance_rejected":
         case "payment_rejected":
         case "booking_complaint_opened":
         case "booking_complaint_musician_update":
@@ -248,7 +246,6 @@ export function getNotificationActionLabel(
     if (type === "booking_commitment_updated" && role === "contractor") return "Ver reserva";
     if (type === "booking_change_rejected" && role === "contractor") return "Ver reserva";
     if (type === "booking_change_accepted" && role === "contractor") return "Ver reserva";
-    if (type === "balance_submitted" && role === "musician") return "Validar abono";
     if (type === "booking_message") return "Abrir chat";
     if (type === "booking_review") return "Ver reacciones";
     if (type === "booking_event_started") return "Ver evento";
@@ -276,7 +273,7 @@ export function getNotificationActionLabel(
         return "Ver reserva";
     }
     if (type === "payment_released" && role === "musician") return "Ver ingresos";
-    if (type === "payment_rejected" || type === "balance_rejected") {
+    if (type === "payment_rejected") {
         return role === "contractor" ? "Pagar con Mercado Pago" : "Ver reserva";
     }
     if (type === "ensemble_invite") return "Crear contraseña";

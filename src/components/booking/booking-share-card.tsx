@@ -172,9 +172,9 @@ export default function BookingShareCard({ booking }: Props) {
                         : share.enabled
                           ? "Los invitados entran solo con su nombre y pueden reaccionar en el timeline del show."
                           : share.can_enable
-                            ? "El abono final ya está cubierto. Genera un enlace para que tus invitados vean el evento y publiquen reacciones."
+                            ? "La reserva está pagada y confirmada. Genera un enlace para que tus invitados vean el evento y publiquen reacciones."
                             : share.reason ||
-                              "Disponible cuando el abono final esté completado."}
+                              "Disponible cuando la reserva esté pagada y confirmada."}
                 </p>
             </div>
 

@@ -8,8 +8,9 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
     payment_pending: "Pago en procesamiento",
     payment_retained: "Reserva confirmada",
     change_pending: "Cambio en revisión",
-    balance_pending: "Saldo pendiente",
-    balance_review: "Saldo en procesamiento",
+    // Legacy (flujo anticipo/saldo, ya inalcanzable): se muestran como confirmadas.
+    balance_pending: "Confirmada",
+    balance_review: "Confirmada",
     in_progress: "En evento",
     payment_released: "Pago liberado",
     completed: "Finalizada",
@@ -26,8 +27,10 @@ export const BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
         "Pago confirmado. Coordina detalles, ubica el evento y prepárate para el show.",
     change_pending:
         "Hay cambios propuestos. La otra parte debe aceptarlos o rechazarlos (sin re-firma).",
-    balance_pending: "Falta el saldo del evento. Paga el saldo seguro con Mercado Pago.",
-    balance_review: "Procesando pago del saldo con Mercado Pago.",
+    balance_pending:
+        "Pago confirmado. Coordina detalles, ubica el evento y prepárate para el show.",
+    balance_review:
+        "Pago confirmado. Coordina detalles, ubica el evento y prepárate para el show.",
     in_progress:
         "Pago completado. Comparte fotos, videos y una reseña del show.",
     payment_released: "Los pagos fueron liberados al músico.",
@@ -46,8 +49,8 @@ export const BOOKING_STATUS_COLORS: Record<
     payment_pending: "warning",
     payment_retained: "success",
     change_pending: "warning",
-    balance_pending: "warning",
-    balance_review: "warning",
+    balance_pending: "success",
+    balance_review: "success",
     in_progress: "primary",
     payment_released: "success",
     completed: "success",
@@ -70,11 +73,12 @@ export function getBookingStatusTone(status: BookingStatus): BookingStatusTone {
         case "payment_released":
             return "done";
         case "payment_retained":
+        // Legacy (inalcanzables): equivalen a una reserva confirmada.
+        case "balance_pending":
+        case "balance_review":
             return "confirmed";
         case "payment_pending":
         case "change_pending":
-        case "balance_pending":
-        case "balance_review":
             return "action";
         default:
             return "progress";
@@ -123,6 +127,7 @@ export function getBookingStatusChipVariant(
 export const CONFIRMED_BOOKING_STATUSES: BookingStatus[] = [
     "payment_retained",
     "change_pending",
+    // Legacy (inalcanzables): equivalen a una reserva confirmada.
     "balance_pending",
     "balance_review",
     "in_progress",
@@ -143,6 +148,7 @@ export const CANCELLABLE_BOOKING_STATUSES: BookingStatus[] = [
     "payment_pending",
     "payment_retained",
     "change_pending",
+    // Legacy (inalcanzables): equivalen a una reserva confirmada.
     "balance_pending",
     "balance_review",
 ];
@@ -152,9 +158,11 @@ export function isCancellableBookingStatus(status: BookingStatus): boolean {
 }
 
 export const CANCELLATION_REFUND_STATUS_LABELS: Record<string, string> = {
+    pending_approval: "En revisión por Chivapp",
     processing: "En proceso",
     completed: "Reembolsado a tu medio de pago",
     failed: "Pendiente: lo está revisando el equipo de Chivapp",
+    rejected: "Sin reembolso",
 };
 
 /** Convierte montos Decimal serializados (string o number) a number. */
@@ -215,7 +223,7 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
 };
 
 export const PAYMENT_TYPE_LABELS: Record<string, string> = {
-    advance: "Anticipo",
-    balance: "Saldo",
-    full: "Pago total"
+    full: "Pago total",
+    // Legacy: pagos antiguos registrados como "advance" equivalen al pago total.
+    advance: "Pago total",
 };

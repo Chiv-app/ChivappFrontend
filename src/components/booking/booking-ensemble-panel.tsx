@@ -66,6 +66,7 @@ function getInstrumentIcon(name: string) {
 const INVITE_OPEN_STATUSES = new Set([
     "payment_retained",
     "change_pending",
+    // Legacy (inalcanzables): equivalen a una reserva confirmada.
     "balance_pending",
     "balance_review",
     "in_progress",

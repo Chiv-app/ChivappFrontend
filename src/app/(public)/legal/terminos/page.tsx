@@ -102,8 +102,13 @@ export default function TermsPage() {
                     </li>
                     <li>
                         <strong className="text-foreground">Fondos Retenidos en Custodia (Escrow):</strong>{" "}
-                        Para protección del contratista y garantía del músico, los pagos por adelanto o saldo total del show son retenidos
-                        en custodia por {SITE_NAME} hasta la fecha y hora de culminación del evento.
+                        Para protección del contratista y garantía del músico, el contratista paga el 100 % del show en un único pago a través
+                        de Mercado Pago al confirmar la reserva; no existen pagos posteriores. Dicho pago es retenido en custodia
+                        por {SITE_NAME} hasta la fecha y hora de culminación del evento. Si la reserva se cancela, el reembolso se rige por la
+                        política de cancelación: si cancela el contratista, se le reembolsa el 100 % de lo pagado (sin incluir el costo de la
+                        pasarela de pagos) cuando faltan más de 15 días para el evento, el 50 % cuando faltan entre 7 y 15 días y 0 % cuando faltan
+                        menos de 7 días; si cancela el músico, se reembolsa el 100 % al contratista. Todo reembolso es revisado y aprobado por{" "}
+                        {SITE_NAME} antes de enviarse a través de Mercado Pago.
                     </li>
                     <li>
                         <strong className="text-foreground">Liquidación y Desembolso al Músico:</strong>{" "}

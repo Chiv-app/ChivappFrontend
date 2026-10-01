@@ -145,6 +145,10 @@ export default function BookingContractorActions({
                         Pago. Tan pronto como se confirme, tu reserva quedará confirmada
                         automáticamente.
                     </p>
+                    <p className="text-xs text-default-500">
+                        Verificamos el estado cada pocos segundos mientras tengas esta
+                        página abierta. También puedes pulsar «Actualizar».
+                    </p>
                 </CardBody>
             </Card>
         );

@@ -14,7 +14,6 @@ const ACTION_STATUSES: BookingStatus[] = [
     "requested",
     "payment_pending",
     "change_pending",
-    "balance_review",
 ];
 
 export default function MusicianDashboardPage() {
