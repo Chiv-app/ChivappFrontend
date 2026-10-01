@@ -382,6 +382,7 @@ export default function ContractorProfileWizard() {
                 return (
                     <FileUploadField
                         label="Foto de documento de identidad"
+                        privateUpload
                         value={idDocumentUrl}
                         onChange={setIdDocumentUrl}
                         accept="image/jpeg,image/png,image/webp,application/pdf"

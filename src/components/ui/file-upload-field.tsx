@@ -10,6 +10,8 @@ type CommonProps = {
     accept?: string;
     helperText?: string;
     maxFiles?: number;
+    /** Sube como documento privado (DNI, evidencias). Ver UploadOptions. */
+    privateUpload?: boolean;
 };
 
 type SingleProps = CommonProps & {
@@ -40,6 +42,7 @@ export default function FileUploadField(props: Props) {
         accept = "image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf",
         helperText,
         maxFiles = 8,
+        privateUpload = false,
     } = props;
     const multiple = props.multiple === true;
     const inputRef = useRef<HTMLInputElement>(null);
@@ -70,7 +73,7 @@ export default function FileUploadField(props: Props) {
 
         setIsUploading(true);
         try {
-            const uploaded = await uploadFiles(toUpload);
+            const uploaded = await uploadFiles(toUpload, { private: privateUpload });
             if (multiple) {
                 props.onChange([...currentUrls, ...uploaded]);
             } else {

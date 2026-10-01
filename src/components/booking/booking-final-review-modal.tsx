@@ -252,6 +252,7 @@ export default function BookingFinalReviewModal({
                                     />
                                     <FileUploadField
                                         label="Evidencia (opcional)"
+                                        privateUpload
                                         value={complaintEvidence}
                                         onChange={setComplaintEvidence}
                                         accept="image/jpeg,image/png,image/webp,application/pdf"

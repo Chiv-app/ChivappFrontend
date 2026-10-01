@@ -22,6 +22,7 @@ import {
     replaceContractorPlaceholders,
     type ContractDesignerVariant,
 } from "@/lib/contract-templates";
+import { sanitizeContractHtml } from "@/lib/sanitize-html";
 import { resolveUploadUrl } from "@/lib/uploads";
 
 type MusicianContextProps = {
@@ -125,16 +126,20 @@ function ContractDesignerEditor(props: Props) {
 
     const previewBodyHtml = useMemo(() => {
         if (variant === "contractor") {
-            return replaceContractorPlaceholders(
-                body,
-                previewContext as ReturnType<typeof buildContractorPreviewContext>,
-                "preview",
+            return sanitizeContractHtml(
+                replaceContractorPlaceholders(
+                    body,
+                    previewContext as ReturnType<typeof buildContractorPreviewContext>,
+                    "preview",
+                ),
             );
         }
-        return replaceContractPlaceholders(
-            body,
-            previewContext as ReturnType<typeof buildPreviewContext>,
-            "preview",
+        return sanitizeContractHtml(
+            replaceContractPlaceholders(
+                body,
+                previewContext as ReturnType<typeof buildPreviewContext>,
+                "preview",
+            ),
         );
     }, [body, previewContext, variant]);
 

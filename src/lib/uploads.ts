@@ -17,6 +17,8 @@ function getUploadBaseUrl(): string {
     return process.env.UPLOADS_URL_INTERNAL || "http://localhost:8000";
 }
 
+export const PRIVATE_UPLOADS_PREFIX = "/uploads/private/";
+
 function toUploadsPath(pathname: string): string | null {
     if (!pathname.startsWith("/uploads")) return null;
     return pathname;
@@ -31,6 +33,10 @@ export function resolveUploadUrl(url: string | null | undefined): string | null 
     if (!url) return null;
     const trimmed = url.trim();
     if (!trimmed) return null;
+
+    // Documentos privados: siempre por el proxy same-origin (lleva la cookie de
+    // sesión y el backend valida el acceso). Nunca al bucket público.
+    if (trimmed.startsWith(PRIVATE_UPLOADS_PREFIX)) return trimmed;
 
     if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
         try {
@@ -161,12 +167,21 @@ export async function compressImageForUpload(file: File): Promise<File> {
     }
 }
 
-export async function uploadFile(file: File): Promise<string> {
+export type UploadOptions = {
+    /**
+     * Documentos sensibles (DNI, firmas, evidencias de quejas): no se publican y
+     * solo los ven el dueño, el admin o su contraparte en una reserva.
+     */
+    private?: boolean;
+};
+
+export async function uploadFile(file: File, options: UploadOptions = {}): Promise<string> {
     const prepared = await compressImageForUpload(file);
     const formData = new FormData();
     formData.append("file", prepared);
 
-    const res = await fetch(`${getApiUrl()}/uploads/`, {
+    const query = options.private ? "?private=true" : "";
+    const res = await fetch(`${getApiUrl()}/uploads/${query}`, {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -196,15 +211,15 @@ export async function uploadFile(file: File): Promise<string> {
     return data.url;
 }
 
-export async function uploadFiles(files: File[]): Promise<string[]> {
+export async function uploadFiles(files: File[], options: UploadOptions = {}): Promise<string[]> {
     const urls: string[] = [];
     for (const file of files) {
-        urls.push(await uploadFile(file));
+        urls.push(await uploadFile(file, options));
     }
     return urls;
 }
 
-/** Sube una firma dibujada (data URL PNG) al endpoint de uploads. */
+/** Sube una firma dibujada (data URL PNG) como archivo privado. */
 export async function uploadSignatureDataUrl(
     dataUrl: string,
     filenamePrefix = "firma",
@@ -214,5 +229,5 @@ export async function uploadSignatureDataUrl(
     const file = new File([blob], `${filenamePrefix}-${Date.now()}.png`, {
         type: "image/png",
     });
-    return uploadFile(file);
+    return uploadFile(file, { private: true });
 }

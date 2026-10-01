@@ -19,6 +19,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
                 contractor.bio ??
                 `Perfil de ${contractor.fullname} en Chivapp.`,
             path: `/contractors/${id}`,
+            // Perfiles de clientes: privados, no deben indexarse.
+            noIndex: true,
         });
     } catch {
         return buildPageMetadata({

@@ -1,7 +1,9 @@
 import type { MapLocation } from "@/lib/geocoding";
 
 const NOMINATIM_BASE = "https://nominatim.openstreetmap.org";
-const USER_AGENT = "Chivapp/1.0 (booking-location-picker)";
+// Nominatim exige un User-Agent que identifique la aplicación y un contacto.
+const USER_AGENT = "Chivapp/1.0 (+https://chiv.app; soporte@chiv.app) booking-location-picker";
+const FETCH_TIMEOUT_MS = 5000;
 
 type NominatimResult = {
     lat: string;
@@ -48,6 +50,7 @@ export async function searchPlaces(query: string): Promise<MapLocation[]> {
             "User-Agent": USER_AGENT,
         },
         next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!response.ok) return [];
@@ -70,6 +73,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<MapLocat
             "User-Agent": USER_AGENT,
         },
         next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
     if (!response.ok) return null;

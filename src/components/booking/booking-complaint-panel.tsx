@@ -385,6 +385,7 @@ export default function BookingComplaintPanel({ bookingId, role, onUpdated }: Pr
                             />
                             <FileUploadField
                                 label="Evidencia del descargo (opcional)"
+                                privateUpload
                                 value={evidence}
                                 onChange={setEvidence}
                                 accept="image/jpeg,image/png,image/webp,application/pdf"

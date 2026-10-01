@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useIsClient } from "@/hooks/use-is-client";
-
-const STORAGE_KEY = "chivapp_cookie_consent";
+import {
+    COOKIE_CONSENT_EVENT,
+    COOKIE_CONSENT_STORAGE_KEY as STORAGE_KEY,
+} from "@/lib/cookie-consent";
 
 function hasConsented(): boolean {
     try {
@@ -30,6 +32,8 @@ export default function CookieConsentBanner() {
         } catch {
             // ignore
         }
+        // Avisa a AnalyticsGate para que cargue Google Analytics sin recargar.
+        window.dispatchEvent(new Event(COOKIE_CONSENT_EVENT));
         setDismissed(true);
     }
 
@@ -45,8 +49,9 @@ export default function CookieConsentBanner() {
                         className="text-lg text-primary shrink-0 mt-0.5"
                     />
                     <p>
-                        Usamos una cookie esencial para mantener tu sesión iniciada. Al
-                        continuar navegando aceptas su uso.{" "}
+                        Usamos una cookie esencial para mantener tu sesión iniciada y, si
+                        aceptas, cookies de analítica (Google Analytics) para mejorar el
+                        servicio.{" "}
                         <Link
                             href="/legal/privacidad#cookies"
                             className="underline underline-offset-2 hover:text-primary"

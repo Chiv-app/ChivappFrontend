@@ -58,7 +58,8 @@ USER nextjs
 
 EXPOSE 8080
 
+# Ruta interna barata (sin dependencias externas); falla de verdad si el server no responde.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:${PORT:-8080}/api/geocode/search?q=test || exit 0
+    CMD wget -q -O /dev/null "http://127.0.0.1:${PORT:-8080}/api/health" || exit 1
 
 CMD ["node", "server.js"]

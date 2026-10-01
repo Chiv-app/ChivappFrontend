@@ -7,6 +7,7 @@ import { Icon } from "@iconify/react";
 import ContractPdfViewer from "@/components/booking/contract-pdf-viewer";
 import { getBookingContractPdfBlob } from "@/lib/contracts";
 import { normalizeContractBodyToHtml } from "@/lib/contract-templates";
+import { sanitizeContractHtml } from "@/lib/sanitize-html";
 import { resolveUploadUrl } from "@/lib/uploads";
 import { formatCurrency, formatBookingDate } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
@@ -49,7 +50,10 @@ export default function ContractDocumentView({
     const contractorSignatureUrl = resolveUploadUrl(contract?.contractor_signature_url);
     const musicianSignatureUrl = resolveUploadUrl(contract?.musician_signature_url);
     const bodyHtml = useMemo(
-        () => (contract?.body ? normalizeContractBodyToHtml(contract.body) : ""),
+        () =>
+            contract?.body
+                ? sanitizeContractHtml(normalizeContractBodyToHtml(contract.body))
+                : "",
         [contract?.body],
     );
 
