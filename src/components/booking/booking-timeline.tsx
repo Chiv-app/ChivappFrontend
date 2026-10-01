@@ -258,7 +258,7 @@ function CollapsedPhaseRail({
     steps: BookingTimelineStep[];
 }) {
     return (
-        <nav aria-label="Fases de la reserva" className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none">
+        <nav aria-label="Fases de la reserva" className="flex items-center gap-1 overflow-x-auto scrollbar-none">
             {steps.map((step, index) => {
                 const isLast = index === steps.length - 1;
                 const isDone = step.state === "done";
@@ -266,10 +266,10 @@ function CollapsedPhaseRail({
                 const isSkipped = step.state === "skipped";
 
                 return (
-                    <div key={step.id} className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <div key={step.id} className="flex items-center gap-1 shrink-0">
                         <button
                             type="button"
-                            className={`flex items-center gap-1.5 focus:outline-none transition-transform active:scale-95 cursor-pointer rounded-full px-2 sm:px-3 py-1 sm:py-1.5 ${
+                            className={`flex items-center gap-1 focus:outline-none transition-transform active:scale-95 cursor-pointer rounded-full px-1.5 sm:px-2 py-1 ${
                                 isCurrent
                                     ? "bg-primary/20 text-primary border border-primary/30"
                                     : isDone

@@ -40,7 +40,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
 
     return (
         <Card
-            className="w-full h-full shadow-lg border border-default-200/50 bg-[#0C121A] xl:sticky xl:top-24 rounded-2xl"
+            className="w-full h-full shadow-lg border border-default-200/50 bg-content1 xl:sticky xl:top-24 rounded-2xl"
             radius="lg"
         >
             <CardBody className="p-6 sm:p-8 flex flex-col gap-8">
@@ -165,7 +165,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                 {booking.event_description ? (
                     <div className="mt-4 flex flex-col gap-2">
                         <p className="text-xs text-default-500 font-medium">Mensaje del cliente:</p>
-                        <div className="rounded-xl border border-default-100/5 bg-[#121922] p-4 relative">
+                        <div className="rounded-xl border border-default-100/5 bg-content2 p-4 relative">
                             <p className="text-[15px] italic text-default-300 leading-relaxed">
                                 "{booking.event_description}"
                             </p>
