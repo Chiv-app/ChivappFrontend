@@ -123,7 +123,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                         }
                         if (res.is_approved || res.status === "approved") {
                             addToast({
-                                title: "¡Pago completado con ééxito!",
+                                title: "¡Pago completado con éxito!",
                                 description:
                                     "Tu pago con Mercado Pago fue confirmado y retenido de forma segura.",
                                 color: "success",
@@ -201,7 +201,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         setMpPendingReturn(false);
         void reloadBookingSilently();
         addToast({
-            title: "¡Pago completado con ééxito!",
+            title: "¡Pago completado con éxito!",
             description:
                 "Tu pago con Mercado Pago fue confirmado y retenido de forma segura.",
             color: "success",

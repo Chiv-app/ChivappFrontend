@@ -66,7 +66,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                                 Pagos 100% Seguros
                             </h3>
                             <p className="text-default-500 text-base md:text-lg leading-relaxed text-pretty">
-                                Tu dinero está protegido. Retenemos el pago en una bóveda virtual de garantía y solo lo liberamos al artista cuando el evento concluye eéxitosamente.
+                                Tu dinero está protegido. Retenemos el pago en una bóveda virtual de garantía y solo lo liberamos al artista cuando el evento concluye exitosamente.
                             </p>
                         </div>
                         {/* Decoración Visual */}

@@ -85,7 +85,7 @@ function CalendarCallbackContent() {
           <div className="flex flex-col items-center space-y-4">
             <Icon icon="lucide:check-circle-2" className="w-16 h-16 text-green-500" />
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              ¡Conexión Eéxitosa!
+              ¡Conexión Exitosa!
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">
               Tu Google Calendar ha sido vinculado correctamente. A partir de ahora, 

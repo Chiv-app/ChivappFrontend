@@ -34,7 +34,7 @@ export const BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
     in_progress:
         "Pago completado. Comparte fotos, videos y una reseña del show.",
     payment_released: "Los pagos fueron liberados al músico.",
-    completed: "Finalizada. Servicio completado con ééxito.",
+    completed: "Finalizada. Servicio completado con éxito.",
     cancelled: "Esta reserva fue cancelada.",
 };
 

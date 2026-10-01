@@ -158,7 +158,7 @@ export default function BookingMercadoPagoModal({
                                 if (res.success && res.status === "approved") {
                                     addToast({
                                         title: "¡Pago Aprobado!",
-                                        description: "Tu pago con tarjeta fue procesado con ééxito.",
+                                        description: "Tu pago con tarjeta fue procesado con éxito.",
                                         color: "success",
                                     });
                                     onSuccess();
@@ -270,7 +270,7 @@ export default function BookingMercadoPagoModal({
 
             if (res.success && res.status === "approved") {
                 addToast({
-                    title: "¡Yapeo Eéxitoso!",
+                    title: "¡Yapeo Exitoso!",
                     description: "Tu reserva ha quedado confirmada inmediatamente.",
                     color: "success",
                 });
