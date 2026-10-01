@@ -31,23 +31,6 @@ export type MusicianBookingCreate = {
     price_agreed: number;
     advance_amount?: number | null;
     musician_quote_notes?: string | null;
-    contractor_signature_url?: string | null;
-    payment_evidence_url?: string | null;
-    payment_evidence_urls?: string[];
-    payment_amount?: number | null;
-    payment_type?: "advance" | "full" | null;
-    mark_payment_validated?: boolean;
-};
-
-export type MusicianAttachContractorSignature = {
-    signature_image_url: string;
-    terms_accepted?: boolean;
-    payment_evidence_url?: string | null;
-    payment_evidence_urls?: string[];
-    payment_amount?: number | null;
-    payment_type?: "advance" | "full" | null;
-    mark_payment_validated?: boolean;
-    sign_ip?: string;
 };
 
 export type BookingUpdate = {
@@ -90,15 +73,19 @@ export type BookingReject = {
     rejection_reason?: string | null;
 };
 
-export type BookingConfirm = {
-    terms_accepted: boolean;
-    payment_evidence_url?: string | null;
-    payment_evidence_urls?: string[];
-    signature_image_url: string;
-    amount: number;
-    payment_type: "advance" | "full";
-    sign_ip?: string;
+/** Vista previa del reembolso si se cancela la reserva ahora. */
+export type CancellationQuoteOut = {
+    can_cancel: boolean;
+    cancelled_by: "contractor" | "musician" | string;
+    days_before_event: number;
+    paid_total: number | string;
+    refundable_base: number | string;
+    refund_percent: number;
+    refund_amount: number | string;
+    rule: string;
 };
+
+export type CancellationRefundStatus = "none" | "processing" | "completed" | "failed";
 
 export type BookingEventChangeRequest = {
     location_address?: string | null;
@@ -114,12 +101,6 @@ export type BookingChangeDecision = {
     accept: boolean;
     price_agreed?: number | null;
     advance_amount?: number | null;
-};
-
-export type BookingBalancePayment = {
-    amount: number;
-    payment_evidence_url?: string | null;
-    payment_evidence_urls?: string[];
 };
 
 export type BookingMessageCreate = {
@@ -243,6 +224,10 @@ export type BookingOut = {
     quoted_at: string | null;
     rejection_reason: string | null;
     cancelled_by: string | null;
+    cancelled_at?: string | null;
+    cancellation_refund_percent?: number | string | null;
+    cancellation_refund_amount?: number | string | null;
+    cancellation_refund_status?: CancellationRefundStatus | string | null;
     pending_location_address: string | null;
     pending_location_city: string | null;
     pending_location_reference: string | null;

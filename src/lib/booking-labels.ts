@@ -134,6 +134,36 @@ export function isConfirmedBookingStatus(status: BookingStatus): boolean {
     return CONFIRMED_BOOKING_STATUSES.includes(status);
 }
 
+/** Estados en los que un participante puede cancelar (espejo de CANCELLABLE_STATUSES del backend). */
+export const CANCELLABLE_BOOKING_STATUSES: BookingStatus[] = [
+    "requested",
+    "accepted",
+    "contract_pending",
+    "contract_signed",
+    "payment_pending",
+    "payment_retained",
+    "change_pending",
+    "balance_pending",
+    "balance_review",
+];
+
+export function isCancellableBookingStatus(status: BookingStatus): boolean {
+    return CANCELLABLE_BOOKING_STATUSES.includes(status);
+}
+
+export const CANCELLATION_REFUND_STATUS_LABELS: Record<string, string> = {
+    processing: "En proceso",
+    completed: "Reembolsado a tu medio de pago",
+    failed: "Pendiente: lo está revisando el equipo de Chivapp",
+};
+
+/** Convierte montos Decimal serializados (string o number) a number. */
+export function toAmount(value: number | string | null | undefined): number {
+    if (value == null) return 0;
+    const parsed = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function formatBookingDate(date: string): string {
     return new Date(`${date}T12:00:00-05:00`).toLocaleDateString("es-PE", {
         timeZone: "America/Lima",

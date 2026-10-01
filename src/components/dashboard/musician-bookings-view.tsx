@@ -14,12 +14,17 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import MusicianCreateBookingModal from "@/components/booking/musician-create-booking-modal";
+import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import BookingReservationItem, {
     type BookingLayoutMode,
 } from "@/components/dashboard/booking-reservation-item";
 import { useAuth } from "@/contexts/auth-context";
-import { cancelBooking, listBookings } from "@/lib/bookings";
-import { BOOKING_STATUS_LABELS, formatCurrency } from "@/lib/booking-labels";
+import { listBookings } from "@/lib/bookings";
+import {
+    BOOKING_STATUS_LABELS,
+    formatCurrency,
+    isCancellableBookingStatus,
+} from "@/lib/booking-labels";
 import type { BookingOut, BookingStatus } from "@/types/api";
 
 type FilterKey = "all" | "action" | "upcoming" | "done";
@@ -64,7 +69,7 @@ export default function MusicianBookingsView() {
     const { user } = useAuth();
     const [bookings, setBookings] = useState<BookingOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [actionId, setActionId] = useState<string | null>(null);
+    const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
     const [filter, setFilter] = useState<FilterKey>("all");
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
@@ -103,28 +108,6 @@ export default function MusicianBookingsView() {
     useEffect(() => {
         loadBookings();
     }, []);
-
-    async function handleCancel(id: string) {
-        setActionId(id);
-        try {
-            await cancelBooking(id);
-            await loadBookings();
-            addToast({
-                title: "Reserva cancelada",
-                description: "La reserva fue cancelada.",
-                color: "success",
-            });
-        } catch (error) {
-            addToast({
-                title: "No se pudo cancelar",
-                description:
-                    error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setActionId(null);
-        }
-    }
 
     const stats = useMemo(() => {
         const owned = bookings.filter((b) => b.viewer_role !== "member");
@@ -206,6 +189,16 @@ export default function MusicianBookingsView() {
 
     return (
         <div className="max-w-6xl mx-auto flex flex-col gap-6">
+            <CancelBookingModal
+                bookingId={cancelTargetId}
+                isOpen={cancelTargetId != null}
+                onOpenChange={(open) => {
+                    if (!open) setCancelTargetId(null);
+                }}
+                onCancelled={() => {
+                    void loadBookings();
+                }}
+            />
             <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
                 <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
                     <div className="min-w-0">
@@ -407,10 +400,7 @@ export default function MusicianBookingsView() {
                                 memberPending ||
                                 (!isMember && needsMusicianAction(booking));
                             const canCancel =
-                                !isMember &&
-                                (booking.status === "requested" ||
-                                    booking.status === "accepted" ||
-                                    booking.status === "contract_pending");
+                                !isMember && isCancellableBookingStatus(booking.status);
 
                             return (
                                 <BookingReservationItem
@@ -428,8 +418,8 @@ export default function MusicianBookingsView() {
                                     }
                                     detailHref={`/musician/bookings/${booking.id}`}
                                     canCancel={canCancel}
-                                    isCancelling={actionId === booking.id}
-                                    onCancel={() => handleCancel(booking.id)}
+                                    isCancelling={false}
+                                    onCancel={() => setCancelTargetId(booking.id)}
                                     memberBadge={isMember}
                                 />
                             );

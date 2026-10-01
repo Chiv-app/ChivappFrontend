@@ -38,7 +38,7 @@ export default function MusicianCreateBookingModal({
                             <span className="text-xl font-bold">Nueva contrata</span>
                             <span className="text-sm font-normal text-default-500">
                                 Obligatorios: nombre, fecha, hora, tipo, ubicación y precio.
-                                La firma y el resto de datos son opcionales.
+                                El cliente aceptará, firmará y pagará la propuesta en Chivapp.
                             </span>
                         </ModalHeader>
                         <ModalBody className="pb-6">

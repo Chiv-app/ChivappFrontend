@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import {
     Button,
-    Checkbox,
     Divider,
     Input,
     Select,
@@ -13,9 +12,7 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import FileUploadField from "@/components/ui/file-upload-field";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
-import SignaturePad from "@/components/ui/signature-pad";
 import { createMusicianBooking } from "@/lib/bookings";
 import {
     formatLocationReference,
@@ -23,7 +20,6 @@ import {
     normalizeStartTime,
     validateBookingRequest,
 } from "@/lib/geocoding";
-import { uploadSignatureDataUrl } from "@/lib/uploads";
 
 const EVENT_TYPES = [
     "Boda",
@@ -60,15 +56,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
     const [location, setLocation] = useState<MapLocation | null>(null);
 
     const [priceAgreed, setPriceAgreed] = useState("");
-    const [advanceAmount, setAdvanceAmount] = useState("");
     const [quoteNotes, setQuoteNotes] = useState("");
-
-    const [attachSignature, setAttachSignature] = useState(false);
-    const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
-    const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
-    const [paymentAmount, setPaymentAmount] = useState("");
-    const [paymentType, setPaymentType] = useState<"advance" | "full">("advance");
-    const [markValidated, setMarkValidated] = useState(false);
 
     const minEventDate = useMemo(() => getMinEventDate(), []);
 
@@ -109,43 +97,8 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             return;
         }
 
-        let advance: number | null = null;
-        if (advanceAmount.trim()) {
-            advance = Number(advanceAmount);
-            if (Number.isNaN(advance) || advance < 0 || advance > price) {
-                addToast({
-                    title: "Anticipo inválido",
-                    description: "El anticipo debe ser ≥ 0 y no superar el precio total.",
-                    color: "warning",
-                });
-                return;
-            }
-        }
-
-        const willAttachSignature = Boolean(signatureDataUrl);
-        const hasEvidence = evidenceUrls.length > 0;
-        if (willAttachSignature && (hasEvidence || markValidated)) {
-            const amount = Number(paymentAmount || advanceAmount || priceAgreed);
-            if (!amount || amount <= 0) {
-                addToast({
-                    title: "Monto de pago",
-                    description: "Indica el monto pagado para regularizar.",
-                    color: "warning",
-                });
-                return;
-            }
-        }
-
         setIsSubmitting(true);
         try {
-            let signatureUrl: string | null = null;
-            if (willAttachSignature && signatureDataUrl) {
-                signatureUrl = await uploadSignatureDataUrl(
-                    signatureDataUrl,
-                    "firma-contratista",
-                );
-            }
-
             const booking = await createMusicianBooking({
                 contractor_fullname: contractorFullname.trim(),
                 contractor_email: contractorEmail.trim().toLowerCase() || null,
@@ -163,26 +116,13 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                 event_type: eventType,
                 event_description: eventDescription.trim() || null,
                 price_agreed: price,
-                advance_amount: advance,
                 musician_quote_notes: quoteNotes.trim() || null,
-                contractor_signature_url: signatureUrl,
-                payment_evidence_urls:
-                    willAttachSignature && hasEvidence ? evidenceUrls : undefined,
-                payment_evidence_url:
-                    willAttachSignature && hasEvidence ? evidenceUrls[0] : null,
-                payment_amount:
-                    willAttachSignature && (hasEvidence || markValidated)
-                        ? Number(paymentAmount || advanceAmount || priceAgreed)
-                        : null,
-                payment_type: willAttachSignature ? paymentType : null,
-                mark_payment_validated: willAttachSignature ? markValidated : false,
             });
 
             addToast({
-                title: "Contrata creada",
-                description: signatureUrl
-                    ? "La reserva se creó y la firma del contratista quedó registrada."
-                    : "La reserva quedó creada. Puedes adjuntar la firma después si lo necesitas.",
+                title: "Propuesta creada",
+                description:
+                    "El cliente recibirá la propuesta para aceptarla, firmar el contrato y pagar a través de Chivapp.",
                 color: "success",
             });
             onSuccess?.();
@@ -329,31 +269,17 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             <section className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                     <Icon icon="material-symbols:payments" width={20} className="text-primary" />
-                    <h3 className="font-semibold text-foreground">Precio y anticipo</h3>
+                    <h3 className="font-semibold text-foreground">Precio</h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
-                        label="Precio total"
+                        label="Lo que tú recibes (precio total)"
                         type="number"
                         min={1}
                         step="0.01"
                         isRequired
                         value={priceAgreed}
                         onValueChange={setPriceAgreed}
-                        variant="bordered"
-                        radius="lg"
-                        startContent={<span className="text-default-400 text-sm">S/</span>}
-                    />
-                    <Input
-                        label="Anticipo (opcional)"
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={advanceAmount}
-                        onValueChange={(value) => {
-                            setAdvanceAmount(value);
-                            if (!paymentAmount) setPaymentAmount(value);
-                        }}
                         variant="bordered"
                         radius="lg"
                         startContent={<span className="text-default-400 text-sm">S/</span>}
@@ -372,79 +298,19 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
 
             <Divider />
 
-            <section className="flex flex-col gap-3">
-                <Checkbox
-                    isSelected={attachSignature}
-                    onValueChange={(checked) => {
-                        setAttachSignature(checked);
-                        if (!checked) {
-                            setSignatureDataUrl(null);
-                            setEvidenceUrls([]);
-                            setMarkValidated(false);
-                        }
-                    }}
-                >
-                    Regularizar ahora con firma (opcional)
-                </Checkbox>
-                <p className="text-xs text-default-500">
-                    No es obligatorio. Si no firmas ahora, podrás adjuntar la firma del
-                    contratista después desde el detalle de la reserva.
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+                <Icon
+                    icon="material-symbols:info"
+                    width={22}
+                    className="text-primary shrink-0 mt-0.5"
+                />
+                <p className="text-sm text-default-600 leading-relaxed">
+                    Se creará como propuesta. El cliente la recibirá para aceptarla, firmar
+                    el contrato y pagar el 100 % de forma segura a través de Chivapp con
+                    Mercado Pago. La reserva se confirma automáticamente al acreditarse el
+                    pago.
                 </p>
-
-                {attachSignature ? (
-                    <div className="flex flex-col gap-4 rounded-2xl border border-default-200 p-4 bg-content1">
-                        <SignaturePad
-                            value={signatureDataUrl}
-                            onChange={setSignatureDataUrl}
-                            label="Firma del contratista (opcional)"
-                            helperText="Si la dejas vacía, la contrata se crea igual y podrás firmar luego."
-                        />
-                        <FileUploadField
-                            multiple
-                            label="Comprobantes de pago (opcional)"
-                            value={evidenceUrls}
-                            onChange={setEvidenceUrls}
-                            helperText="Puedes subir varios archivos. Las imágenes se optimizan al cargar."
-                        />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <Input
-                                label="Monto pagado"
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                value={paymentAmount}
-                                onValueChange={setPaymentAmount}
-                                variant="bordered"
-                                radius="lg"
-                                startContent={
-                                    <span className="text-default-400 text-sm">S/</span>
-                                }
-                            />
-                            <Select
-                                label="Tipo de pago"
-                                selectedKeys={[paymentType]}
-                                onSelectionChange={(keys) => {
-                                    const value = Array.from(keys)[0];
-                                    if (value === "advance" || value === "full") {
-                                        setPaymentType(value);
-                                    }
-                                }}
-                                variant="bordered"
-                                radius="lg"
-                            >
-                                <SelectItem key="advance">Anticipo</SelectItem>
-                                <SelectItem key="full">Pago total</SelectItem>
-                            </Select>
-                        </div>
-                        <Checkbox
-                            isSelected={markValidated}
-                            onValueChange={setMarkValidated}
-                        >
-                            El pago ya fue recibido y validado (reserva confirmada)
-                        </Checkbox>
-                    </div>
-                ) : null}
-            </section>
+            </div>
 
             <div className="flex justify-end gap-2">
                 <Button
@@ -459,7 +325,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                         )
                     }
                 >
-                    Crear contrata
+                    Enviar propuesta
                 </Button>
             </div>
         </form>

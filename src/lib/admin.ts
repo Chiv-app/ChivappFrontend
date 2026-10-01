@@ -195,6 +195,13 @@ export function cancelAdminBooking(bookingId: string, payload: AdminBookingCance
     });
 }
 
+/** Reintenta en Mercado Pago un reembolso de cancelación fallido o pendiente. */
+export function retryAdminCancellationRefund(bookingId: string) {
+    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/retry-refund`, {
+        method: "POST",
+    });
+}
+
 export function disableAdminBookingShare(bookingId: string) {
     return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/disable-share`, {
         method: "POST",
@@ -205,38 +212,6 @@ export function getAdminPayments(params: AdminListParams = {}) {
     return apiFetch<AdminPaymentOut[]>(
         `/admin/payments${toQuery({ limit: 50, ...params })}`,
     );
-}
-
-export function getAdminPendingPaymentReviews() {
-    return apiFetch<import("@/types/api").AdminPaymentReviewItem[]>(
-        "/admin/payments/pending-review",
-    );
-}
-
-export function validateAdminAdvancePayment(bookingId: string) {
-    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/advance/validate`, {
-        method: "POST",
-    });
-}
-
-export function rejectAdminAdvancePayment(bookingId: string, reason: string) {
-    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/advance/reject`, {
-        method: "POST",
-        body: JSON.stringify({ reason }),
-    });
-}
-
-export function validateAdminBalancePayment(bookingId: string) {
-    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/balance/validate`, {
-        method: "POST",
-    });
-}
-
-export function rejectAdminBalancePayment(bookingId: string, reason: string) {
-    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/balance/reject`, {
-        method: "POST",
-        body: JSON.stringify({ reason }),
-    });
 }
 
 export function getAdminPaymentInstructions() {

@@ -72,12 +72,18 @@ export type AdminBookingOut = {
     contractor_email: string | null;
     cancelled_by: string | null;
     rejection_reason: string | null;
+    cancellation_refund_percent?: number | string | null;
+    cancellation_refund_amount?: number | string | null;
+    cancellation_refund_status?: "none" | "processing" | "completed" | "failed" | string | null;
+    cancellation_refund_error?: string | null;
     created_at: string;
     updated_at: string;
 };
 
 export type AdminBookingCancel = {
     reason?: string | null;
+    /** % de reembolso al contratista si hay pago retenido (0-100, por defecto 100). */
+    refund_percent?: number;
 };
 
 export type AdminBookingDetailOut = AdminBookingOut & {
@@ -111,22 +117,6 @@ export type AdminPaymentOut = {
     event_date: string | null;
     musician_name: string | null;
     contractor_name: string | null;
-};
-
-export type AdminPaymentReviewItem = {
-    booking_id: string;
-    booking_status: string;
-    kind: "advance" | "balance";
-    payment_id: string;
-    amount: number;
-    currency: string;
-    evidence_urls: string[];
-    event_type: string;
-    event_date: string;
-    musician_name: string | null;
-    contractor_name: string | null;
-    submitted_at: string;
-    previous_rejections: number;
 };
 
 export type AdminListParams = {

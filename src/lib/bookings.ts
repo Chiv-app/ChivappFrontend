@@ -1,9 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import type {
     BookingBalanceDue,
-    BookingBalancePayment,
     BookingChangeDecision,
-    BookingConfirm,
     BookingCreate,
     BookingEventChangeRequest,
     BookingMessageCreate,
@@ -16,8 +14,8 @@ import type {
     BookingReviewCreate,
     BookingReviewOut,
     BookingUpdate,
+    CancellationQuoteOut,
     ContractorRecommendationOut,
-    MusicianAttachContractorSignature,
     MusicianBookingCreate,
 } from "@/types/api";
 
@@ -38,16 +36,6 @@ export function createBooking(payload: BookingCreate) {
 
 export function createMusicianBooking(payload: MusicianBookingCreate) {
     return apiFetch<BookingOut>("/bookings/musician-created", {
-        method: "POST",
-        body: JSON.stringify(payload),
-    });
-}
-
-export function attachContractorSignature(
-    id: string,
-    payload: MusicianAttachContractorSignature,
-) {
-    return apiFetch<BookingOut>(`/bookings/${id}/attach-contractor-signature`, {
         method: "POST",
         body: JSON.stringify(payload),
     });
@@ -102,11 +90,9 @@ export function reopenBookingQuote(id: string, payload: BookingReopenQuote = {})
     });
 }
 
-export function confirmBooking(id: string, payload: BookingConfirm) {
-    return apiFetch<BookingOut>(`/bookings/${id}/confirm`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-    });
+/** Vista previa del reembolso que aplicaría si el usuario actual cancela ahora. */
+export function getCancellationQuote(id: string) {
+    return apiFetch<CancellationQuoteOut>(`/bookings/${id}/cancellation-quote`);
 }
 
 export function cancelBooking(id: string, payload: BookingReject = {}) {
@@ -143,13 +129,6 @@ export function decideBookingChange(id: string, payload: BookingChangeDecision) 
 
 export function getBookingBalanceDue(id: string) {
     return apiFetch<BookingBalanceDue>(`/bookings/${id}/balance-due`);
-}
-
-export function submitBookingBalance(id: string, payload: BookingBalancePayment) {
-    return apiFetch<BookingOut>(`/bookings/${id}/submit-balance`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-    });
 }
 
 export function startBookingEvent(id: string) {

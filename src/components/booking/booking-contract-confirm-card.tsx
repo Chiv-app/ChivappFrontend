@@ -22,9 +22,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useContractorVerification } from "@/hooks/use-contractor-verification";
 import { createMercadoPagoPreference } from "@/lib/payments";
 import {
-    contractorAdvanceDue,
     contractorPayableTotal,
-    contractorRemainingAfterAdvance,
     platformFeeAmount,
 } from "@/lib/platform-fee";
 import { uploadSignatureDataUrl } from "@/lib/uploads";
@@ -57,14 +55,10 @@ export default function BookingContractConfirmCard({
     const [uploadedSignatureUrl, setUploadedSignatureUrl] = useState<string | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isUpsellModalOpen, setIsUpsellModalOpen] = useState(false);
-    const [paymentType, setPaymentType] = useState<"advance" | "full">(
-        booking.advance_amount != null ? "advance" : "full",
-    );
     const [isEditOpen, setIsEditOpen] = useState(false);
     const fee = platformFeeAmount(booking);
     const contractorTotal = contractorPayableTotal(booking);
-    const advanceDue = contractorAdvanceDue(booking);
-    const remainingAfterAdvance = contractorRemainingAfterAdvance(booking);
+    const payLabel = contractorTotal != null ? formatCurrency(contractorTotal) : "";
     const isAlreadySigned =
         booking.status === "contract_signed" || Boolean(contract?.contractor_signed);
 
@@ -209,14 +203,7 @@ export default function BookingContractConfirmCard({
                                 : "—"}
                         </p>
                         <p className="text-xs text-default-500 mt-1">
-                            Anticipo sugerido:{" "}
-                            {advanceDue != null
-                                ? formatCurrency(advanceDue)
-                                : "Pago total"}
-                            {remainingAfterAdvance != null &&
-                            booking.advance_amount != null
-                                ? ` · Saldo restante: ${formatCurrency(remainingAfterAdvance)}`
-                                : ""}
+                            Pago único del 100 % con Mercado Pago
                         </p>
                     </div>
                 </div>
@@ -244,7 +231,7 @@ export default function BookingContractConfirmCard({
                                 <Icon icon="material-symbols:check-circle" width={22} className="shrink-0" />
                                 <div>
                                     <p className="text-sm font-semibold text-foreground">Contrato firmado electrónicamente</p>
-                                    <p className="text-xs text-default-500">Tu firma ya fue registrada. Continúa seleccionando tu forma de pago.</p>
+                                    <p className="text-xs text-default-500">Tu firma ya fue registrada. Continúa con el pago en Mercado Pago.</p>
                                 </div>
                             </div>
                             <Chip size="sm" color="success" variant="flat">Firmado</Chip>
@@ -339,20 +326,8 @@ export default function BookingContractConfirmCard({
                         {isConfirming
                             ? "Conectando con Mercado Pago..."
                             : isAlreadySigned
-                              ? `Pagar ${
-                                    paymentType === "advance" && advanceDue != null
-                                        ? formatCurrency(advanceDue)
-                                        : contractorTotal != null
-                                          ? formatCurrency(contractorTotal)
-                                          : ""
-                                } con Mercado Pago`
-                              : `Firmar contrato y pagar ${
-                                    paymentType === "advance" && advanceDue != null
-                                        ? formatCurrency(advanceDue)
-                                        : contractorTotal != null
-                                          ? formatCurrency(contractorTotal)
-                                          : ""
-                                } con Mercado Pago`}
+                              ? `Pagar ${payLabel} con Mercado Pago`
+                              : `Firmar contrato y pagar ${payLabel} con Mercado Pago`}
                     </Button>
                 </form>
             </CardBody>
@@ -375,8 +350,8 @@ export default function BookingContractConfirmCard({
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 booking={booking}
-                paymentType={paymentType}
-                amount={paymentType === "advance" ? (advanceDue ?? 0) : (contractorTotal ?? 0)}
+                paymentType="full"
+                amount={contractorTotal ?? 0}
                 signatureImageUrl={uploadedSignatureUrl}
                 onSuccess={() => {
                     onUpdated({

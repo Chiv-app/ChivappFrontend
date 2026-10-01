@@ -8,30 +8,20 @@ import {
     CardBody,
     Chip,
     Divider,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Textarea,
     addToast,
-    useDisclosure,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AdminBookingTimelineCard from "@/components/admin/admin-booking-timeline-card";
+import AdminCancelBookingModal from "@/components/admin/admin-cancel-booking-modal";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { formatDateTime } from "@/lib/date-utils";
 import ContractDocumentView from "@/components/booking/contract-document-view";
 import { PaymentEvidenceViewer } from "@/components/booking/contract-pdf-viewer";
 import {
-    cancelAdminBooking,
     disableAdminBookingShare,
     getAdminBookingContractPdfBlob,
     getAdminBookingDetail,
-    rejectAdminAdvancePayment,
-    rejectAdminBalancePayment,
-    validateAdminAdvancePayment,
-    validateAdminBalancePayment,
+    retryAdminCancellationRefund,
 } from "@/lib/admin";
 import {
     BOOKING_STATUS_COLORS,
@@ -40,9 +30,10 @@ import {
     formatBookingTime,
     formatCurrency,
     getBookingStatusChipVariant,
+    toAmount,
 } from "@/lib/booking-labels";
 import { formatRelativeTime } from "@/lib/format-time";
-import type { AdminBookingDetailOut, BookingStatus, PaymentOut } from "@/types/api";
+import type { AdminBookingDetailOut, BookingStatus } from "@/types/api";
 
 type Props = {
     params: Promise<{ id: string }>;
@@ -69,17 +60,28 @@ const PAYMENT_STATUS_COLOR: Record<
     refunded: "default",
 };
 
+const REFUND_STATUS_META: Record<
+    string,
+    { label: string; color: "default" | "warning" | "success" | "danger" | "primary" }
+> = {
+    none: { label: "Sin reembolso", color: "default" },
+    processing: { label: "En proceso", color: "primary" },
+    completed: { label: "Reembolsado", color: "success" },
+    failed: { label: "Fallido", color: "danger" },
+};
+
+const CANCELLED_BY_LABELS: Record<string, string> = {
+    musician: "el músico",
+    contractor: "el contratista",
+    admin: "admin",
+};
+
 export default function AdminBookingDetailPage({ params }: Props) {
     const { id } = use(params);
     const [booking, setBooking] = useState<AdminBookingDetailOut | null>(null);
     const [loading, setLoading] = useState(true);
-    const [reason, setReason] = useState("");
-    const [busy, setBusy] = useState(false);
-    const cancelModal = useDisclosure();
-    const [validatingPaymentId, setValidatingPaymentId] = useState<string | null>(null);
-    const [rejectTarget, setRejectTarget] = useState<PaymentOut | null>(null);
-    const [rejectReason, setRejectReason] = useState("");
-    const [isRejecting, setIsRejecting] = useState(false);
+    const [isCancelOpen, setIsCancelOpen] = useState(false);
+    const [isRetryingRefund, setIsRetryingRefund] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -102,84 +104,29 @@ export default function AdminBookingDetailPage({ params }: Props) {
         void load();
     }, [load]);
 
-    async function handleCancel() {
-        setBusy(true);
+    async function handleRetryRefund() {
+        setIsRetryingRefund(true);
         try {
-            await cancelAdminBooking(id, { reason: reason.trim() || null });
-            addToast({ title: "Reserva cancelada por admin", color: "warning" });
-            cancelModal.onClose();
-            setReason("");
+            const updated = await retryAdminCancellationRefund(id);
+            addToast({
+                title:
+                    updated.cancellation_refund_status === "completed"
+                        ? "Reembolso completado"
+                        : updated.cancellation_refund_status === "failed"
+                          ? "El reembolso volvió a fallar"
+                          : "Reembolso reintentado",
+                description: updated.cancellation_refund_error ?? undefined,
+                color: updated.cancellation_refund_status === "failed" ? "danger" : "success",
+            });
             await load();
         } catch (error) {
             addToast({
-                title: "No se pudo cancelar",
+                title: "No se pudo reintentar el reembolso",
                 description: error instanceof Error ? error.message : "Intenta de nuevo.",
                 color: "danger",
             });
         } finally {
-            setBusy(false);
-        }
-    }
-
-    async function handleValidatePayment(payment: PaymentOut) {
-        setValidatingPaymentId(payment.id);
-        try {
-            if (payment.payment_type === "balance") {
-                await validateAdminBalancePayment(id);
-            } else {
-                await validateAdminAdvancePayment(id);
-            }
-            addToast({ title: "Comprobante validado", color: "success" });
-            await load();
-        } catch (error) {
-            addToast({
-                title: "No se pudo validar",
-                description: error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setValidatingPaymentId(null);
-        }
-    }
-
-    function openRejectPayment(payment: PaymentOut) {
-        setRejectTarget(payment);
-        setRejectReason("");
-    }
-
-    async function handleRejectPayment() {
-        if (!rejectTarget) return;
-        const trimmedReason = rejectReason.trim();
-        if (trimmedReason.length < 3) {
-            addToast({
-                title: "Motivo requerido",
-                description: "Explica brevemente por qué rechazas el comprobante.",
-                color: "warning",
-            });
-            return;
-        }
-        setIsRejecting(true);
-        try {
-            if (rejectTarget.payment_type === "balance") {
-                await rejectAdminBalancePayment(id, trimmedReason);
-            } else {
-                await rejectAdminAdvancePayment(id, trimmedReason);
-            }
-            addToast({
-                title: "Comprobante rechazado",
-                description: "Se notificó al contratista para que vuelva a subir evidencia.",
-                color: "warning",
-            });
-            setRejectTarget(null);
-            await load();
-        } catch (error) {
-            addToast({
-                title: "No se pudo rechazar",
-                description: error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setIsRejecting(false);
+            setIsRetryingRefund(false);
         }
     }
 
@@ -216,6 +163,12 @@ export default function AdminBookingDetailPage({ params }: Props) {
 
     const statusKey = booking.status as BookingStatus;
     const finalReview = booking.reviews.find((review) => review.is_final);
+    const refundStatus = booking.cancellation_refund_status ?? null;
+    const refundMeta = refundStatus ? REFUND_STATUS_META[refundStatus] : undefined;
+    const showRefundInfo =
+        booking.status === "cancelled" &&
+        (toAmount(booking.cancellation_refund_amount) > 0 ||
+            (refundStatus != null && refundStatus !== "none"));
 
     return (
         <div className="flex flex-col gap-6">
@@ -311,6 +264,74 @@ export default function AdminBookingDetailPage({ params }: Props) {
                             </div>
                         </div>
 
+                        {showRefundInfo ? (
+                            <div
+                                className={`rounded-xl border p-3 flex flex-col gap-2 text-sm ${
+                                    refundStatus === "failed"
+                                        ? "border-danger/30 bg-danger/5"
+                                        : "border-default-200"
+                                }`}
+                            >
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="font-semibold text-foreground">
+                                        Reembolso por cancelación
+                                        {booking.cancelled_by
+                                            ? ` · cancelada por ${
+                                                  CANCELLED_BY_LABELS[booking.cancelled_by] ??
+                                                  booking.cancelled_by
+                                              }`
+                                            : ""}
+                                    </p>
+                                    {refundMeta ? (
+                                        <Chip size="sm" variant="flat" color={refundMeta.color}>
+                                            {refundMeta.label}
+                                        </Chip>
+                                    ) : null}
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <p className="text-xs text-default-500">Monto</p>
+                                        <p className="font-semibold">
+                                            {formatCurrency(
+                                                toAmount(booking.cancellation_refund_amount),
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-default-500">Porcentaje</p>
+                                        <p className="font-semibold">
+                                            {toAmount(booking.cancellation_refund_percent)} %
+                                        </p>
+                                    </div>
+                                </div>
+                                {refundStatus === "failed" ? (
+                                    <>
+                                        {booking.cancellation_refund_error ? (
+                                            <p className="text-xs text-danger break-words">
+                                                Error de Mercado Pago:{" "}
+                                                {booking.cancellation_refund_error}
+                                            </p>
+                                        ) : null}
+                                        <div>
+                                            <Button
+                                                size="sm"
+                                                color="danger"
+                                                isLoading={isRetryingRefund}
+                                                onPress={handleRetryRefund}
+                                                startContent={
+                                                    isRetryingRefund ? null : (
+                                                        <Icon icon="material-symbols:refresh" width={16} />
+                                                    )
+                                                }
+                                            >
+                                                Reintentar reembolso
+                                            </Button>
+                                        </div>
+                                    </>
+                                ) : null}
+                            </div>
+                        ) : null}
+
                         <Divider />
 
                         <div className="flex flex-wrap gap-2">
@@ -324,7 +345,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                     size="sm"
                                     color="danger"
                                     variant="flat"
-                                    onPress={cancelModal.onOpen}
+                                    onPress={() => setIsCancelOpen(true)}
                                 >
                                     Cancelar reserva
                                 </Button>
@@ -391,26 +412,6 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                     evidenceUrls={payment.evidence_urls}
                                     label={`Comprobante · ${paymentTypeLabel(payment.payment_type)}`}
                                 />
-                                {payment.status === "initiated" ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        <Button
-                                            size="sm"
-                                            color="success"
-                                            isLoading={validatingPaymentId === payment.id}
-                                            onPress={() => handleValidatePayment(payment)}
-                                        >
-                                            Validar
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            color="danger"
-                                            variant="flat"
-                                            onPress={() => openRejectPayment(payment)}
-                                        >
-                                            Rechazar
-                                        </Button>
-                                    </div>
-                                ) : null}
                             </div>
                         ))
                     )}
@@ -474,81 +475,14 @@ export default function AdminBookingDetailPage({ params }: Props) {
                 </Card>
             ) : null}
 
-            <Modal isOpen={cancelModal.isOpen} onOpenChange={cancelModal.onOpenChange}>
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader>Cancelar reserva</ModalHeader>
-                            <ModalBody>
-                                <p className="text-sm text-default-600">
-                                    Esta acción cancela la reserva como administrador. Las
-                                    partes verán el estado cancelado.
-                                </p>
-                                <Textarea
-                                    label="Motivo (opcional)"
-                                    value={reason}
-                                    onValueChange={setReason}
-                                    variant="bordered"
-                                />
-                            </ModalBody>
-                            <ModalFooter>
-                                <Button variant="flat" onPress={onClose} isDisabled={busy}>
-                                    Volver
-                                </Button>
-                                <Button color="danger" isLoading={busy} onPress={handleCancel}>
-                                    Confirmar cancelación
-                                </Button>
-                            </ModalFooter>
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
-
-            <Modal
-                isOpen={!!rejectTarget}
-                onOpenChange={(open) => {
-                    if (!open) setRejectTarget(null);
+            <AdminCancelBookingModal
+                bookingId={booking.id}
+                isOpen={isCancelOpen}
+                onOpenChange={setIsCancelOpen}
+                onCancelled={() => {
+                    void load();
                 }}
-            >
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader className="flex flex-col gap-1">
-                                Rechazar comprobante
-                                <span className="text-sm font-normal text-default-500">
-                                    Se notificará al contratista y al músico con el motivo.
-                                </span>
-                            </ModalHeader>
-                            <ModalBody>
-                                <Textarea
-                                    label="Motivo del rechazo"
-                                    value={rejectReason}
-                                    onValueChange={setRejectReason}
-                                    variant="bordered"
-                                    minRows={3}
-                                    isRequired
-                                />
-                            </ModalBody>
-                            <ModalFooter>
-                                <Button
-                                    variant="flat"
-                                    onPress={onClose}
-                                    isDisabled={isRejecting}
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    color="danger"
-                                    isLoading={isRejecting}
-                                    onPress={handleRejectPayment}
-                                >
-                                    Rechazar y notificar
-                                </Button>
-                            </ModalFooter>
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
+            />
         </div>
     );
 }

@@ -17,10 +17,12 @@ import BookingPendingChangesModal from "@/components/booking/booking-pending-cha
 import BookingCalendarSyncModal from "@/components/booking/booking-calendar-sync-modal";
 import BookingQuoteForm from "@/components/booking/booking-quote-form";
 import BookingTimeline from "@/components/booking/booking-timeline";
-import MusicianAttachSignatureCard from "@/components/booking/musician-attach-signature-card";
-import { cancelBooking, getBooking, getBookingBalanceDue, listBookingReviews } from "@/lib/bookings";
+import CancelBookingModal from "@/components/booking/cancel-booking-modal";
+import CancellationRefundNotice from "@/components/booking/cancellation-refund-notice";
+import { getBooking, getBookingBalanceDue, listBookingReviews } from "@/lib/bookings";
 import { checkMercadoPagoPaymentStatus } from "@/lib/payments";
 import {
+    isCancellableBookingStatus,
     isConfirmedBookingStatus,
     isEventUpcoming,
 } from "@/lib/booking-labels";
@@ -36,7 +38,7 @@ type Props = {
 export default function BookingDetailView({ bookingId, role }: Props) {
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isCancelling, setIsCancelling] = useState(false);
+    const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [amountPaid, setAmountPaid] = useState<number | null>(null);
     const [hasReview, setHasReview] = useState(false);
@@ -174,25 +176,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         }
     }, [searchParams, bookingId, pathname, router]);
 
-    async function handleCancel() {
-        if (!booking) return;
-        setIsCancelling(true);
-        try {
-            const updated = await cancelBooking(booking.id);
-            setBooking(updated);
-            addToast({ title: "Reserva cancelada", color: "success" });
-        } catch (error) {
-            addToast({
-                title: "No se pudo cancelar",
-                description:
-                    error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setIsCancelling(false);
-        }
-    }
-
     function handleUpdated(updated: BookingOut) {
         setBooking(updated);
         refreshBalance(updated);
@@ -254,14 +237,17 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         booking.status === "payment_retained" &&
         upcoming &&
         !hasPendingChanges;
-    const canCancel =
-        !isMemberView &&
-        (booking.status === "requested" ||
-            booking.status === "accepted" ||
-            booking.status === "contract_pending");
+    const canCancel = !isMemberView && isCancellableBookingStatus(booking.status);
 
     return (
         <div className="max-w-6xl mx-auto px-0">
+            <CancelBookingModal
+                bookingId={booking.id}
+                isOpen={isCancelOpen}
+                onOpenChange={setIsCancelOpen}
+                onCancelled={handleUpdated}
+            />
+
             <BookingEditCommitmentModal
                 booking={booking}
                 role={role}
@@ -357,6 +343,10 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                         <BookingQuoteForm booking={booking} onUpdated={handleUpdated} />
                     ) : null}
 
+                    {!isMemberView ? (
+                        <CancellationRefundNotice booking={booking} />
+                    ) : null}
+
                     {!isMemberView &&
                     role === "musician" &&
                     booking.status === "payment_pending" ? (
@@ -384,10 +374,27 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                     {!isMemberView &&
                     role === "musician" &&
                     booking.status === "contract_pending" ? (
-                        <MusicianAttachSignatureCard
-                            booking={booking}
-                            onUpdated={handleUpdated}
-                        />
+                        <div className="flex flex-col gap-4">
+                            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+                                <Icon
+                                    icon="material-symbols:info"
+                                    width={22}
+                                    className="text-primary shrink-0 mt-0.5"
+                                />
+                                <p className="text-sm text-default-600">
+                                    Esperando que el cliente revise, firme el contrato y
+                                    pague a través de Chivapp con Mercado Pago.
+                                </p>
+                            </div>
+                            <Button
+                                color="primary"
+                                variant="flat"
+                                startContent={<Icon icon="lucide:link" width={18} />}
+                                onPress={handleCopyPaymentLink}
+                            >
+                                Copiar Link de Pago para el Cliente
+                            </Button>
+                        </div>
                     ) : null}
 
                     {!isMemberView &&
@@ -417,8 +424,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                                 color="danger"
                                 variant="flat"
                                 radius="lg"
-                                isLoading={isCancelling}
-                                onPress={handleCancel}
+                                onPress={() => setIsCancelOpen(true)}
                             >
                                 Cancelar reserva
                             </Button>

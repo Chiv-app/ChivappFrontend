@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { Button, Checkbox, Textarea } from "@heroui/react";
 import { quoteBooking, rejectBooking } from "@/lib/bookings";
 import { addToast } from "@heroui/react";
+import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 
 export default function BookingQuoteForm({
@@ -23,6 +24,7 @@ export default function BookingQuoteForm({
     );
     const [quoteNotes, setQuoteNotes] = useState(booking.musician_quote_notes ?? "");
     const [includesTravel, setIncludesTravel] = useState(true);
+    const [isCancelOpen, setIsCancelOpen] = useState(false);
 
     const [isPendingSubmit, startSubmit] = useTransition();
     const [isPendingReject, startReject] = useTransition();
@@ -72,7 +74,12 @@ export default function BookingQuoteForm({
     };
 
     const handleReject = () => {
-        if (!window.confirm("¿Seguro que deseas rechazar/cancelar esta reserva?")) return;
+        // Tras enviar la cotización ya no se puede "rechazar": se cancela con la política vigente.
+        if (booking.status !== "requested") {
+            setIsCancelOpen(true);
+            return;
+        }
+        if (!window.confirm("¿Seguro que deseas rechazar esta solicitud?")) return;
         startReject(async () => {
             try {
                 const res = await rejectBooking(booking.id, { rejection_reason: "No puedo atender la solicitud." });
@@ -86,6 +93,12 @@ export default function BookingQuoteForm({
 
     return (
         <div className="w-full h-full flex flex-col rounded-2xl border border-default-200/50 bg-[#0C121A] p-6 sm:p-8">
+            <CancelBookingModal
+                bookingId={booking.id}
+                isOpen={isCancelOpen}
+                onOpenChange={setIsCancelOpen}
+                onCancelled={(updated) => onUpdated?.(updated)}
+            />
             <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
                     <h2 className="text-2xl font-bold text-white">

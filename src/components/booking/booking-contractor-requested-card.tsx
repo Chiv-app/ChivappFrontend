@@ -8,11 +8,10 @@ import {
     Chip,
     Divider,
     User,
-    addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import BookingLocationLinks from "@/components/booking/booking-location-links";
-import { cancelBooking } from "@/lib/bookings";
+import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import {
     formatBookingDate,
     formatBookingTime,
@@ -31,35 +30,17 @@ export default function BookingContractorRequestedCard({
     onUpdated,
     onEdit,
 }: Props) {
-    const [isCancelling, setIsCancelling] = useState(false);
-
-    async function handleCancel() {
-        if (!confirm("¿Seguro que deseas cancelar esta solicitud?")) {
-            return;
-        }
-        setIsCancelling(true);
-        try {
-            const updated = await cancelBooking(booking.id);
-            onUpdated(updated);
-            addToast({
-                title: "Solicitud cancelada",
-                description: "La solicitud fue cancelada exitosamente.",
-                color: "success",
-            });
-        } catch (error) {
-            addToast({
-                title: "Error al cancelar",
-                description:
-                    error instanceof Error ? error.message : "Intenta nuevamente.",
-                color: "danger",
-            });
-        } finally {
-            setIsCancelling(false);
-        }
-    }
+    const [isCancelOpen, setIsCancelOpen] = useState(false);
 
     return (
         <Card className="border border-default-200/70 shadow-soft overflow-hidden">
+            <CancelBookingModal
+                bookingId={booking.id}
+                isOpen={isCancelOpen}
+                onOpenChange={setIsCancelOpen}
+                onCancelled={onUpdated}
+                title="Cancelar solicitud"
+            />
             <div className="bg-gradient-to-br from-warning/15 via-warning/5 to-transparent px-6 py-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                     <Chip color="warning" variant="flat" size="sm" startContent={<Icon icon="material-symbols:pending-actions" width={16} />}>
@@ -183,7 +164,7 @@ export default function BookingContractorRequestedCard({
                             ¿Qué ocurre a continuación?
                         </p>
                         <p className="text-xs text-default-600 mt-1 leading-relaxed">
-                            El músico revisará los detalles y te enviará una cotización con el monto total y el anticipo requerido.
+                            El músico revisará los detalles y te enviará una cotización con el monto total del servicio.
                             Te notificaremos en la plataforma en cuanto esté lista. Una vez recibida la cotización, podrás aceptarla, firmar el contrato digital y pagar de forma 100% segura con Mercado Pago.
                         </p>
                     </div>
@@ -194,9 +175,8 @@ export default function BookingContractorRequestedCard({
                         color="danger"
                         variant="flat"
                         radius="lg"
-                        isLoading={isCancelling}
-                        onPress={handleCancel}
-                        startContent={!isCancelling && <Icon icon="material-symbols:cancel" width={18} />}
+                        onPress={() => setIsCancelOpen(true)}
+                        startContent={<Icon icon="material-symbols:cancel" width={18} />}
                     >
                         Cancelar solicitud
                     </Button>

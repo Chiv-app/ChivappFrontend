@@ -18,6 +18,7 @@ import {
 import { Icon } from "@iconify/react";
 import { useAuth } from "@/contexts/auth-context";
 import { useMercadoPago } from "@/hooks/use-mercadopago";
+import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/booking-labels";
 import { processMercadoPagoPayment, createMercadoPagoPreference } from "@/lib/payments";
 import type { BookingOut } from "@/types/api";
@@ -56,6 +57,8 @@ export default function BookingMercadoPagoModal({
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [processError, setProcessError] = useState<string | null>(null);
+    // 409: el monto calculado por el servidor cambió; hay que recargar para ver el nuevo total.
+    const [needsReload, setNeedsReload] = useState(false);
     const [brickLoaded, setBrickLoaded] = useState(false);
 
     const brickControllerRef = useRef<{ unmount: () => void } | null>(null);
@@ -64,6 +67,7 @@ export default function BookingMercadoPagoModal({
     useEffect(() => {
         if (isOpen) {
             setProcessError(null);
+            setNeedsReload(false);
             setIsProcessing(false);
             setPhoneNumber("");
             setOtp("");
@@ -168,6 +172,7 @@ export default function BookingMercadoPagoModal({
                                 }
                             } catch (err) {
                                 const errMsg = err instanceof Error ? err.message : "Error al procesar el pago con tarjeta.";
+                                if (err instanceof ApiError && err.status === 409) setNeedsReload(true);
                                 setProcessError(errMsg);
                                 throw err;
                             } finally {
@@ -280,6 +285,7 @@ export default function BookingMercadoPagoModal({
                 );
             }
         } catch (err) {
+            if (err instanceof ApiError && err.status === 409) setNeedsReload(true);
             setProcessError(
                 err instanceof Error ? err.message : "Error al procesar el pago con Yape. Verifica tus datos."
             );
@@ -304,6 +310,7 @@ export default function BookingMercadoPagoModal({
                 throw new Error("No se pudo generar el enlace de pago.");
             }
         } catch (err) {
+            if (err instanceof ApiError && err.status === 409) setNeedsReload(true);
             setProcessError(
                 err instanceof Error ? err.message : "Error al redirigir a Mercado Pago."
             );
@@ -311,12 +318,7 @@ export default function BookingMercadoPagoModal({
         }
     }
 
-    const paymentLabel =
-        paymentType === "advance"
-            ? "Anticipo (50%)"
-            : paymentType === "full"
-              ? "Pago Total"
-              : "Saldo Pendiente";
+    const paymentLabel = paymentType === "balance" ? "Saldo Pendiente" : "Pago Total";
 
     return (
         <Modal
@@ -382,6 +384,18 @@ export default function BookingMercadoPagoModal({
                                     <div>
                                         <p className="font-semibold">No pudimos procesar el pago</p>
                                         <p className="text-xs mt-0.5">{processError}</p>
+                                        {needsReload ? (
+                                            <Button
+                                                size="sm"
+                                                color="danger"
+                                                variant="flat"
+                                                className="mt-2"
+                                                startContent={<Icon icon="solar:refresh-bold" className="w-4 h-4" />}
+                                                onPress={() => window.location.reload()}
+                                            >
+                                                Recargar página
+                                            </Button>
+                                        ) : null}
                                     </div>
                                 </div>
                             )}
