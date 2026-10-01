@@ -5,69 +5,68 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 
 function CalendarCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, refresh } = useAuth();
+  const { user, isLoading: authLoading, refresh } = useAuth();
   
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [exchangeStatus, setExchangeStatus] = useState<"loading" | "success" | "error">("loading");
+  const [exchangeError, setExchangeError] = useState("");
   const exchangedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const code = searchParams?.get("code");
+  const state = searchParams?.get("state");
   const errorParam = searchParams?.get("error");
 
+  // Errores que se deducen de la URL o de la sesión (sin setState en efectos).
+  let presetError: string | null = null;
+  if (errorParam) {
+    presetError = "La conexión fue cancelada o denegada por Google.";
+  } else if (!code || !state) {
+    presetError = "No se recibió el código de autorización.";
+  } else if (!authLoading && !user) {
+    presetError = "Debes iniciar sesión para conectar tu calendario.";
+  }
+
+  const status = presetError ? "error" : exchangeStatus;
+  const errorMessage = presetError ?? exchangeError;
+
   useEffect(() => {
-    // Si Google retorna un error directo (ej. el usuario canceló el proceso)
-    if (errorParam) {
-      setStatus("error");
-      setErrorMessage("La conexión fue cancelada o denegada por Google.");
-      return;
-    }
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
-    if (!code) {
-      setStatus("error");
-      setErrorMessage("No se recibió el código de autorización.");
-      return;
-    }
-
-    if (!user) {
-      setStatus("error");
-      setErrorMessage("Debes iniciar sesión para conectar tu calendario.");
-      return;
-    }
-
+  useEffect(() => {
+    if (presetError || authLoading || !user || !code || !state) return;
     if (exchangedRef.current) return;
     exchangedRef.current = true;
 
-    let isMounted = true;
-
     const exchangeToken = async () => {
       try {
-        await apiFetch(`/calendar-auth/callback?code=${encodeURIComponent(code)}`, { method: "POST" });
+        await apiFetch(
+          `/calendar-auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
+          { method: "POST" },
+        );
         await refresh();
-        if (isMounted) {
-          setStatus("success");
-        }
+        if (mountedRef.current) setExchangeStatus("success");
       } catch (error) {
-        if (isMounted) {
-          setStatus("error");
-          setErrorMessage(
-            (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 
-            "Hubo un problema al conectar con Google. Por favor intenta nuevamente."
-          );
-        }
+        if (!mountedRef.current) return;
+        setExchangeStatus("error");
+        setExchangeError(
+          error instanceof ApiError
+            ? error.message
+            : "Hubo un problema al conectar con Google. Por favor intenta nuevamente."
+        );
       }
     };
 
     exchangeToken();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [code, errorParam, user]);
+  }, [presetError, code, state, user, authLoading, refresh]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">

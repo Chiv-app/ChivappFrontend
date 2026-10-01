@@ -77,9 +77,15 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
     if (userAgent) {
         headers.set("user-agent", userAgent);
     }
+    // IP real del cliente: la última entrada de X-Forwarded-For la agrega el
+    // balanceador (las anteriores las puede inventar el cliente). Se envía al
+    // backend firmada con el secreto compartido para el rate limit y auditoría.
     const forwardedFor = request.headers.get("x-forwarded-for");
-    if (forwardedFor) {
-        headers.set("x-forwarded-for", forwardedFor);
+    const clientIp = forwardedFor?.split(",").pop()?.trim();
+    const proxySecret = process.env.PROXY_SHARED_SECRET;
+    if (clientIp && proxySecret) {
+        headers.set("x-chivapp-client-ip", clientIp);
+        headers.set("x-chivapp-proxy-secret", proxySecret);
     }
 
     // Cabeceras de pasarela de pago (Webhooks de Mercado Pago, firmas HMAC e idempotencia)

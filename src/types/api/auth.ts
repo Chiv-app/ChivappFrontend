@@ -15,9 +15,9 @@ export type RegisterRequest = {
     accepted_terms: boolean;
 };
 
+/** El token de sesión solo viaja en la cookie httponly `access_token`. */
 export type TokenOut = {
-    access_token: string;
-    token_type: "bearer";
+    message: string;
 };
 
 export type UserOut = {

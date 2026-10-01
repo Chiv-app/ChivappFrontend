@@ -105,7 +105,11 @@ export default function LoginForm({
                           ? "Acceso cancelado en Google. Intenta nuevamente si deseas ingresar con tu cuenta."
                           : oauthError === "pending_expired"
                             ? "El registro social expiró. Por favor intenta iniciar sesión con Google nuevamente."
-                            : "No se pudo completar el acceso social. Intenta de nuevo o ingresa con tu correo."}
+                            : oauthError === "email_in_use"
+                              ? "Este correo ya tiene una cuenta. Inicia sesión con tu contraseña y vincula Google desde tu perfil."
+                              : oauthError === "invalid_state"
+                                ? "La sesión de inicio con Google expiró o no es válida. Vuelve a intentarlo desde este navegador."
+                                : "No se pudo completar el acceso social. Intenta de nuevo o ingresa con tu correo."}
                 </p>
             ) : null}
             <SocialAuthButtons intent="login" />
