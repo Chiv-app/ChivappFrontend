@@ -2,7 +2,7 @@ import { useState, useTransition } from "react";
 import { formatCurrency } from "@/lib/booking-labels";
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
-import { Button, Checkbox, Textarea } from "@heroui/react";
+import { Button, Checkbox, Textarea, Input } from "@heroui/react";
 import { quoteBooking, rejectBooking, updateBooking } from "@/lib/bookings";
 import { addToast } from "@heroui/react";
 import CancelBookingModal from "@/components/booking/cancel-booking-modal";
