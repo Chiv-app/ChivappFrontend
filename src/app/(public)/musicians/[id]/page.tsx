@@ -7,6 +7,8 @@ import { getMusicianById } from "@/lib/musicians";
 import { buildPageMetadata, musicianJsonLd, serializeJsonLd } from "@/lib/seo";
 import type { MusicianDetail } from "@/types/ui/musician";
 
+export const revalidate = 3600;
+
 type PageProps = {
     params: Promise<{ id: string }>;
 };

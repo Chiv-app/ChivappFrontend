@@ -27,6 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 import { notFound } from "next/navigation";
 import type { MusicianCard } from "@/types/ui/musician";
 
+export const revalidate = 3600;
+
 export default async function GenrePage({ params }: Props) {
     const { genero } = await params;
     const genreName = formatTitle(genero);

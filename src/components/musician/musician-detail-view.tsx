@@ -397,11 +397,11 @@ export default function MusicianDetailView({
                     {showreelUrl ? (
                         <div className="relative min-h-[40vh] lg:min-h-full overflow-hidden flex flex-col justify-center items-center border-t lg:border-t-0 lg:border-l border-default-200/70 bg-default-900">
                             {showreelThumb ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
+                                <Image
                                     src={showreelThumb}
                                     alt={`Video de ${musician.name}`}
-                                    className="absolute inset-0 size-full object-cover opacity-80"
+                                    fill
+                                    className="object-cover opacity-80"
                                 />
                             ) : musician.image ? (
                                 <Image
@@ -631,14 +631,14 @@ export default function MusicianDetailView({
                                                                 musician.name,
                                                             )
                                                         }
-                                                        className="group relative w-full overflow-hidden rounded-4xl border border-default-200/70 bg-default-900 shadow-soft mb-6 text-left"
+                                                        className="group relative aspect-video w-full overflow-hidden rounded-4xl border border-default-200/70 bg-default-900 shadow-soft mb-6 text-left"
                                                     >
                                                         {tile.thumb ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img
+                                                            <Image
                                                                 src={tile.thumb}
                                                                 alt="Video del portafolio"
-                                                                className="w-full h-auto object-cover brightness-75 transition-transform duration-700 group-hover:scale-105"
+                                                                fill
+                                                                className="object-cover brightness-75 transition-transform duration-700 group-hover:scale-105"
                                                             />
                                                         ) : (
                                                             <div className="aspect-video w-full bg-default-800" />
