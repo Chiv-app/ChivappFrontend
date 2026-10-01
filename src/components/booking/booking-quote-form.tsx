@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/booking-labels";
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
 import { Button, Checkbox, Textarea } from "@heroui/react";
-import { quoteBooking, rejectBooking } from "@/lib/bookings";
+import { quoteBooking, rejectBooking, updateBooking } from "@/lib/bookings";
 import { addToast } from "@heroui/react";
 import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
@@ -24,6 +24,8 @@ export default function BookingQuoteForm({
     );
     const [quoteNotes, setQuoteNotes] = useState(booking.musician_quote_notes ?? "");
     const [includesTravel, setIncludesTravel] = useState(true);
+    const [locationAddress, setLocationAddress] = useState(booking.location_address || "");
+    const [locationCity, setLocationCity] = useState(booking.location_city || "");
     const [isCancelOpen, setIsCancelOpen] = useState(false);
 
     const [isPendingSubmit, startSubmit] = useTransition();
@@ -44,6 +46,25 @@ export default function BookingQuoteForm({
         platform_fee_percent: booking.platform_fee_percent
     });
 
+    const handleDraft = () => {
+        startSubmit(async () => {
+            try {
+                const res = await updateBooking(booking.id, {
+                    location_address: locationAddress,
+                    location_city: locationCity,
+                });
+                onUpdated?.(res);
+                addToast({ title: "Borrador guardado", color: "success" });
+            } catch (err) {
+                addToast({
+                    title: "Error al guardar",
+                    description: err instanceof Error ? err.message : "Error desconocido",
+                    color: "danger",
+                });
+            }
+        });
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!priceAgreed || isNaN(Number(priceAgreed))) return;
@@ -61,8 +82,8 @@ export default function BookingQuoteForm({
                 const res = await quoteBooking(booking.id, {
                     price_agreed: Number(priceAgreed),
                     musician_quote_notes: finalNotes,
-                    location_address: booking.location_address,
-                    location_city: booking.location_city ?? undefined,
+                    location_address: locationAddress || booking.location_address,
+                    location_city: locationCity || booking.location_city || undefined,
                     location_reference: booking.location_reference ?? undefined,
                 });
                 onUpdated?.(res);
@@ -115,6 +136,31 @@ export default function BookingQuoteForm({
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-8 mt-6">
+                {/* DETALLES SECTION */}
+                <div className="flex flex-col gap-4">
+                    <p className="text-sm text-default-400 font-semibold uppercase tracking-wider">Detalles del Evento</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Input
+                            label="Dirección"
+                            value={locationAddress}
+                            onValueChange={setLocationAddress}
+                            variant="faded"
+                            classNames={{
+                                inputWrapper: "bg-default-100/50 border-default-200/50",
+                            }}
+                        />
+                        <Input
+                            label="Ciudad"
+                            value={locationCity}
+                            onValueChange={setLocationCity}
+                            variant="faded"
+                            classNames={{
+                                inputWrapper: "bg-default-100/50 border-default-200/50",
+                            }}
+                        />
+                    </div>
+                </div>
+
                 {/* PRECIO SECTION */}
                 <div className="flex flex-col gap-2">
                     <div className="flex justify-between items-end">
@@ -216,6 +262,8 @@ export default function BookingQuoteForm({
                             type="button"
                             variant="bordered"
                             radius="full"
+                            onClick={handleDraft}
+                            disabled={isSubmitting}
                             className="border-default-200/40 text-white font-medium flex-1 sm:flex-none hover:bg-default-200/10"
                         >
                             Guardar borrador
