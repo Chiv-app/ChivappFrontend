@@ -274,7 +274,7 @@ export default function BookingConfirmedWorkspace({
                     title="Modificación de reserva"
                     summary="En validación"
                     customBadgeLabel="Enviado"
-                    customBadgeColor="primary"
+                    customBadgeColor="default"
                     defaultExpanded={true}
                 >
                     <div className="pt-2">
@@ -298,7 +298,7 @@ export default function BookingConfirmedWorkspace({
                     title="Ubicación en vivo"
                     summary="Fase de evento"
                     customBadgeLabel="Activo"
-                    customBadgeColor="primary"
+                    customBadgeColor="success"
                     defaultExpanded={true}
                 >
                     <div className="pt-2">
