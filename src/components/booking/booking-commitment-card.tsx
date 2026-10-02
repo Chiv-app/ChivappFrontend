@@ -27,11 +27,13 @@ function formatDuration(start: string, end: string | null) {
 
 export default function BookingCommitmentCard({ booking }: { booking: BookingOut }) {
     const isMusician = booking.viewer_role === "member";
+    const coords = parseLocationReference(booking.location_reference);
     const googleMapsUrl = buildGoogleMapsUrl({
+        lat: coords?.lat,
+        lng: coords?.lng,
         address: booking.location_address,
         city: booking.location_city,
     });
-    const coords = parseLocationReference(booking.location_reference);
     const openStreetMapUrl = coords
         ? buildOpenStreetMapUrl(coords.lat, coords.lng)
         : null;
