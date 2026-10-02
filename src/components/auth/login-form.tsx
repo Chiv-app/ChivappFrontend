@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Divider, Input, addToast, Form } from "@heroui/react";
+import { Icon } from "@iconify/react";
 import { PasswordInput } from "@/components/auth/password-input";
 import SocialAuthButtons from "@/components/auth/social-auth-buttons";
 import { useAuth } from "@/contexts/auth-context";
@@ -14,14 +15,14 @@ import { UI } from "@/lib/ui-classes";
 type Props = {
     redirect?: string | null;
     oauthError?: string | null;
-    onSwitchToRegister?: () => void;
+    
     onSuccess?: (destination: string) => void;
 };
 
 export default function LoginForm({
     redirect = "/",
     oauthError,
-    onSwitchToRegister,
+    
     onSuccess,
 }: Props) {
     const { login } = useAuth();
@@ -122,25 +123,43 @@ export default function LoginForm({
             </div>
             <Form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full" validationBehavior="native">
                 <Input
-                    label="Correo electrónico"
+                    aria-label="Correo electrónico"
+                    placeholder="correo@ejemplo.com"
                     type="email"
-                    placeholder="tu@email.com"
                     variant="bordered"
+                    radius="md"
+                    size="lg"
                     value={email}
-                    onValueChange={setEmail}
+                    onValueChange={(val) => {
+                        setEmail(val);
+                        
+                    }}
                     isRequired
                     autoComplete="email"
-                    classNames={UI.authInput}
+                    startContent={<Icon icon="lucide:mail" className="text-default-400" width={18} />}
+                    classNames={{
+                        ...UI.authInput,
+                        inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                    }}
                 />
                 <PasswordInput
-                    label="Contraseña"
-                    placeholder="••••••••"
+                    aria-label="Contraseña"
+                    placeholder="Contraseña"
                     variant="bordered"
+                    radius="md"
+                    size="lg"
                     value={password}
-                    onValueChange={setPassword}
+                    onValueChange={(val) => {
+                        setPassword(val);
+                        
+                    }}
                     isRequired
                     autoComplete="current-password"
-                    classNames={UI.authInput}
+                    startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
+                    classNames={{
+                        ...UI.authInput,
+                        inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                    }}
                 />
                 <div className="flex justify-end">
                     <a
@@ -153,25 +172,15 @@ export default function LoginForm({
                 <Button
                     type="submit"
                     color="primary"
-                    radius="lg"
-                    className="font-semibold shadow-glow hover:shadow-glow-lg transition-shadow"
+                    radius="full"
+                    size="lg"
+                    className="font-bold shadow-lg w-full mt-2 hover:opacity-90 transition-opacity"
                     isLoading={isSubmitting}
                 >
                     Ingresar
                 </Button>
             </Form>
-            {onSwitchToRegister ? (
-                <p className="text-sm text-default-500 text-center">
-                    ¿No tienes cuenta?{" "}
-                    <button
-                        type="button"
-                        onClick={onSwitchToRegister}
-                        className="font-semibold text-foreground hover:text-secondary transition-colors"
-                    >
-                        Regístrate
-                    </button>
-                </p>
-            ) : null}
+            
         </div>
     );
 }

@@ -8,8 +8,8 @@ import {
     Checkbox,
     Divider,
     Input,
-    Radio,
-    RadioGroup,
+    
+    Tabs, Tab,
     addToast,
     Form,
 } from "@heroui/react";
@@ -29,7 +29,7 @@ type Props = {
     redirect?: string | null;
     oauthError?: string | null;
     defaultRole?: UserRole;
-    onSwitchToLogin?: () => void;
+    
     onSuccess?: (destination: string) => void;
 };
 
@@ -37,7 +37,7 @@ export default function RegisterForm({
     redirect = "/",
     oauthError,
     defaultRole,
-    onSwitchToLogin,
+    
     onSuccess,
 }: Props) {
     const { register } = useAuth();
@@ -202,84 +202,38 @@ export default function RegisterForm({
                     </div>
                 ) : null}
 
-                <RadioGroup
-                    label="Quiero registrarme como"
-                    value={role}
-                    onValueChange={(value) => {
-                        setRole(value as UserRole);
-                        setPasswordError("");
-                        setFormAlert(null);
-                    }}
-                    orientation="horizontal"
-                    isRequired
-                    classNames={{
-                        base: "w-full",
-                        wrapper: "grid grid-cols-2 gap-2 sm:gap-2.5",
-                        label: "text-xs font-semibold text-foreground/80 mb-1",
-                    }}
-                >
-                    <Radio
-                        value="contractor"
-                        classNames={{
-                            base: "inline-flex m-0 max-w-full w-full bg-content2/50 hover:bg-content2 items-center justify-between flex-row-reverse cursor-pointer rounded-2xl gap-2 p-2.5 border-2 border-default-200/60 data-[selected=true]:border-primary data-[selected=true]:bg-primary/10 transition-all",
-                            labelWrapper: "ml-0 flex-1",
+                <div className="flex bg-transparent border border-default-200/50 p-1 rounded-md w-full">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setRole("contractor");
+                            setPasswordError("");
+                            setFormAlert(null);
                         }}
+                        className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-sm text-xs font-semibold transition-colors ${role === "contractor" ? "bg-default-200/60 text-foreground shadow-md" : "text-default-500 hover:text-default-700"}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <div
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                                    role === "contractor"
-                                        ? "bg-primary text-primary-foreground shadow-xs"
-                                        : "bg-default-200/70 text-default-600"
-                                }`}
-                            >
-                                <Icon icon="material-symbols:business-center-rounded" className="text-lg" />
-                            </div>
-                            <div className="flex flex-col text-left">
-                                <span className="text-xs font-bold leading-tight text-foreground">
-                                    Contratista
-                                </span>
-                                <span className="text-[10px] text-default-500 leading-tight">
-                                    Busco mariachis
-                                </span>
-                            </div>
-                        </div>
-                    </Radio>
-
-                    <Radio
-                        value="musician"
-                        classNames={{
-                            base: "inline-flex m-0 max-w-full w-full bg-content2/50 hover:bg-content2 items-center justify-between flex-row-reverse cursor-pointer rounded-2xl gap-2 p-2.5 border-2 border-default-200/60 data-[selected=true]:border-primary data-[selected=true]:bg-primary/10 transition-all",
-                            labelWrapper: "ml-0 flex-1",
+                        <Icon icon="lucide:party-popper" /> Busco músicos
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setRole("musician");
+                            setPasswordError("");
+                            setFormAlert(null);
                         }}
+                        className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-sm text-xs font-semibold transition-colors ${role === "musician" ? "bg-default-200/60 text-foreground shadow-md" : "text-default-500 hover:text-default-700"}`}
                     >
-                        <div className="flex items-center gap-2">
-                            <div
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                                    role === "musician"
-                                        ? "bg-primary text-primary-foreground shadow-xs"
-                                        : "bg-default-200/70 text-default-600"
-                                }`}
-                            >
-                                <Icon icon="material-symbols:music-note-rounded" className="text-lg" />
-                            </div>
-                            <div className="flex flex-col text-left">
-                                <span className="text-xs font-bold leading-tight text-foreground">
-                                    Músico
-                                </span>
-                                <span className="text-[10px] text-default-500 leading-tight">
-                                    Ofrezco música
-                                </span>
-                            </div>
-                        </div>
-                    </Radio>
-                </RadioGroup>
+                        <Icon icon="lucide:music" /> Soy músico
+                    </button>
+                </div>
 
                 <Input
-                    label="Correo electrónico"
+                    aria-label="Correo electrónico"
+                    placeholder="correo@ejemplo.com"
                     type="email"
-                    placeholder="tu@email.com"
                     variant="bordered"
+                    radius="md"
+                    size="lg"
                     value={email}
                     onValueChange={(val) => {
                         setEmail(val);
@@ -287,16 +241,22 @@ export default function RegisterForm({
                     }}
                     isRequired
                     autoComplete="email"
-                    classNames={UI.authInput}
+                    startContent={<Icon icon="lucide:mail" className="text-default-400" width={18} />}
+                    classNames={{
+                        ...UI.authInput,
+                        inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                    }}
                 />
 
                 {role === "contractor" && (
                     <>
                         <Input
-                            label="Nombre completo"
+                            aria-label="Nombre completo"
+                            placeholder="Nombre y apellido"
                             type="text"
-                            placeholder="Ej. Juan Pérez"
                             variant="bordered"
+                            radius="md"
+                            size="lg"
                             value={fullname}
                             onValueChange={(val) => {
                                 setFullname(val);
@@ -304,13 +264,19 @@ export default function RegisterForm({
                             }}
                             isRequired
                             autoComplete="name"
-                            classNames={UI.authInput}
+                            startContent={<Icon icon="lucide:user" className="text-default-400" width={18} />}
+                            classNames={{
+                                ...UI.authInput,
+                                inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                            }}
                         />
                         <Input
-                            label="Número de celular"
+                            aria-label="Número de celular"
+                            placeholder="Número de celular"
                             type="tel"
-                            placeholder="Ej. 987654321"
                             variant="bordered"
+                            radius="md"
+                            size="lg"
                             value={phone}
                             onValueChange={(val) => {
                                 setPhone(val);
@@ -318,16 +284,21 @@ export default function RegisterForm({
                             }}
                             isRequired
                             autoComplete="tel"
-                            classNames={UI.authInput}
+                            startContent={<Icon icon="lucide:phone" className="text-default-400" width={18} />}
+                            classNames={{
+                                ...UI.authInput,
+                                inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                            }}
                         />
                     </>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <PasswordInput
-                        label="Contraseña"
-                        placeholder="••••••••"
+                        aria-label="Contraseña"
+                        placeholder="Contraseña"
                         variant="bordered"
+                        radius="md"
+                        size="lg"
                         value={password}
                         onValueChange={(val) => {
                             setPassword(val);
@@ -336,13 +307,19 @@ export default function RegisterForm({
                         }}
                         isRequired
                         autoComplete="new-password"
-                        classNames={UI.authInput}
+                        startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
+                        classNames={{
+                            ...UI.authInput,
+                            inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                        }}
                     />
 
                     <PasswordInput
-                        label="Validar contraseña"
-                        placeholder="••••••••"
+                        aria-label="Validar contraseña"
+                        placeholder="Confirmar contraseña"
                         variant="bordered"
+                        radius="md"
+                        size="lg"
                         value={confirmPassword}
                         onValueChange={(val) => {
                             setConfirmPassword(val);
@@ -357,9 +334,12 @@ export default function RegisterForm({
                                 ? "Las contraseñas no coinciden"
                                 : passwordError
                         }
-                        classNames={UI.authInput}
+                        startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
+                        classNames={{
+                            ...UI.authInput,
+                            inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                        }}
                     />
-                </div>
 
                 <PasswordRequirementsChecklist
                     password={password}
@@ -395,26 +375,16 @@ export default function RegisterForm({
                 <Button
                     type="submit"
                     color="primary"
-                    radius="lg"
-                    className="font-semibold shadow-glow hover:shadow-glow-lg transition-shadow"
+                    radius="full"
+                    size="lg"
+                    className="font-bold shadow-lg w-full mt-2 hover:opacity-90 transition-opacity"
                     isLoading={isSubmitting}
                     isDisabled={!acceptedTerms || !passwordEvaluation.isValid}
                 >
-                    Crear cuenta
+                    Crear cuenta gratis
                 </Button>
             </Form>
-            {onSwitchToLogin ? (
-                <p className="text-sm text-default-500 text-center">
-                    ¿Ya tienes cuenta?{" "}
-                    <button
-                        type="button"
-                        onClick={onSwitchToLogin}
-                        className="font-semibold text-foreground hover:text-secondary transition-colors"
-                    >
-                        Inicia sesión
-                    </button>
-                </p>
-            ) : null}
+            
         </div>
     );
 }

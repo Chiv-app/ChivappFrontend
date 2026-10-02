@@ -29,3 +29,11 @@ if (!window.matchMedia) {
 
 vi.mock("@iconify/react", () => ({ Icon: (props: Record<string, unknown>) => React.createElement("span", { "data-icon": props.icon, className: props.className }) }));
 
+
+if (typeof ResizeObserver === "undefined") {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

@@ -23,8 +23,9 @@ export default function SocialAuthButtons({
                 as="a"
                 href={oauthStartUrl("google", intent)}
                 variant="bordered"
-                radius="lg"
-                className="font-semibold border-default-300"
+                radius="md"
+                size="lg"
+                className="font-bold border-default-200/50 bg-transparent shadow-none text-foreground hover:bg-content2 transition-colors w-full"
                 startContent={<Icon icon="logos:google-icon" width={18} />}
             >
                 Continuar con Google

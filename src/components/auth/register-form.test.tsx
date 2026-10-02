@@ -38,9 +38,9 @@ async function fillRequiredFields(
     password = "SuperSecreta123!",
     confirmPassword = "SuperSecreta123!",
 ) {
-    await user.type(screen.getByLabelText(/^Correo electr/i), "nuevo@example.com");
+    await user.type(screen.getByPlaceholderText("correo@ejemplo.com"), "nuevo@example.com");
     if (role === "contractor") {
-        await user.type(screen.getByLabelText(/^Nombre completo$/i), "Juan Pérez");
+        await user.type(screen.getByPlaceholderText("Nombre y apellido"), "Juan Pérez");
         await user.type(screen.getByLabelText(/^N.mero de celular$/i), "987654321");
     }
     await user.type(screen.getByLabelText(/^Contrase.a$/i), password);
@@ -65,7 +65,7 @@ describe("RegisterForm", () => {
         const user = userEvent.setup();
         renderRegisterForm();
         await fillRequiredFields(user, "contractor");
-        await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+        await user.click(screen.getByRole("button", { name: "Crear cuenta gratis" }));
 
         expect(registerUser).toHaveBeenCalledWith({
             email: "nuevo@example.com",
@@ -88,9 +88,9 @@ describe("RegisterForm", () => {
 
         const user = userEvent.setup();
         renderRegisterForm();
-        await user.click(screen.getByRole("radio", { name: /Músico/i }));
+        await user.click(screen.getByRole("button", { name: /Soy músico/i }));
         await fillRequiredFields(user, "musician");
-        await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+        await user.click(screen.getByRole("button", { name: "Crear cuenta gratis" }));
 
         expect(registerUser).toHaveBeenCalledWith({
             email: "nuevo@example.com",
@@ -107,7 +107,7 @@ describe("RegisterForm", () => {
         renderRegisterForm();
         await fillRequiredFields(user, "contractor", "SuperSecreta123!", "OtraPassword456!");
 
-        const submitBtn = screen.getByRole("button", { name: "Crear cuenta" });
+        const submitBtn = screen.getByRole("button", { name: "Crear cuenta gratis" });
         expect(submitBtn).toBeDisabled();
         expect(registerUser).not.toHaveBeenCalled();
     });
@@ -121,7 +121,7 @@ describe("RegisterForm", () => {
         const user = userEvent.setup();
         renderRegisterForm();
         await fillRequiredFields(user, "contractor");
-        await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
+        await user.click(screen.getByRole("button", { name: "Crear cuenta gratis" }));
 
         expect(addToastMock).toHaveBeenCalledWith(
             expect.objectContaining({ title: "Correo no disponible" }),
