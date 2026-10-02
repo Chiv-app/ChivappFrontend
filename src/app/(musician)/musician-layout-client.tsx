@@ -2,6 +2,7 @@
 
 import RoleDashboardShell from "@/components/dashboard/role-dashboard-shell";
 import { MUSICIAN_NAV } from "@/lib/dashboard-nav";
+import MusicianOnboardingOverlay from '@/components/layout/musician-onboarding-overlay';
 
 export default function MusicianLayoutClient({
     children,
@@ -15,6 +16,7 @@ export default function MusicianLayoutClient({
             navItems={MUSICIAN_NAV}
         >
             {children}
+            <MusicianOnboardingOverlay />
         </RoleDashboardShell>
     );
 }

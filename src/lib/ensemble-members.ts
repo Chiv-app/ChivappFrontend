@@ -193,3 +193,17 @@ export function getMusicianReports(params?: {
 export function listMyCalls(): Promise<BookingMemberInviteOut[]> {
     return apiFetch("/musician/my-calls");
 }
+
+export function listMyEnsembleInvites(): Promise<EnsembleMemberOut[]> {
+    return apiFetch("/musician/my-ensemble-invites");
+}
+
+export function respondEnsembleInvite(
+    id: string,
+    action: "accept" | "decline"
+): Promise<EnsembleMemberOut> {
+    return apiFetch(`/musician/my-ensemble-invites/${id}/respond`, {
+        method: "POST",
+        body: JSON.stringify({ action }),
+    });
+}
