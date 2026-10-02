@@ -27,3 +27,5 @@ if (!window.matchMedia) {
     }) as MediaQueryList;
 }
 
+vi.mock("@iconify/react", () => ({ Icon: (props: Record<string, unknown>) => React.createElement("span", { "data-icon": props.icon, className: props.className }) }));
+
