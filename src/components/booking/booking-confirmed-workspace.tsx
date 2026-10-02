@@ -577,6 +577,7 @@ export default function BookingConfirmedWorkspace({
                                     : "Completa los pasos para finalizar"}
                             </Button>
                         </div>
+                        </div>
                     </div>
                 </CollapsiblePhaseSection>
             ) : null}
