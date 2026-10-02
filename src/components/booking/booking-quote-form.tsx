@@ -69,19 +69,11 @@ export default function BookingQuoteForm({
         e.preventDefault();
         if (!priceAgreed || isNaN(Number(priceAgreed))) return;
 
-        let finalNotes = quoteNotes;
-        if (includesTravel) {
-            const travelText = `Incluye traslado y viáticos a ${booking.location_city || "la ciudad"}.`;
-            if (!finalNotes.includes(travelText)) {
-                finalNotes = finalNotes ? `${finalNotes}\n${travelText}` : travelText;
-            }
-        }
-
         startSubmit(async () => {
             try {
                 const res = await quoteBooking(booking.id, {
                     price_agreed: Number(priceAgreed),
-                    musician_quote_notes: finalNotes,
+                    musician_quote_notes: quoteNotes,
                     location_address: locationAddress || booking.location_address,
                     location_city: locationCity || booking.location_city || undefined,
                     location_reference: booking.location_reference ?? undefined,
@@ -128,10 +120,6 @@ export default function BookingQuoteForm({
                     <p className="text-sm text-default-400 mt-1">
                         Ingresa lo que tú deseas recibir por el evento.
                     </p>
-                </div>
-                <div className="flex items-center gap-1.5 text-primary text-sm font-medium">
-                    <Icon icon="lucide:shield-check" width={16} />
-                    Pago protegido
                 </div>
             </div>
 
@@ -213,37 +201,6 @@ export default function BookingQuoteForm({
                         }}
                     />
                     
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <button 
-                            type="button"
-                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-foreground dark:hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
-                            onClick={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "¿Hay estacionamiento disponible?")}
-                        >
-                            + ¿Hay estacionamiento disponible?
-                        </button>
-                        <button 
-                            type="button"
-                            className="text-xs font-medium text-default-400 bg-content2/40 hover:bg-content2/80 hover:text-foreground dark:hover:text-white px-3 py-1.5 rounded-full border border-default-200/30 transition-colors"
-                            onClick={() => setQuoteNotes(prev => (prev ? prev + "\n" : "") + "Incluye amplificación.")}
-                        >
-                            + Incluye amplificación
-                        </button>
-                    </div>
-
-                    {booking.location_city && (
-                        <Checkbox 
-                            size="sm" 
-                            isSelected={includesTravel}
-                            onValueChange={setIncludesTravel}
-                            classNames={{
-                                label: "text-sm text-default-600 dark:text-default-300",
-                                wrapper: "before:border-default-400"
-                            }}
-                            className="mt-3"
-                        >
-                            Incluye traslado y viáticos a {booking.location_city}
-                        </Checkbox>
-                    )}
                 </div>
 
                 {/* BOTONES ACTION */}
