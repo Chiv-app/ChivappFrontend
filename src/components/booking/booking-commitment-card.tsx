@@ -5,6 +5,7 @@ import {
 } from "@/lib/geocoding";
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
+import { BOOKING_STATUS_LABELS } from '@/lib/booking-labels';
 import { Card, CardBody, Chip } from "@heroui/react";
 
 function formatDuration(start: string, end: string | null) {
@@ -60,15 +61,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                         >
                             <span className="flex items-center gap-1.5">
                                 <span className="size-1.5 rounded-full bg-primary" />
-                                {booking.status === "requested"
-                                    ? "Solicitud pendiente"
-                                    : booking.status === "accepted"
-                                      ? "Cotización enviada"
-                                      : booking.status === "contract_pending"
-                                        ? "Contrato pendiente"
-                                        : booking.status === "cancelled"
-                                          ? "Cancelado"
-                                          : booking.status}
+                                {BOOKING_STATUS_LABELS[booking.status] || booking.status}
                             </span>
                         </Chip>
                     </div>
