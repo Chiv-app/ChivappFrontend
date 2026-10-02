@@ -201,23 +201,9 @@ export default function BookingEnsemblePanel({ booking }: Props) {
     }
 
     return (
-        <Card className="border border-default-200/70 shadow-soft">
-            <CardBody className="gap-5 p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <Icon icon="material-symbols:groups" width={22} />
-                            <h3 className="text-lg font-bold">Integrantes del evento</h3>
-                            <Chip size="sm" variant="flat" color="default">
-                                Opcional
-                            </Chip>
-                        </div>
-                        <p className="text-sm text-default-500 mt-1">
-                            Elige a quién convocas para este show. No es obligatorio. Los
-                            pagos a integrantes se habilitan después de tu reseña al
-                            contratista, en el módulo Pagos.
-                        </p>
-                    </div>
+        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="w-full">
                     <div className="flex flex-wrap gap-2">
                         <Button
                             as={Link}
@@ -403,8 +389,8 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                         ) : null}
                     </>
                 )}
-            </CardBody>
-        </Card>
+            </div>
+        </div>
     );
 }
 

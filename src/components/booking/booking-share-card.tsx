@@ -141,44 +141,7 @@ export default function BookingShareCard({ booking }: Props) {
     }
 
     return (
-        <Card
-            className={`border overflow-hidden shadow-soft ${
-                share.enabled
-                    ? "border-primary/30"
-                    : locked
-                      ? "border-default-200"
-                      : "border-default-200"
-            }`}
-        >
-            <div className="bg-gradient-to-br from-primary/12 via-primary/5 to-transparent px-6 py-5">
-                <Chip
-                    color={share.enabled ? "primary" : locked ? "default" : "warning"}
-                    variant="flat"
-                    size="sm"
-                    className="mb-3"
-                >
-                    {share.enabled
-                        ? "Enlace activo"
-                        : locked
-                          ? "Compartir cerrado"
-                          : "Invitados"}
-                </Chip>
-                <h3 className="text-xl font-bold text-foreground">
-                    Compartir con invitados
-                </h3>
-                <p className="text-sm text-default-600 mt-2 max-w-2xl">
-                    {locked
-                        ? "La reserva finalizó. El enlace de invitados quedó cancelado."
-                        : share.enabled
-                          ? "Los invitados entran solo con su nombre y pueden reaccionar en el timeline del show."
-                          : share.can_enable
-                            ? "La reserva está pagada y confirmada. Genera un enlace para que tus invitados vean el evento y publiquen reacciones."
-                            : share.reason ||
-                              "Disponible cuando la reserva esté pagada y confirmada."}
-                </p>
-            </div>
-
-            <CardBody className="gap-4 p-6">
+        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-4">
                 {share.enabled && url ? (
                     <>
                         <Input
@@ -246,7 +209,6 @@ export default function BookingShareCard({ booking }: Props) {
                         <p className="text-sm text-default-600">{share.reason}</p>
                     </div>
                 ) : null}
-            </CardBody>
-        </Card>
+            </div>
     );
 }

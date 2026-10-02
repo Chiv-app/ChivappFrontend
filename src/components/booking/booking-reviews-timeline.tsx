@@ -174,22 +174,7 @@ export default function BookingReviewsTimeline({
     }
 
     return (
-        <Card className="border border-secondary/30 shadow-soft overflow-hidden">
-            <div className="bg-gradient-to-br from-secondary/15 via-secondary/5 to-transparent px-6 py-5">
-                <Chip color="secondary" variant="flat" size="sm" className="mb-3">
-                    {reviews.length} {reviews.length === 1 ? "entrada" : "entradas"}
-                </Chip>
-                <h3 className="text-xl font-bold text-foreground">
-                    {role === "contractor" ? "Timeline del show" : "Reacciones del evento"}
-                </h3>
-                <p className="text-sm text-default-600 mt-2 max-w-2xl">
-                    {role === "contractor"
-                        ? "Comparte reacciones en vivo durante el evento. La reseña final se pide al finalizar la contratación."
-                        : "Reacciones del contratista y la reseña final del show."}
-                </p>
-            </div>
-
-            <CardBody className="gap-6 p-6">
+        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-6">
                 {canAdd ? (
                     <form
                         onSubmit={handleAddReaction}
@@ -291,7 +276,6 @@ export default function BookingReviewsTimeline({
                         ))}
                     </ol>
                 )}
-            </CardBody>
-        </Card>
+        </div>
     );
 }

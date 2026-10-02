@@ -185,46 +185,41 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
 
     if (!eventReady) {
         return (
-            <Card className="border border-default-200/70 shadow-soft">
-                <CardBody className="gap-2 p-6">
-                    <div className="flex items-center gap-2">
-                        <Icon icon="material-symbols:payments" width={22} />
-                        <h3 className="text-lg font-bold">Pago a integrantes</h3>
-                    </div>
-                    <p className="text-sm text-default-500">
-                        Se habilita al finalizar el show y después de dejar tu reseña al
-                        contratista. Si cierras sin pagar, la reserva seguirá en{" "}
-                        <Link href="/musician/payouts" className="text-primary underline">
-                            Pagos
-                        </Link>
-                        .
-                    </p>
-                </CardBody>
-            </Card>
+            <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                    <Icon icon="material-symbols:payments" width={22} />
+                    <h3 className="text-lg font-bold">Pago a integrantes</h3>
+                </div>
+                <p className="text-sm text-default-500">
+                    Se habilita al finalizar el show y después de dejar tu reseña al
+                    contratista. Si cierras sin pagar, la reserva seguirá en{" "}
+                    <Link href="/musician/payouts" className="text-primary underline">
+                        Pagos
+                    </Link>
+                    .
+                </p>
+            </div>
         );
     }
 
     if (!hasReview) {
         return (
-            <Card className="border border-warning/30 shadow-soft">
-                <CardBody className="gap-2 p-6">
-                    <div className="flex items-center gap-2">
-                        <Icon icon="material-symbols:rate-review" width={22} />
-                        <h3 className="text-lg font-bold">Pago a integrantes</h3>
-                    </div>
-                    <p className="text-sm text-default-600">
-                        Deja primero tu reseña al contratista para poder repartir y pagar
-                        a tus músicos con el monto del show (
-                        {formatCurrency(Number(booking.price_agreed || 0))}).
-                    </p>
-                </CardBody>
-            </Card>
+            <div className="border border-warning/30 shadow-soft rounded-2xl bg-warning/5 p-6 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                    <Icon icon="material-symbols:rate-review" width={22} />
+                    <h3 className="text-lg font-bold">Pago a integrantes</h3>
+                </div>
+                <p className="text-sm text-default-600">
+                    Deja primero tu reseña al contratista para poder repartir y pagar
+                    a tus músicos con el monto del show (
+                    {formatCurrency(Number(booking.price_agreed || 0))}).
+                </p>
+            </div>
         );
     }
 
     return (
-        <Card className="border border-success/30 shadow-soft">
-            <CardBody className="gap-5 p-6">
+        <div className="border border-success/30 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-5">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
                         <div className="flex items-center gap-2">
@@ -375,7 +370,6 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
                         </div>
                     </>
                 ) : null}
-            </CardBody>
-        </Card>
+        </div>
     );
 }

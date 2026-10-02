@@ -53,8 +53,7 @@ type Props = {
 
 function LockedFeatureCard({ title, icon, actionText }: { title: string, icon: string, actionText: string }) {
     return (
-        <Card className="border border-warning-200 bg-warning-50/50 shadow-soft">
-            <CardBody className="gap-3 p-6 text-center items-center justify-center">
+        <div className="border border-warning-200 bg-warning-50/50 shadow-soft rounded-2xl p-6 text-center flex flex-col items-center justify-center gap-3">
                 <div className="w-12 h-12 bg-warning-100 text-warning-600 rounded-full flex items-center justify-center mb-1">
                     <Icon icon={icon} width={28} />
                 </div>
@@ -71,8 +70,7 @@ function LockedFeatureCard({ title, icon, actionText }: { title: string, icon: s
                 >
                     {actionText}
                 </Button>
-            </CardBody>
-        </Card>
+        </div>
     );
 }
 
@@ -271,26 +269,46 @@ export default function BookingConfirmedWorkspace({
             ) : null}
 
             {waitingOwnChange ? (
-                <Card className="border border-primary/30 shadow-soft">
-                    <CardBody className="gap-2 p-6">
-                        <Chip color="primary" variant="flat" size="sm" className="w-fit">
-                            En validación
-                        </Chip>
-                        <h3 className="text-lg font-bold">Cambio enviado</h3>
-                        <p className="text-sm text-default-600">
-                            Esperando que el músico acepte o rechace tu propuesta.
-                            No se requiere una nueva firma.
-                        </p>
-                    </CardBody>
-                </Card>
+                <CollapsiblePhaseSection
+                    icon="material-symbols:edit-calendar"
+                    title="Modificación de reserva"
+                    summary="En validación"
+                    customBadgeLabel="Enviado"
+                    customBadgeColor="primary"
+                    defaultExpanded={true}
+                >
+                    <div className="pt-2">
+                        <div className="border border-primary/30 shadow-soft rounded-2xl bg-primary/5 p-6 flex flex-col gap-2">
+                            <Chip color="primary" variant="flat" size="sm" className="w-fit">
+                                En validación
+                            </Chip>
+                            <h3 className="text-lg font-bold">Cambio enviado</h3>
+                            <p className="text-sm text-default-600">
+                                Esperando que el músico acepte o rechace tu propuesta.
+                                No se requiere una nueva firma.
+                            </p>
+                        </div>
+                    </div>
+                </CollapsiblePhaseSection>
             ) : null}
 
             {booking.status === "in_progress" ? (
-                isLocked ? (
-                    <LockedFeatureCard title="Ubicación en vivo" icon="material-symbols:location-on" actionText="Completar mi perfil" />
-                ) : (
-                    <BookingLiveLocationCard bookingId={booking.id} role={role} />
-                )
+                <CollapsiblePhaseSection
+                    icon="material-symbols:location-on"
+                    title="Ubicación en vivo"
+                    summary="Fase de evento"
+                    customBadgeLabel="Activo"
+                    customBadgeColor="primary"
+                    defaultExpanded={true}
+                >
+                    <div className="pt-2">
+                        {isLocked ? (
+                            <LockedFeatureCard title="Ubicación en vivo" icon="material-symbols:location-on" actionText="Completar mi perfil" />
+                        ) : (
+                            <BookingLiveLocationCard bookingId={booking.id} role={role} />
+                        )}
+                    </div>
+                </CollapsiblePhaseSection>
             ) : null}
 
 
@@ -372,37 +390,35 @@ export default function BookingConfirmedWorkspace({
                 >
                     <div className="flex flex-col gap-6 pt-2">
                         {showPaymentActions ? (
-                            <Card className="border border-warning/30 shadow-soft">
-                                <CardBody className="gap-5 p-6">
-                                    <div className="flex items-center gap-2">
-                                        <Icon icon="material-symbols:account-balance-wallet" width={22} />
-                                        <h3 className="text-lg font-bold">Pagos del evento</h3>
-                                    </div>
-                                    {role === "musician" &&
-                                    booking.status === "payment_retained" ? (
-                                        <div className="flex flex-col gap-3">
-                                            <div>
-                                                <h4 className="font-semibold text-foreground">
-                                                    Pago total cubierto
-                                                </h4>
-                                                <p className="text-sm text-default-600 mt-1">
-                                                    La reserva se pagó al 100 % con Mercado Pago. Puedes
-                                                    habilitar la fase de evento para fotos y reseña.
-                                                </p>
-                                            </div>
-                                            <Button
-                                                color="primary"
-                                                radius="lg"
-                                                className="w-fit font-semibold"
-                                                isLoading={isStarting}
-                                                onPress={handleStartEvent}
-                                            >
-                                                Habilitar fase de evento
-                                            </Button>
+                            <div className="border border-warning/30 shadow-soft rounded-2xl bg-warning/5 p-6 flex flex-col gap-5">
+                                <div className="flex items-center gap-2">
+                                    <Icon icon="material-symbols:account-balance-wallet" width={22} />
+                                    <h3 className="text-lg font-bold">Pagos del evento</h3>
+                                </div>
+                                {role === "musician" &&
+                                booking.status === "payment_retained" ? (
+                                    <div className="flex flex-col gap-3">
+                                        <div>
+                                            <h4 className="font-semibold text-foreground">
+                                                Pago total cubierto
+                                            </h4>
+                                            <p className="text-sm text-default-600 mt-1">
+                                                La reserva se pagó al 100 % con Mercado Pago. Puedes
+                                                habilitar la fase de evento para fotos y reseña.
+                                            </p>
                                         </div>
-                                    ) : null}
-                                </CardBody>
-                            </Card>
+                                        <Button
+                                            color="primary"
+                                            radius="lg"
+                                            className="w-fit font-semibold"
+                                            isLoading={isStarting}
+                                            onPress={handleStartEvent}
+                                        >
+                                            Habilitar fase de evento
+                                        </Button>
+                                    </div>
+                                ) : null}
+                            </div>
                         ) : null}
                         <BookingDocumentsCard
                             booking={booking}
@@ -460,42 +476,34 @@ export default function BookingConfirmedWorkspace({
 
             {/* 7. Cierre */}
             {showCompletePanel ? (
-                <Card
-                    className={`border overflow-hidden shadow-soft ${
-                        completion.canFinalize
-                            ? "border-success/40"
-                            : "border-warning/40"
-                    }`}
+                <CollapsiblePhaseSection
+                    icon="material-symbols:check-circle"
+                    title="Finalizar contratación"
+                    summary="Cierre del evento"
+                    customBadgeLabel={completion.canFinalize ? "Listo" : "Pasos pendientes"}
+                    customBadgeColor={completion.canFinalize ? "success" : "warning"}
+                    defaultExpanded={true}
                 >
-                    <div
-                        className={`px-6 py-5 ${
-                            completion.canFinalize
-                                ? "bg-gradient-to-br from-success/15 via-success/5 to-transparent"
-                                : "bg-gradient-to-br from-warning/15 via-warning/5 to-transparent"
-                        }`}
-                    >
-                        <Chip
-                            color={completion.canFinalize ? "success" : "warning"}
-                            variant="flat"
-                            size="sm"
-                            className="mb-3"
+                    <div className="pt-2">
+                        <div
+                            className={`border overflow-hidden shadow-soft rounded-2xl flex flex-col gap-4 p-6 ${
+                                completion.canFinalize
+                                    ? "border-success/40 bg-success/5"
+                                    : "border-warning/40 bg-warning/5"
+                            }`}
                         >
-                            {completion.canFinalize
-                                ? "Listo para finalizar"
-                                : "Pasos pendientes"}
-                        </Chip>
-                        <h3 className="text-xl font-bold text-foreground">
-                            Finalizar contratación
-                        </h3>
-                        <p className="text-sm text-default-600 mt-2 max-w-2xl">
-                            {completion.canFinalize
-                                ? role === "contractor" && !hasReview
-                                    ? "Al finalizar te pediremos la reseña del show. Luego se liberan los pagos y se cierra la reserva."
-                                    : "Todos los pasos están listos. Al finalizar se liberan los pagos y se cierra la reserva."
-                                : "Para cerrar el contrato debes completar los pasos marcados abajo. El timeline de la izquierda también te indica el pendiente."}
-                        </p>
-                    </div>
-                    <CardBody className="gap-4 p-6">
+                            <div className="flex flex-col gap-2">
+                                <h3 className="text-xl font-bold text-foreground">
+                                    Finalizar contratación
+                                </h3>
+                                <p className="text-sm text-default-600 max-w-2xl">
+                                    {completion.canFinalize
+                                        ? role === "contractor" && !hasReview
+                                            ? "Al finalizar te pediremos la reseña del show. Luego se liberan los pagos y se cierra la reserva."
+                                            : "Todos los pasos están listos. Al finalizar se liberan los pagos y se cierra la reserva."
+                                        : "Para cerrar el contrato debes completar los pasos marcados abajo. El timeline de la izquierda también te indica el pendiente."}
+                                </p>
+                            </div>
                         <ul className="flex flex-col gap-2">
                             {completion.gates
                                 .filter((gate) => gate.id !== "done")
@@ -569,8 +577,8 @@ export default function BookingConfirmedWorkspace({
                                     : "Completa los pasos para finalizar"}
                             </Button>
                         </div>
-                    </CardBody>
-                </Card>
+                    </div>
+                </CollapsiblePhaseSection>
             ) : null}
 
             {role === "contractor" ? (

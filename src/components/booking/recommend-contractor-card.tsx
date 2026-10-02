@@ -91,15 +91,14 @@ export default function RecommendContractorCard({ booking }: Props) {
     }
 
     return (
-        <Card
-            className={`border shadow-soft ${
+        <div
+            className={`border shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-4 ${
                 isLocked
                     ? "border-default-200/70 opacity-95"
                     : "border-primary/25"
             }`}
         >
-            <CardBody className="gap-4 p-6">
-                <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
                         <Icon
                             icon={
@@ -194,7 +193,6 @@ export default function RecommendContractorCard({ booking }: Props) {
                         </Button>
                     </form>
                 )}
-            </CardBody>
-        </Card>
+        </div>
     );
 }

@@ -303,23 +303,7 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
     const anyRequestedByMe = othersNotSharing.some((p) => p.requested_by_me);
 
     return (
-        <Card className="border border-primary/25 shadow-soft overflow-hidden">
-            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 py-5">
-                <Chip color="primary" variant="flat" size="sm" className="mb-3">
-                    Fase de evento
-                </Chip>
-                <h3 className="text-xl font-bold text-foreground">
-                    Ubicación en vivo
-                </h3>
-                <p className="text-sm text-default-600 mt-2 max-w-2xl">
-                    El líder, cada integrante y el contratista pueden compartir su
-                    ubicación de forma independiente. Quienes estén compartiendo
-                    aparecen en el mapa. Si cierras la app, tu sesión se reinicia y
-                    deberás volver a compartir.
-                </p>
-            </div>
-
-            <CardBody className="gap-5 p-6">
+        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-5">
                 {isLoading || !session ? (
                     <div className="h-64 rounded-2xl bg-default-100 animate-pulse" />
                 ) : (
@@ -491,7 +475,6 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
                         </div>
                     </>
                 )}
-            </CardBody>
-        </Card>
+        </div>
     );
 }
