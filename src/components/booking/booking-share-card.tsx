@@ -141,7 +141,7 @@ export default function BookingShareCard({ booking }: Props) {
     }
 
     return (
-        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
                 {share.enabled && url ? (
                     <>
                         <Input

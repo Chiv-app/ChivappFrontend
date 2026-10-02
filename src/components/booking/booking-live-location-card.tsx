@@ -303,7 +303,7 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
     const anyRequestedByMe = othersNotSharing.some((p) => p.requested_by_me);
 
     return (
-        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-5">
+        <div className="flex flex-col gap-5">
                 {isLoading || !session ? (
                     <div className="h-64 rounded-2xl bg-default-100 animate-pulse" />
                 ) : (

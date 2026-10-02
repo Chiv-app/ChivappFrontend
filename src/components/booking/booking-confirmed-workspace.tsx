@@ -326,7 +326,7 @@ export default function BookingConfirmedWorkspace({
                     {isLocked ? (
                         <LockedFeatureCard title="Conversación" icon="material-symbols:chat" actionText="Completar mi perfil" />
                     ) : (
-                        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-4">
+                        <div className="flex flex-col gap-4">
                             <div className="max-h-72 overflow-y-auto rounded-xl border border-default-200 bg-default-50 p-4 flex flex-col gap-3">
                                 {messages.length === 0 ? (
                                     <p className="text-sm text-default-500 text-center py-6">

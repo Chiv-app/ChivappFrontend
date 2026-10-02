@@ -201,7 +201,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
     }
 
     return (
-        <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-5">
+        <div className="flex flex-col gap-5">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="w-full">
                     <div className="flex flex-wrap gap-2">
