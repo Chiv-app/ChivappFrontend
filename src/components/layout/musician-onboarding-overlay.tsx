@@ -87,7 +87,7 @@ export default function MusicianOnboardingOverlay() {
                                         <Icon icon="lucide:music" width={32} />
                                     </div>
                                     <p className="text-lg">
-                                        El músico <strong>{currentEns.leader?.fullname || "Un músico"}</strong> te ha invitado a unirte a su agrupación.
+                                        Has sido invitado a unirte a una agrupación.
                                     </p>
                                     <p className="text-sm text-default-500">
                                         Al aceptar, podrás recibir convocatorias a sus eventos y gestionar tus pagos.
@@ -99,7 +99,7 @@ export default function MusicianOnboardingOverlay() {
                                         <Icon icon="lucide:calendar-check" width={32} />
                                     </div>
                                     <p className="text-lg">
-                                        <strong>{currentCall.leader_fullname || "Un músico"}</strong> te ha convocado a un evento.
+                                        Has sido convocado a un evento.
                                     </p>
                                     <p className="text-sm text-default-500">
                                         Acepta el compromiso para confirmar tu asistencia al evento.

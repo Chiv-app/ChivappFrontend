@@ -94,9 +94,12 @@ export default function MusicianReportsView() {
 
     useEffect(() => {
         let cancelled = false;
-        queueMicrotask(() => setIsLoading(true));
-        refresh()
-            .catch((error) => {
+        
+        const load = async () => {
+            setIsLoading(true);
+            try {
+                await refresh();
+            } catch (error) {
                 if (cancelled) return;
                 addToast({
                     title: "No se pudieron cargar los reportes",
@@ -105,10 +108,12 @@ export default function MusicianReportsView() {
                     color: "danger",
                 });
                 setData(null);
-            })
-            .finally(() => {
+            } finally {
                 if (!cancelled) setIsLoading(false);
-            });
+            }
+        };
+        
+        load();
         return () => {
             cancelled = true;
         };
