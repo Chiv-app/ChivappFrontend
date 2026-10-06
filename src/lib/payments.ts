@@ -10,6 +10,7 @@ import type {
     MercadoPagoProcessPaymentResponse,
     MusicianEarningsSummary,
     PaymentOut,
+    PlatformPaymentInstructions,
 } from "@/types/api";
 
 export function getBookingPayment(bookingId: string) {
@@ -128,3 +129,7 @@ export function processMercadoPagoPayment(payload: MercadoPagoProcessPaymentRequ
     });
 }
 
+
+export function getPlatformPaymentInstructions() {
+    return apiFetch<PlatformPaymentInstructions>("/payments/platform-instructions");
+}

@@ -69,10 +69,10 @@ export default function BookingContractConfirmCard({
             return;
         }
 
-        if (!isVerified) {
+        if (!user?.is_verified) {
             addToast({
-                title: "Perfil incompleto",
-                description: "Debes completar y verificar tu perfil antes de poder realizar pagos.",
+                title: "Cuenta no verificada",
+                description: "Debes verificar tu correo electrónico antes de poder realizar pagos.",
                 color: "danger",
             });
             return;

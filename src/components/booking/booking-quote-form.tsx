@@ -1,4 +1,4 @@
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { formatCurrency } from "@/lib/booking-labels";
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
@@ -7,6 +7,7 @@ import { quoteBooking, rejectBooking, updateBooking } from "@/lib/bookings";
 import { addToast } from "@heroui/react";
 import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
+import { getPlatformPaymentInstructions } from "@/lib/payments";
 
 export default function BookingQuoteForm({
     booking,
@@ -23,10 +24,24 @@ export default function BookingQuoteForm({
         booking.price_agreed?.toString() ?? "",
     );
     const [quoteNotes, setQuoteNotes] = useState(booking.musician_quote_notes ?? "");
-    const [includesTravel, setIncludesTravel] = useState(true);
     const [locationAddress, setLocationAddress] = useState(booking.location_address || "");
     const [locationCity, setLocationCity] = useState(booking.location_city || "");
     const [isCancelOpen, setIsCancelOpen] = useState(false);
+    
+    // Default to the booking's fee, but fetch the live one to show accurate preview
+    const [livePlatformFeePercent, setLivePlatformFeePercent] = useState<number>(
+        booking.platform_fee_percent ?? 0
+    );
+
+    useEffect(() => {
+        getPlatformPaymentInstructions()
+            .then(res => {
+                if (res.platform_fee_percent != null) {
+                    setLivePlatformFeePercent(res.platform_fee_percent);
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const [isPendingSubmit, startSubmit] = useTransition();
     const [isPendingReject, startReject] = useTransition();
@@ -35,15 +50,14 @@ export default function BookingQuoteForm({
 
     const priceNum = Number(priceAgreed) || 0;
     
-    // Restauramos la lógica original de cobro usando platform-fee.ts
     const contractorTotalPreview = contractorPayableTotal({
         price_agreed: priceNum,
-        platform_fee_percent: booking.platform_fee_percent
+        platform_fee_percent: livePlatformFeePercent
     });
     
     const feePreview = platformFeeAmount({
         price_agreed: priceNum,
-        platform_fee_percent: booking.platform_fee_percent
+        platform_fee_percent: livePlatformFeePercent
     });
 
     const handleDraft = () => {
