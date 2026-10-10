@@ -182,7 +182,7 @@ export default function MusicianEarningsView() {
 
     useEffect(() => {
         if (!isVerified && isEnsembleMember) {
-            setMainTab("member");
+            setTimeout(() => setMainTab("member"), 0);
             return;
         }
         if (isVerified) setMainTab("debts");
