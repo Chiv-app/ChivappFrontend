@@ -10,7 +10,7 @@ import {
 } from "react";
 import {
     getCurrentUser,
-    loginUser,
+    loginUser, loginOtp,
     logoutUser,
     registerUser,
 } from "@/lib/auth";
@@ -21,6 +21,7 @@ type AuthContextValue = {
     user: UserOut | null;
     isLoading: boolean;
     login: (credentials: LoginRequest) => Promise<UserOut>;
+    loginWithOtp: (email: string, otp: string) => Promise<UserOut>;
     register: (data: RegisterRequest) => Promise<UserOut>;
     logout: () => Promise<void>;
     refresh: () => Promise<void>;
@@ -56,6 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
     }, [isClient]);
 
+    
+    const loginWithOtp = useCallback(async (email: string, otp: string) => {
+        const loggedIn = await loginOtp(email, otp);
+        setUser(loggedIn);
+        return loggedIn;
+    }, []);
+
     const login = useCallback(async (credentials: LoginRequest) => {
         const loggedIn = await loginUser(credentials);
         setUser(loggedIn);
@@ -81,11 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user: isClient ? user : null,
             isLoading: !isClient || isLoading,
             login,
+            loginWithOtp,
             register,
             logout,
             refresh,
         }),
-        [user, isLoading, isClient, login, register, logout, refresh],
+        [user, isLoading, isClient, login, loginWithOtp, register, logout, refresh],
     );
 
     return (

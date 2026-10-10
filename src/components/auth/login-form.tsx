@@ -11,87 +11,130 @@ import { ApiError } from "@/lib/api";
 import { isEmailTakenError } from "@/lib/auth-errors";
 import { resolveAuthRedirect } from "@/lib/profiles";
 import { UI } from "@/lib/ui-classes";
+import { loginStepOne } from "@/lib/auth";
 
 type Props = {
     redirect?: string | null;
     oauthError?: string | null;
-    
     onSuccess?: (destination: string) => void;
 };
+
+type Step = "email" | "password" | "otp";
 
 export default function LoginForm({
     redirect = "/",
     oauthError,
-    
     onSuccess,
 }: Props) {
-    const { login } = useAuth();
+    const { login, loginWithOtp } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
 
+    const [step, setStep] = useState<Step>("email");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [otp, setOtp] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [notFoundError, setNotFoundError] = useState(false);
 
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault();
-        setIsSubmitting(true);
+    const handleSuccess = (loggedIn: any) => {
+        let destination = resolveAuthRedirect(
+            loggedIn.role,
+            redirect,
+            loggedIn.is_verified,
+        );
 
-        try {
-            const loggedIn = await login({ email, password });
-            let destination = resolveAuthRedirect(
-                loggedIn.role,
-                redirect,
-                loggedIn.is_verified,
-            );
-
-            if (loggedIn.role === "musician") {
-                if (!loggedIn.is_verified && !loggedIn.is_ensemble_member) {
-                    destination = "/musician/onboarding";
-                } else {
-                    if (destination === "/musician/onboarding" && (loggedIn.is_verified || loggedIn.is_ensemble_member)) {
-                        destination = "/musician/bookings";
-                    } else if (destination === "/") {
-                        destination = "/musician/bookings";
-                    }
+        if (loggedIn.role === "musician") {
+            if (!loggedIn.is_verified && !loggedIn.is_ensemble_member) {
+                destination = "/musician/onboarding";
+            } else {
+                if (destination === "/musician/onboarding" && (loggedIn.is_verified || loggedIn.is_ensemble_member)) {
+                    destination = "/musician/bookings";
+                } else if (destination === "/") {
+                    destination = "/musician/bookings";
                 }
             }
+        }
 
-            addToast({
-                title: "Bienvenido",
-                description:
-                    loggedIn.role === "admin"
-                        ? "Accede al panel de administración."
-                        : loggedIn.role === "musician"
-                          ? "Gestiona tu perfil, reservas e ingresos."
-                          : "Explora músicos y gestiona tus reservas.",
-                color: "success",
-            });
+        addToast({
+            title: "Bienvenido",
+            description:
+                loggedIn.role === "admin"
+                    ? "Accede al panel de administración."
+                    : loggedIn.role === "musician"
+                      ? "Gestiona tu perfil, reservas e ingresos."
+                      : "Explora músicos y gestiona tus reservas.",
+            color: "success",
+        });
 
-            if (onSuccess) {
-                onSuccess(destination);
-                return;
+        if (onSuccess) {
+            onSuccess(destination);
+            return;
+        }
+
+        if (destination !== pathname) {
+            router.replace(destination);
+        }
+        router.refresh();
+    };
+
+    const handleError = (error: any) => {
+        const raw =
+            error instanceof ApiError
+                ? error.message
+                : "No se pudo iniciar sesión. Intenta de nuevo.";
+        const isEmailTaken = isEmailTakenError(raw);
+        addToast({
+            title: isEmailTaken
+                ? "Correo no disponible"
+                : "Error al iniciar sesión",
+            description: isEmailTaken
+                ? "No se puede utilizar este correo porque ya está en uso."
+                : raw,
+            color: "danger",
+        });
+    };
+
+    async function handleEmailSubmit(e: FormEvent) {
+        e.preventDefault();
+        setNotFoundError(false);
+        setIsSubmitting(true);
+        try {
+            const res = await loginStepOne(email);
+            if (res.status === "not_found") {
+                setNotFoundError(true);
+            } else if (res.status === "requires_password") {
+                setStep("password");
+            } else if (res.status === "otp_sent") {
+                setStep("otp");
             }
-
-            if (destination !== pathname) {
-                router.replace(destination);
-            }
-            router.refresh();
         } catch (error) {
-            const raw =
-                error instanceof ApiError
-                    ? error.message
-                    : "No se pudo iniciar sesión. Intenta de nuevo.";
-            const isEmailTaken = isEmailTakenError(raw);
-            addToast({
-                title: isEmailTaken
-                    ? "Correo no disponible"
-                    : "Error al iniciar sesión",
-                description: isEmailTaken
-                    ? "No se puede utilizar este correo porque ya está en uso."
-                    : raw,
-                color: "danger",
-            });
+            handleError(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    async function handlePasswordSubmit(e: FormEvent) {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const loggedIn = await login({ email, password });
+            handleSuccess(loggedIn);
+        } catch (error) {
+            handleError(error);
+            setIsSubmitting(false);
+        }
+    }
+
+    async function handleOtpSubmit(e: FormEvent) {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const loggedIn = await loginWithOtp(email, otp);
+            handleSuccess(loggedIn);
+        } catch (error) {
+            handleError(error);
             setIsSubmitting(false);
         }
     }
@@ -113,74 +156,154 @@ export default function LoginForm({
                                 : "No se pudo completar el acceso social. Intenta de nuevo o ingresa con tu correo."}
                 </p>
             ) : null}
-            <SocialAuthButtons intent="login" />
-            <div className="flex items-center gap-3">
-                <Divider className="flex-1" />
-                <span className="text-xs font-medium text-default-400 uppercase tracking-widest">
-                    O con correo
-                </span>
-                <Divider className="flex-1" />
-            </div>
-            <Form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full" validationBehavior="native">
-                <Input
-                    aria-label="Correo electrónico"
-                    placeholder="correo@ejemplo.com"
-                    type="email"
-                    variant="bordered"
-                    radius="md"
-                    size="lg"
-                    value={email}
-                    onValueChange={(val) => {
-                        setEmail(val);
-                        
-                    }}
-                    isRequired
-                    autoComplete="email"
-                    startContent={<Icon icon="lucide:mail" className="text-default-400" width={18} />}
-                    classNames={{
-                        ...UI.authInput,
-                        inputWrapper: "bg-transparent border-default-200/50 shadow-none"
-                    }}
-                />
-                <PasswordInput
-                    aria-label="Contraseña"
-                    placeholder="Contraseña"
-                    variant="bordered"
-                    radius="md"
-                    size="lg"
-                    value={password}
-                    onValueChange={(val) => {
-                        setPassword(val);
-                        
-                    }}
-                    isRequired
-                    autoComplete="current-password"
-                    startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
-                    classNames={{
-                        ...UI.authInput,
-                        inputWrapper: "bg-transparent border-default-200/50 shadow-none"
-                    }}
-                />
-                <div className="flex justify-end">
-                    <a
-                        href="/forgot-password"
-                        className="text-sm text-default-500 hover:text-foreground transition-colors"
-                    >
-                        ¿Olvidaste tu contraseña?
-                    </a>
-                </div>
-                <Button
-                    type="submit"
-                    color="primary"
-                    radius="full"
-                    size="lg"
-                    className="font-bold shadow-lg w-full mt-2 hover:opacity-90 transition-opacity"
-                    isLoading={isSubmitting}
-                >
-                    Ingresar
-                </Button>
-            </Form>
             
+            {step === "email" && (
+                <>
+                    <SocialAuthButtons intent="login" />
+                    <div className="flex items-center gap-3">
+                        <Divider className="flex-1" />
+                        <span className="text-xs font-medium text-default-400 uppercase tracking-widest">
+                            O con correo
+                        </span>
+                        <Divider className="flex-1" />
+                    </div>
+                    <Form onSubmit={handleEmailSubmit} className="flex flex-col gap-4 w-full" validationBehavior="native">
+                        <Input
+                            aria-label="Correo electrónico"
+                            placeholder="correo@ejemplo.com"
+                            type="email"
+                            variant="bordered"
+                            radius="md"
+                            size="lg"
+                            value={email}
+                            onValueChange={(val) => {
+                                setEmail(val);
+                                setNotFoundError(false);
+                            }}
+                            isRequired
+                            autoComplete="email"
+                            startContent={<Icon icon="lucide:mail" className="text-default-400" width={18} />}
+                            classNames={{
+                                ...UI.authInput,
+                                inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                            }}
+                        />
+                        {notFoundError && (
+                            <p className="text-sm text-danger mt-[-8px]">
+                                No encontramos una cuenta con ese correo. Si eres nuevo, ve a la opción Crear Cuenta.
+                            </p>
+                        )}
+                        <Button
+                            type="submit"
+                            color="primary"
+                            radius="full"
+                            size="lg"
+                            className="font-bold shadow-lg w-full mt-2 hover:opacity-90 transition-opacity"
+                            isLoading={isSubmitting}
+                        >
+                            Continuar
+                        </Button>
+                    </Form>
+                </>
+            )}
+
+            {step === "password" && (
+                <Form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4 w-full" validationBehavior="native">
+                    <p className="text-sm text-default-500 mb-2">Ingresa tu contraseña para <b>{email}</b></p>
+                    <PasswordInput
+                        aria-label="Contraseña"
+                        placeholder="Contraseña"
+                        variant="bordered"
+                        radius="md"
+                        size="lg"
+                        value={password}
+                        onValueChange={setPassword}
+                        isRequired
+                        autoComplete="current-password"
+                        startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
+                        classNames={{
+                            ...UI.authInput,
+                            inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                        }}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                        <button
+                            type="button"
+                            onClick={() => setStep("email")}
+                            className="text-sm text-default-500 hover:text-foreground transition-colors"
+                        >
+                            Cambiar correo
+                        </button>
+                        <a
+                            href="/forgot-password"
+                            className="text-sm text-primary hover:opacity-80 transition-colors"
+                        >
+                            ¿Olvidaste tu contraseña?
+                        </a>
+                    </div>
+                    <Button
+                        type="submit"
+                        color="primary"
+                        radius="full"
+                        size="lg"
+                        className="font-bold shadow-lg w-full mt-2 hover:opacity-90 transition-opacity"
+                        isLoading={isSubmitting}
+                    >
+                        Ingresar
+                    </Button>
+                </Form>
+            )}
+
+            {step === "otp" && (
+                <Form onSubmit={handleOtpSubmit} className="flex flex-col gap-4 w-full" validationBehavior="native">
+                    <p className="text-sm text-default-500 mb-2">
+                        Hemos enviado un código a <b>{email}</b>. Ingrésalo para continuar.
+                    </p>
+                    <Input
+                        aria-label="Código de verificación"
+                        placeholder="Ingresa el código de 6 dígitos"
+                        type="text"
+                        variant="bordered"
+                        radius="md"
+                        size="lg"
+                        value={otp}
+                        onValueChange={setOtp}
+                        isRequired
+                        autoComplete="one-time-code"
+                        startContent={<Icon icon="lucide:key" className="text-default-400" width={18} />}
+                        classNames={{
+                            ...UI.authInput,
+                            inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                        }}
+                    />
+                    <Button
+                        type="submit"
+                        color="primary"
+                        radius="full"
+                        size="lg"
+                        className="font-bold shadow-lg w-full mt-2 hover:opacity-90 transition-opacity"
+                        isLoading={isSubmitting}
+                    >
+                        Verificar e Ingresar
+                    </Button>
+                    <div className="flex flex-col items-center gap-3 mt-4">
+                        <button
+                            type="button"
+                            onClick={() => setStep("password")}
+                            className="text-sm text-primary hover:opacity-80 transition-colors"
+                        >
+                            Usar mi contraseña en su lugar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setStep("email")}
+                            className="text-sm text-default-500 hover:text-foreground transition-colors"
+                        >
+                            Cambiar correo
+                        </button>
+                    </div>
+                </Form>
+            )}
         </div>
     );
 }

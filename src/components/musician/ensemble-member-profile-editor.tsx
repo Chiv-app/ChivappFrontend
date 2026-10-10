@@ -59,10 +59,10 @@ export default function EnsembleMemberProfileEditor({
                 color: "success",
             });
             await refresh(); // refrescar contexto de usuario
-        } catch (error: any) {
+        } catch (error: unknown) {
             addToast({
                 title: "Error",
-                description: error.message || "No se pudo guardar el perfil.",
+                description: (error as Error).message || "No se pudo guardar el perfil.",
                 color: "danger",
             });
         } finally {
@@ -86,10 +86,10 @@ export default function EnsembleMemberProfileEditor({
                 color: "success",
             });
             onUpgradeToPro();
-        } catch (error: any) {
+        } catch (error: unknown) {
             addToast({
                 title: "Error",
-                description: error.message || "No se pudo cambiar a Perfil Pro.",
+                description: (error as Error).message || "No se pudo cambiar a Perfil Pro.",
                 color: "danger",
             });
         } finally {

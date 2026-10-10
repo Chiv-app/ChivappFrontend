@@ -1133,6 +1133,14 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
 
 
     },
+    {
+        href: "/musician/links",
+        title: "Links de Pago",
+        description: "Revisa los enlaces de contrata rápida que has generado.",
+        icon: "material-symbols:link",
+        requiresVerification: true,
+    },
+
 
 
 
