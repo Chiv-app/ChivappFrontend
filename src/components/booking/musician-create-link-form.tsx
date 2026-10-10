@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
+import type { BookingLinkOut } from "@/lib/booking-links";
 
 type Props = {
     onSuccess: () => void;
