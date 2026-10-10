@@ -5,22 +5,30 @@ import { notFound } from "next/navigation";
 import CheckoutClient from "./checkout-client";
 
 type Params = {
-    params: { token: string };
+    params: Promise<{ token: string }>;
 };
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
+export async function generateMetadata(props: Params): Promise<Metadata> {
+    const params = await props.params;
     try {
         const link = await getBookingLinkPublic(params.token);
         return {
-            title: `Contratar a ${link.musician.stage_name} - Pago Seguro`,
-            description: `Realiza el pago seguro para confirmar tu evento con ${link.musician.stage_name}.`,
+            title: `Reserva con ${link.musician.stage_name} | Chivapp`,
+            description: `Realiza tu pago seguro y protege tu reserva para tu evento con ${link.musician.stage_name}. 100% garantizado en Chivapp.`,
+            openGraph: {
+                title: `Reserva con ${link.musician.stage_name} | Chivapp`,
+                description: `Realiza tu pago seguro y protege tu reserva con ${link.musician.stage_name}. 100% garantizado en Chivapp.`,
+                images: link.musician.profile_picture_url ? [link.musician.profile_picture_url] : [],
+                type: "website",
+            }
         };
     } catch {
         return { title: "Enlace no válido | Chivapp" };
     }
 }
 
-export default async function SmartPaymentPage({ params }: Params) {
+export default async function SmartPaymentPage(props: Params) {
+    const params = await props.params;
     let link;
     try {
         link = await getBookingLinkPublic(params.token);
