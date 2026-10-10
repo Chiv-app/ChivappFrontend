@@ -18,6 +18,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/auth", () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
+    loginStepOne: vi.fn(),
     loginUser: vi.fn(),
     registerUser: vi.fn(),
     logoutUser: vi.fn(),
@@ -43,9 +44,12 @@ describe("LoginForm", () => {
         vi.clearAllMocks();
     });
 
+    
     it("submits the entered credentials to loginUser", async () => {
-        const { loginUser } = await import("@/lib/auth");
+        const { loginUser, loginStepOne } = await import("@/lib/auth");
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as any);
         vi.mocked(loginUser).mockResolvedValue({
+
             id: "u1",
             email: "user@example.com",
             role: "contractor",
@@ -56,6 +60,8 @@ describe("LoginForm", () => {
         renderLoginForm();
 
         await user.type(screen.getByLabelText("Correo electrónico"), "user@example.com");
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await screen.findByLabelText("Contraseña");
         await user.type(screen.getByLabelText("Contraseña"), "SuperSecreta123");
         await user.click(screen.getByRole("button", { name: "Ingresar" }));
 
@@ -65,9 +71,12 @@ describe("LoginForm", () => {
         });
     });
 
+    
     it("shows a specific message when the email is already taken", async () => {
-        const { loginUser } = await import("@/lib/auth");
+        const { loginUser, loginStepOne } = await import("@/lib/auth");
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as any);
         vi.mocked(loginUser).mockRejectedValue(
+
             new ApiError("/auth/login", 400, "Ese correo ya está en uso"),
         );
 
@@ -75,6 +84,8 @@ describe("LoginForm", () => {
         renderLoginForm();
 
         await user.type(screen.getByLabelText("Correo electrónico"), "user@example.com");
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await screen.findByLabelText("Contraseña");
         await user.type(screen.getByLabelText("Contraseña"), "wrong");
         await user.click(screen.getByRole("button", { name: "Ingresar" }));
 
@@ -83,9 +94,12 @@ describe("LoginForm", () => {
         );
     });
 
+    
     it("shows the backend's raw message for other login errors", async () => {
-        const { loginUser } = await import("@/lib/auth");
+        const { loginUser, loginStepOne } = await import("@/lib/auth");
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as any);
         vi.mocked(loginUser).mockRejectedValue(
+
             new ApiError("/auth/login", 401, "Credenciales inválidas"),
         );
 
@@ -93,6 +107,8 @@ describe("LoginForm", () => {
         renderLoginForm();
 
         await user.type(screen.getByLabelText("Correo electrónico"), "user@example.com");
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await screen.findByLabelText("Contraseña");
         await user.type(screen.getByLabelText("Contraseña"), "wrong");
         await user.click(screen.getByRole("button", { name: "Ingresar" }));
 
