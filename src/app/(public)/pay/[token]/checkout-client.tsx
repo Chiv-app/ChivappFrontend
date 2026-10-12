@@ -46,6 +46,10 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 addToast({ title: "Datos incompletos", description: "El nombre, correo y celular son obligatorios.", color: "danger" });
                 return;
             }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                addToast({ title: "Correo inválido", description: "Ingresa un correo electrónico válido.", color: "danger" });
+                return;
+            }
         }
         setCompletedSteps(prev => {
             const next = new Set(prev);
