@@ -7,6 +7,11 @@ import { Icon } from "@iconify/react";
 import { BookingLinkPublicOut, checkoutBookingLink } from "@/lib/booking-links";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
+import BookingContractConfirmCard from "@/components/booking/booking-contract-confirm-card";
+import { getBooking } from "@/lib/bookings";
+import { getBookingContract } from "@/lib/contracts";
+import { useAuth } from "@/contexts/auth-context";
+import type { BookingOut, ContractOut } from "@/types/api";
 
 export default function CheckoutClient({ linkData }: { linkData: BookingLinkPublicOut }) {
     const router = useRouter();
@@ -24,6 +29,10 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const [documentNumber, setDocumentNumber] = useState("");
 
     const [selectedKeys, setSelectedKeys] = useState(new Set(["1"]));
+    const { refresh: refreshAuth } = useAuth();
+    const [booking, setBooking] = useState<BookingOut | null>(null);
+    const [contract, setContract] = useState<ContractOut | null>(null);
+    const [isLoadingContract, setIsLoadingContract] = useState(false);
 
     const handleNext = (currentStep: string, nextStep: string) => {
         // Here we could add validation
@@ -45,14 +54,22 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 document_number: documentNumber
             });
             
-            addToast({
-                title: "¡Reserva creada!",
-                description: "Preparando tu contrato y entorno de pago seguro...",
-                color: "success"
-            });
-            
-            // TODO: redirect to MercadoPago or booking details
-            window.location.href = `/contractor/bookings/${res.booking_id}`;
+                        addToast({ title: "¡Reserva creada!", description: "Generando contrato...", color: "success" });
+            await refreshAuth();
+            setIsLoadingContract(true);
+            setSelectedKeys(new Set(["3"]));
+            try {
+                const [fetchedBooking, fetchedContract] = await Promise.all([
+                    getBooking(res.booking_id),
+                    getBookingContract(res.booking_id)
+                ]);
+                setBooking(fetchedBooking);
+                setContract(fetchedContract);
+            } catch (err) {
+                console.error("Error al cargar contrato", err);
+            } finally {
+                setIsLoadingContract(false);
+            }
             
         } catch (error: unknown) {
             addToast({
@@ -74,7 +91,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     avatarProps={{ src: linkData.musician.profile_picture_url || undefined, size: "lg" }}
                 />
                 <div className="text-right">
-                    <p className="text-sm text-default-500">Total a pagar</p>
+                    <p className="text-sm text-default-500">Monto</p>
                     <p className="text-2xl font-bold text-primary">{formatCurrency(linkData.price)}</p>
                 </div>
             </div>
@@ -170,28 +187,42 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     </div>
                 </AccordionItem>
 
-                <AccordionItem 
+                                <AccordionItem 
                     key="3" 
                     title={<span className="font-semibold">3. Confirmación y Pago</span>}
                     subtitle="Revisa el contrato y procede al pago"
                     startContent={<Icon icon="lucide:credit-card" className="text-primary" width={24}/>}
                 >
                     <div className="flex flex-col gap-4 py-2">
-                        <div className="bg-primary-50 p-4 rounded-xl border border-primary-100">
-                            <p className="text-sm text-primary-800 mb-2">
-                                Al proceder con el pago, aceptas nuestros Términos y Condiciones, así como el contrato de prestación de servicios musicales con <b>{linkData.musician.stage_name}</b>.
-                            </p>
-                        </div>
-                        <Button 
-                            color="primary" 
-                            size="lg" 
-                            className="w-full font-bold shadow-md"
-                            onPress={handleSubmit}
-                            isLoading={isSubmitting}
-                            startContent={!isSubmitting && <Icon icon="lucide:check-circle-2" width={20} />}
-                        >
-                            Confirmar y Pagar {formatCurrency(linkData.price)}
-                        </Button>
+                        {booking ? (
+                            <BookingContractConfirmCard
+                                booking={booking}
+                                contract={contract}
+                                isLoadingContract={isLoadingContract}
+                                bypassVerificationCheck={true}
+                                onUpdated={(updatedBooking) => {
+                                    window.location.href = `/contractor/bookings/${updatedBooking.id}`;
+                                }}
+                            />
+                        ) : (
+                            <>
+                                <div className="bg-primary-50 p-4 rounded-xl border border-primary-100">
+                                    <p className="text-sm text-primary-800 mb-2">
+                                        Al proceder con el pago, aceptas nuestros Términos y Condiciones, así como el contrato de prestación de servicios musicales con <b>{linkData.musician.stage_name}</b>.
+                                    </p>
+                                </div>
+                                <Button 
+                                    color="primary" 
+                                    size="lg" 
+                                    className="w-full font-bold shadow-md"
+                                    onPress={handleSubmit}
+                                    isLoading={isSubmitting}
+                                    startContent={!isSubmitting && <Icon icon="lucide:check-circle-2" width={20} />}
+                                >
+                                    Generar contrato y continuar
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </AccordionItem>
             </Accordion>

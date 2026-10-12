@@ -33,6 +33,7 @@ type Props = {
     contract: ContractOut | null;
     isLoadingContract: boolean;
     onUpdated: (booking: BookingOut) => void;
+    bypassVerificationCheck?: boolean;
 };
 
 const STEPS = [
@@ -46,9 +47,10 @@ export default function BookingContractConfirmCard({
     contract,
     isLoadingContract,
     onUpdated,
+    bypassVerificationCheck,
 }: Props) {
     const { user } = useAuth();
-    const { isVerified, isLoading: isLoadingVerification } = useContractorVerification(true, user?.is_verified ?? false);
+    const { isVerified, isLoading: isLoadingVerification } = useContractorVerification(!bypassVerificationCheck, user?.is_verified ?? false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export default function BookingContractConfirmCard({
             return;
         }
 
-        if (!user?.is_verified) {
+        if (!user?.is_verified && !bypassVerificationCheck) {
             addToast({
                 title: "Cuenta no verificada",
                 description: "Debes verificar tu correo electrónico antes de poder realizar pagos.",
