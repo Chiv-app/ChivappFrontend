@@ -92,9 +92,17 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
             }
             
         } catch (error: unknown) {
+            let errorMsg = (error as Error).message || "Ocurrió un problema inesperado. Por favor, intenta nuevamente.";
+            if (error && typeof error === 'object' && 'response' in error) {
+                const response = (error as any).response;
+                if (response?.data?.detail) {
+                    errorMsg = typeof response.data.detail === 'string' ? response.data.detail : JSON.stringify(response.data.detail);
+                }
+            }
+            
             addToast({
                 title: "Problema al procesar",
-                description: (error as Error).message || "Ocurrió un problema inesperado. Por favor, intenta nuevamente.",
+                description: errorMsg,
                 color: "danger"
             });
         } finally {
