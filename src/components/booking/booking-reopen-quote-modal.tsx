@@ -59,7 +59,6 @@ export default function BookingReopenQuoteModal({
     );
     const [isSaving, setIsSaving] = useState(false);
     const [slots, setSlots] = useState<AvailabilityOut[]>([]);
-    const minCalendarValue = useMemo(() => today(getLocalTimeZone()), []);
     const availableDays = useMemo(() => getAvailableDaySet(slots), [slots]);
     const daySlots = useMemo(
         () => (eventDate ? getSlotsForDate(slots, eventDate) : []),

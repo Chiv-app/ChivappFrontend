@@ -5,7 +5,7 @@ export type BookingLinkStatus = "active" | "completed" | "expired";
 export type MusicianLinkProfile = {
     id: string;
     stage_name: string;
-    profile_picture_url: string | null;
+    profile_image_url: string | null;
 };
 
 export type BookingLinkPublicOut = {

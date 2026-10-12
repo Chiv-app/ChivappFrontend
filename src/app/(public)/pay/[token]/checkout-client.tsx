@@ -120,7 +120,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 <UserUI 
                     name={linkData.musician.stage_name}
                     description="Contrato rápido"
-                    avatarProps={{ src: linkData.musician.profile_picture_url || undefined, size: "lg" }}
+                    avatarProps={{ src: linkData.musician.profile_image_url || undefined, size: "lg" }}
                 />
                 <div className="text-right">
                     <p className="text-sm text-default-500">Monto</p>

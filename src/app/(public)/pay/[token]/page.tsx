@@ -18,7 +18,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
             openGraph: {
                 title: `Reserva con ${link.musician.stage_name} | Chivapp`,
                 description: `Realiza tu pago seguro y protege tu reserva con ${link.musician.stage_name}. 100% garantizado en Chivapp.`,
-                images: link.musician.profile_picture_url ? [link.musician.profile_picture_url] : [],
+                images: link.musician.profile_image_url ? [link.musician.profile_image_url] : [],
                 type: "website",
             }
         };

@@ -7,13 +7,11 @@ import { Icon } from "@iconify/react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   Button,
-  DatePicker,
-  Select,
+    Select,
   SelectItem,
   Textarea,
   addToast,
-  TimeInput,
-  Input,
+    Input,
   Card,
   CardBody,
   Divider,
@@ -84,8 +82,6 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const [eventDescription, setEventDescription] = useState("");
   const [location, setLocation] = useState<MapLocation | null>(null);
 
-  const minCalendarValue = useMemo(() => today(getLocalTimeZone()), []);
-
   const timeValue = startTime
     ? new Time(
         parseInt(startTime.split(":")[0]),
@@ -128,22 +124,6 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     };
   }, [musician.id]);
 
-  function handleDateChange(value: DateValue | null) {
-    if (!value) {
-      setEventDate("");
-      return;
-    }
-    const next = value.toString();
-    setEventDate(next);
-    if (startTime) {
-      const mismatch = validateBookingAgainstAvailability({
-        eventDate: next,
-        startTime,
-        slots,
-      });
-      if (mismatch) setStartTime("");
-    }
-  }
 
   async function submitRequest() {
     const validationError = validateBookingRequest({
@@ -260,7 +240,6 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     await submitRequest();
   }
 
-  const calendarValue = eventDate ? parseDate(eventDate) : null;
   const canSubmit = !isLoadingSlots && !slotsError;
 
   return (
@@ -272,15 +251,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* 1. Fecha */}
         <div className="flex flex-col justify-center">
-          <DatePicker
-            label="Fecha"
-            variant="bordered"
-            isRequired
-            minValue={minCalendarValue}
-            value={calendarValue}
-            onChange={handleDateChange}
-
-            isDisabled={isLoadingSlots}
+          <Input type="date" label="Fecha" variant="bordered" isRequired value={eventDate} onValueChange={(val) => { setEventDate(val); if (startTime) { const mismatch = validateBookingAgainstAvailability({ eventDate: val, startTime, duration_hours: 1 }, slots); setSlotsError(mismatch); } }} isDisabled={isLoadingSlots}
             classNames={{
               label: "uppercase font-bold tracking-wider text-[0.55rem]",
               input: "font-bold text-xs",

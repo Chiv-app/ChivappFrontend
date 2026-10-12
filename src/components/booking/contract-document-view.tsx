@@ -157,20 +157,6 @@ export default function ContractDocumentView({
         );
     }
 
-    if (!hasSnapshot) {
-        return (
-            <ContractPdfViewer
-                pdfUrl={legacyPdfUrl}
-                title={
-                    contract.contract_signed_pdf_url
-                        ? "Contrato firmado"
-                        : "Contrato PDF"
-                }
-                description={description}
-            />
-        );
-    }
-
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-3">
@@ -178,45 +164,46 @@ export default function ContractDocumentView({
                     <p className="font-semibold text-foreground">{title}</p>
                     <p className="text-sm text-default-500 mt-1">{description}</p>
                 </div>
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
-                    <Button
-                        variant="flat"
-                        color="primary"
-                        radius="lg"
-                        className="w-full sm:w-auto"
-                        isLoading={isLoadingPdf}
-                        onPress={() => void handleTogglePdfPreview()}
-                        startContent={
-                            <Icon icon="material-symbols:picture-as-pdf" width={20} />
-                        }
-                    >
-                        {showPdfPreview ? "Ocultar PDF" : "Ver PDF"}
-                    </Button>
-                    <Button
-                        variant="bordered"
-                        radius="lg"
-                        className="w-full sm:w-auto"
-                        isLoading={isLoadingPdf}
-                        onPress={() => void handleDownloadPdf()}
-                        startContent={
-                            <Icon icon="material-symbols:download" width={20} />
-                        }
-                    >
-                        Descargar PDF
-                    </Button>
-                </div>
             </div>
 
-            {pdfError ? (
-                <Card shadow="none" className="border border-danger/20 bg-danger/5">
-                    <CardBody className="p-4">
-                        <p className="text-sm text-default-700">{pdfError}</p>
-                    </CardBody>
-                </Card>
-            ) : null}
+            <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                    as={legacyPdfUrl ? "a" : "button"}
+                    href={legacyPdfUrl ? resolveUploadUrl(legacyPdfUrl) : undefined}
+                    target={legacyPdfUrl ? "_blank" : undefined}
+                    rel="noopener noreferrer"
+                    variant="flat"
+                    color="primary"
+                    radius="lg"
+                    className="flex-1 font-semibold"
+                    onPress={() => {
+                        if (!legacyPdfUrl) {
+                            handleTogglePdfPreview();
+                        }
+                    }}
+                    isLoading={isLoadingPdf}
+                    startContent={<Icon icon="material-symbols:contract" width={20} />}
+                >
+                    Ver contrato del músico
+                </Button>
+                
+                <Button
+                    as="a"
+                    href="/legal/terminos"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="flat"
+                    color="secondary"
+                    radius="lg"
+                    className="flex-1 font-semibold"
+                    startContent={<Icon icon="material-symbols:info" width={20} />}
+                >
+                    Términos y condiciones
+                </Button>
+            </div>
 
             {showPdfPreview && pdfObjectUrl ? (
-                <div className="overflow-hidden rounded-2xl border border-default-200 bg-default-50 shadow-soft">
+                <div className="overflow-hidden rounded-2xl border border-default-200 bg-default-50 shadow-soft mt-2">
                     <iframe
                         src={`${pdfObjectUrl}#toolbar=1&view=FitH`}
                         title={title}
@@ -225,132 +212,38 @@ export default function ContractDocumentView({
                 </div>
             ) : null}
 
-            <Card shadow="none" className="border border-default-200">
-                <CardBody className="gap-5 p-5 sm:p-6">
-                    <div>
-                        {contract.musician_signed ? (
-                            <p className="text-sm text-success">
-                                Firma del artista incluida
-                                {contract.musician_sign_timestamp
-                                    ? ` — ${formatDateTime(contract.musician_sign_timestamp)}`
-                                    : ""}
-                            </p>
-                        ) : (
-                            <p className="text-sm text-default-500">
-                                Pendiente de firma del artista en su perfil
-                            </p>
-                        )}
-                        {(contract.contractor_signed || contract.contract_signed_pdf_url) ? (
-                            <p className="text-sm text-success mt-1">
-                                Firmado digitalmente por el contratista
-                                {contract.contractor_sign_timestamp
-                                    ? ` — ${formatDateTime(contract.contractor_sign_timestamp)}`
-                                    : ""}
-                            </p>
-                        ) : (
-                            <p className="text-sm text-default-500 mt-1">
-                                Pendiente de firma del contratista
-                            </p>
-                        )}
-                    </div>
-
-                    {meta.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {meta.map((item) => (
-                                <div
-                                    key={item.label}
-                                    className="rounded-xl border border-default-200 bg-default-50/70 px-4 py-3"
-                                >
-                                    <p className="text-xs text-default-500">
-                                        {item.label}
-                                    </p>
-                                    <p className="text-sm font-medium text-foreground mt-1">
-                                        {item.value}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    ) : null}
-
-                    <Divider />
-
-                    <div className="rounded-2xl border border-default-200 bg-default-100/80 p-2 sm:p-3 overflow-x-auto">
-                        <article className="contract-doc-page mx-auto w-full max-w-[720px] min-w-[260px] rounded-xl shadow-lg px-4 py-6 sm:px-8 sm:py-10 md:px-10 md:py-12">
-                            <div
-                                className="contract-doc"
-                                dangerouslySetInnerHTML={{ __html: bodyHtml }}
-                            />
-                        </article>
-                    </div>
-
-                    {musicianSignatureUrl || contractorSignatureUrl ? (
-                        <>
-                            <Divider />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-3">
-                                    <p className="font-semibold text-foreground">
-                                        Firma del artista
-                                    </p>
-                                    {musicianSignatureUrl ? (
-                                        <div className="overflow-hidden rounded-2xl border border-default-200 bg-white p-4">
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src={musicianSignatureUrl}
-                                                alt="Firma del artista"
-                                                className="max-h-32 w-full object-contain"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-default-500">
-                                            Sin firma del artista en este contrato.
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="flex flex-col gap-3">
-                                    <p className="font-semibold text-foreground">
-                                        Firma del contratista
-                                    </p>
-                                    {contractorSignatureUrl ? (
-                                        <>
-                                            <div className="overflow-hidden rounded-2xl border border-default-200 bg-white p-4">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src={contractorSignatureUrl}
-                                                    alt="Firma del contratista"
-                                                    className="max-h-32 w-full object-contain"
-                                                />
-                                            </div>
-                                            <Button
-                                                as={Link}
-                                                href={contractorSignatureUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                size="sm"
-                                                variant="flat"
-                                                className="w-fit"
-                                                startContent={
-                                                    <Icon
-                                                        icon="material-symbols:open-in-new"
-                                                        width={18}
-                                                    />
-                                                }
-                                            >
-                                                Abrir firma
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <p className="text-sm text-default-500">
-                                            Pendiente de firma del contratista.
-                                        </p>
-                                    )}
-                                </div>
+            {pdfError ? (
+                <p className="text-sm text-danger mt-1">{pdfError}</p>
+            ) : null}
+            
+            {musicianSignatureUrl || contractorSignatureUrl ? (
+                <Card shadow="none" className="border border-default-200 mt-2">
+                    <CardBody className="gap-4 p-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <p className="text-sm font-semibold text-foreground">Firma del artista</p>
+                                {musicianSignatureUrl ? (
+                                    <div className="overflow-hidden rounded-xl border border-default-200 bg-white p-2">
+                                        <img src={musicianSignatureUrl} alt="Firma del artista" className="max-h-20 w-full object-contain" />
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-default-500">Sin firma del artista.</p>
+                                )}
                             </div>
-                        </>
-                    ) : null}
-                </CardBody>
-            </Card>
+                            <div className="flex flex-col gap-2">
+                                <p className="text-sm font-semibold text-foreground">Firma del contratista</p>
+                                {contractorSignatureUrl ? (
+                                    <div className="overflow-hidden rounded-xl border border-default-200 bg-white p-2">
+                                        <img src={contractorSignatureUrl} alt="Firma del contratista" className="max-h-20 w-full object-contain" />
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-default-500">Pendiente de firma.</p>
+                                )}
+                            </div>
+                        </div>
+                    </CardBody>
+                </Card>
+            ) : null}
         </div>
     );
 }
-
-
