@@ -185,7 +185,7 @@ export default function MusicianEarningsView() {
             setTimeout(() => setMainTab("member"), 0);
             return;
         }
-        if (isVerified) setMainTab("debts");
+        if (isVerified) setTimeout(() => setMainTab("debts"), 0);
     }, [isVerified, isEnsembleMember]);
 
     const debts = summary.debts ?? [];

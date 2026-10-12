@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Accordion, AccordionItem, Input, Button, addToast, User as UserUI } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { BookingLinkPublicOut, checkoutBookingLink } from "@/lib/booking-links";
+import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
 
 export default function CheckoutClient({ linkData }: { linkData: BookingLinkPublicOut }) {
@@ -15,8 +16,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const [eventDate, setEventDate] = useState(linkData.event_date || "");
     const [startTime, setStartTime] = useState(linkData.start_time || "");
     const [eventType, setEventType] = useState("");
-    const [locationAddress, setLocationAddress] = useState("");
-    const [locationCity, setLocationCity] = useState("");
+    const [location, setLocation] = useState<MapLocation | null>(null);
     
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
@@ -37,8 +37,8 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 event_date: eventDate,
                 start_time: startTime,
                 event_type: eventType,
-                location_address: locationAddress,
-                location_city: locationCity,
+                location_address: location?.address || "",
+                location_city: location?.city || "", 
                 fullname,
                 email,
                 phone,
@@ -117,20 +117,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             isRequired
                             variant="bordered"
                         />
-                        <Input 
-                            label="Dirección exacta" 
-                            value={locationAddress} 
-                            onValueChange={setLocationAddress}
-                            isRequired
-                            variant="bordered"
-                        />
-                        <Input 
-                            label="Ciudad / Distrito" 
-                            value={locationCity} 
-                            onValueChange={setLocationCity}
-                            isRequired
-                            variant="bordered"
-                        />
+                        <LocationMapPickerField value={location} onChange={setLocation} />
                         <div className="flex justify-end mt-2">
                             <Button color="primary" onPress={() => handleNext("1", "2")}>
                                 Siguiente paso
