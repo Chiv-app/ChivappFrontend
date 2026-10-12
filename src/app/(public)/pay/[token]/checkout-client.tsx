@@ -47,7 +47,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
             
             addToast({
                 title: "¡Reserva creada!",
-                description: "Te redirigiremos a la pasarela de pago...",
+                description: "Preparando tu contrato y entorno de pago seguro...",
                 color: "success"
             });
             
