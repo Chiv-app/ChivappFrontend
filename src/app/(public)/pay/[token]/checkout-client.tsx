@@ -29,13 +29,29 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const [documentNumber, setDocumentNumber] = useState("");
 
     const [selectedKeys, setSelectedKeys] = useState(new Set(["1"]));
+    const [completedSteps, setCompletedSteps] = useState(new Set<string>());
     const { refresh: refreshAuth } = useAuth();
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [contract, setContract] = useState<ContractOut | null>(null);
     const [isLoadingContract, setIsLoadingContract] = useState(false);
 
     const handleNext = (currentStep: string, nextStep: string) => {
-        // Here we could add validation
+        if (currentStep === "1") {
+            if (!eventDate || !startTime || !eventType || !location?.address) {
+                addToast({ title: "Datos incompletos", description: "Completa la fecha, hora, tipo de evento y ubicación.", color: "danger" });
+                return;
+            }
+        } else if (currentStep === "2") {
+            if (!fullname || !email || !phone) {
+                addToast({ title: "Datos incompletos", description: "El nombre, correo y celular son obligatorios.", color: "danger" });
+                return;
+            }
+        }
+        setCompletedSteps(prev => {
+            const next = new Set(prev);
+            next.add(currentStep);
+            return next;
+        });
         setSelectedKeys(new Set([nextStep]));
     };
 
@@ -82,6 +98,10 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
         }
     };
 
+    const disabledKeys = ["1", "2", "3"].filter(key => 
+        key !== "1" && !completedSteps.has((parseInt(key) - 1).toString()) && !booking
+    );
+
     return (
         <div className="flex flex-col gap-6">
             <div className="bg-content1 p-6 rounded-2xl shadow-sm flex items-center justify-between border border-default-200">
@@ -100,6 +120,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 variant="splitted"
                 selectedKeys={selectedKeys}
                 onSelectionChange={(keys) => setSelectedKeys(new Set(keys as Iterable<string>))}
+                disabledKeys={disabledKeys}
                 className="px-0 gap-4"
             >
                 <AccordionItem 
