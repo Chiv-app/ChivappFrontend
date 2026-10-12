@@ -52,12 +52,12 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
             });
             
             // TODO: redirect to MercadoPago or booking details
-            router.push(`/contractor/bookings/${res.booking_id}`);
+            window.location.href = `/contractor/bookings/${res.booking_id}`;
             
         } catch (error: unknown) {
             addToast({
-                title: "Error",
-                description: (error as Error).message || "No se pudo procesar la solicitud",
+                title: "Problema al procesar",
+                description: (error as Error).message || "Ocurrió un problema inesperado. Por favor, intenta nuevamente.",
                 color: "danger"
             });
         } finally {
