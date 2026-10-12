@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 import { getBookingLinkPublic } from "@/lib/booking-links";
 import { notFound } from "next/navigation";
+import { toAbsoluteUploadUrl } from "@/lib/uploads";
 import CheckoutClient from "./checkout-client";
 
 type Params = {
@@ -18,7 +19,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
             openGraph: {
                 title: `Reserva con ${link.musician.stage_name} | Chivapp`,
                 description: `Realiza tu pago seguro y protege tu reserva con ${link.musician.stage_name}. 100% garantizado en Chivapp.`,
-                images: link.musician.profile_image_url ? [link.musician.profile_image_url] : [],
+                images: link.musician.profile_image_url ? [toAbsoluteUploadUrl(link.musician.profile_image_url) || ""] : [],
                 type: "website",
             }
         };

@@ -251,7 +251,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* 1. Fecha */}
         <div className="flex flex-col justify-center">
-          <Input type="date" label="Fecha" variant="bordered" isRequired value={eventDate} onValueChange={(val) => { setEventDate(val); if (startTime) { const mismatch = validateBookingAgainstAvailability({ eventDate: val, startTime, duration_hours: 1 }, slots); setSlotsError(mismatch); } }} isDisabled={isLoadingSlots}
+          <Input type="date" label="Fecha" variant="bordered" isRequired value={eventDate} onValueChange={(val) => { setEventDate(val); if (startTime) { const mismatch = validateBookingAgainstAvailability({ eventDate: val, startTime, slots }); setSlotsError(mismatch); } }} isDisabled={isLoadingSlots}
             classNames={{
               label: "uppercase font-bold tracking-wider text-[0.55rem]",
               input: "font-bold text-xs",
@@ -261,37 +261,31 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
 
         {/* 2. Hora (TimeInput) */}
         <div className="flex flex-col justify-center">
-          <TimeInput
-            label="Hora"
-            variant="bordered"
-            isRequired
-            hourCycle={12}
-            value={timeValue}
-            description={
-              daySlots.length > 0
-                ? `Disp: ${daySlots
-                    .map(
-                      (s) =>
-                        `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
-                    )
-                    .join(", ")}`
-                : undefined
-            }
-            onChange={(val) => {
-              if (val) {
-                setStartTime(
-                  `${val.hour.toString().padStart(2, "0")}:${val.minute.toString().padStart(2, "0")}`,
-                );
-              } else {
-                setStartTime("");
+          <Input
+              type="time"
+              label="Hora"
+              variant="bordered"
+              isRequired
+              value={startTime}
+              onValueChange={(val) => {
+                setStartTime(val);
+              }}
+              isDisabled={isLoadingSlots}
+              description={
+                daySlots.length > 0
+                  ? `Disp: ${daySlots
+                      .map(
+                        (s) =>
+                          `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
+                      )
+                      .join(", ")}`
+                  : undefined
               }
-            }}
-            isDisabled={isLoadingSlots}
-            classNames={{
-              label: "uppercase font-bold tracking-wider text-[0.55rem]",
-              input: "font-bold text-xs",
-            }}
-          />
+              classNames={{
+                label: "uppercase font-bold tracking-wider text-[0.55rem]",
+                input: "font-bold text-xs",
+              }}
+            />
         </div>
 
         {/* 3. Tipo de Evento */}

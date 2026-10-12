@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Accordion, AccordionItem, Input, Button, addToast, User as UserUI } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { resolveUploadUrl } from "@/lib/uploads";
 import { BookingLinkPublicOut, checkoutBookingLink } from "@/lib/booking-links";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
@@ -120,7 +121,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 <UserUI 
                     name={linkData.musician.stage_name}
                     description="Contrato rápido"
-                    avatarProps={{ src: linkData.musician.profile_image_url || undefined, size: "lg" }}
+                    avatarProps={{ src: resolveUploadUrl(linkData.musician.profile_image_url) || undefined, size: "lg" }}
                 />
                 <div className="text-right">
                     <p className="text-sm text-default-500">Monto</p>

@@ -78,7 +78,44 @@ export default function LocationMapPicker({ value, onChange }: Props) {
   const requestCurrentLocation = () => {
     if (typeof window !== "undefined" && navigator.geolocation) {
       setIsResolving(true);
-      navigator.geolocation.getCurrentPosition(async (pos) => { const lat = pos.coords.latitude; const lng = pos.coords.longitude; try { const loc = await reverseGeocode(lat, lng); if (loc) { onChange(loc); setSearchQuery(loc.address); } else { const fallback = buildFallbackLocation(lat, lng); onChange(fallback); setSearchQuery(fallback.address); } } catch (e) { console.error('Error obteniendo ubicación', e); const fallback = buildFallbackLocation(lat, lng); onChange(fallback); setSearchQuery(fallback.address); } finally { setIsResolving(false); } }, (err) => { console.error('Ubicación error', err); let errMsg = 'Por favor permite el acceso a tu ubicación en tu navegador.'; if (err.code === err.TIMEOUT) errMsg = 'Se agotó el tiempo buscando tu ubicación.'; if (err.code === err.POSITION_UNAVAILABLE) errMsg = 'La información de ubicación no está disponible.'; addToast({ title: 'Error de ubicación', description: errMsg, color: 'warning' }); setIsResolving(false); }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 } );
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          try {
+            const loc = await reverseGeocode(lat, lng);
+            if (loc) {
+              onChange(loc);
+              setSearchQuery(loc.address);
+            } else {
+              const fallback = buildFallbackLocation(lat, lng);
+              onChange(fallback);
+              setSearchQuery(fallback.address);
+            }
+          } catch (e) {
+            console.error("Error obteniendo ubicación", e);
+            const fallback = buildFallbackLocation(lat, lng);
+            onChange(fallback);
+            setSearchQuery(fallback.address);
+          } finally {
+            setIsResolving(false);
+          }
+        },
+        (err) => {
+          console.error("Ubicación error", err);
+          let errMsg = "Por favor permite el acceso a tu ubicación en tu navegador.";
+          if (err.code === err.TIMEOUT) errMsg = "Se agotó el tiempo buscando tu ubicación.";
+          if (err.code === err.POSITION_UNAVAILABLE) errMsg = "La información de ubicación no está disponible.";
+          
+          addToast({
+            title: "Error de ubicación",
+            description: errMsg,
+            color: "warning",
+          });
+          setIsResolving(false);
+        },
+        { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
+      );
     } else {
       addToast({
         title: "No soportado",

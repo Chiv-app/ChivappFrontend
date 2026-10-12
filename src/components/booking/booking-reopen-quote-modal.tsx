@@ -186,23 +186,20 @@ export default function BookingReopenQuoteModal({
                         </ModalHeader>
                         <ModalBody className="gap-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <DatePicker
+                                <Input
+                                    type="date"
                                     label="Fecha del evento"
                                     variant="bordered"
                                     isRequired
                                     isDisabled={isSaving}
-                                    minValue={minCalendarValue}
-                                    value={eventDate ? parseDate(eventDate) : null}
-                                    onChange={(value) =>
-                                        setEventDate(value ? value.toString() : "")
-                                    }
-                                    isDateUnavailable={isDateUnavailable}
+                                    value={eventDate}
+                                    onValueChange={setEventDate}
                                     description={
                                         daySlots.length > 0
                                             ? `Horario: ${daySlots
                                                   .map(
                                                       (s) =>
-                                                          `${formatTimeLabel(s.start_time)}–${formatTimeLabel(s.end_time)}`,
+                                                          `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
                                                   )
                                                   .join(", ")}`
                                             : undefined

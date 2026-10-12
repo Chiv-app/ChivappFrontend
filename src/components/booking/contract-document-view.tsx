@@ -169,7 +169,7 @@ export default function ContractDocumentView({
             <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                     as={legacyPdfUrl ? "a" : "button"}
-                    href={legacyPdfUrl ? resolveUploadUrl(legacyPdfUrl) : undefined}
+                    href={legacyPdfUrl ? (resolveUploadUrl(legacyPdfUrl) || undefined) : undefined}
                     target={legacyPdfUrl ? "_blank" : undefined}
                     rel="noopener noreferrer"
                     variant="flat"
