@@ -602,7 +602,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         <Icon icon="lucide:credit-card" className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className={`text-base font-bold flex items-center gap-2 ${activeStep === 3 ? 'text-white' : 'text-slate-200'}`}>3. Confirmación y Pago de Seña</h3>
+                                        <h3 className={`text-base font-bold flex items-center gap-2 ${activeStep === 3 ? 'text-white' : 'text-slate-200'}`}>3. Confirmación y Pago</h3>
                                         <p className="text-xs text-slate-400">Revisa el contrato y reserva</p>
                                     </div>
                                 </div>
@@ -615,7 +615,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                             <Icon icon="lucide:file-text" className="w-4 h-4 text-primary" /> Términos del Contrato Rápido:
                                         </div>
                                         <ul className="list-disc list-inside space-y-1 text-slate-300 text-xs">
-                                            <li>La seña asegura la fecha en la agenda exclusiva de <strong className="text-primary font-bold">{linkData.musician.stage_name}</strong>.</li>
+                                            <li>El pago asegura la fecha en la agenda exclusiva de <strong className="text-primary font-bold">{linkData.musician.stage_name}</strong>.</li>
                                             <li>Llegada garantizada a la hora coordinada con vestimenta completa.</li>
                                             <li>Confirmación inmediata enviada por correo.</li>
                                         </ul>
@@ -631,7 +631,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-300 mb-3">Selecciona medio de pago para la seña</label>
+                                        <label className="block text-xs font-bold text-slate-300 mb-3">Selecciona medio de pago</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <label className={`relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === 'yape' ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/30 hover:border-white/20'}`}>
                                                 <input checked={paymentMethod === 'yape'} onChange={() => setPaymentMethod('yape')} className="sr-only" name="payment_method" type="radio" value="yape" />
