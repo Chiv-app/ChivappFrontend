@@ -5,6 +5,9 @@ import { notFound } from "next/navigation";
 import { toAbsoluteUploadUrl } from "@/lib/uploads";
 import CheckoutClient from "./checkout-client";
 
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 import Link from "next/link";
 
 

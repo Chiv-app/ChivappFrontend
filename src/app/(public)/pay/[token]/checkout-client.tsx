@@ -56,10 +56,20 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     };
 
     const videoList: string[] = [];
-    if (linkData.musician.showreel_video_url) videoList.push(linkData.musician.showreel_video_url);
+    if (linkData.musician.showreel_video_url) {
+        linkData.musician.showreel_video_url.split(',').forEach(v => {
+            const clean = v.trim();
+            if (clean && !videoList.includes(clean)) videoList.push(clean);
+        });
+    }
     if (linkData.musician.videos) {
         linkData.musician.videos.forEach(v => {
-            if (!videoList.includes(v)) videoList.push(v);
+            if (typeof v === 'string') {
+                v.split(',').forEach(subV => {
+                    const clean = subV.trim();
+                    if (clean && !videoList.includes(clean)) videoList.push(clean);
+                });
+            }
         });
     }
 
