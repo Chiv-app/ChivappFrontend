@@ -67,12 +67,8 @@ export default async function SmartPaymentPage(props: Params) {
     }
 
     return (
-        <main className="min-h-screen bg-default-50 py-10 px-4">
-            <div className="max-w-2xl mx-auto">
-                <Suspense fallback={<div>Cargando...</div>}>
-                    <CheckoutClient linkData={link} />
-                </Suspense>
-            </div>
-        </main>
+        <Suspense fallback={<div className="min-h-screen bg-[#080e17] flex items-center justify-center text-white">Cargando...</div>}>
+            <CheckoutClient linkData={link} />
+        </Suspense>
     );
 }
