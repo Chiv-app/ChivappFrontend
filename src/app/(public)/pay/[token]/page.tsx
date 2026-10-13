@@ -39,11 +39,27 @@ export default async function SmartPaymentPage(props: Params) {
     } catch (e: any) {
         if (e.message?.includes("expirado")) {
             return (
-                <main className="min-h-screen bg-default-50 py-10 px-4 flex items-center justify-center">
-                    <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm text-center">
-                        <div className="text-warning mx-auto mb-4 text-5xl">⏰</div>
-                        <h1 className="text-2xl font-bold mb-2">Enlace expirado</h1>
-                        <p className="text-default-500 mb-6">Este enlace de pago ha caducado. Por favor, solicita al músico que regenere un nuevo enlace para continuar con tu reserva.</p>
+                <main className="min-h-screen bg-[#080e17] text-white py-10 px-4 flex items-center justify-center">
+                    <div className="max-w-md w-full bg-[#161c25]/72 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
+                        <div className="text-amber-400 mx-auto mb-4 text-5xl">⏳</div>
+                        <h1 className="text-2xl font-bold mb-2 text-white">Enlace expirado</h1>
+                        <p className="text-slate-400 mb-6 relative z-10">Este enlace de pago ha caducado. Por favor, solicita al músico que regenere un nuevo enlace para continuar con tu reserva.</p>
+                    </div>
+                </main>
+            )
+        }
+        if (e.message?.includes("completed") || e.message?.includes("completado")) {
+            return (
+                <main className="min-h-screen bg-[#080e17] text-white py-10 px-4 flex items-center justify-center">
+                    <div className="max-w-md w-full bg-[#161c25]/72 backdrop-blur-xl border border-white/10 p-8 rounded-2xl shadow-2xl text-center relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl"></div>
+                        <div className="text-primary mx-auto mb-4 text-5xl">✓</div>
+                        <h1 className="text-2xl font-bold mb-2 text-white">¡Reserva Completada!</h1>
+                        <p className="text-slate-400 mb-6 relative z-10">Este enlace ya fue procesado y la reserva ha sido creada. Puedes encontrar los detalles en tu cuenta.</p>
+                        <Link href="/login" className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-primary to-cyan-400 px-4 py-3 text-sm font-semibold text-slate-900 hover:opacity-90 transition-all">
+                            Ir a mi cuenta
+                        </Link>
                     </div>
                 </main>
             )
