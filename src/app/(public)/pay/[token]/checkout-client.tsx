@@ -189,23 +189,23 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-slate-400 flex-wrap">
                                 <div className="flex items-center text-amber-400 font-bold gap-1.5 bg-[#1a1f26] px-2.5 py-1 rounded-lg border border-white/5 shadow-sm">
                                     <Icon icon="lucide:star" className="w-4 h-4 fill-amber-400 text-amber-400" /> 
-                                    <span>4.9</span>
+                                    <span>{linkData.musician.rating_avg || '5.0'}</span>
                                 </div>
                                 <span className="text-slate-600 font-bold">•</span>
-                                <span className="text-slate-300 font-medium">120+ presentaciones realizadas</span>
+                                <span className="text-slate-300 font-medium">
+                                    {linkData.musician.rating_count ? `${linkData.musician.rating_count} presentaciones realizadas` : 'Nuevo en la plataforma'}
+                                </span>
                             </div>
 
-                            <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap pt-1">
-                                <span className="text-xs font-medium text-slate-300 bg-[#1a1f26] border border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors cursor-default">
-                                    <Icon icon="lucide:music" className="w-3.5 h-3.5 text-cyan-400" /> Tradicional
-                                </span>
-                                <span className="text-xs font-medium text-slate-300 bg-[#1a1f26] border border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors cursor-default">
-                                    <Icon icon="lucide:heart" className="w-3.5 h-3.5 text-slate-400" /> Serenatas
-                                </span>
-                                <span className="text-xs font-medium text-slate-300 bg-[#1a1f26] border border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors cursor-default">
-                                    <Icon icon="lucide:sparkles" className="w-3.5 h-3.5 text-cyan-400" /> Traje de Gala
-                                </span>
-                            </div>
+                            {linkData.musician.genres && linkData.musician.genres.length > 0 && (
+                                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap pt-1">
+                                    {linkData.musician.genres.slice(0, 3).map((genre, i) => (
+                                        <span key={i} className="text-xs font-medium text-slate-300 bg-[#1a1f26] border border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors cursor-default">
+                                            <Icon icon={i === 0 ? "lucide:music" : i === 1 ? "lucide:heart" : "lucide:sparkles"} className={`w-3.5 h-3.5 ${i % 2 === 0 ? 'text-cyan-400' : 'text-slate-400'}`} /> {genre}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                             
                             {linkData.musician.portfolio_description && (
                                 <div className="text-sm text-slate-400 leading-relaxed pr-0 sm:pr-4 pt-2">
@@ -229,11 +229,11 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 </button>
                                 <button className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
                                     <Icon icon="lucide:star" className="w-4 h-4 fill-amber-400 text-amber-400" /> Comentarios
-                                    <span className="bg-amber-400/10 text-amber-400 px-1.5 rounded text-[10px] ml-0.5 border border-amber-400/20">4.9</span>
+                                    <span className="bg-amber-400/10 text-amber-400 px-1.5 rounded text-[10px] ml-0.5 border border-amber-400/20">{linkData.musician.rating_avg || '5.0'}</span>
                                 </button>
                             </div>
                             <div className="hidden sm:flex text-xs font-medium text-slate-400">
-                                En Ayacucho
+                                En {linkData.musician.location_city || 'Ayacucho'}
                             </div>
                         </div>
 

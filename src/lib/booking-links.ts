@@ -10,6 +10,10 @@ export type MusicianLinkProfile = {
     gallery_images?: string[] | null;
     videos?: string[] | null;
     showreel_video_url?: string | null;
+    rating_avg?: number | null;
+    rating_count?: number | null;
+    genres?: string[] | null;
+    location_city?: string | null;
 };
 
 export type BookingLinkPublicOut = {
