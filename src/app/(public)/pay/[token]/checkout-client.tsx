@@ -507,46 +507,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             </div>
                         </div>
                         
-                        {/* PORTAFOLIO DEL ARTISTA */}
-                        <div className="bg-[#161c25]/72 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl relative space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                                    <Icon icon="lucide:user" className="w-4 h-4 text-primary" /> Conoce al Artista
-                                </h3>
-                            </div>
-                            
-                            {linkData.musician.showreel_video_url ? (
-                                <div className="rounded-xl overflow-hidden aspect-video bg-black shadow-lg">
-                                    <video 
-                                        src={resolveUploadUrl(linkData.musician.showreel_video_url) || undefined} 
-                                        controls 
-                                        className="w-full h-full object-cover" 
-                                    />
-                                </div>
-                            ) : (linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0) ? (
-                                <div className="rounded-xl overflow-hidden aspect-video bg-black shadow-lg">
-                                    <img 
-                                        src={resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined} 
-                                        alt="Galería del Artista" 
-                                        className="w-full h-full object-cover" 
-                                    />
-                                </div>
-                            ) : null}
 
-                            {linkData.musician.portfolio_description && (
-                                <div className="text-sm text-slate-300 leading-relaxed">
-                                    <p className="line-clamp-4">{linkData.musician.portfolio_description}</p>
-                                </div>
-                            )}
-                            
-                            {linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
-                                <div className="grid grid-cols-3 gap-3">
-                                    {linkData.musician.gallery_images.slice(1, 4).map((img, i) => (
-                                        <img key={i} src={resolveUploadUrl(img) || undefined} alt="Foto galería" className="rounded-xl aspect-square object-cover w-full shadow-md border border-white/5" />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
                     </aside>
                 </div>
             </div>
