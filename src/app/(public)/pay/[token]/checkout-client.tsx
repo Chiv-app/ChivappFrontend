@@ -277,9 +277,29 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     className="w-full h-full object-contain bg-black/50 backdrop-blur-sm" 
                                 />
                             ) : activeMediaTab === 'comentarios' ? (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-                                    <Icon icon="lucide:message-square-quote" className="w-12 h-12 mb-3 text-white/10" />
-                                    <p className="text-sm">Las opiniones de los clientes se mostrarán aquí.</p>
+                                <div className="w-full h-full flex flex-col bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+                                    {linkData.musician.reviews && linkData.musician.reviews.length > 0 ? (
+                                        <div className="space-y-4 w-full h-full">
+                                            {linkData.musician.reviews.map((review, i) => (
+                                                <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 w-full">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-sm font-semibold text-slate-200">{review.guest_name || 'Usuario'}</span>
+                                                        <div className="flex gap-0.5 text-amber-400">
+                                                            {Array.from({ length: review.rating }).map((_, j) => (
+                                                                <Icon key={j} icon="lucide:star" className="w-3.5 h-3.5 fill-amber-400" />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-slate-400 leading-relaxed italic">"{review.comment}"</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-slate-400 h-full text-center m-auto">
+                                            <Icon icon="lucide:message-square-quote" className="w-12 h-12 mb-3 text-white/10" />
+                                            <p className="text-sm">El músico aún no cuenta con reseñas escritas.</p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-white/5">

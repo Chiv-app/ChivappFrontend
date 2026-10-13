@@ -2,6 +2,13 @@ import { apiFetch } from "./api";
 
 export type BookingLinkStatus = "active" | "completed" | "expired";
 
+export type MusicianReviewOut = {
+    guest_name?: string | null;
+    rating: number;
+    comment?: string | null;
+    created_at: string;
+};
+
 export type MusicianLinkProfile = {
     id: string;
     stage_name: string;
@@ -14,6 +21,7 @@ export type MusicianLinkProfile = {
     rating_count?: number | null;
     genres?: string[] | null;
     location_city?: string | null;
+    reviews?: MusicianReviewOut[] | null;
 };
 
 export type BookingLinkPublicOut = {
