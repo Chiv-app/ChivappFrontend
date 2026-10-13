@@ -19,16 +19,12 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     // Form state
     const [eventDate, setEventDate] = useState(linkData.event_date || "");
     const [startTime, setStartTime] = useState(linkData.start_time || "");
-    const [eventType, setEventType] = useState("serenata");
+    const [eventType, setEventType] = useState("");
     const [location, setLocation] = useState<MapLocation | null>(null);
-    const [reference, setReference] = useState("");
-    
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
     const [documentNumber, setDocumentNumber] = useState("");
-    const [notes, setNotes] = useState("");
-
     // Identity Flow State
     const [identityStatus, setIdentityStatus] = useState<BookingLinkIdentityStatus | "idle">("idle");
     const [identityMessage, setIdentityMessage] = useState<string | null>(null);
@@ -116,12 +112,11 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
         if (!booking) {
             setIsSubmitting(true);
             try {
-                const fullAddress = location?.address + (reference ? ` (Ref: ${reference})` : "");
                 const res = await checkoutBookingLink(linkData.token, {
                     event_date: eventDate,
                     start_time: startTime,
                     event_type: eventType,
-                    location_address: fullAddress,
+                    location_address: location?.address || "",
                     location_city: location?.city || "", 
                     fullname,
                     email,
@@ -249,19 +244,15 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
 
                                     <div>
                                         <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                                            <Icon icon="lucide:sparkles" className="w-3.5 h-3.5 text-primary" /> Tipo de ocasión <span className="text-primary">*</span>
+                                            <Icon icon="lucide:sparkles" className="w-3.5 h-3.5 text-primary" /> Tipo de evento (ej. Cumpleaños, Boda) <span className="text-primary">*</span>
                                         </label>
-                                        <select 
+                                        <input 
+                                            type="text"
                                             className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                                             value={eventType}
                                             onChange={(e) => setEventType(e.target.value)}
-                                        >
-                                            <option value="cumpleanos">Cumpleaños / Aniversario</option>
-                                            <option value="serenata">Serenata Romántica</option>
-                                            <option value="matrimonio">Boda / Matrimonio</option>
-                                            <option value="corporativo">Evento Corporativo</option>
-                                            <option value="otro">Otro tipo de evento</option>
-                                        </select>
+                                            placeholder="Ej. Cumpleaños, Boda"
+                                        />
                                     </div>
 
                                     <div>
@@ -273,18 +264,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                                            <Icon icon="lucide:map" className="w-3.5 h-3.5 text-primary" /> Punto de referencia <span className="text-slate-400 font-normal">(opcional)</span>
-                                        </label>
-                                        <input 
-                                            className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
-                                            placeholder="Ej. Frente al Parque Sucre o tienda Don Pepe" 
-                                            type="text" 
-                                            value={reference}
-                                            onChange={(e) => setReference(e.target.value)}
-                                        />
-                                    </div>
+                                    
                                     
                                     <div className="pt-2 flex justify-end">
                                         <button 
@@ -352,7 +332,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">DNI / Carnet de Extranjería <span className="text-slate-400 font-normal">(opcional)</span></label>
+                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Documento de Identidad (DNI/CE)</label>
                                             <input 
                                                 className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
                                                 maxLength={12} 
@@ -395,16 +375,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         </div>
                                     )}
 
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Canciones especiales o dedicatoria personalizada</label>
-                                        <textarea 
-                                            className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 resize-none focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
-                                            placeholder="Indica si deseas que nombremos a alguien especial o indicaciones si es sorpresa." 
-                                            rows={2}
-                                            value={notes}
-                                            onChange={(e) => setNotes(e.target.value)}
-                                        ></textarea>
-                                    </div>
+                                    
 
                                     <div className="pt-3 flex justify-between items-center">
                                         <button className="text-xs text-slate-400 hover:text-white px-3 py-2 font-semibold transition-colors" onClick={() => goToStep(1)} type="button">
