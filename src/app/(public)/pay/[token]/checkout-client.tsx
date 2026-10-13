@@ -147,14 +147,14 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     };
 
     return (
-        <div className="font-sans antialiased selection:bg-primary/20 selection:text-primary relative bg-[#080e17] text-[#dde2f0] -m-10 p-10 min-h-screen">
+        <div className="font-sans antialiased selection:bg-primary/20 selection:text-primary relative bg-[#080e17] text-[#dde2f0] min-h-screen">
             {/* Ambient Backdrop Glow */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-30">
                 <div className="absolute -top-32 left-1/4 w-[600px] h-[350px] bg-cyan-500/10 rounded-full blur-3xl"></div>
                 <div className="absolute top-1/2 right-0 w-[450px] h-[450px] bg-amber-500/10 rounded-full blur-3xl"></div>
             </div>
 
-            <div className="relative z-10 max-w-7xl mx-auto flex flex-col gap-8">
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 flex flex-col gap-6 sm:gap-8">
                 {/* 1. HERO CABECERA */}
                 <section className="bg-[#161c25]/72 backdrop-blur-xl rounded-3xl p-6 sm:p-7 border border-white/10 shadow-2xl relative overflow-hidden">
                     <div className="absolute -right-20 -top-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
