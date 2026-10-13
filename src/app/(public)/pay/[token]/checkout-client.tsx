@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Accordion, AccordionItem, Input, Button, addToast, User as UserUI } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { resolveUploadUrl } from "@/lib/uploads";
-import { BookingLinkPublicOut, checkoutBookingLink } from "@/lib/booking-links";
+import { BookingLinkPublicOut, checkoutBookingLink, checkIdentityBookingLink, sendOtpBookingLink, BookingLinkIdentityStatus } from "@/lib/booking-links";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
 import BookingContractConfirmCard from "@/components/booking/booking-contract-confirm-card";
@@ -29,9 +29,45 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const [phone, setPhone] = useState("");
     const [documentNumber, setDocumentNumber] = useState("");
 
+    // Identity Flow State
+    const [identityStatus, setIdentityStatus] = useState<BookingLinkIdentityStatus | "idle">("idle");
+    const [identityMessage, setIdentityMessage] = useState<string | null>(null);
+    const [isCheckingIdentity, setIsCheckingIdentity] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [password, setPassword] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+
     const [selectedKeys, setSelectedKeys] = useState(new Set(["1"]));
     const [completedSteps, setCompletedSteps] = useState(new Set<string>());
     const { refresh: refreshAuth } = useAuth();
+    const handleEmailBlur = async () => {
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+        setIsCheckingIdentity(true);
+        try {
+            const res = await checkIdentityBookingLink(linkData.token, email);
+            setIdentityStatus(res.status);
+            setIdentityMessage(res.message || null);
+            if (res.status === 'exists_verified') {
+                // Pre-fill fullname and phone if possible or just trigger OTP
+                handleSendOtp();
+            }
+        } catch (error) {
+            console.error("Failed to check identity", error);
+        } finally {
+            setIsCheckingIdentity(false);
+        }
+    };
+
+    const handleSendOtp = async () => {
+        try {
+            await sendOtpBookingLink(linkData.token, email);
+            setOtpSent(true);
+            addToast({ title: "Código enviado", description: "Revisa tu correo para obtener el código de acceso.", color: "success" });
+        } catch (error: any) {
+            addToast({ title: "Error", description: error.message || "No se pudo enviar el código", color: "danger" });
+        }
+    };
+
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [contract, setContract] = useState<ContractOut | null>(null);
     const [isLoadingContract, setIsLoadingContract] = useState(false);
@@ -72,7 +108,9 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 fullname,
                 email,
                 phone,
-                document_number: documentNumber
+                document_number: documentNumber,
+                otp: identityStatus === 'exists_verified' ? otp : undefined,
+                password: identityStatus === 'exists_unverified' ? password : undefined,
             });
             
                         addToast({ title: "¡Reserva creada!", description: "Generando contrato...", color: "success" });
@@ -195,9 +233,17 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             label="Correo electrónico" 
                             type="email"
                             value={email} 
-                            onValueChange={setEmail}
+                            onValueChange={(val) => {
+                                setEmail(val);
+                                setIdentityStatus("idle");
+                                setIdentityMessage(null);
+                            }}
+                            onBlur={handleEmailBlur}
                             isRequired
                             variant="bordered"
+                            isInvalid={identityStatus === 'self'}
+                            errorMessage={identityStatus === 'self' ? identityMessage : undefined}
+                            description={isCheckingIdentity ? "Verificando..." : undefined}
                         />
                         <Input 
                             label="Teléfono (WhatsApp)" 

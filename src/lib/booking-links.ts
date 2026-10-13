@@ -28,6 +28,8 @@ export type BookingLinkCheckout = {
     email: string;
     phone: string;
     document_number?: string | null;
+    otp?: string | null;
+    password?: string | null;
 };
 
 export async function getBookingLinkPublic(token: string): Promise<BookingLinkPublicOut> {
@@ -64,5 +66,26 @@ export async function getMyBookingLinks(): Promise<BookingLinkOut[]> {
 export async function resetBookingLinkExpiration(token: string): Promise<BookingLinkOut> {
     return apiFetch<BookingLinkOut>(`/booking-links/${token}/reset-expiration`, {
         method: "POST",
+    });
+}
+
+export type BookingLinkIdentityStatus = 'self' | 'exists_verified' | 'exists_unverified' | 'new';
+
+export type BookingLinkIdentityResponse = {
+    status: BookingLinkIdentityStatus;
+    message?: string | null;
+};
+
+export async function checkIdentityBookingLink(token: string, email: string): Promise<BookingLinkIdentityResponse> {
+    return apiFetch<BookingLinkIdentityResponse>(`/booking-links/${token}/check-identity`, {
+        method: "POST",
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function sendOtpBookingLink(token: string, email: string): Promise<{message: string}> {
+    return apiFetch<{message: string}>(`/booking-links/${token}/send-otp`, {
+        method: "POST",
+        body: JSON.stringify({ email }),
     });
 }
