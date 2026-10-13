@@ -55,7 +55,11 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
 
     const videoList: string[] = [];
     if (linkData.musician.showreel_video_url) videoList.push(linkData.musician.showreel_video_url);
-    if (linkData.musician.videos) videoList.push(...linkData.musician.videos);
+    if (linkData.musician.videos) {
+        linkData.musician.videos.forEach(v => {
+            if (!videoList.includes(v)) videoList.push(v);
+        });
+    }
 
     const handleEmailBlur = async () => {
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
