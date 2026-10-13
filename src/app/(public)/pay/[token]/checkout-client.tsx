@@ -43,6 +43,19 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+    const hasVideos = !!linkData.musician.showreel_video_url || (linkData.musician.videos && linkData.musician.videos.length > 0);
+    const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'fotos' | 'comentarios'>(hasVideos ? 'videos' : 'fotos');
+    const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+
+    const handleMediaTab = (tab: 'videos' | 'fotos' | 'comentarios') => {
+        setActiveMediaTab(tab);
+        setActiveMediaIndex(0);
+    };
+
+    const videoList: string[] = [];
+    if (linkData.musician.showreel_video_url) videoList.push(linkData.musician.showreel_video_url);
+    if (linkData.musician.videos) videoList.push(...linkData.musician.videos);
+
     const handleEmailBlur = async () => {
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
         setIsCheckingIdentity(true);
@@ -221,15 +234,24 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         {/* Pestañas (Tabs Row) */}
                         <div className="flex items-center justify-between px-2">
                             <div className="flex items-center gap-4 sm:gap-6">
-                                <button className="text-xs font-bold text-slate-900 bg-cyan-400 px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]">
-                                    <Icon icon="lucide:play" className="w-4 h-4 fill-slate-900" /> Videos
+                                <button 
+                                    onClick={() => handleMediaTab('videos')}
+                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'videos' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <Icon icon="lucide:play" className={`w-4 h-4 ${activeMediaTab === 'videos' ? 'fill-slate-900' : ''}`} /> Videos
                                 </button>
-                                <button className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
-                                    <Icon icon="lucide:image" className="w-4 h-4" /> Fotos
+                                <button 
+                                    onClick={() => handleMediaTab('fotos')}
+                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'fotos' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <Icon icon="lucide:image" className={`w-4 h-4 ${activeMediaTab === 'fotos' ? 'fill-slate-900' : ''}`} /> Fotos
                                 </button>
-                                <button className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5">
-                                    <Icon icon="lucide:star" className="w-4 h-4 fill-amber-400 text-amber-400" /> Comentarios
-                                    <span className="bg-amber-400/10 text-amber-400 px-1.5 rounded text-[10px] ml-0.5 border border-amber-400/20">{linkData.musician.rating_avg || '5.0'}</span>
+                                <button 
+                                    onClick={() => handleMediaTab('comentarios')}
+                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'comentarios' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <Icon icon="lucide:star" className={`w-4 h-4 ${activeMediaTab === 'comentarios' ? 'fill-slate-900 text-slate-900' : 'fill-amber-400 text-amber-400'}`} /> Comentarios
+                                    <span className={`${activeMediaTab === 'comentarios' ? 'bg-slate-900/10 text-slate-900 border-slate-900/20' : 'bg-amber-400/10 text-amber-400 border-amber-400/20'} px-1.5 rounded text-[10px] ml-0.5 border`}>{linkData.musician.rating_avg || '5.0'}</span>
                                 </button>
                             </div>
                             <div className="hidden sm:flex text-xs font-medium text-slate-400">
@@ -238,59 +260,50 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         </div>
 
                         {/* Contenedor Multimedia Principal */}
-                        <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-[#0c1017] shadow-inner group">
-                            {linkData.musician.showreel_video_url ? (
+                        <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-[#0c1017] shadow-inner group flex items-center justify-center">
+                            {activeMediaTab === 'videos' && videoList.length > 0 ? (
                                 <video 
-                                    src={resolveUploadUrl(linkData.musician.showreel_video_url) || undefined} 
-                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                                    key={videoList[activeMediaIndex]}
+                                    src={resolveUploadUrl(videoList[activeMediaIndex]) || undefined} 
+                                    className="w-full h-full object-cover" 
+                                    controls
                                     poster={linkData.musician.gallery_images?.[0] ? resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined : undefined}
                                 />
-                            ) : (linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0) ? (
+                            ) : activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0 ? (
                                 <img 
-                                    src={resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined} 
+                                    key={linkData.musician.gallery_images[activeMediaIndex]}
+                                    src={resolveUploadUrl(linkData.musician.gallery_images[activeMediaIndex]) || undefined} 
                                     alt="Galería del Artista" 
-                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" 
+                                    className="w-full h-full object-contain bg-black/50 backdrop-blur-sm" 
                                 />
+                            ) : activeMediaTab === 'comentarios' ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                                    <Icon icon="lucide:message-square-quote" className="w-12 h-12 mb-3 text-white/10" />
+                                    <p className="text-sm">Las opiniones de los clientes se mostrarán aquí.</p>
+                                </div>
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-white/5">
                                     <Icon icon="lucide:music" className="w-12 h-12 text-white/10" />
                                 </div>
                             )}
-                            
-                            {/* Superposiciones (Badges Flotantes) */}
-                            <div className="absolute top-3 sm:top-4 left-3 sm:left-4 flex gap-2">
-                                <span className="bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-lg backdrop-blur-md">
-                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> EN VIVO
-                                </span>
-                                <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-medium px-2.5 py-1 rounded-md border border-white/10 hidden sm:flex items-center">
-                                    Plaza Mayor Huamanga
-                                </span>
-                            </div>
-                            
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-cyan-400 rounded-full flex items-center justify-center shadow-[0_0_25px_rgba(0,210,238,0.5)] cursor-pointer pointer-events-auto hover:scale-110 transition-transform">
-                                    <Icon icon="lucide:play" className="w-5 h-5 sm:w-6 sm:h-6 fill-slate-900 text-slate-900 ml-1" />
-                                </div>
-                            </div>
-
-                            <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4">
-                                <span className="bg-black/70 backdrop-blur-md text-cyan-300 text-[10px] font-medium px-3 py-1.5 rounded-md border border-white/10 flex items-center gap-1.5">
-                                    <Icon icon="lucide:music" className="w-3 h-3" /> En Vivo en Huamanga • 7 músicos
-                                </span>
-                            </div>
-
-                            <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 hidden sm:block">
-                                <span className="bg-cyan-400 text-slate-900 text-[9px] font-black tracking-wider px-2.5 py-1.5 rounded-md shadow-sm">
-                                    4K AUDIO REAL
-                                </span>
-                            </div>
                         </div>
                         
-                        {/* Miniaturas de galería (Opcional, si hay más imágenes) */}
-                        {linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
+                        {/* Miniaturas */}
+                        {activeMediaTab === 'videos' && videoList.length > 1 && (
                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                                {linkData.musician.gallery_images.slice(1, 6).map((img, i) => (
-                                    <img key={i} src={resolveUploadUrl(img) || undefined} alt="Miniatura" className="rounded-lg aspect-video object-cover w-full shadow-sm border border-white/5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer" />
+                                {videoList.map((vid, i) => (
+                                    <div key={i} onClick={() => setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border cursor-pointer transition-all ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
+                                        <div className="absolute inset-0 bg-black flex items-center justify-center">
+                                            <Icon icon="lucide:play-circle" className="w-6 h-6 text-white/50" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+                                {linkData.musician.gallery_images.map((img, i) => (
+                                    <img key={i} onClick={() => setActiveMediaIndex(i)} src={resolveUploadUrl(img) || undefined} alt="Miniatura" className={`rounded-lg aspect-video object-cover w-full shadow-sm border transition-all cursor-pointer ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`} />
                                 ))}
                             </div>
                         )}
