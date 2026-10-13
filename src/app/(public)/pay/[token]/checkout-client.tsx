@@ -8,6 +8,7 @@ import { resolveUploadUrl } from "@/lib/uploads";
 import { BookingLinkPublicOut, checkoutBookingLink, checkIdentityBookingLink, sendOtpBookingLink, BookingLinkIdentityStatus } from "@/lib/booking-links";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
+import { getVideoEmbedUrl, isSupportedVideoUrl } from "@/lib/video-urls";
 import { useAuth } from "@/contexts/auth-context";
 import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-modal";
 import type { BookingOut } from "@/types/api";
@@ -251,7 +252,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'comentarios' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
                                 >
                                     <Icon icon="lucide:star" className={`w-4 h-4 ${activeMediaTab === 'comentarios' ? 'fill-slate-900 text-slate-900' : 'fill-amber-400 text-amber-400'}`} /> Comentarios
-                                    <span className={`${activeMediaTab === 'comentarios' ? 'bg-slate-900/10 text-slate-900 border-slate-900/20' : 'bg-amber-400/10 text-amber-400 border-amber-400/20'} px-1.5 rounded text-[10px] ml-0.5 border`}>{linkData.musician.rating_avg || '5.0'}</span>
+                                    <span className={`${activeMediaTab === 'comentarios' ? 'bg-slate-900/10 text-slate-900 border-slate-900/20' : 'bg-amber-400/10 text-amber-400 border-amber-400/20'} px-1.5 rounded text-[10px] ml-0.5 border`}>{linkData.musician.reviews?.length || 0}</span>
                                 </button>
                             </div>
                             <div className="hidden sm:flex text-xs font-medium text-slate-400">
@@ -262,13 +263,23 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         {/* Contenedor Multimedia Principal */}
                         <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-[#0c1017] shadow-inner group flex items-center justify-center">
                             {activeMediaTab === 'videos' && videoList.length > 0 ? (
-                                <video 
-                                    key={videoList[activeMediaIndex]}
-                                    src={resolveUploadUrl(videoList[activeMediaIndex]) || undefined} 
-                                    className="w-full h-full object-cover" 
-                                    controls
-                                    poster={linkData.musician.gallery_images?.[0] ? resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined : undefined}
-                                />
+                                isSupportedVideoUrl(videoList[activeMediaIndex]) ? (
+                                    <iframe 
+                                        key={videoList[activeMediaIndex]}
+                                        src={getVideoEmbedUrl(videoList[activeMediaIndex]) || undefined} 
+                                        className="w-full h-full object-cover"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <video 
+                                        key={videoList[activeMediaIndex]}
+                                        src={resolveUploadUrl(videoList[activeMediaIndex]) || undefined} 
+                                        className="w-full h-full object-cover" 
+                                        controls
+                                        poster={linkData.musician.gallery_images?.[0] ? resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined : undefined}
+                                    />
+                                )
                             ) : activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0 ? (
                                 <img 
                                     key={linkData.musician.gallery_images[activeMediaIndex]}

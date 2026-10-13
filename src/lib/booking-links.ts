@@ -29,6 +29,7 @@ export type BookingLinkPublicOut = {
     price: number;
     fee_percent?: number | null;
     fee_amount?: number | null;
+    total_payable?: number | null;
     event_date: string | null;
     start_time: string | null;
     musician: MusicianLinkProfile;
