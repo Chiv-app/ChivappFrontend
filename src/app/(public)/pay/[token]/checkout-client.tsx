@@ -265,30 +265,67 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         {/* Contenedor Multimedia Principal */}
                         <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-[#0c1017] shadow-inner group flex items-center justify-center">
                             {activeMediaTab === 'videos' && videoList.length > 0 ? (
-                                isSupportedVideoUrl(videoList[activeMediaIndex]) ? (
-                                    <iframe 
-                                        key={videoList[activeMediaIndex]}
-                                        src={getVideoEmbedUrl(videoList[activeMediaIndex]) || undefined} 
-                                        className="w-full h-full object-cover"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    />
-                                ) : (
-                                    <video 
-                                        key={videoList[activeMediaIndex]}
-                                        src={resolveUploadUrl(videoList[activeMediaIndex]) || undefined} 
-                                        className="w-full h-full object-cover" 
-                                        controls
-                                        poster={linkData.musician.gallery_images?.[0] ? resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined : undefined}
-                                    />
-                                )
+                                <>
+                                    {isSupportedVideoUrl(videoList[activeMediaIndex]) ? (
+                                        <iframe 
+                                            key={videoList[activeMediaIndex]}
+                                            src={getVideoEmbedUrl(videoList[activeMediaIndex]) || undefined} 
+                                            className="w-full h-full object-cover"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    ) : (
+                                        <video 
+                                            key={videoList[activeMediaIndex]}
+                                            src={resolveUploadUrl(videoList[activeMediaIndex]) || undefined} 
+                                            className="w-full h-full object-cover" 
+                                            controls
+                                            poster={linkData.musician.gallery_images?.[0] ? resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined : undefined}
+                                        />
+                                    )}
+                                    {/* Arrows for Video Navigation */}
+                                    {videoList.length > 1 && (
+                                        <>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === 0 ? videoList.length - 1 : prev - 1); }}
+                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                            >
+                                                <Icon icon="lucide:chevron-left" className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === videoList.length - 1 ? 0 : prev + 1); }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                            >
+                                                <Icon icon="lucide:chevron-right" className="w-5 h-5" />
+                                            </button>
+                                        </>
+                                    )}
+                                </>
                             ) : activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0 ? (
-                                <img 
-                                    key={linkData.musician.gallery_images[activeMediaIndex]}
-                                    src={resolveUploadUrl(linkData.musician.gallery_images[activeMediaIndex]) || undefined} 
-                                    alt="Galería del Artista" 
-                                    className="w-full h-full object-contain bg-black/50 backdrop-blur-sm" 
-                                />
+                                <>
+                                    <img 
+                                        key={linkData.musician.gallery_images[activeMediaIndex]}
+                                        src={resolveUploadUrl(linkData.musician.gallery_images[activeMediaIndex]) || undefined} 
+                                        alt="Galería del Artista" 
+                                        className="w-full h-full object-contain bg-black/50 backdrop-blur-sm" 
+                                    />
+                                    {linkData.musician.gallery_images.length > 1 && (
+                                        <>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === 0 ? linkData.musician.gallery_images!.length - 1 : prev - 1); }}
+                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                            >
+                                                <Icon icon="lucide:chevron-left" className="w-5 h-5" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === linkData.musician.gallery_images!.length - 1 ? 0 : prev + 1); }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                            >
+                                                <Icon icon="lucide:chevron-right" className="w-5 h-5" />
+                                            </button>
+                                        </>
+                                    )}
+                                </>
                             ) : activeMediaTab === 'comentarios' ? (
                                 <div className="w-full h-full flex flex-col bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto custom-scrollbar">
                                     {linkData.musician.reviews && linkData.musician.reviews.length > 0 ? (
