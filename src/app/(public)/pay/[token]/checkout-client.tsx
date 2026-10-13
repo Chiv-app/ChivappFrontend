@@ -47,6 +47,8 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const hasVideos = !!linkData.musician.showreel_video_url || (linkData.musician.videos && linkData.musician.videos.length > 0);
     const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'fotos' | 'comentarios'>(hasVideos ? 'videos' : 'fotos');
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+    const [showAllVideos, setShowAllVideos] = useState(false);
+    const [showAllPhotos, setShowAllPhotos] = useState(false);
 
     const handleMediaTab = (tab: 'videos' | 'fotos' | 'comentarios') => {
         setActiveMediaTab(tab);
@@ -322,18 +324,25 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         {/* Miniaturas */}
                         {activeMediaTab === 'videos' && videoList.length > 1 && (
                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                                {videoList.map((vid, i) => {
+                                {(showAllVideos ? videoList : videoList.slice(0, 4)).map((vid, i) => {
                                     const thumb = getYoutubeThumbnailUrl(vid);
+                                    const isLast = !showAllVideos && i === 3 && videoList.length > 4;
                                     return (
-                                        <div key={i} onClick={() => setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border cursor-pointer transition-all ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
+                                        <div key={i} onClick={() => isLast ? setShowAllVideos(true) : setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border cursor-pointer transition-all ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
                                             {thumb ? (
                                                 <img src={thumb} alt="Video thumbnail" className="w-full h-full object-cover" />
                                             ) : (
                                                 <video src={(resolveUploadUrl(vid) || "") + "#t=0.1"} className="w-full h-full object-cover" preload="metadata" />
                                             )}
-                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/10 transition-colors">
-                                                <Icon icon="lucide:play" className="w-6 h-6 text-white drop-shadow-md" />
-                                            </div>
+                                            {isLast ? (
+                                                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
+                                                    <span className="text-white font-bold text-lg sm:text-xl">+{videoList.length - 3}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/10 transition-colors">
+                                                    <Icon icon="lucide:play" className="w-6 h-6 text-white drop-shadow-md" />
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -341,9 +350,19 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         )}
                         {activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                                {linkData.musician.gallery_images.map((img, i) => (
-                                    <img key={i} onClick={() => setActiveMediaIndex(i)} src={resolveUploadUrl(img) || undefined} alt="Miniatura" className={`rounded-lg aspect-video object-cover w-full shadow-sm border transition-all cursor-pointer ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`} />
-                                ))}
+                                {(showAllPhotos ? linkData.musician.gallery_images : linkData.musician.gallery_images.slice(0, 4)).map((img, i) => {
+                                    const isLast = !showAllPhotos && i === 3 && linkData.musician.gallery_images!.length > 4;
+                                    return (
+                                        <div key={i} onClick={() => isLast ? setShowAllPhotos(true) : setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border transition-all cursor-pointer ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
+                                            <img src={resolveUploadUrl(img) || undefined} alt="Miniatura" className="w-full h-full object-cover" />
+                                            {isLast && (
+                                                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
+                                                    <span className="text-white font-bold text-lg sm:text-xl">+{linkData.musician.gallery_images!.length - 3}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
