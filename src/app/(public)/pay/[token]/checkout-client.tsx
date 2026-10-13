@@ -518,7 +518,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             {linkData.musician.showreel_video_url ? (
                                 <div className="rounded-xl overflow-hidden aspect-video bg-black shadow-lg">
                                     <video 
-                                        src={resolveUploadUrl(linkData.musician.showreel_video_url)} 
+                                        src={resolveUploadUrl(linkData.musician.showreel_video_url) || undefined} 
                                         controls 
                                         className="w-full h-full object-cover" 
                                     />
@@ -526,7 +526,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             ) : (linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0) ? (
                                 <div className="rounded-xl overflow-hidden aspect-video bg-black shadow-lg">
                                     <img 
-                                        src={resolveUploadUrl(linkData.musician.gallery_images[0])} 
+                                        src={resolveUploadUrl(linkData.musician.gallery_images[0]) || undefined} 
                                         alt="Galería del Artista" 
                                         className="w-full h-full object-cover" 
                                     />
@@ -542,7 +542,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             {linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
                                 <div className="grid grid-cols-3 gap-3">
                                     {linkData.musician.gallery_images.slice(1, 4).map((img, i) => (
-                                        <img key={i} src={resolveUploadUrl(img)} alt="Foto galería" className="rounded-xl aspect-square object-cover w-full shadow-md border border-white/5" />
+                                        <img key={i} src={resolveUploadUrl(img) || undefined} alt="Foto galería" className="rounded-xl aspect-square object-cover w-full shadow-md border border-white/5" />
                                     ))}
                                 </div>
                             )}
