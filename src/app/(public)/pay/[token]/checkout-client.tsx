@@ -267,13 +267,15 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             {activeMediaTab === 'videos' && videoList.length > 0 ? (
                                 <>
                                     {isSupportedVideoUrl(videoList[activeMediaIndex]) ? (
-                                        <iframe 
-                                            key={videoList[activeMediaIndex]}
-                                            src={getVideoEmbedUrl(videoList[activeMediaIndex]) || undefined} 
-                                            className="w-full h-full object-cover"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                            allowFullScreen
-                                        />
+                                        <div className="w-full h-full relative group/iframe">
+                                            <iframe 
+                                                key={videoList[activeMediaIndex]}
+                                                src={getVideoEmbedUrl(videoList[activeMediaIndex]) || undefined} 
+                                                className="w-full h-full object-cover"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        </div>
                                     ) : (
                                         <video 
                                             key={videoList[activeMediaIndex]}
@@ -288,13 +290,13 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         <>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === 0 ? videoList.length - 1 : prev - 1); }}
-                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-left" className="w-5 h-5" />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === videoList.length - 1 ? 0 : prev + 1); }}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-right" className="w-5 h-5" />
                                             </button>
@@ -313,13 +315,13 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         <>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === 0 ? linkData.musician.gallery_images!.length - 1 : prev - 1); }}
-                                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-left" className="w-5 h-5" />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === linkData.musician.gallery_images!.length - 1 ? 0 : prev + 1); }}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-right" className="w-5 h-5" />
                                             </button>
@@ -385,23 +387,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 })}
                             </div>
                         )}
-                        {activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                                {(showAllPhotos ? linkData.musician.gallery_images : linkData.musician.gallery_images.slice(0, 4)).map((img, i) => {
-                                    const isLast = !showAllPhotos && i === 3 && linkData.musician.gallery_images!.length > 4;
-                                    return (
-                                        <div key={i} onClick={() => isLast ? setShowAllPhotos(true) : setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border transition-all cursor-pointer ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
-                                            <img src={resolveUploadUrl(img) || undefined} alt="Miniatura" className="w-full h-full object-cover" />
-                                            {isLast && (
-                                                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
-                                                    <span className="text-white font-bold text-lg sm:text-xl">+{linkData.musician.gallery_images!.length - 3}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                        
                     </div>
                 </section>
 
