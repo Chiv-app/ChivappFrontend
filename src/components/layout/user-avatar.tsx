@@ -28,9 +28,10 @@ export default function UserAvatar({
 }: Props) {
     const fromUser = resolveUploadUrl(user.profile_picture_url);
     const [musicianImageUrl, setMusicianImageUrl] = useState<string | null>(null);
+    const [hasLoadedMusician, setHasLoadedMusician] = useState(false);
 
     useEffect(() => {
-        if (fromUser || user.role !== "musician") {
+        if (user.role !== "musician") {
             return;
         }
 
@@ -39,19 +40,25 @@ export default function UserAvatar({
             .then((profile) => {
                 if (!cancelled) {
                     setMusicianImageUrl(resolveUploadUrl(profile.profile_image_url));
+                    setHasLoadedMusician(true);
                 }
             })
             .catch(() => {
-                if (!cancelled) setMusicianImageUrl(null);
+                if (!cancelled) {
+                    setMusicianImageUrl(null);
+                    setHasLoadedMusician(true);
+                }
             });
 
         return () => {
             cancelled = true;
         };
-    }, [fromUser, user.id, user.role, user.profile_picture_url]);
+    }, [user.id, user.role]);
 
-    const imageUrl =
-        fromUser ?? (user.role === "musician" ? musicianImageUrl : null);
+    // Priority: 1. Musician Profile Image (if loaded and exists), 2. Google/User Profile Picture, 3. Fallback
+    const imageUrl = user.role === "musician" 
+        ? (hasLoadedMusician && musicianImageUrl ? musicianImageUrl : fromUser)
+        : fromUser;
 
     return (
         <Avatar
