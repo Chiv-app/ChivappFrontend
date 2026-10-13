@@ -8,7 +8,7 @@ import { resolveUploadUrl } from "@/lib/uploads";
 import { BookingLinkPublicOut, checkoutBookingLink, checkIdentityBookingLink, sendOtpBookingLink, BookingLinkIdentityStatus } from "@/lib/booking-links";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
-import { getVideoEmbedUrl, isSupportedVideoUrl } from "@/lib/video-urls";
+import { getVideoEmbedUrl, isSupportedVideoUrl, getYoutubeThumbnailUrl } from "@/lib/video-urls";
 import { useAuth } from "@/contexts/auth-context";
 import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-modal";
 import type { BookingOut } from "@/types/api";
@@ -179,25 +179,21 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         
                         {/* Foto de Perfil con Marco Cyan */}
                         <div className="relative flex-shrink-0">
-                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl p-[2px] bg-gradient-to-b from-cyan-400 to-cyan-500/40">
+                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl">
                                 <img 
                                     alt={linkData.musician.stage_name} 
                                     className="w-full h-full rounded-[14px] object-cover object-top bg-[#080e17]" 
                                     src={resolveUploadUrl(linkData.musician.profile_image_url) || "https://ui-avatars.com/api/?name=M"} 
                                 />
                             </div>
-                            <div className="absolute -bottom-2 -right-2 bg-cyan-400 text-[#080e17] p-1.5 rounded-full shadow-lg border-4 border-[#11161d] flex items-center justify-center">
-                                <Icon icon="lucide:check" className="w-4 h-4 stroke-[4]" />
-                            </div>
+                            
                         </div>
 
                         {/* Detalles e Insignias */}
                         <div className="space-y-4 min-w-0 flex-1 text-center sm:text-left mt-2 sm:mt-0">
                             <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                                 <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">{linkData.musician.stage_name}</h2>
-                                <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400 border border-cyan-400/30 px-2.5 py-0.5 rounded-full flex items-center gap-1 bg-cyan-400/5">
-                                    <Icon icon="lucide:check-circle-2" className="w-3.5 h-3.5" /> Oficial
-                                </span>
+                                
                             </div>
                             
                             <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-slate-400 flex-wrap">
@@ -322,13 +318,23 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         {/* Miniaturas */}
                         {activeMediaTab === 'videos' && videoList.length > 1 && (
                             <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                                {videoList.map((vid, i) => (
-                                    <div key={i} onClick={() => setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border cursor-pointer transition-all ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
-                                        <div className="absolute inset-0 bg-black flex items-center justify-center">
-                                            <Icon icon="lucide:play-circle" className="w-6 h-6 text-white/50" />
+                                {videoList.map((vid, i) => {
+                                    const thumb = getYoutubeThumbnailUrl(vid);
+                                    return (
+                                        <div key={i} onClick={() => setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border cursor-pointer transition-all ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
+                                            {thumb ? (
+                                                <img src={thumb} alt="Video thumbnail" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="absolute inset-0 bg-black flex items-center justify-center">
+                                                    <Icon icon="lucide:play-circle" className="w-6 h-6 text-white/50" />
+                                                </div>
+                                            )}
+                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/10 transition-colors">
+                                                <Icon icon="lucide:play" className="w-6 h-6 text-white drop-shadow-md" />
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                         {activeMediaTab === 'fotos' && linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
@@ -642,32 +648,21 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-slate-400 flex items-center gap-1">
                                         Comisión de plataforma ({linkData.fee_percent || 2}%)
-                                        <div className="group relative cursor-help">
-                                            <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
-                                                Esta es la seña para asegurar la fecha a través de la plataforma.
-                                            </div>
-                                        </div>
                                     </span>
                                     <span className="font-semibold text-slate-200">{formatCurrency(linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))}</span>
-                                </div>
-                                <div className="h-px w-full bg-white/10 my-1"></div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-300 font-bold">Costo Total del Evento</span>
-                                    <span className="font-bold text-white">{formatCurrency(linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))}</span>
                                 </div>
                             </div>
 
                             <div className="p-4 rounded-2xl bg-gradient-to-br from-[#0c1424] to-[#141f33] border border-primary/30 shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="space-y-1 z-10">
-                                    <span className="text-[11px] uppercase tracking-wider text-primary font-extrabold block">Seña para asegurar fecha</span>
+                                    <span className="text-[11px] uppercase tracking-wider text-primary font-extrabold block">Costo total del evento</span>
                                     <span className="text-[12px] text-emerald-400 font-semibold flex items-center gap-1.5">
-                                        <Icon icon="lucide:wallet" className="w-3.5 h-3.5" /> Saldo a pagar el día del show: <span className="text-white font-bold">{formatCurrency(linkData.price)}</span>
+                                        <Icon icon="lucide:check-circle" className="w-3.5 h-3.5" /> Pago único y seguro
                                     </span>
                                 </div>
                                 <div className="text-right z-10">
                                     <div className="text-3xl sm:text-4xl font-black text-primary tracking-tight drop-shadow-sm flex items-baseline sm:justify-end gap-1">
-                                        {formatCurrency(linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))}
+                                        {formatCurrency(linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
                                     </div>
                                 </div>
                                 {/* Glow background */}
