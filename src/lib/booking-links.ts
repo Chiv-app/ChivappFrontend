@@ -6,6 +6,10 @@ export type MusicianLinkProfile = {
     id: string;
     stage_name: string;
     profile_image_url: string | null;
+    portfolio_description?: string | null;
+    gallery_images?: string[] | null;
+    videos?: string[] | null;
+    showreel_video_url?: string | null;
 };
 
 export type BookingLinkPublicOut = {

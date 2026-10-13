@@ -161,14 +161,12 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                         <div className="lg:col-span-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
                             <div className="relative flex-shrink-0">
-                                <div className="p-1 rounded-2xl bg-gradient-to-tr from-cyan-400 via-primary to-amber-400 shadow-[0_0_35px_-5px_rgba(0,210,238,0.35)]">
-                                    <img 
-                                        alt={linkData.musician.stage_name} 
-                                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover object-top border border-black/50" 
-                                        src={resolveUploadUrl(linkData.musician.profile_image_url) || "https://ui-avatars.com/api/?name=M"} 
-                                    />
-                                </div>
-                                <div className="absolute -bottom-1.5 -right-1.5 bg-primary text-slate-950 p-1.5 rounded-full shadow-lg border-2 border-[#080e17] flex items-center justify-center">
+                                <img 
+                                    alt={linkData.musician.stage_name} 
+                                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover object-top shadow-lg border border-white/5" 
+                                    src={resolveUploadUrl(linkData.musician.profile_image_url) || "https://ui-avatars.com/api/?name=M"} 
+                                />
+                                <div className="absolute -bottom-2 -right-2 bg-primary text-slate-950 p-1.5 rounded-full shadow-lg border-2 border-[#080e17] flex items-center justify-center">
                                     <Icon icon="lucide:check" className="w-3.5 h-3.5 stroke-[3]" />
                                 </div>
                             </div>
@@ -507,6 +505,47 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     <span className="text-slate-300 text-[11px]">Contrato directo garantizado por Chivapp</span>
                                 </div>
                             </div>
+                        </div>
+                        
+                        {/* PORTAFOLIO DEL ARTISTA */}
+                        <div className="bg-[#161c25]/72 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl relative space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                                    <Icon icon="lucide:user" className="w-4 h-4 text-primary" /> Conoce al Artista
+                                </h3>
+                            </div>
+                            
+                            {linkData.musician.showreel_video_url ? (
+                                <div className="rounded-xl overflow-hidden aspect-video bg-black shadow-lg">
+                                    <video 
+                                        src={resolveUploadUrl(linkData.musician.showreel_video_url)} 
+                                        controls 
+                                        className="w-full h-full object-cover" 
+                                    />
+                                </div>
+                            ) : (linkData.musician.gallery_images && linkData.musician.gallery_images.length > 0) ? (
+                                <div className="rounded-xl overflow-hidden aspect-video bg-black shadow-lg">
+                                    <img 
+                                        src={resolveUploadUrl(linkData.musician.gallery_images[0])} 
+                                        alt="Galería del Artista" 
+                                        className="w-full h-full object-cover" 
+                                    />
+                                </div>
+                            ) : null}
+
+                            {linkData.musician.portfolio_description && (
+                                <div className="text-sm text-slate-300 leading-relaxed">
+                                    <p className="line-clamp-4">{linkData.musician.portfolio_description}</p>
+                                </div>
+                            )}
+                            
+                            {linkData.musician.gallery_images && linkData.musician.gallery_images.length > 1 && (
+                                <div className="grid grid-cols-3 gap-3">
+                                    {linkData.musician.gallery_images.slice(1, 4).map((img, i) => (
+                                        <img key={i} src={resolveUploadUrl(img)} alt="Foto galería" className="rounded-xl aspect-square object-cover w-full shadow-md border border-white/5" />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </aside>
                 </div>
