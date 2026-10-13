@@ -27,6 +27,8 @@ export type MusicianLinkProfile = {
 export type BookingLinkPublicOut = {
     token: string;
     price: number;
+    fee_percent?: number | null;
+    fee_amount?: number | null;
     event_date: string | null;
     start_time: string | null;
     musician: MusicianLinkProfile;

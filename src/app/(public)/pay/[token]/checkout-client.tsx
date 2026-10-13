@@ -623,18 +623,44 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 </span>
                             </div>
                             
-                            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#0c1424] to-[#141f33] border border-primary/30 shadow-lg relative overflow-hidden flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <span className="text-xs uppercase tracking-wider text-slate-300 font-bold block">Seña para asegurar fecha:</span>
+                            <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-3 mb-4">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-400">Honorarios del músico</span>
+                                    <span className="font-semibold text-slate-200">{formatCurrency(linkData.price)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-400 flex items-center gap-1">
+                                        Comisión de plataforma ({linkData.fee_percent || 2}%)
+                                        <div className="group relative cursor-help">
+                                            <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
+                                                Esta es la seña para asegurar la fecha a través de la plataforma.
+                                            </div>
+                                        </div>
+                                    </span>
+                                    <span className="font-semibold text-slate-200">{formatCurrency(linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))}</span>
+                                </div>
+                                <div className="h-px w-full bg-white/10 my-1"></div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-300 font-bold">Costo Total del Evento</span>
+                                    <span className="font-bold text-white">{formatCurrency(linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))}</span>
+                                </div>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#0c1424] to-[#141f33] border border-primary/30 shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="space-y-1 z-10">
+                                    <span className="text-[11px] uppercase tracking-wider text-primary font-extrabold block">Seña para asegurar fecha</span>
                                     <span className="text-[12px] text-emerald-400 font-semibold flex items-center gap-1.5">
-                                        <Icon icon="lucide:shield-check" className="w-3.5 h-3.5" /> Saldo a pagar el día del show
+                                        <Icon icon="lucide:wallet" className="w-3.5 h-3.5" /> Saldo a pagar el día del show: <span className="text-white font-bold">{formatCurrency(linkData.price)}</span>
                                     </span>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-3xl sm:text-4xl font-black text-primary tracking-tight drop-shadow-sm flex items-baseline justify-end gap-1">
-                                        {formatCurrency(linkData.price)}
+                                <div className="text-right z-10">
+                                    <div className="text-3xl sm:text-4xl font-black text-primary tracking-tight drop-shadow-sm flex items-baseline sm:justify-end gap-1">
+                                        {formatCurrency(linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))}
                                     </div>
                                 </div>
+                                {/* Glow background */}
+                                <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/20 blur-[30px] rounded-full pointer-events-none"></div>
                             </div>
                             
                             <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
