@@ -325,9 +325,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                             {thumb ? (
                                                 <img src={thumb} alt="Video thumbnail" className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="absolute inset-0 bg-black flex items-center justify-center">
-                                                    <Icon icon="lucide:play-circle" className="w-6 h-6 text-white/50" />
-                                                </div>
+                                                <video src={(resolveUploadUrl(vid) || "") + "#t=0.1"} className="w-full h-full object-cover" preload="metadata" />
                                             )}
                                             <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/10 transition-colors">
                                                 <Icon icon="lucide:play" className="w-6 h-6 text-white drop-shadow-md" />
@@ -650,6 +648,29 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         Comisión de plataforma ({linkData.fee_percent || 2}%)
                                     </span>
                                     <span className="font-semibold text-slate-200">{formatCurrency(linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))}</span>
+                                </div>
+                                {linkData.total_payable && (linkData.total_payable - (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))) > 0.01 && (
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-400 flex items-center gap-1">
+                                        Cargos de procesamiento
+                                        <div className="group relative cursor-help">
+                                            <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
+                                                Comisiones de Mercado Pago por procesamiento de tarjeta.
+                                            </div>
+                                        </div>
+                                    </span>
+                                    <span className="font-semibold text-slate-200">
+                                        {formatCurrency(linkData.total_payable - (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
+                                    </span>
+                                </div>
+                                )}
+                                <div className="h-px w-full bg-white/10 my-1"></div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-300 font-bold">Total a pagar</span>
+                                    <span className="font-bold text-white">
+                                        {formatCurrency(linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
+                                    </span>
                                 </div>
                             </div>
 
