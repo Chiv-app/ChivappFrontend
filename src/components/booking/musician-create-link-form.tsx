@@ -5,6 +5,8 @@ import { Button, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
 import type { BookingLinkOut } from "@/lib/booking-links";
+import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
+import { formatCurrency } from "@/lib/booking-labels";
 
 type Props = {
     onSuccess: () => void;
@@ -73,6 +75,14 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
         );
     }
 
+    const parsedPrice = parseFloat(price) || 0;
+    const bookingPreview = {
+        price_agreed: parsedPrice,
+        platform_fee_percent: 2
+    };
+    const totalToPay = contractorPayableTotal(bookingPreview) || 0;
+    const feeToPay = platformFeeAmount(bookingPreview) || 0;
+
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
             <Input
@@ -86,6 +96,28 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 variant="bordered"
                 startContent={<span className="text-default-400 text-sm">S/</span>}
             />
+            
+            {parsedPrice > 0 && (
+                <div className="bg-default-50 border border-default-200 rounded-lg p-3 flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-default-500">Tu ganancia (Precio base)</span>
+                        <span className="font-semibold">{formatCurrency(parsedPrice)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-default-500">Tarifa de servicio</span>
+                        <span className="font-semibold">{formatCurrency(feeToPay)}</span>
+                    </div>
+                    <div className="h-px w-full bg-default-200 my-1"></div>
+                    <div className="flex justify-between items-center">
+                        <span className="font-bold">Total a pagar por el cliente</span>
+                        <span className="font-bold text-primary">{formatCurrency(totalToPay)}</span>
+                    </div>
+                    <p className="text-[11px] text-default-400 mt-1 leading-tight">
+                        * El cliente pagará esta cantidad. Incluye la comisión de la plataforma y los cargos de procesamiento bancario.
+                    </p>
+                </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
                 <Input
                     label="Fecha del evento (Opcional)"
@@ -103,7 +135,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 />
             </div>
             <div className="bg-primary/10 p-3 rounded-lg mt-2">
-                <p className="text-xs text-primary-800">
+                <p className="text-xs text-primary-800 dark:text-primary-300">
                     El cliente abrirá el link, llenará sus datos personales, la direcci&oacute;n del evento y pagar&aacute; de forma segura. Se generará el contrato y la reserva automáticamente.
                 </p>
             </div>
