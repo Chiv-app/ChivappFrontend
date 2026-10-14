@@ -696,9 +696,6 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                                     <Icon icon="lucide:receipt" className="w-4 h-4 text-primary" /> Resumen de tu Reserva
                                 </h3>
-                                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    <Icon icon="lucide:check" className="w-3 h-3" /> Tarifa oficial
-                                </span>
                             </div>
                             
                             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-3 mb-4">
