@@ -73,7 +73,15 @@ export function getYoutubeVideoId(url: string): string | null {
 
 export function getYoutubeEmbedUrl(url: string): string | null {
     const id = getYoutubeVideoId(url);
-    return id ? `https://www.youtube.com/embed/${id}` : null;
+    if (!id) return null;
+    try {
+        const parsed = new URL(normalizeUrl(url));
+        const list = parsed.searchParams.get("list");
+        if (list) {
+            return `https://www.youtube.com/embed/${id}?list=${list}`;
+        }
+    } catch {}
+    return `https://www.youtube.com/embed/${id}`;
 }
 
 export function getYoutubeThumbnailUrl(url: string): string | null {
