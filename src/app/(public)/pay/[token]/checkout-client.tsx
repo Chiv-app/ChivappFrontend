@@ -191,11 +191,11 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none"></div>
 
                     {/* LADO IZQUIERDO: Información del Músico */}
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:w-[45%] relative z-10">
+                    <div className="flex flex-col items-center gap-6 lg:w-[45%] relative z-10 text-center mx-auto">
                         
                         {/* Foto de Perfil con Marco Cyan */}
                         <div className="relative flex-shrink-0">
-                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl">
+                            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl mx-auto">
                                 <img 
                                     alt={linkData.musician.stage_name} 
                                     className="w-full h-full rounded-[14px] object-cover object-top bg-[#080e17]" 
@@ -206,13 +206,13 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         </div>
 
                         {/* Detalles e Insignias */}
-                        <div className="space-y-4 min-w-0 flex-1 text-center sm:text-left mt-2 sm:mt-0">
-                            <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+                        <div className="space-y-4 min-w-0 flex-1 w-full mt-2 sm:mt-0">
+                            <div className="flex items-center justify-center gap-3 flex-wrap">
                                 <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">{linkData.musician.stage_name}</h2>
                                 
                             </div>
                             
-                            <div className="flex items-center justify-center sm:justify-start gap-3 text-sm text-slate-400 flex-wrap">
+                            <div className="flex items-center justify-center gap-3 text-sm text-slate-400 flex-wrap">
                                 <div className="flex items-center text-amber-400 font-bold gap-1.5 bg-[#1a1f26] px-2.5 py-1 rounded-lg border border-white/5 shadow-sm">
                                     <Icon icon="lucide:star" className="w-4 h-4 fill-amber-400 text-amber-400" /> 
                                     <span>{linkData.musician.rating_avg || '5.0'}</span>
@@ -224,7 +224,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             </div>
 
                             {linkData.musician.genres && linkData.musician.genres.length > 0 && (
-                                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap pt-1">
+                                <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
                                     {linkData.musician.genres.slice(0, 3).map((genre, i) => (
                                         <span key={i} className="text-xs font-medium text-slate-300 bg-[#1a1f26] border border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors cursor-default">
                                             <Icon icon={i === 0 ? "lucide:music" : i === 1 ? "lucide:heart" : "lucide:sparkles"} className={`w-3.5 h-3.5 ${i % 2 === 0 ? 'text-cyan-400' : 'text-slate-400'}`} /> {genre}
@@ -234,7 +234,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             )}
                             
                             {linkData.musician.portfolio_description && (
-                                <div className="text-sm text-slate-400 leading-relaxed pr-0 sm:pr-4 pt-2">
+                                <div className="text-sm text-slate-400 leading-relaxed pt-2 max-w-lg mx-auto">
                                     <p className="line-clamp-2">{linkData.musician.portfolio_description}</p>
                                 </div>
                             )}
@@ -377,33 +377,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             )}
                         </div>
                         
-                        {/* Miniaturas */}
-                        {activeMediaTab === 'videos' && videoList.length > 1 && (
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
-                                {(showAllVideos ? videoList : videoList.slice(0, 4)).map((vid, i) => {
-                                    const thumb = getYoutubeThumbnailUrl(vid);
-                                    const isLast = !showAllVideos && i === 3 && videoList.length > 4;
-                                    return (
-                                        <div key={i} onClick={() => isLast ? setShowAllVideos(true) : setActiveMediaIndex(i)} className={`relative rounded-lg aspect-video overflow-hidden shadow-sm border cursor-pointer transition-all ${activeMediaIndex === i ? 'border-cyan-400 opacity-100' : 'border-white/5 opacity-50 hover:opacity-80'}`}>
-                                            {thumb ? (
-                                                <img src={thumb} alt="Video thumbnail" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <video src={(resolveUploadUrl(vid) || "") + "#t=0.1"} className="w-full h-full object-cover" preload="metadata" />
-                                            )}
-                                            {isLast ? (
-                                                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-sm">
-                                                    <span className="text-white font-bold text-lg sm:text-xl">+{videoList.length - 3}</span>
-                                                </div>
-                                            ) : (
-                                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center group-hover:bg-black/10 transition-colors">
-                                                    <Icon icon="lucide:play" className="w-6 h-6 text-white drop-shadow-md" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+
                         
                     </div>
                 </section>
@@ -703,28 +677,25 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     <span className="text-slate-400">Honorarios del músico</span>
                                     <span className="font-semibold text-slate-200">{formatCurrency(linkData.price)}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-400 flex items-center gap-1">
-                                        Comisión de plataforma ({linkData.fee_percent || 2}%)
-                                    </span>
-                                    <span className="font-semibold text-slate-200">{formatCurrency(linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))}</span>
-                                </div>
-                                {linkData.total_payable && (linkData.total_payable - (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))) > 0.01 && (
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-400 flex items-center gap-1">
-                                        Cargos de procesamiento
-                                        <div className="group relative cursor-help">
-                                            <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
-                                                Comisiones de Mercado Pago por procesamiento de tarjeta.
-                                            </div>
+                                {(() => {
+                                    const serviceFee = (linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))) - linkData.price;
+                                    return serviceFee > 0.01 ? (
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-slate-400 flex items-center gap-1">
+                                                Tarifa de servicio
+                                                <div className="group relative cursor-help">
+                                                    <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
+                                                        Incluye comisión de la plataforma y cargos de procesamiento.
+                                                    </div>
+                                                </div>
+                                            </span>
+                                            <span className="font-semibold text-slate-200">
+                                                {formatCurrency(serviceFee)}
+                                            </span>
                                         </div>
-                                    </span>
-                                    <span className="font-semibold text-slate-200">
-                                        {formatCurrency(linkData.total_payable - (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
-                                    </span>
-                                </div>
-                                )}
+                                    ) : null;
+                                })()}
                                 <div className="h-px w-full bg-white/10 my-1"></div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-slate-300 font-bold">Total a pagar</span>
