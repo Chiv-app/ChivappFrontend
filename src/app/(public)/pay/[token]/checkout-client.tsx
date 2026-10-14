@@ -272,6 +272,13 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             </div>
                         </div>
 
+                        {/* DEBUG DATA (Solo visible en local o si se inspecciona) */}
+                        <div className="hidden" data-debug="videos">
+                            Raw videos: {JSON.stringify(linkData.musician.videos)}
+                            Showreel: {linkData.musician.showreel_video_url}
+                            VideoList: {JSON.stringify(videoList)}
+                        </div>
+
                         {/* Contenedor Multimedia Principal */}
                         <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-[#0c1017] shadow-inner group flex items-center justify-center">
                             {activeMediaTab === 'videos' && videoList.length > 0 ? (
