@@ -177,7 +177,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     };
 
     return (
-        <div className="font-sans antialiased selection:bg-primary/20 selection:text-primary relative bg-[#080e17] text-[#dde2f0] min-h-screen">
+        <div className="font-sans antialiased selection:bg-primary/20 selection:text-primary relative bg-slate-50 dark:bg-[#080e17] text-slate-800 dark:text-[#dde2f0] min-h-screen">
             {/* Ambient Backdrop Glow */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-30">
                 <div className="absolute -top-32 left-1/4 w-[600px] h-[350px] bg-cyan-500/10 rounded-full blur-3xl"></div>
@@ -186,7 +186,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 flex flex-col gap-6 sm:gap-8">
                 {/* 1. HERO CABECERA */}
-                <section className="bg-[#11161d] rounded-[2rem] p-6 sm:p-8 border border-white/[0.03] shadow-2xl relative overflow-hidden flex flex-col lg:flex-row gap-8 lg:gap-12">
+                <section className="bg-white dark:bg-[#11161d] rounded-[2rem] p-6 sm:p-8 border border-slate-200 dark:border-white/[0.03] shadow-2xl relative overflow-hidden flex flex-col lg:flex-row gap-8 lg:gap-12">
                     {/* Ambient Background Glow */}
                     <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px] pointer-events-none"></div>
 
@@ -198,7 +198,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl mx-auto">
                                 <img 
                                     alt={linkData.musician.stage_name} 
-                                    className="w-full h-full rounded-[14px] object-cover object-top bg-[#080e17]" 
+                                    className="w-full h-full rounded-[14px] object-cover object-top bg-slate-50 dark:bg-[#080e17]" 
                                     src={resolveUploadUrl(linkData.musician.profile_image_url) || "https://ui-avatars.com/api/?name=M"} 
                                 />
                             </div>
@@ -208,17 +208,17 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         {/* Detalles e Insignias */}
                         <div className="space-y-4 min-w-0 flex-1 w-full mt-2 sm:mt-0">
                             <div className="flex items-center justify-center gap-3 flex-wrap">
-                                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">{linkData.musician.stage_name}</h2>
+                                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">{linkData.musician.stage_name}</h2>
                                 
                             </div>
                             
-                            <div className="flex items-center justify-center gap-3 text-sm text-slate-400 flex-wrap">
-                                <div className="flex items-center text-amber-400 font-bold gap-1.5 bg-[#1a1f26] px-2.5 py-1 rounded-lg border border-white/5 shadow-sm">
+                            <div className="flex items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400 flex-wrap">
+                                <div className="flex items-center text-amber-400 font-bold gap-1.5 bg-slate-100 dark:bg-[#1a1f26] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/5 shadow-sm">
                                     <Icon icon="lucide:star" className="w-4 h-4 fill-amber-400 text-amber-400" /> 
                                     <span>{linkData.musician.rating_avg || '5.0'}</span>
                                 </div>
                                 <span className="text-slate-600 font-bold">•</span>
-                                <span className="text-slate-300 font-medium">
+                                <span className="text-slate-600 dark:text-slate-300 font-medium">
                                     {linkData.musician.rating_count ? `${linkData.musician.rating_count} presentaciones realizadas` : 'Nuevo en la plataforma'}
                                 </span>
                             </div>
@@ -226,15 +226,15 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             {linkData.musician.genres && linkData.musician.genres.length > 0 && (
                                 <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
                                     {linkData.musician.genres.slice(0, 3).map((genre, i) => (
-                                        <span key={i} className="text-xs font-medium text-slate-300 bg-[#1a1f26] border border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-white/10 transition-colors cursor-default">
-                                            <Icon icon={i === 0 ? "lucide:music" : i === 1 ? "lucide:heart" : "lucide:sparkles"} className={`w-3.5 h-3.5 ${i % 2 === 0 ? 'text-cyan-400' : 'text-slate-400'}`} /> {genre}
+                                        <span key={i} className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-[#1a1f26] border border-slate-200 dark:border-white/5 px-3.5 py-1.5 rounded-full flex items-center gap-2 hover:bg-slate-200 dark:bg-white/10 transition-colors cursor-default">
+                                            <Icon icon={i === 0 ? "lucide:music" : i === 1 ? "lucide:heart" : "lucide:sparkles"} className={`w-3.5 h-3.5 ${i % 2 === 0 ? 'text-cyan-400' : 'text-slate-500 dark:text-slate-400'}`} /> {genre}
                                         </span>
                                     ))}
                                 </div>
                             )}
                             
                             {linkData.musician.portfolio_description && (
-                                <div className="text-sm text-slate-400 leading-relaxed pt-2 max-w-lg mx-auto">
+                                <div className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed pt-2 max-w-lg mx-auto">
                                     <p className="line-clamp-2">{linkData.musician.portfolio_description}</p>
                                 </div>
                             )}
@@ -249,25 +249,25 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             <div className="flex items-center gap-4 sm:gap-6">
                                 <button 
                                     onClick={() => handleMediaTab('videos')}
-                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'videos' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'videos' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200'}`}
                                 >
                                     <Icon icon="lucide:play" className={`w-4 h-4 ${activeMediaTab === 'videos' ? 'fill-slate-900' : ''}`} /> Videos
                                 </button>
                                 <button 
                                     onClick={() => handleMediaTab('fotos')}
-                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'fotos' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'fotos' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200'}`}
                                 >
                                     <Icon icon="lucide:image" className={`w-4 h-4 ${activeMediaTab === 'fotos' ? 'fill-slate-900' : ''}`} /> Fotos
                                 </button>
                                 <button 
                                     onClick={() => handleMediaTab('comentarios')}
-                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'comentarios' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${activeMediaTab === 'comentarios' ? 'bg-cyan-400 text-slate-900 shadow-[0_0_15px_-3px_rgba(0,210,238,0.4)]' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200'}`}
                                 >
                                     <Icon icon="lucide:star" className={`w-4 h-4 ${activeMediaTab === 'comentarios' ? 'fill-slate-900 text-slate-900' : 'fill-amber-400 text-amber-400'}`} /> Comentarios
                                     <span className={`${activeMediaTab === 'comentarios' ? 'bg-slate-900/10 text-slate-900 border-slate-900/20' : 'bg-amber-400/10 text-amber-400 border-amber-400/20'} px-1.5 rounded text-[10px] ml-0.5 border`}>{linkData.musician.reviews?.length || 0}</span>
                                 </button>
                             </div>
-                            <div className="hidden sm:flex text-xs font-medium text-slate-400">
+                            <div className="hidden sm:flex text-xs font-medium text-slate-500 dark:text-slate-400">
                                 En {linkData.musician.location_city || 'Ayacucho'}
                             </div>
                         </div>
@@ -280,7 +280,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         </div>
 
                         {/* Contenedor Multimedia Principal */}
-                        <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-[#0c1017] shadow-inner group flex items-center justify-center">
+                        <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-slate-200 dark:bg-[#0c1017] shadow-inner group flex items-center justify-center">
                             {activeMediaTab === 'videos' && videoList.length > 0 ? (
                                 <>
                                     {isSupportedVideoUrl(videoList[activeMediaIndex]) ? (
@@ -307,13 +307,13 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         <>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === 0 ? videoList.length - 1 : prev - 1); }}
-                                                className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-slate-100 dark:bg-black/40 hover:bg-black/60 text-slate-900 dark:text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-left" className="w-5 h-5" />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === videoList.length - 1 ? 0 : prev + 1); }}
-                                                className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-slate-100 dark:bg-black/40 hover:bg-black/60 text-slate-900 dark:text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-right" className="w-5 h-5" />
                                             </button>
@@ -326,19 +326,19 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         key={linkData.musician.gallery_images[activeMediaIndex]}
                                         src={resolveUploadUrl(linkData.musician.gallery_images[activeMediaIndex]) || undefined} 
                                         alt="Galería del Artista" 
-                                        className="w-full h-full object-contain bg-black/50 backdrop-blur-sm" 
+                                        className="w-full h-full object-contain bg-slate-200/50 dark:bg-black/50 backdrop-blur-sm" 
                                     />
                                     {linkData.musician.gallery_images.length > 1 && (
                                         <>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === 0 ? linkData.musician.gallery_images!.length - 1 : prev - 1); }}
-                                                className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 left-2 top-1/2 -translate-y-1/2 bg-slate-100 dark:bg-black/40 hover:bg-black/60 text-slate-900 dark:text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-left" className="w-5 h-5" />
                                             </button>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMediaIndex(prev => prev === linkData.musician.gallery_images!.length - 1 ? 0 : prev + 1); }}
-                                                className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-all"
+                                                className="absolute z-10 right-2 top-1/2 -translate-y-1/2 bg-slate-100 dark:bg-black/40 hover:bg-black/60 text-slate-900 dark:text-white p-2 rounded-full backdrop-blur-sm transition-all"
                                             >
                                                 <Icon icon="lucide:chevron-right" className="w-5 h-5" />
                                             </button>
@@ -346,33 +346,33 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     )}
                                 </>
                             ) : activeMediaTab === 'comentarios' ? (
-                                <div className="w-full h-full flex flex-col bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+                                <div className="w-full h-full flex flex-col bg-slate-100 dark:bg-black/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto custom-scrollbar">
                                     {linkData.musician.reviews && linkData.musician.reviews.length > 0 ? (
                                         <div className="space-y-4 w-full h-full">
                                             {linkData.musician.reviews.map((review, i) => (
-                                                <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 w-full">
+                                                <div key={i} className="bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl p-4 w-full">
                                                     <div className="flex justify-between items-start mb-2">
-                                                        <span className="text-sm font-semibold text-slate-200">{review.guest_name || 'Usuario'}</span>
+                                                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{review.guest_name || 'Usuario'}</span>
                                                         <div className="flex gap-0.5 text-amber-400">
                                                             {Array.from({ length: review.rating }).map((_, j) => (
                                                                 <Icon key={j} icon="lucide:star" className="w-3.5 h-3.5 fill-amber-400" />
                                                             ))}
                                                         </div>
                                                     </div>
-                                                    <p className="text-xs text-slate-400 leading-relaxed italic">"{review.comment}"</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed italic">&quot;{review.comment}&quot;</p>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center text-slate-400 h-full text-center m-auto">
-                                            <Icon icon="lucide:message-square-quote" className="w-12 h-12 mb-3 text-white/10" />
+                                        <div className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 h-full text-center m-auto">
+                                            <Icon icon="lucide:message-square-quote" className="w-12 h-12 mb-3 text-slate-900 dark:text-white/10" />
                                             <p className="text-sm">El músico aún no cuenta con reseñas escritas.</p>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-white/5">
-                                    <Icon icon="lucide:music" className="w-12 h-12 text-white/10" />
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-white/5">
+                                    <Icon icon="lucide:music" className="w-12 h-12 text-slate-900 dark:text-white/10" />
                                 </div>
                             )}
                         </div>
@@ -388,15 +388,15 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     <section className="lg:col-span-7 space-y-4">
                         
                         {/* PASO 1 */}
-                        <div className={`bg-[#161c25]/72 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-2xl relative ${activeStep === 1 ? 'border border-primary/45' : 'border border-white/10'}`}>
-                            <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer border-b border-white/[0.08] bg-[#111824]" onClick={() => goToStep(1)}>
+                        <div className={`bg-white/90 dark:bg-[#161c25]/72 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-2xl relative ${activeStep === 1 ? 'border border-primary/45' : 'border border-slate-300 dark:border-white/10'}`}>
+                            <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer border-b border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#111824]" onClick={() => goToStep(1)}>
                                 <div className="flex items-center space-x-3.5">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${activeStep === 1 ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)]' : 'bg-white/5 text-slate-300 border-white/10'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${activeStep === 1 ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)]' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-white/10'}`}>
                                         <Icon icon="lucide:calendar" className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className={`text-base font-extrabold flex items-center gap-2 ${activeStep === 1 ? 'text-white' : 'text-slate-200'}`}>1. Datos del Evento</h3>
-                                        <p className="text-xs text-slate-400">Cuándo y dónde será la presentación</p>
+                                        <h3 className={`text-base font-extrabold flex items-center gap-2 ${activeStep === 1 ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>1. Datos del Evento</h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Cuándo y dónde será la presentación</p>
                                     </div>
                                 </div>
                                 {activeStep === 1 && (
@@ -410,22 +410,22 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 <div className="p-6 sm:p-7 space-y-5">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
                                                 <Icon icon="lucide:calendar-days" className="w-3.5 h-3.5 text-primary" /> Fecha de la presentación <span className="text-primary">*</span>
                                             </label>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
                                                 type="date" 
                                                 value={eventDate} 
                                                 onChange={(e) => setEventDate(e.target.value)}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
                                                 <Icon icon="lucide:clock" className="w-3.5 h-3.5 text-primary" /> Hora aproximada <span className="text-primary">*</span>
                                             </label>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
                                                 type="time" 
                                                 value={startTime} 
                                                 onChange={(e) => setStartTime(e.target.value)}
@@ -434,12 +434,12 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
                                             <Icon icon="lucide:sparkles" className="w-3.5 h-3.5 text-primary" /> Tipo de evento (ej. Cumpleaños, Boda) <span className="text-primary">*</span>
                                         </label>
                                         <input 
                                             type="text"
-                                            className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                                            className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                                             value={eventType}
                                             onChange={(e) => setEventType(e.target.value)}
                                             placeholder="Ej. Cumpleaños, Boda"
@@ -447,10 +447,10 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
                                             <Icon icon="lucide:map-pin" className="w-3.5 h-3.5 text-primary" /> Ubicación del evento <span className="text-primary">*</span>
                                         </label>
-                                        <div className="bg-[#0e141d]/88 border border-white/11 rounded-xl overflow-hidden">
+                                        <div className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 rounded-xl overflow-hidden">
                                             <LocationMapPickerField value={location} onChange={setLocation} />
                                         </div>
                                     </div>
@@ -459,7 +459,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     
                                     <div className="pt-2 flex justify-end">
                                         <button 
-                                            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-cyan-400 hover:from-cyan-300 hover:to-primary text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer" 
+                                            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-cyan-400 hover:from-cyan-300 hover:to-primary text-white dark:text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer" 
                                             onClick={() => goToStep(2)} 
                                             type="button"
                                         >
@@ -472,26 +472,26 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         </div>
 
                         {/* PASO 2 */}
-                        <div className={`bg-[#161c25]/72 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-2xl relative ${activeStep === 2 ? 'border border-primary/45' : 'border border-white/10'}`}>
-                            <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-white/[0.02]" onClick={() => { if (completedSteps.has(1)) goToStep(2) }}>
+                        <div className={`bg-white/90 dark:bg-[#161c25]/72 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-2xl relative ${activeStep === 2 ? 'border border-primary/45' : 'border border-slate-300 dark:border-white/10'}`}>
+                            <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:bg-white/[0.02]" onClick={() => { if (completedSteps.has(1)) goToStep(2) }}>
                                 <div className="flex items-center space-x-3.5">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${activeStep === 2 ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)]' : 'bg-white/5 text-slate-300 border-white/10'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${activeStep === 2 ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)]' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-white/10'}`}>
                                         <Icon icon="lucide:user" className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className={`text-base font-bold flex items-center gap-2 ${activeStep === 2 ? 'text-white' : 'text-slate-200'}`}>2. Tus datos personales</h3>
-                                        <p className="text-xs text-slate-400">Información de contacto del contratista</p>
+                                        <h3 className={`text-base font-bold flex items-center gap-2 ${activeStep === 2 ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>2. Tus datos personales</h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Información de contacto del contratista</p>
                                     </div>
                                 </div>
                             </div>
                             
                             {activeStep === 2 && (
-                                <div className="p-6 sm:p-7 space-y-5 border-t border-white/10">
+                                <div className="p-6 sm:p-7 space-y-5 border-t border-slate-300 dark:border-white/10">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Nombre y Apellidos completos <span className="text-primary">*</span></label>
+                                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Nombre y Apellidos completos <span className="text-primary">*</span></label>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
                                                 placeholder="Ej. Carlos Mendoza" 
                                                 type="text" 
                                                 value={fullname}
@@ -499,9 +499,9 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Correo electrónico <span className="text-primary">*</span></label>
+                                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Correo electrónico <span className="text-primary">*</span></label>
                                             <input 
-                                                className={`bg-[#0e141d]/88 border ${identityStatus === 'self' ? 'border-danger text-danger' : 'border-white/11'} w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none`}
+                                                className={`bg-white dark:bg-[#0e141d]/88 border ${identityStatus === 'self' ? 'border-danger text-danger' : 'border-slate-300 dark:border-white/11'} w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none`}
                                                 placeholder="ejemplo@gmail.com" 
                                                 type="email" 
                                                 value={email}
@@ -513,9 +513,9 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         </div>
                                         
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Teléfono celular / WhatsApp <span className="text-primary">*</span></label>
+                                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Teléfono celular / WhatsApp <span className="text-primary">*</span></label>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
                                                 placeholder="966 123 456" 
                                                 type="tel" 
                                                 value={phone}
@@ -523,9 +523,9 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Documento de Identidad (DNI/CE)</label>
+                                            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">Documento de Identidad (DNI/CE)</label>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-white/11 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-slate-300 dark:border-white/11 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none" 
                                                 maxLength={12} 
                                                 placeholder="8 dígitos" 
                                                 type="text" 
@@ -541,7 +541,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                                 {identityMessage || "Este correo ya está registrado."} Hemos enviado un código a tu correo para verificar tu identidad.
                                             </p>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-primary/30 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-primary/30 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 outline-none" 
                                                 placeholder="Código OTP (000000)" 
                                                 maxLength={6}
                                                 value={otp}
@@ -557,7 +557,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                                 {identityMessage || "Este correo ya está registrado pero requiere contraseña."}
                                             </p>
                                             <input 
-                                                className="bg-[#0e141d]/88 border border-warning/30 w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none" 
+                                                className="bg-white dark:bg-[#0e141d]/88 border border-warning/30 w-full rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-500 outline-none" 
                                                 type="password"
                                                 placeholder="Tu contraseña de Chivapp" 
                                                 value={password}
@@ -569,11 +569,11 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     
 
                                     <div className="pt-3 flex justify-between items-center">
-                                        <button className="text-xs text-slate-400 hover:text-white px-3 py-2 font-semibold transition-colors" onClick={() => goToStep(1)} type="button">
+                                        <button className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white px-3 py-2 font-semibold transition-colors" onClick={() => goToStep(1)} type="button">
                                             ← Volver al paso 1
                                         </button>
                                         <button 
-                                            className="px-7 py-3 rounded-2xl bg-gradient-to-r from-primary to-cyan-400 hover:from-cyan-300 hover:to-primary text-slate-950 font-extrabold text-sm flex items-center gap-2 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)] transition-all" 
+                                            className="px-7 py-3 rounded-2xl bg-gradient-to-r from-primary to-cyan-400 hover:from-cyan-300 hover:to-primary text-white dark:text-slate-950 font-extrabold text-sm flex items-center gap-2 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)] transition-all" 
                                             onClick={() => goToStep(3)} 
                                             type="button"
                                         >
@@ -586,35 +586,35 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                         </div>
 
                         {/* PASO 3 */}
-                        <div className={`bg-[#161c25]/72 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-2xl relative ${activeStep === 3 ? 'border border-primary/45' : 'border border-white/10'}`}>
-                            <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-white/[0.02]" onClick={() => { if (completedSteps.has(2)) goToStep(3) }}>
+                        <div className={`bg-white/90 dark:bg-[#161c25]/72 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-2xl relative ${activeStep === 3 ? 'border border-primary/45' : 'border border-slate-300 dark:border-white/10'}`}>
+                            <div className="p-5 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:bg-white/[0.02]" onClick={() => { if (completedSteps.has(2)) goToStep(3) }}>
                                 <div className="flex items-center space-x-3.5">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${activeStep === 3 ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)]' : 'bg-white/5 text-slate-300 border-white/10'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${activeStep === 3 ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_15px_-3px_rgba(0,210,238,0.35)]' : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-white/10'}`}>
                                         <Icon icon="lucide:credit-card" className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className={`text-base font-bold flex items-center gap-2 ${activeStep === 3 ? 'text-white' : 'text-slate-200'}`}>3. Confirmación y Pago</h3>
-                                        <p className="text-xs text-slate-400">Revisa el contrato y reserva</p>
+                                        <h3 className={`text-base font-bold flex items-center gap-2 ${activeStep === 3 ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'}`}>3. Confirmación y Pago</h3>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Revisa el contrato y reserva</p>
                                     </div>
                                 </div>
                             </div>
                             
                             {activeStep === 3 && (
-                                <div className="p-6 sm:p-7 space-y-6 border-t border-white/10">
-                                    <div className="p-4 sm:p-5 rounded-2xl bg-black/40 border border-white/10 text-xs text-slate-300 space-y-2.5">
-                                        <div className="font-extrabold text-white flex items-center gap-2 text-sm">
+                                <div className="p-6 sm:p-7 space-y-6 border-t border-slate-300 dark:border-white/10">
+                                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-100 dark:bg-black/40 border border-slate-300 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 space-y-2.5">
+                                        <div className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
                                             <Icon icon="lucide:file-text" className="w-4 h-4 text-primary" /> Términos del Contrato Rápido:
                                         </div>
-                                        <ul className="list-disc list-inside space-y-1 text-slate-300 text-xs">
+                                        <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300 text-xs">
                                             <li>El pago asegura la fecha en la agenda exclusiva de <strong className="text-primary font-bold">{linkData.musician.stage_name}</strong>.</li>
                                             <li>Llegada garantizada a la hora coordinada con vestimenta completa.</li>
                                             <li>Confirmación inmediata enviada por correo.</li>
                                         </ul>
-                                        <label className="flex items-center gap-2.5 pt-2 text-slate-200 cursor-pointer select-none">
+                                        <label className="flex items-center gap-2.5 pt-2 text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                             <input 
                                                 checked={termsAccepted} 
                                                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                                                className="w-4 h-4 rounded text-primary focus:ring-0 bg-slate-900 border-white/20" 
+                                                className="w-4 h-4 rounded text-primary focus:ring-0 bg-slate-900 border-slate-400 dark:border-white/20" 
                                                 type="checkbox" 
                                             />
                                             <span className="text-xs">He leído y acepto los términos del contrato de actuación.</span>
@@ -622,15 +622,15 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-300 mb-3">Selecciona medio de pago</label>
+                                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-3">Selecciona medio de pago</label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <label className={`relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === 'yape' ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/30 hover:border-white/20'}`}>
+                                            <label className={`relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === 'yape' ? 'border-primary bg-primary/10' : 'border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/30 hover:border-slate-400 dark:border-white/20'}`}>
                                                 <input checked={paymentMethod === 'yape'} onChange={() => setPaymentMethod('yape')} className="sr-only" name="payment_method" type="radio" value="yape" />
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <span className={`font-bold text-xs ${paymentMethod === 'yape' ? 'text-white' : 'text-slate-300'}`}>Mercado Pago (Yape / Tarjetas)</span>
-                                                    <Icon icon="lucide:smartphone" className={`w-4 h-4 ${paymentMethod === 'yape' ? 'text-primary' : 'text-slate-400'}`} />
+                                                    <span className={`font-bold text-xs ${paymentMethod === 'yape' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>Mercado Pago (Yape / Tarjetas)</span>
+                                                    <Icon icon="lucide:smartphone" className={`w-4 h-4 ${paymentMethod === 'yape' ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`} />
                                                 </div>
-                                                <span className="text-[11px] text-slate-400">Pago seguro con QR, Débito o Crédito</span>
+                                                <span className="text-[11px] text-slate-500 dark:text-slate-400">Pago seguro con QR, Débito o Crédito</span>
                                                 {paymentMethod === 'yape' && <div className="mt-2 text-primary text-[10px] font-black uppercase tracking-wider">Recomendado</div>}
                                             </label>
                                         </div>
@@ -638,11 +638,11 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
 
                                     <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-black/80 to-[#0A1220] border border-primary/30 flex flex-col sm:flex-row items-center justify-between gap-4">
                                         <div>
-                                            <span className="text-xs text-slate-400 block font-medium">Total a pagar ahora:</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">Total a pagar ahora:</span>
                                             <span className="text-3xl font-black text-primary">{formatCurrency(linkData.price)}</span>
                                         </div>
                                         <button 
-                                            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-cyan-300 hover:from-cyan-300 hover:to-primary text-slate-950 font-black text-sm tracking-wide flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50" 
+                                            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-cyan-300 hover:from-cyan-300 hover:to-primary text-white dark:text-slate-950 font-black text-sm tracking-wide flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50" 
                                             id="btn-confirm-booking" 
                                             type="button"
                                             onClick={handlePayAndConfirm}
@@ -653,7 +653,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                         </button>
                                     </div>
                                     <div className="flex justify-start">
-                                        <button className="text-xs text-slate-400 hover:text-white px-3 py-1 font-semibold transition-colors" onClick={() => goToStep(2)} type="button">
+                                        <button className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white px-3 py-1 font-semibold transition-colors" onClick={() => goToStep(2)} type="button">
                                             ← Volver al paso 2
                                         </button>
                                     </div>
@@ -665,41 +665,41 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
 
                     {/* COLUMNA DERECHA: Resumen */}
                     <aside className="lg:col-span-5 space-y-5 lg:sticky lg:top-24">
-                        <div className="bg-[#161c25]/72 backdrop-blur-xl rounded-3xl p-6 border border-primary/30 shadow-2xl relative space-y-5">
-                            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                        <div className="bg-white/90 dark:bg-[#161c25]/72 backdrop-blur-xl rounded-3xl p-6 border border-primary/30 shadow-2xl relative space-y-5">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-300 dark:border-white/10">
+                                <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                                     <Icon icon="lucide:receipt" className="w-4 h-4 text-primary" /> Resumen de tu Reserva
                                 </h3>
                             </div>
                             
-                            <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-3 mb-4">
+                            <div className="bg-white/[0.03] border border-slate-200 dark:border-white/5 rounded-2xl p-4 space-y-3 mb-4">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-400">Honorarios del músico</span>
-                                    <span className="font-semibold text-slate-200">{formatCurrency(linkData.price)}</span>
+                                    <span className="text-slate-500 dark:text-slate-400">Honorarios del músico</span>
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(linkData.price)}</span>
                                 </div>
                                 {(() => {
                                     const serviceFee = (linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))) - linkData.price;
                                     return serviceFee > 0.01 ? (
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-slate-400 flex items-center gap-1">
+                                            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                                 Tarifa de servicio
                                                 <div className="group relative cursor-help">
                                                     <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
-                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-600 dark:text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
                                                         Incluye comisión de la plataforma y cargos de procesamiento.
                                                     </div>
                                                 </div>
                                             </span>
-                                            <span className="font-semibold text-slate-200">
+                                            <span className="font-semibold text-slate-700 dark:text-slate-200">
                                                 {formatCurrency(serviceFee)}
                                             </span>
                                         </div>
                                     ) : null;
                                 })()}
-                                <div className="h-px w-full bg-white/10 my-1"></div>
+                                <div className="h-px w-full bg-slate-200 dark:bg-white/10 my-1"></div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-slate-300 font-bold">Total a pagar</span>
-                                    <span className="font-bold text-white">
+                                    <span className="text-slate-600 dark:text-slate-300 font-bold">Total a pagar</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">
                                         {formatCurrency(linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
                                     </span>
                                 </div>
@@ -726,8 +726,8 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     <Icon icon="lucide:lock" className="w-4 h-4" />
                                 </div>
                                 <div className="text-xs">
-                                    <span className="font-extrabold text-white block">Reserva 100% Protegida</span>
-                                    <span className="text-slate-300 text-[11px]">Contrato directo garantizado por Chivapp</span>
+                                    <span className="font-extrabold text-slate-900 dark:text-white block">Reserva 100% Protegida</span>
+                                    <span className="text-slate-600 dark:text-slate-300 text-[11px]">Contrato directo garantizado por Chivapp</span>
                                 </div>
                             </div>
                         </div>
