@@ -52,7 +52,7 @@ export type BookingLinkCheckout = {
 };
 
 export async function getBookingLinkPublic(token: string): Promise<BookingLinkPublicOut> {
-    return apiFetch<BookingLinkPublicOut>(`/booking-links/${token}`);
+    return apiFetch<BookingLinkPublicOut>(`/booking-links/${token}`, { cache: "no-store" });
 }
 
 export async function checkoutBookingLink(token: string, payload: BookingLinkCheckout): Promise<{ message: string; booking_id: string }> {
