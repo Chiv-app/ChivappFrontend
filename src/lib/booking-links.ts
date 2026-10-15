@@ -47,6 +47,7 @@ export type BookingLinkCheckout = {
     email: string;
     phone: string;
     document_number?: string | null;
+    signature_image_url?: string | null;
     otp?: string | null;
     password?: string | null;
 };

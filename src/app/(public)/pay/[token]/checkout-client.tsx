@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-modal";
 import type { BookingOut } from "@/types/api";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
+import SignaturePad from "@/components/ui/signature-pad";
 
 export default function CheckoutClient({ linkData }: { linkData: BookingLinkPublicOut }) {
     const router = useRouter();
@@ -51,6 +52,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
 
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [signature, setSignature] = useState<string | null>(null);
 
     const hasVideos = !!linkData.musician.showreel_video_url || (linkData.musician.videos && linkData.musician.videos.length > 0);
     const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'fotos' | 'comentarios'>(hasVideos ? 'videos' : 'fotos');
@@ -146,6 +148,10 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
             addToast({ title: "Términos obligatorios", description: "Debes aceptar los términos para continuar.", color: "warning" });
             return;
         }
+        if (!signature) {
+            addToast({ title: "Firma obligatoria", description: "Por favor, dibuja tu firma para el contrato de actuación.", color: "warning" });
+            return;
+        }
 
         if (!booking) {
             setIsSubmitting(true);
@@ -160,6 +166,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     email,
                     phone,
                     document_number: documentNumber,
+                    signature_image_url: signature,
                     otp: identityStatus === 'exists_verified' ? otp : undefined,
                     password: identityStatus === 'exists_unverified' ? password : undefined,
                 });
@@ -609,23 +616,32 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                             
                             {activeStep === 3 && (
                                 <div className="p-6 sm:p-7 space-y-6 border-t border-slate-300 dark:border-white/10">
-                                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-100 dark:bg-black/40 border border-slate-300 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 space-y-2.5">
-                                        <div className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
-                                            <Icon icon="lucide:file-text" className="w-4 h-4 text-primary" /> Términos del Contrato Rápido:
+                                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-100 dark:bg-black/40 border border-slate-300 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 space-y-4">
+                                        <div className="space-y-2.5">
+                                            <div className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
+                                                <Icon icon="lucide:file-text" className="w-4 h-4 text-primary" /> Términos del Contrato Rápido:
+                                            </div>
+                                            <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300 text-xs">
+                                                <li>El pago asegura la fecha en la agenda exclusiva de <strong className="text-primary font-bold">{linkData.musician.stage_name}</strong>.</li>
+                                                <li>Llegada garantizada a la hora coordinada con vestimenta completa.</li>
+                                                <li>Confirmación inmediata enviada por correo.</li>
+                                            </ul>
                                         </div>
-                                        <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-300 text-xs">
-                                            <li>El pago asegura la fecha en la agenda exclusiva de <strong className="text-primary font-bold">{linkData.musician.stage_name}</strong>.</li>
-                                            <li>Llegada garantizada a la hora coordinada con vestimenta completa.</li>
-                                            <li>Confirmación inmediata enviada por correo.</li>
-                                        </ul>
-                                        <label className="flex items-center gap-2.5 pt-2 text-slate-700 dark:text-slate-200 cursor-pointer select-none">
+                                        
+                                        <div className="pt-2 border-t border-slate-300 dark:border-white/10">
+                                            <SignaturePad value={signature || ""} onChange={setSignature} label="Firma del cliente" helperText="Dibuja tu firma para aceptar el contrato." />
+                                        </div>
+
+                                        <label className="flex items-start sm:items-center gap-2.5 pt-2 text-slate-700 dark:text-slate-200 cursor-pointer select-none">
                                             <input 
                                                 checked={termsAccepted} 
                                                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                                                className="w-4 h-4 rounded text-primary focus:ring-0 bg-slate-900 border-slate-400 dark:border-white/20" 
+                                                className="w-4 h-4 rounded text-primary focus:ring-0 bg-slate-900 border-slate-400 dark:border-white/20 mt-0.5 sm:mt-0" 
                                                 type="checkbox" 
                                             />
-                                            <span className="text-xs">He leído y acepto los términos del contrato de actuación.</span>
+                                            <span className="text-xs">
+                                                He leído y acepto el <a href="#" onClick={(e) => e.preventDefault()} className="text-primary hover:underline font-semibold">contrato de actuación</a>, las <a href="/legal/terminos" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">políticas de reserva</a> y los <a href="/legal/terminos" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">términos y condiciones</a>.
+                                            </span>
                                         </label>
                                     </div>
 
@@ -748,6 +764,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     onClose={() => setIsPaymentModalOpen(false)} 
                     booking={booking} 
                     amount={totalPayable} 
+                    signatureImageUrl={signature}
                     onSuccess={() => {
                         window.location.reload();
                     }}
