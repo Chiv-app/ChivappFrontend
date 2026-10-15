@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
 import type { BookingLinkOut } from "@/lib/booking-links";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 import { formatCurrency } from "@/lib/booking-labels";
+import { getPlatformPaymentInstructions } from "@/lib/payments";
 
 type Props = {
     onSuccess: () => void;
@@ -18,6 +19,18 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     const [startTime, setStartTime] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [createdLink, setCreatedLink] = useState<string | null>(null);
+
+    const [livePlatformFeePercent, setLivePlatformFeePercent] = useState<number>(2);
+
+    useEffect(() => {
+        getPlatformPaymentInstructions()
+            .then(res => {
+                if (res.platform_fee_percent != null) {
+                    setLivePlatformFeePercent(res.platform_fee_percent);
+                }
+            })
+            .catch(() => {});
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,7 +91,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     const parsedPrice = parseFloat(price) || 0;
     const bookingPreview = {
         price_agreed: parsedPrice,
-        platform_fee_percent: 2
+        platform_fee_percent: livePlatformFeePercent
     };
     const totalToPay = contractorPayableTotal(bookingPreview) || 0;
     const feeToPay = platformFeeAmount(bookingPreview) || 0;
