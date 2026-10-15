@@ -12,11 +12,19 @@ import { getVideoEmbedUrl, isSupportedVideoUrl, getYoutubeThumbnailUrl } from "@
 import { useAuth } from "@/contexts/auth-context";
 import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-modal";
 import type { BookingOut } from "@/types/api";
+import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 
 export default function CheckoutClient({ linkData }: { linkData: BookingLinkPublicOut }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     
+    const bookingPreview = {
+        price_agreed: linkData.price,
+        platform_fee_percent: linkData.fee_percent ?? 2
+    };
+    const totalPayable = contractorPayableTotal(bookingPreview) || 0;
+    const serviceFee = platformFeeAmount(bookingPreview) || 0;
+
     // Form state
     const [eventDate, setEventDate] = useState(linkData.event_date || "");
     const [startTime, setStartTime] = useState(linkData.start_time || "");
@@ -639,7 +647,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-black/80 to-[#0A1220] border border-primary/30 flex flex-col sm:flex-row items-center justify-between gap-4">
                                         <div>
                                             <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">Total a pagar ahora:</span>
-                                            <span className="text-3xl font-black text-primary">{formatCurrency(linkData.price)}</span>
+                                            <span className="text-3xl font-black text-primary">{formatCurrency(totalPayable)}</span>
                                         </div>
                                         <button 
                                             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-cyan-300 hover:from-cyan-300 hover:to-primary text-white dark:text-slate-950 font-black text-sm tracking-wide flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50" 
@@ -677,30 +685,27 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                     <span className="text-slate-500 dark:text-slate-400">Honorarios del músico</span>
                                     <span className="font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(linkData.price)}</span>
                                 </div>
-                                {(() => {
-                                    const serviceFee = (linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100))))) - linkData.price;
-                                    return serviceFee > 0.01 ? (
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                                Tarifa de servicio
-                                                <div className="group relative cursor-help">
-                                                    <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
-                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-600 dark:text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
-                                                        Incluye comisión de la plataforma y cargos de procesamiento.
-                                                    </div>
+                                {serviceFee > 0.01 && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                            Tarifa de servicio
+                                            <div className="group relative cursor-help">
+                                                <Icon icon="lucide:info" className="w-3.5 h-3.5 text-slate-500" />
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-xs text-slate-600 dark:text-slate-300 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 text-center">
+                                                    Incluye comisión de la plataforma y cargos de procesamiento.
                                                 </div>
-                                            </span>
-                                            <span className="font-semibold text-slate-700 dark:text-slate-200">
-                                                {formatCurrency(serviceFee)}
-                                            </span>
-                                        </div>
-                                    ) : null;
-                                })()}
+                                            </div>
+                                        </span>
+                                        <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                            {formatCurrency(serviceFee)}
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="h-px w-full bg-slate-200 dark:bg-white/10 my-1"></div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-slate-600 dark:text-slate-300 font-bold">Total a pagar</span>
                                     <span className="font-bold text-slate-900 dark:text-white">
-                                        {formatCurrency(linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
+                                        {formatCurrency(totalPayable)}
                                     </span>
                                 </div>
                             </div>
@@ -714,7 +719,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                                 </div>
                                 <div className="text-right z-10">
                                     <div className="text-3xl sm:text-4xl font-black text-primary tracking-tight drop-shadow-sm flex items-baseline sm:justify-end gap-1">
-                                        {formatCurrency(linkData.total_payable || (linkData.price + (linkData.fee_amount || (linkData.price * ((linkData.fee_percent || 2) / 100)))))}
+                                        {formatCurrency(totalPayable)}
                                     </div>
                                 </div>
                                 {/* Glow background */}
@@ -742,7 +747,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     isOpen={isPaymentModalOpen} 
                     onClose={() => setIsPaymentModalOpen(false)} 
                     booking={booking} 
-                    amount={linkData.price} 
+                    amount={totalPayable} 
                     onSuccess={() => {
                         window.location.reload();
                     }}
