@@ -28,7 +28,7 @@ import {
 } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
 import { listMyMemberIncome } from "@/lib/ensemble-members";
-import { getMusicianEarnings } from "@/lib/payments";
+import { getMusicianEarnings, requestPayout } from "@/lib/payments";
 import type {
     BookingStatus,
     MusicianDebtItem,
@@ -72,6 +72,7 @@ function emptyMemberIncome(): MyMemberIncomeSummary {
 
 const DEBT_STATE_LABEL: Record<string, string> = {
     payable: "Por cobrar",
+    awaiting_reviews: "Pendiente de reseñas",
     disputed: "En disputa",
     awaiting_admin: "Esperando admin",
     settled: "Cobrado",
@@ -83,6 +84,7 @@ const DEBT_STATE_COLOR: Record<
     "default" | "primary" | "secondary" | "success" | "warning" | "danger"
 > = {
     payable: "primary",
+    awaiting_reviews: "warning",
     disputed: "danger",
     awaiting_admin: "warning",
     settled: "success",
@@ -113,6 +115,7 @@ export default function MusicianEarningsView() {
     const [memberIncome, setMemberIncome] =
         useState<MyMemberIncomeSummary>(emptyMemberIncome());
     const [isLoading, setIsLoading] = useState(true);
+    const [isRequestingPayout, setIsRequestingPayout] = useState(false);
     const [debtFilter, setDebtFilter] = useState<DebtFilter>("all");
     const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
     const [mainTab, setMainTab] = useState<MainTab>("debts");
@@ -187,6 +190,28 @@ export default function MusicianEarningsView() {
         }
         if (isVerified) setTimeout(() => setMainTab("debts"), 0);
     }, [isVerified, isEnsembleMember]);
+
+    const handleRequestPayout = async () => {
+        try {
+            setIsRequestingPayout(true);
+            await requestPayout();
+            addToast({
+                title: "Solicitud enviada",
+                description: "Se ha solicitado el retiro de fondos.",
+                color: "success",
+            });
+            const data = await getMusicianEarnings();
+            setSummary(data);
+        } catch (error) {
+            addToast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Error desconocido",
+                color: "danger",
+            });
+        } finally {
+            setIsRequestingPayout(false);
+        }
+    };
 
     const debts = summary.debts ?? [];
     const payments = summary.items ?? [];
@@ -281,6 +306,8 @@ export default function MusicianEarningsView() {
                     filteredDebts={filteredDebts}
                     filter={debtFilter}
                     onFilterChange={setDebtFilter}
+                    isRequestingPayout={isRequestingPayout}
+                    onPayoutRequest={handleRequestPayout}
                 />
             ) : null}
 
@@ -329,11 +356,15 @@ function PlatformDebtsSection({
     filteredDebts,
     filter,
     onFilterChange,
+    isRequestingPayout,
+    onPayoutRequest,
 }: {
     summary: MusicianEarningsSummary;
     filteredDebts: MusicianDebtItem[];
     filter: DebtFilter;
     onFilterChange: (value: DebtFilter) => void;
+    isRequestingPayout: boolean;
+    onPayoutRequest: () => void;
 }) {
     const cards = [
         {
@@ -372,6 +403,14 @@ function PlatformDebtsSection({
 
     return (
         <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-foreground">Resumen de deuda</h2>
+                {(summary.total_app_debt ?? 0) > 0 && (
+                    <Button color="primary" isLoading={isRequestingPayout} onPress={onPayoutRequest}>
+                        Solicitar retiro ({formatCurrency(summary.total_app_debt ?? 0)})
+                    </Button>
+                )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                 {cards.map((card) => (
                     <Card key={card.label} className="border border-default-200/70 shadow-soft">
@@ -706,6 +745,11 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                         {item.complaint_reason ? (
                             <p className="text-sm text-danger mt-2 line-clamp-2">
                                 Queja: {item.complaint_reason}
+                            </p>
+                        ) : null}
+                        {item.debt_state === "awaiting_reviews" ? (
+                            <p className="text-xs text-warning-600 dark:text-warning-400 mt-1.5">
+                                Para habilitar el desembolso, tanto tú como el contratista deben haber dejado su reseña tras culminar el evento.
                             </p>
                         ) : null}
                     </div>

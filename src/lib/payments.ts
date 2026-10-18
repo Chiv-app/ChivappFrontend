@@ -133,3 +133,10 @@ export function processMercadoPagoPayment(payload: MercadoPagoProcessPaymentRequ
 export function getPlatformPaymentInstructions() {
     return apiFetch<PlatformPaymentInstructions>("/payments/platform-instructions");
 }
+
+export function requestPayout() {
+    return apiFetch('/payments/musician/request-payout', {
+        method: 'POST'
+    });
+}
+
