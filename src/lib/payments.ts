@@ -135,8 +135,8 @@ export function getPlatformPaymentInstructions() {
 }
 
 export function requestPayout() {
-    return apiFetch('/payments/musician/request-payout', {
-        method: 'POST'
+    return apiFetch<import("@/types/api").PayoutRequestOut>("/payments/musician/request-payout", {
+        method: "POST",
     });
 }
 

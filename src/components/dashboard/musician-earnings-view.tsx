@@ -194,17 +194,21 @@ export default function MusicianEarningsView() {
     const handleRequestPayout = async () => {
         try {
             setIsRequestingPayout(true);
-            await requestPayout();
+            const created = await requestPayout();
+            setSummary((prev) => ({
+                ...prev,
+                pending_payout_request: created,
+            }));
             addToast({
                 title: "Solicitud enviada",
-                description: "Se ha solicitado el retiro de fondos.",
+                description: `Se registró tu solicitud de retiro por ${formatCurrency(created.amount)}. El equipo administrativo procesará el desembolso.`,
                 color: "success",
             });
             const data = await getMusicianEarnings();
             setSummary(data);
         } catch (error) {
             addToast({
-                title: "Error",
+                title: "No se pudo solicitar el retiro",
                 description: error instanceof Error ? error.message : "Error desconocido",
                 color: "danger",
             });
@@ -403,12 +407,33 @@ function PlatformDebtsSection({
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-foreground">Resumen de deuda</h2>
                 {(summary.total_app_debt ?? 0) > 0 && (
-                    <Button color="primary" isLoading={isRequestingPayout} onPress={onPayoutRequest}>
-                        Solicitar retiro ({formatCurrency(summary.total_app_debt ?? 0)})
-                    </Button>
+                    summary.pending_payout_request ? (
+                        <Chip
+                            color="success"
+                            variant="flat"
+                            size="lg"
+                            startContent={<Icon icon="material-symbols:check-circle" width={18} />}
+                            className="px-3 py-2 font-semibold"
+                        >
+                            Retiro solicitado ({formatCurrency(summary.pending_payout_request.amount)}) · En proceso
+                        </Chip>
+                    ) : (
+                        <Button
+                            color="primary"
+                            isLoading={isRequestingPayout}
+                            onPress={onPayoutRequest}
+                            startContent={
+                                !isRequestingPayout ? (
+                                    <Icon icon="material-symbols:payments-outline" width={18} />
+                                ) : undefined
+                            }
+                        >
+                            Solicitar retiro ({formatCurrency(summary.total_app_debt ?? 0)})
+                        </Button>
+                    )
                 )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
@@ -749,7 +774,13 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                         ) : null}
                         {item.debt_state === "awaiting_reviews" ? (
                             <p className="text-xs text-warning-600 dark:text-warning-400 mt-1.5">
-                                Para habilitar el desembolso, tanto tú como el contratista deben haber dejado su reseña tras culminar el evento.
+                                {!item.has_contractor_review && !item.has_musician_review
+                                    ? "Para habilitar el desembolso, tanto el contratista como tú deben dejar su reseña tras culminar el evento."
+                                    : !item.has_contractor_review
+                                      ? "Falta la reseña final del contratista tras culminar el evento para habilitar el desembolso."
+                                      : !item.has_musician_review
+                                        ? "Falta que dejes tu reseña al contratista en el detalle de la reserva para habilitar el desembolso."
+                                        : "El evento debe estar marcado como finalizado con ambas reseñas para habilitar el desembolso."}
                             </p>
                         ) : null}
                     </div>

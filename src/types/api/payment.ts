@@ -87,6 +87,15 @@ export type MusicianEarningsItem = {
     created_at: string;
 };
 
+export type PayoutRequestOut = {
+    id: string;
+    musician_id: string;
+    amount: number;
+    status: "pending" | "processed" | "rejected" | string;
+    created_at: string;
+    processed_at?: string | null;
+};
+
 export type MusicianDebtItem = {
     booking_id: string;
     event_type: string;
@@ -98,6 +107,8 @@ export type MusicianDebtItem = {
     currency: string;
     booking_status: string;
     debt_state: string;
+    has_contractor_review?: boolean;
+    has_musician_review?: boolean;
     complaint_status: string | null;
     complaint_reason: string | null;
     admin_musician_amount: number | null;
@@ -118,6 +129,7 @@ export type MusicianEarningsSummary = {
     bookings_cancelled: number;
     items: MusicianEarningsItem[];
     debts?: MusicianDebtItem[];
+    pending_payout_request?: PayoutRequestOut | null;
 };
 
 export type PlatformPaymentInstructions = {
