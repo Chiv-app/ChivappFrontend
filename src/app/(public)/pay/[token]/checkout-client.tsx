@@ -53,6 +53,7 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [signature, setSignature] = useState<string | null>(null);
+    const [uploadedSignatureUrl, setUploadedSignatureUrl] = useState<string | null>(null);
 
     const hasVideos = !!linkData.musician.showreel_video_url || (linkData.musician.videos && linkData.musician.videos.length > 0);
     const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'fotos' | 'comentarios'>(hasVideos ? 'videos' : 'fotos');
@@ -172,7 +173,20 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                 });
                 
                 await refreshAuth();
-                setBooking({ id: res.booking_id } as BookingOut); // Minimal mock for modal
+                if (res.signature_image_url) {
+                    setUploadedSignatureUrl(res.signature_image_url);
+                }
+                setBooking({
+                    id: res.booking_id,
+                    event_type: eventType,
+                    event_date: eventDate,
+                    start_time: startTime,
+                    location_address: location?.address || "",
+                    location_city: location?.city || "",
+                    price_agreed: linkData.price,
+                    platform_fee_percent: linkData.fee_percent ?? 2,
+                    status: "contract_signed",
+                } as BookingOut);
                 setIsPaymentModalOpen(true);
             } catch (error: unknown) {
                 let errorMsg = (error as Error).message || "Ocurrió un problema inesperado.";
@@ -764,9 +778,9 @@ export default function CheckoutClient({ linkData }: { linkData: BookingLinkPubl
                     onClose={() => setIsPaymentModalOpen(false)} 
                     booking={booking} 
                     amount={totalPayable} 
-                    signatureImageUrl={signature}
+                    signatureImageUrl={uploadedSignatureUrl || signature}
                     onSuccess={() => {
-                        window.location.reload();
+                        router.push(`/contractor/bookings/${booking.id}`);
                     }}
                 />
             )}

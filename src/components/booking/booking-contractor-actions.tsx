@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, CardBody, Chip, addToast } from "@heroui/react";
+import { Card, CardBody, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import BookingContractConfirmCard from "@/components/booking/booking-contract-confirm-card";
 import BookingContractorRequestedCard from "@/components/booking/booking-contractor-requested-card";
@@ -29,7 +29,8 @@ export default function BookingContractorActions({
     useEffect(() => {
         if (
             booking.status !== "contract_pending" &&
-            booking.status !== "contract_signed"
+            booking.status !== "contract_signed" &&
+            booking.status !== "payment_pending"
         ) {
             setContract(null);
             return;
@@ -128,29 +129,36 @@ export default function BookingContractorActions({
 
     if (booking.status === "payment_pending") {
         return (
-            <Card className="border border-warning/30 bg-warning/5 shadow-soft">
-                <CardBody className="gap-3 p-6">
-                    <div className="flex items-center gap-2">
-                        <Icon
-                            icon="material-symbols:hourglass-top"
-                            width={24}
-                            className="text-warning shrink-0"
-                        />
-                        <p className="font-semibold text-foreground text-base">
-                            Pago en procesamiento con Mercado Pago
+            <div className="flex flex-col gap-6">
+                <Card className="border border-warning/30 bg-warning/5 shadow-soft">
+                    <CardBody className="gap-3 p-6">
+                        <div className="flex items-center gap-2">
+                            <Icon
+                                icon="material-symbols:hourglass-top"
+                                width={24}
+                                className="text-warning shrink-0"
+                            />
+                            <p className="font-semibold text-foreground text-base">
+                                Pago en procesamiento con Mercado Pago
+                            </p>
+                        </div>
+                        <p className="text-sm text-default-600">
+                            Estamos esperando la confirmación de acreditación de Mercado
+                            Pago. Si no completaste la operación anterior, puedes reintentar el pago abajo.
                         </p>
-                    </div>
-                    <p className="text-sm text-default-600">
-                        Estamos esperando la confirmación de acreditación de Mercado
-                        Pago. Tan pronto como se confirme, tu reserva quedará confirmada
-                        automáticamente.
-                    </p>
-                    <p className="text-xs text-default-500">
-                        Verificamos el estado cada pocos segundos mientras tengas esta
-                        página abierta. También puedes pulsar «Actualizar».
-                    </p>
-                </CardBody>
-            </Card>
+                        <p className="text-xs text-default-500">
+                            Verificamos el estado cada pocos segundos mientras tengas esta
+                            página abierta. También puedes pulsar «Actualizar».
+                        </p>
+                    </CardBody>
+                </Card>
+                <BookingContractConfirmCard
+                    booking={booking}
+                    contract={contract}
+                    isLoadingContract={isLoadingContract}
+                    onUpdated={onUpdated}
+                />
+            </div>
         );
     }
 

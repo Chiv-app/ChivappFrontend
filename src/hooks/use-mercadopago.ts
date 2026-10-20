@@ -58,15 +58,37 @@ export function useMercadoPago() {
         if (!publicKey) {
             fetch("/api/mercadopago/public-key")
                 .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed to load key"))))
-                .then((data) => {
+                .then(async (data) => {
                     if (!isMounted) return;
                     if (data?.publicKey) {
                         setPublicKey(data.publicKey);
-                    } else {
+                        return;
+                    }
+                    const fallbackRes = await fetch("/api/v1/payments/mercadopago/public-key");
+                    if (fallbackRes.ok) {
+                        const fallbackData = await fallbackRes.json();
+                        if (isMounted && fallbackData?.public_key) {
+                            setPublicKey(fallbackData.public_key);
+                            return;
+                        }
+                    }
+                    if (isMounted) {
                         setLoadError("NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY no está configurada.");
                     }
                 })
-                .catch(() => {
+                .catch(async () => {
+                    try {
+                        const fallbackRes = await fetch("/api/v1/payments/mercadopago/public-key");
+                        if (fallbackRes.ok) {
+                            const fallbackData = await fallbackRes.json();
+                            if (isMounted && fallbackData?.public_key) {
+                                setPublicKey(fallbackData.public_key);
+                                return;
+                            }
+                        }
+                    } catch {
+                        // ignore
+                    }
                     if (isMounted) {
                         setLoadError("NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY no está configurada.");
                     }

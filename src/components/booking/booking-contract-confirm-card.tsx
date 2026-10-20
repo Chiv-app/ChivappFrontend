@@ -19,8 +19,6 @@ import ContractDocumentView from "@/components/booking/contract-document-view";
 import SignaturePad from "@/components/ui/signature-pad";
 import { formatCurrency } from "@/lib/booking-labels";
 import { useAuth } from "@/contexts/auth-context";
-import { useContractorVerification } from "@/hooks/use-contractor-verification";
-import { createMercadoPagoPreference } from "@/lib/payments";
 import {
     contractorPayableTotal,
     platformFeeAmount,
@@ -47,10 +45,8 @@ export default function BookingContractConfirmCard({
     contract,
     isLoadingContract,
     onUpdated,
-    bypassVerificationCheck,
 }: Props) {
     const { user } = useAuth();
-    const { isVerified, isLoading: isLoadingVerification } = useContractorVerification(!bypassVerificationCheck, user?.is_verified ?? false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -66,19 +62,6 @@ export default function BookingContractConfirmCard({
 
     async function handleConfirm(event: FormEvent) {
         event.preventDefault();
-
-        if (isLoadingVerification) {
-            return;
-        }
-
-        if (!user?.is_verified && !bypassVerificationCheck) {
-            addToast({
-                title: "Cuenta no verificada",
-                description: "Debes verificar tu correo electrónico antes de poder realizar pagos.",
-                color: "danger",
-            });
-            return;
-        }
 
         if (isAlreadySigned) {
             if (contract?.contractor_signature_url && !uploadedSignatureUrl) {
@@ -344,7 +327,6 @@ export default function BookingContractConfirmCard({
                 onSuccess={() => {
                     setIsUpsellModalOpen(false);
                     setIsPaymentModalOpen(true);
-                    // Update local user state if possible, but redirecting to MercadoPago is fine
                 }}
             />
 
@@ -353,7 +335,7 @@ export default function BookingContractConfirmCard({
                 onClose={() => setIsPaymentModalOpen(false)}
                 booking={booking}
                 amount={contractorTotal ?? 0}
-                signatureImageUrl={uploadedSignatureUrl}
+                signatureImageUrl={uploadedSignatureUrl || contract?.contractor_signature_url || null}
                 onSuccess={() => {
                     onUpdated({
                         ...booking,

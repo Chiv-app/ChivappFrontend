@@ -56,11 +56,17 @@ export async function getBookingLinkPublic(token: string): Promise<BookingLinkPu
     return apiFetch<BookingLinkPublicOut>(`/booking-links/${token}`, { cache: "no-store" });
 }
 
-export async function checkoutBookingLink(token: string, payload: BookingLinkCheckout): Promise<{ message: string; booking_id: string }> {
-    return apiFetch<{ message: string; booking_id: string }>(`/booking-links/${token}/checkout`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-    });
+export async function checkoutBookingLink(
+    token: string,
+    payload: BookingLinkCheckout
+): Promise<{ message: string; booking_id: string; signature_image_url?: string | null }> {
+    return apiFetch<{ message: string; booking_id: string; signature_image_url?: string | null }>(
+        `/booking-links/${token}/checkout`,
+        {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }
+    );
 }
 
 
