@@ -55,7 +55,7 @@ function isSafeSegment(segment: string): boolean {
     return true;
 }
 
-function securityHeaders(contentType: string, isError = false): Headers {
+function securityHeaders(contentType: string, isError = false, isPrivate = false): Headers {
     const headers = new Headers();
     headers.set("X-Content-Type-Options", "nosniff");
     headers.set(
@@ -65,7 +65,11 @@ function securityHeaders(contentType: string, isError = false): Headers {
     // Los errores no deben cachearse para no retener 401/404 transitorios en el navegador.
     headers.set(
         "Cache-Control",
-        isError ? "no-store" : "private, max-age=300",
+        isError
+            ? "no-store"
+            : isPrivate
+              ? "private, max-age=300"
+              : "public, max-age=3600",
     );
     return headers;
 }
@@ -92,12 +96,6 @@ async function handleUploadRequest(
 
     const segments = path.map((segment) => encodeURIComponent(decodeURIComponent(segment)));
     const isPrivate = segments[0] === "private";
-
-    // Los archivos privados siempre pasan por el backend (autorización con cookies).
-    if (process.env.NEXT_PUBLIC_GCS_BUCKET_URL && !isPrivate) {
-        const gcsUrl = `${process.env.NEXT_PUBLIC_GCS_BUCKET_URL}/${segments.join("/")}`;
-        return NextResponse.redirect(gcsUrl, 302);
-    }
 
     const upstreamBase = getUpstreamBase(request);
     const targetUrl = `${upstreamBase}/uploads/${segments.join("/")}`;
@@ -138,7 +136,7 @@ async function handleUploadRequest(
             const status = upstreamRes.status >= 400 ? upstreamRes.status : 502;
             return new NextResponse(method === "HEAD" ? null : "Archivo no encontrado", {
                 status,
-                headers: securityHeaders("text/plain", true),
+                headers: securityHeaders("text/plain", true, isPrivate),
             });
         }
 
@@ -149,7 +147,7 @@ async function handleUploadRequest(
         const isInline = INLINE_CONTENT_TYPES.has(upstreamType);
         const contentType = isInline ? upstreamType : "application/octet-stream";
 
-        const headers = securityHeaders(contentType, false);
+        const headers = securityHeaders(contentType, false, isPrivate);
         headers.set("Content-Type", contentType);
         // "inline" permite visualizar imágenes, videos y PDFs; el resto se descarga.
         headers.set("Content-Disposition", isInline ? "inline" : "attachment");
@@ -158,7 +156,8 @@ async function handleUploadRequest(
             if (value) headers.set(name, value);
         }
 
-        return new NextResponse(method === "HEAD" ? null : upstreamRes.body, {
+        const body = method === "HEAD" ? null : await upstreamRes.arrayBuffer();
+        return new NextResponse(body, {
             status: upstreamRes.status,
             headers,
         });

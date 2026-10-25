@@ -42,12 +42,15 @@ export function resolveUploadUrl(url: string | null | undefined): string | null 
         try {
             const parsed = new URL(trimmed);
             if (parsed.pathname.startsWith("/uploads/")) {
-                const filename = parsed.pathname.replace("/uploads/", "");
-                if (process.env.NEXT_PUBLIC_GCS_BUCKET_URL) {
-                    return `${process.env.NEXT_PUBLIC_GCS_BUCKET_URL}/${filename}`;
-                }
                 const asUploads = toUploadsPath(parsed.pathname);
                 if (asUploads) return asUploads;
+            }
+            if (parsed.hostname === "storage.googleapis.com") {
+                const parts = parsed.pathname.split("/").filter(Boolean);
+                if (parts.length >= 2) {
+                    const objectPath = parts.slice(1).join("/");
+                    return `/uploads/${objectPath}`;
+                }
             }
         } catch {
             // fall through
@@ -56,13 +59,6 @@ export function resolveUploadUrl(url: string | null | undefined): string | null 
     }
 
     const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-    
-    if (path.startsWith("/uploads/")) {
-        if (process.env.NEXT_PUBLIC_GCS_BUCKET_URL) {
-            const filename = path.replace("/uploads/", "");
-            return `${process.env.NEXT_PUBLIC_GCS_BUCKET_URL}/${filename}`;
-        }
-    }
 
     const asUploads = toUploadsPath(path);
     if (asUploads) {
