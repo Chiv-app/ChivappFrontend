@@ -18,7 +18,7 @@ export default function PublicLayout({
 
     return (
         <>
-            <AppNavbar revealOnScroll />
+            <AppNavbar />
             <div
                 className={
                     isFullBleed

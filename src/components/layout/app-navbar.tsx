@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     Button,
     Dropdown,
@@ -42,54 +42,21 @@ type ModuleEntry = {
     active: boolean;
 };
 
-function AuthNavSkeleton({ compact = false }: { compact?: boolean }) {
+function AuthNavSkeleton() {
     return (
         <div
-            className={`rounded-lg bg-default-200 animate-pulse ${
-                compact ? "h-8 w-16" : "h-10 w-20 sm:w-28"
-            }`}
+            className="rounded-lg bg-default-200 animate-pulse h-10 w-20 sm:w-28"
             aria-hidden="true"
         />
     );
 }
 
-type Props = {
-    revealOnScroll?: boolean;
-};
-
-export default function AppNavbar({ revealOnScroll = false }: Props) {
+export default function AppNavbar() {
     const isClient = useIsClient();
     const { user, isLoading, logout } = useAuth();
     const { openLogin, openRegister } = useAuthModal();
     const router = useRouter();
     const pathname = usePathname();
-    const [revealed, setRevealed] = useState(!revealOnScroll);
-
-    useEffect(() => {
-        if (!revealOnScroll) return;
-
-        if (pathname === "/") {
-            const introSection = document.getElementById("musicians");
-            if (!introSection) return;
-
-            const observer = new IntersectionObserver(
-                ([entry]) => setRevealed(!entry.isIntersecting),
-                { threshold: 0 },
-            );
-            observer.observe(introSection);
-            return () => observer.disconnect();
-        }
-
-        function handleScroll() {
-            setRevealed(window.scrollY > 24);
-        }
-        const raf = requestAnimationFrame(handleScroll);
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => {
-            cancelAnimationFrame(raf);
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [revealOnScroll, pathname]);
 
     const authReady = isClient && !isLoading;
     const musicianVerification = useProfileVerification(
@@ -159,89 +126,29 @@ export default function AppNavbar({ revealOnScroll = false }: Props) {
 
     const homePath = authReady && user ? getRoleHomePath(user.role) : "/";
 
-    const isMusicianBrowseOrDetail =
-        pathname.startsWith("/musicians") || pathname.startsWith("/musicos");
-    const compact = revealOnScroll && !revealed && !isMusicianBrowseOrDetail;
-
-    const isDashboardRoute =
-        pathname.startsWith("/musician/") ||
-        pathname === "/musician" ||
-        pathname.startsWith("/contractor/") ||
-        pathname === "/contractor" ||
-        pathname.startsWith("/admin");
-
     return (
         <>
             <nav
                 aria-label="Navegación principal"
-                className={[
-                    "fixed z-50 inset-x-3 sm:inset-x-6 top-3 sm:top-4 rounded-full bg-content1/85 backdrop-blur-xl shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-default-200/50",
-                    "transition-all duration-300 ease-out",
-                    compact ? "h-14" : "h-16",
-                ].join(" ")}
+                className="fixed z-50 inset-x-3 sm:inset-x-6 top-3 sm:top-4 h-16 rounded-full bg-content1/85 backdrop-blur-xl shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-default-200/50"
             >
-                <div
-                    className={`h-full max-w-full mx-auto flex items-center justify-between gap-1.5 sm:gap-4 ${
-                        compact ? "px-2.5 sm:px-4" : "px-2.5 sm:px-6"
-                    }`}
-                >
+                <div className="h-full max-w-full mx-auto flex items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-6">
                     <div className="flex items-center gap-4 min-w-0">
                         <Link
                             href={homePath}
                             aria-label="Chivapp — Ir al inicio"
                             className="shrink-0 hover:opacity-80 transition-opacity"
                         >
-                            <AppLogo height={compact ? 28 : 40} priority color="dynamic" />
+                            <AppLogo height={40} priority color="dynamic" />
                         </Link>
-
-                        {!isDashboardRoute && (
-                            <div className="hidden md:flex items-center gap-1">
-                                <Link
-                                    href="/musicians"
-                                    className={`px-3.5 py-2 rounded-full text-sm font-semibold transition-colors ${
-                                        pathname.startsWith("/musicians") ||
-                                        pathname.startsWith("/musicos")
-                                            ? "bg-primary/15 text-primary-text"
-                                            : "text-default-600 hover:text-foreground hover:bg-default-100"
-                                    }`}
-                                >
-                                    Explorar músicos
-                                </Link>
-                                <Link
-                                    href="/#how-it-works"
-                                    className="px-3.5 py-2 rounded-full text-sm font-semibold text-default-600 hover:text-foreground hover:bg-default-100 transition-colors"
-                                >
-                                    Cómo funciona
-                                </Link>
-                                <Link
-                                    href="/#faq"
-                                    className="px-3.5 py-2 rounded-full text-sm font-semibold text-default-600 hover:text-foreground hover:bg-default-100 transition-colors"
-                                >
-                                    Preguntas frecuentes
-                                </Link>
-                            </div>
-                        )}
                     </div>
 
                     <div id="navbar-center-slot" className="hidden xl:flex flex-1 justify-center px-4" />
 
-                    <div
-                        className={`flex items-center min-w-0 ${
-                            compact ? "gap-1 sm:gap-1.5" : "gap-1 sm:gap-3"
-                        }`}
-                    >
-                        {!isDashboardRoute && (
-                            <Link
-                                href="/musicians"
-                                className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-2 rounded-full text-xs font-semibold text-default-600 hover:text-foreground hover:bg-default-100 transition-colors touch-target"
-                            >
-                                <Icon icon="material-symbols:search" width={18} aria-hidden="true" />
-                                <span className="sr-only sm:not-sr-only">Músicos</span>
-                            </Link>
-                        )}
-                        <ThemeToggle size={compact ? "sm" : "md"} />
+                    <div className="flex items-center min-w-0 gap-1 sm:gap-3">
+                        <ThemeToggle size="md" />
                         {!authReady ? (
-                            <AuthNavSkeleton compact={compact} />
+                            <AuthNavSkeleton />
                         ) : !user ? (
                             <>
                                 <Button
@@ -278,28 +185,20 @@ export default function AppNavbar({ revealOnScroll = false }: Props) {
                                         <Button
                                             variant="flat"
                                             radius="full"
-                                            className={`min-w-0 px-2 sm:px-3 font-semibold data-[hover=true]:bg-default-100 ${
-                                                compact ? "h-10" : "h-11"
-                                            }`}
+                                            className="min-w-0 px-2 sm:px-3 font-semibold data-[hover=true]:bg-default-100 h-11"
                                             endContent={
                                                 <Icon
                                                     icon="material-symbols:keyboard-arrow-down"
                                                     width={18}
                                                     height={18}
                                                     aria-hidden="true"
-                                                    className={`text-default-500 ${
-                                                        compact ? "hidden" : "hidden sm:block"
-                                                    }`}
+                                                    className="text-default-500 hidden sm:block"
                                                 />
                                             }
                                         >
                                             <span className="flex items-center gap-2.5 min-w-0">
                                                 <UserAvatar user={user} size="sm" />
-                                                <span
-                                                    className={`flex-col items-start min-w-0 text-left leading-tight ${
-                                                        compact ? "hidden" : "hidden sm:flex"
-                                                    }`}
-                                                >
+                                                <span className="flex-col items-start min-w-0 text-left leading-tight hidden sm:flex">
                                                     <span className="truncate max-w-[9rem] text-sm text-foreground">
                                                         {user.fullname || user.email}
                                                     </span>

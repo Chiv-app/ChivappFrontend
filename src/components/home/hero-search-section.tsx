@@ -76,29 +76,6 @@ export default function HeroSearchSection() {
                             {phrases[index]}
                         </motion.p>
                     </AnimatePresence>
-                    {!shouldReduceMotion && (
-                        <button
-                            type="button"
-                            onClick={() => setPaused((prev) => !prev)}
-                            aria-pressed={paused}
-                            aria-label={
-                                paused
-                                    ? "Reanudar animación de frases"
-                                    : "Pausar animación de frases"
-                            }
-                            className="inline-flex min-w-11 min-h-11 items-center justify-center rounded-full border border-default-200 bg-content1/80 text-default-600 hover:text-foreground hover:bg-default-100 transition-colors shrink-0"
-                        >
-                            <Icon
-                                icon={
-                                    paused
-                                        ? "material-symbols:play-arrow-rounded"
-                                        : "material-symbols:pause-rounded"
-                                }
-                                width={16}
-                                aria-hidden="true"
-                            />
-                        </button>
-                    )}
                 </div>
 
                 <motion.p

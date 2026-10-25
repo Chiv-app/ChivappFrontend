@@ -30,60 +30,36 @@ const ROTATING_WORDS = ["perfecta", "ideal", "en vivo", "soñada"];
 
 function RotatingText() {
     const [index, setIndex] = useState(0);
-    const [paused, setPaused] = useState(false);
     const prefersReducedMotion = useReducedMotion();
 
     useEffect(() => {
-        if (prefersReducedMotion || paused) return;
+        if (prefersReducedMotion) return;
         const interval = setInterval(() => {
             setIndex((current) => (current + 1) % ROTATING_WORDS.length);
         }, 3000);
         return () => clearInterval(interval);
-    }, [prefersReducedMotion, paused]);
+    }, [prefersReducedMotion]);
 
     if (prefersReducedMotion) {
         return <span className="inline-block text-cyan-400">perfecta</span>;
     }
 
     return (
-        <span className="inline-flex items-center gap-2">
-            <span className="inline-block relative text-cyan-400 w-[200px] text-left">
-                <AnimatePresence mode="wait">
-                    <motion.span
-                        key={index}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute top-0 left-0"
-                    >
-                        {ROTATING_WORDS[index]}
-                    </motion.span>
-                </AnimatePresence>
-                {/* Invisible spacer to maintain height/width */}
-                <span className="invisible">perfecta</span>
-            </span>
-            <button
-                type="button"
-                onClick={() => setPaused((prev) => !prev)}
-                aria-pressed={paused}
-                aria-label={
-                    paused
-                        ? "Reanudar texto animado"
-                        : "Pausar texto animado"
-                }
-                className="inline-flex min-w-11 min-h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 hover:text-white hover:bg-white/20 transition-colors"
-            >
-                <Icon
-                    icon={
-                        paused
-                            ? "material-symbols:play-arrow-rounded"
-                            : "material-symbols:pause-rounded"
-                    }
-                    width={16}
-                    aria-hidden="true"
-                />
-            </button>
+        <span className="inline-block relative text-cyan-400 w-[200px] text-left">
+            <AnimatePresence mode="wait">
+                <motion.span
+                    key={index}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-0 left-0"
+                >
+                    {ROTATING_WORDS[index]}
+                </motion.span>
+            </AnimatePresence>
+            {/* Invisible spacer to maintain height/width */}
+            <span className="invisible">perfecta</span>
         </span>
     );
 }
