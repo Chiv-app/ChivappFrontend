@@ -12,6 +12,7 @@ const BOOKING_NOTIFICATION_TYPES = new Set([
     "booking_change_requested",
     "booking_change_accepted",
     "booking_change_rejected",
+    "booking_change_withdrawn",
     "booking_commitment_updated",
     "booking_message",
     "booking_event_started",
@@ -30,9 +31,17 @@ const BOOKING_NOTIFICATION_TYPES = new Set([
     "booking_refund_transfer",
     "booking_refund_validated",
     "booking_refund_rejected",
+    "admin_refund_approval_requested",
     "payment_validated",
     "payment_rejected",
     "payment_released",
+    "payment_event",
+    "payment_alert",
+    "refund",
+    "payout_request",
+    "payout_requested",
+    "payout_processed",
+    "payout_rejected",
 ]);
 
 const PROFILE_NOTIFICATION_TYPES = new Set([
@@ -41,6 +50,8 @@ const PROFILE_NOTIFICATION_TYPES = new Set([
     "profile_rejected",
     "profile_needs_resubmit",
     "profile_review_requested",
+    "musician_submitted",
+    "contractor_submitted",
 ]);
 
 export type NotificationAudience = Extract<
@@ -117,15 +128,31 @@ export function getNotificationHref(
         return null;
     }
 
-    if (notification.type === "profile_review_requested" && role === "admin") {
+    if (
+        (notification.type === "profile_review_requested" ||
+            notification.type === "musician_submitted" ||
+            notification.type === "contractor_submitted") &&
+        role === "admin"
+    ) {
+        if (notification.type === "musician_submitted") return "/admin/musicians";
+        if (notification.type === "contractor_submitted") return "/admin/contractors";
         const profileRole = getProfileRoleFromMeta(notification.meta);
         if (profileRole === "musician") return "/admin/musicians";
         if (profileRole === "contractor") return "/admin/contractors";
         return "/admin/activity";
     }
 
+    if (notification.type === "user_registered" && role === "admin") {
+        return "/admin/users";
+    }
+
     if (isProfileNotification(notification.type) && role !== "admin") {
         return role === "musician" ? "/musician/profile" : "/contractor/profile";
+    }
+
+    if (notification.type === "admin_refund_approval_requested" && role === "admin") {
+        const bookingId = getBookingIdFromNotification(notification.meta);
+        return bookingId ? `/admin/bookings/${bookingId}` : "/admin/bookings";
     }
 
     if (
@@ -133,12 +160,30 @@ export function getNotificationHref(
         (notification.type === "booking_refund_validated" ||
             notification.type === "booking_refund_rejected" ||
             notification.type === "booking_complaint_musician_update" ||
-            notification.type === "booking_complaint_opened")
+            notification.type === "booking_complaint_opened" ||
+            notification.type === "payout_request" ||
+            notification.type === "payout_requested" ||
+            notification.type === "payment_event" ||
+            notification.type === "payment_alert" ||
+            notification.type === "refund")
     ) {
         return "/admin/payments";
     }
 
+    if (
+        (notification.type === "payout_request" ||
+            notification.type === "payout_processed" ||
+            notification.type === "payout_rejected") &&
+        role === "musician"
+    ) {
+        return "/musician/earnings";
+    }
+
     if (!isBookingNotification(notification.type) || role === "admin") {
+        if (role === "admin") {
+            const bookingId = getBookingIdFromNotification(notification.meta);
+            if (bookingId) return `/admin/bookings/${bookingId}`;
+        }
         return null;
     }
 
@@ -185,6 +230,7 @@ export function getNotificationIcon(type: string): string {
         case "booking_change_requested":
         case "booking_change_accepted":
         case "booking_change_rejected":
+        case "booking_change_withdrawn":
         case "booking_commitment_updated":
             return "material-symbols:edit-location";
         case "booking_message":
@@ -193,6 +239,8 @@ export function getNotificationIcon(type: string): string {
             return "material-symbols:play-circle";
         case "payment_released":
             return "material-symbols:payments";
+        case "payment_alert":
+            return "material-symbols:warning";
         case "payment_rejected":
         case "booking_complaint_opened":
         case "booking_complaint_musician_update":
@@ -206,10 +254,20 @@ export function getNotificationIcon(type: string): string {
         case "booking_refund_transfer":
         case "booking_refund_validated":
         case "booking_refund_rejected":
+        case "admin_refund_approval_requested":
+        case "payout_request":
+        case "payout_requested":
+        case "payout_processed":
+        case "payout_rejected":
+        case "payment_event":
+        case "refund":
             return "material-symbols:account-balance-wallet";
         case "profile_submitted":
         case "profile_needs_resubmit":
         case "profile_review_requested":
+        case "musician_submitted":
+        case "contractor_submitted":
+        case "user_registered":
             return "material-symbols:badge";
         case "ensemble_invite":
         case "ensemble_member_joined":
@@ -225,8 +283,28 @@ export function getNotificationActionLabel(
     type: string,
     role: NotificationAudience,
 ): string {
-    if (type === "profile_review_requested" && role === "admin") {
+    if (
+        (type === "profile_review_requested" ||
+            type === "musician_submitted" ||
+            type === "contractor_submitted") &&
+        role === "admin"
+    ) {
         return "Revisar perfil";
+    }
+    if (type === "user_registered" && role === "admin") {
+        return "Ver usuarios";
+    }
+    if (type === "admin_refund_approval_requested" && role === "admin") {
+        return "Revisar reembolso";
+    }
+    if (type === "payment_alert" && role === "admin") {
+        return "Conciliar pago";
+    }
+    if ((type === "payout_requested" || type === "payout_request") && role === "admin") {
+        return "Ver solicitud de retiro";
+    }
+    if (type === "payout_processed" || type === "payout_rejected" || type === "payout_request") {
+        return "Ver retiros";
     }
     if (
         type === "profile_submitted" ||
@@ -246,7 +324,7 @@ export function getNotificationActionLabel(
     if (type === "booking_commitment_updated" && role === "contractor") return "Ver reserva";
     if (type === "booking_change_rejected" && role === "contractor") return "Ver reserva";
     if (type === "booking_change_accepted" && role === "contractor") return "Ver reserva";
-    if (type === "booking_message") return "Abrir chat";
+    if (type === "booking_message") return "Ver chat";
     if (type === "booking_review") return "Ver reacciones";
     if (type === "booking_event_started") return "Ver evento";
     if (type === "booking_complaint_opened" && role === "musician") {

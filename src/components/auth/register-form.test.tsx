@@ -44,7 +44,7 @@ async function fillRequiredFields(
         await user.type(screen.getByLabelText(/^N.mero de celular$/i), "987654321");
     }
     await user.type(screen.getByLabelText(/^Contrase.a$/i), password);
-    await user.type(screen.getByLabelText(/^Validar contrase.a$/i), confirmPassword);
+    await user.type(screen.getByLabelText(/^(Repetir|Validar) contrase.a$/i), confirmPassword);
     await user.click(screen.getByRole("checkbox"));
 }
 

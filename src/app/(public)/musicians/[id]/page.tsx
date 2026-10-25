@@ -7,16 +7,16 @@ import { getMusicianById } from "@/lib/musicians";
 import { buildPageMetadata, musicianJsonLd, serializeJsonLd } from "@/lib/seo";
 import type { MusicianDetail } from "@/types/ui/musician";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 type PageProps = {
     params: Promise<{ id: string }>;
 };
 
 const detailFallback = (
-    <main className="pt-8 pb-20 px-4 md:px-8">
+    <div className="pt-8 pb-20 px-4 md:px-8">
         <div className="max-w-content mx-auto h-96 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
-    </main>
+    </div>
 );
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

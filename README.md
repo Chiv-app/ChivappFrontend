@@ -1,14 +1,14 @@
 # Frontend — Chivapp Web App
 
-Aplicación web **Next.js 16** (App Router) para descubrir y contratar músicos. Marca: **Chivapp**. UI en español; código en inglés.
+Aplicación web **Next.js 16** (App Router) para descubrir y contratar músicos. Marca: **Chivapp**. UI en español (Sentence case); código en inglés.
 
 ## Stack
 
 | Tecnología | Versión | Uso |
 |------------|---------|-----|
-| Next.js | 16.2 | Framework, SSR, App Router |
+| Next.js | 16.4 | Framework, SSR, App Router |
 | React | 19.2 | UI |
-| HeroUI | 2.8 | Componentes (Button, Input, Card, …) |
+| HeroUI | 2.8 | Componentes (`Button`, `Input`, `Card`, `Modal`, `Tabs`, `Table`, …) |
 | Tailwind CSS | 4 | Estilos y tokens |
 | TypeScript | 5 | Tipado |
 | @iconify/react | 6 | Iconos |
@@ -18,50 +18,44 @@ Aplicación web **Next.js 16** (App Router) para descubrir y contratar músicos.
 
 ```
 src/
+├── proxy.ts                    # Proxy/middleware de Next 16 (rutas privadas y redirecciones de sesión)
 ├── types/
 │   ├── api/                    # Espejo de schemas Pydantic (*Out, *Create)
-│   │   ├── enums.ts            # UserRole, BookingStatus, PaymentStatus, ...
-│   │   ├── auth.ts             # UserOut, LoginRequest, TokenOut
-│   │   ├── profiles.ts         # MusicianProfileListOut, MusicianProfilePublicOut, ...
-│   │   ├── booking.ts
-│   │   ├── contract.ts
-│   │   ├── payment.ts
-│   │   ├── notification.ts
-│   │   ├── availability.ts
-│   │   ├── media.ts
-│   │   ├── search.ts
-│   │   └── index.ts
 │   └── ui/
 │       └── musician.ts         # MusicianCard, MusicianDetail (vista)
 ├── app/
-│   ├── layout.tsx              # Root: fuentes Geist, Providers
-│   ├── providers.tsx           # NextThemesProvider > HeroUIProvider > AuthProvider > NotificationsProvider > AuthModalProvider
-│   ├── globals.css
-│   ├── sitemap.ts               # SEO — usa slug del músico cuando existe, fallback a id
-│   ├── (public)/                # Home, /musicians/[id], /contractors/[id], /share/[token]
-│   ├── (auth)/                  # login, register, forgot/reset-password, verify-email, complete-role
-│   ├── (musician)/musician/*    # Dashboard de músico: bookings, earnings, members, profile, reports...
-│   ├── (contractor)/contractor/*# Dashboard de contratista: bookings, expenses, operations, profile...
-│   ├── (admin)/admin/*          # Dashboard de administración
-│   ├── invite/member/[token]    # Invitación de integrante de ensamble
-│   └── api/                     # geocode, proxy a /api/v1
+│   ├── layout.tsx              # Root: fuentes Geist, skip-link (#contenido), Providers
+│   ├── loading.tsx             # Estado de carga global (App Router)
+│   ├── error.tsx               # Boundary de error global con reintento
+│   ├── providers.tsx           # NextThemesProvider > HeroUIProvider (es-PE) > MotionConfig > AuthProvider
+│   ├── globals.css             # Tokens semánticos, focus-visible, touch-target, reduced-motion
+│   ├── sitemap.ts              # SEO — usa slug del músico cuando existe, fallback a id
+│   ├── (public)/               # Home (ISR), /musicians, /musicos/[genero]/[ciudad], /musicians/[id], /share/[token]
+│   ├── pay/[token]/            # Checkout de link de pago rápido
+│   ├── (auth)/                 # login, register, forgot/reset-password, verify-email, complete-role
+│   ├── (musician)/musician/*   # Dashboard de músico: bookings, links, earnings, payouts, members, profile, reports
+│   ├── (contractor)/contractor/* # Dashboard de contratista: bookings, operations, profile, notifications
+│   ├── (admin)/admin/*         # Dashboard de administración
+│   ├── invite/member/[token]   # Invitación de integrante de ensamble
+│   └── api/                    # geocode, proxy a /api/v1
 ├── components/
-│   ├── home/                   # home-intro-section, rotating-message-card, process-view
+│   ├── home/                   # home-view, hero-search-section, home-intro-section, process-view
 │   ├── layout/                 # app-navbar, theme-toggle, musician-card
-│   ├── auth/                   # login-form, register-form, book-action-button, social-auth-buttons
-│   ├── booking/                 # booking-confirmed-workspace (flujo multi-fase), collapsible-phase-section
-│   ├── musician/                # musician-detail-view, share-profile-button
-│   └── ui/                     # masonry-item, hero-card-wrapper
-├── contexts/                    # auth-context, notifications-context, auth-modal-context
-├── hooks/                       # use-is-client, ...
+│   ├── auth/                   # login-form, register-form, auth-modal, book-action-button, social-auth-buttons
+│   ├── booking/                # booking-request-form, booking-confirmed-workspace, booking-mercadopago-modal
+│   ├── dashboard/              # role-dashboard-shell (sidebar + bottom-nav), vistas de paneles
+│   ├── musician/               # musician-detail-view, musician-profile-wizard, musician-onboarding
+│   └── ui/                     # confirm-dialog, signature-pad, masonry-item, hero-card-wrapper
+├── contexts/                   # auth-context, notifications-context, auth-modal-context
+├── hooks/                      # use-is-client, ...
 └── lib/
     ├── api.ts                  # apiFetch<T>() genérico
     ├── auth.ts                 # login/registerUser, getCurrentUser(): UserOut | null
-    ├── auth-errors.ts          # isEmailTakenError() — detecta "correo ya en uso" en errores del backend
+    ├── booking-labels.ts       # Etiquetas y ayudas de estado de reserva sensibles al rol
+    ├── dashboard-nav.ts        # Navegación de paneles por rol
+    ├── ui-classes.ts           # Clases compartidas UI.card, UI.input, UI.select, UI.modal, UI.skeleton
     ├── musicians.ts            # getMusicians(), getMusicianById(), searchMusicians()
-    └── mappers/
-        ├── musician.ts         # toMusicianCardFromList, toMusicianDetail, ...
-        └── index.ts
+    └── mappers/                # Transformación API → UI
 ```
 
 ## Variables de entorno
@@ -70,9 +64,8 @@ Copiar `.env.example` a `.env.local`:
 
 | Variable | Descripción | Valor local |
 |----------|-------------|-------------|
-| `NEXT_PUBLIC_API_URL` | Base URL del backend | `http://localhost:8000/api/v1` |
-
-> El fallback en `api.ts` apunta a `http://localhost:8080/api/v1`; usar siempre `.env.local` para evitar desalineación.
+| `NEXT_PUBLIC_API_URL` | Base URL del backend | `/api/v1` (proxy mismo origen) o `http://localhost:8000/api/v1` |
+| `NEXT_PUBLIC_UPLOADS_URL` | Host público opcional de uploads | (vacío en local; usa `/uploads`) |
 
 ## Arranque local
 
@@ -86,60 +79,14 @@ npm run lint     # ESLint
 npm run test     # Vitest (unitarios + componentes)
 ```
 
-## Rutas
+## Design system y accesibilidad
 
-| Ruta | Tipo | Descripción |
-|------|------|-------------|
-| `/` | Server Component | Home con grid de músicos desde API |
-| `/musicians/[id]` | Server Component | Detalle público del músico |
-| `/login` | Client Component | Inicio de sesión conectado al API |
-| `/register` | Client Component | Registro (contratista / músico) |
-| `/musicians/[id]/book` | Client + gate | Solicitud de reserva (solo contratistas autenticados) |
+Ver **[DESIGN.md](./DESIGN.md)** (única fuente de verdad documental) para:
 
-Grupos de rutas:
-
-- `(public)` — incluye `NavbarPublic` y `Footer`
-- `(auth)` — layout centrado para formularios
-
-## Integración con Backend
-
-### Capas de tipos
-
-| Capa | Ubicación | Propósito |
-|------|-----------|-----------|
-| API | `types/api/` | Contrato 1:1 con schemas Pydantic del backend |
-| UI | `types/ui/` | Formas simplificadas para componentes |
-| Mappers | `lib/mappers/` | Transformación API → UI |
-
-### Cliente API (`lib/api.ts`)
-
-```typescript
-apiFetch<MusicianProfileListOut[]>("/profiles/musicians?skip=0&limit=20")
-```
-
-- Prefijo: `NEXT_PUBLIC_API_URL`
-- `credentials: "include"` para cookies JWT
-- Genérico tipado; lanza `ApiError` si `!res.ok`
-
-### Datos en Home
-
-1. `page.tsx` (server) llama `getMusicians()`
-2. `getMusicians()` → `GET /profiles/musicians` → `MusicianProfileListOut[]`
-3. `toMusicianCardFromList()` transforma a `MusicianCard` para cards
-
-### Auth (`lib/auth.ts` + `contexts/auth-context.tsx`)
-
-- `getCurrentUser()` → `GET /auth/me` retorna `UserOut | null`
-- `loginUser()` / `registerUser()` / `logoutUser()` envuelven `POST /auth/login|register|logout`; `AuthProvider` expone `login`/`register`/`logout`/`user` vía `useAuth()`
-- Errores del backend se interpretan con `lib/auth-errors.ts::isEmailTakenError()` para distinguir "correo ya en uso" de otras colisiones (teléfono, nombre artístico)
-
-### Mappers disponibles
-
-| Función | Entrada API | Salida UI |
-|---------|-------------|-----------|
-| `toMusicianCardFromList` | `MusicianProfileListOut` | `MusicianCard` |
-| `toMusicianCardFromSearch` | `MusicianSearchResult` | `MusicianCard` |
-| `toMusicianDetail` | `MusicianProfilePublicOut` | `MusicianDetail` |
+- Paleta de colores y tokens de contraste WCAG 2.2 AA (`primary`, `primary-foreground`, `primary-text`, `success-text`, `warning-text`, `danger-text`, `default-400..600`).
+- Escala tipográfica en Geist Sans (mínimo 12 px para metadatos, 14 px contenido, 16 px en inputs móviles).
+- Reglas de accesibilidad (`:focus-visible`, touch targets de 44×44 px, `prefers-reduced-motion`, `ConfirmDialog`, glosario cotización/reserva y Sentence case).
+- Guía de uso de componentes HeroUI y utilidades `src/lib/ui-classes.ts` (`UI.*`) y `src/lib/booking-labels.ts`.
 
 ## Testing
 
@@ -151,77 +98,10 @@ npm run test:watch  # modo watch
 npm run test:smoke  # smoke tests, requiere SMOKE_BASE_URL
 ```
 
-- Tests unitarios: mappers (`lib/mappers/musician.test.ts`), helpers (`lib/auth-errors.test.ts`).
-- Tests de componentes: `theme-toggle`, `musician-card`, `login-form`, `register-form` — mockean `next/navigation` y `@/lib/auth`/`@heroui/react` según corresponda.
-- `src/__smoke__/` — pruebas de solo lectura (home, sitemap.xml) contra un sitio **ya desplegado**. Se saltan automáticamente si no hay `SMOKE_BASE_URL`:
-  ```bash
-  SMOKE_BASE_URL=https://tuapp.com npm run test:smoke
-  ```
-
-CI en GitHub Actions (`.github/workflows/tests.yml`) corre `npm run test` en cada push/PR, y expone un job `smoke-tests` disparable a mano apuntando a la URL ya desplegada en GCP.
-
-## Despliegue en GCP
-
-- Build de producción estándar de Next.js (`npm run build` + `npm run start`), sin configuración especial de Cloud Run adicional por ahora.
-- Después de cada despliegue, correr el job `smoke-tests` del workflow de CI (o `npm run test:smoke` localmente) apuntando a la URL real para confirmar que el sitio quedó sano.
-- Asegurar que `NEXT_PUBLIC_API_URL` apunte al backend desplegado (no a `localhost`).
-
-## Design system
-
-Ver [DESIGN.md](./DESIGN.md) para tokens de color, tipografía, espaciado y patrones HeroUI.
-
-Resumen:
-
-- Color primario: `#9EE3EF` (celeste)
-- Fuente: Geist Sans
-- Componentes interactivos: HeroUI directo
-- `lang="es"` en HTML root
-
-## Configuración Next.js
-
-`next.config.ts`:
-
-- `reactCompiler: true`
-- `transpilePackages`: HeroUI
-- Imágenes remotas: `images.pexels.com`
-
 ## Convenciones
 
 | Ámbito | Idioma |
 |--------|--------|
-| Texto visible al usuario | Español |
+| Texto visible al usuario | Español (Sentence case) |
 | Código (archivos, variables, funciones) | Inglés |
 | Commits y docs técnicos | Español o inglés (consistente por archivo) |
-
-### Nombres de archivos
-
-- Componentes: `kebab-case.tsx` (`musician-card.tsx`)
-- Páginas: App Router (`page.tsx`, `layout.tsx`)
-- Lib/utilidades: `camelCase` exports en archivos descriptivos
-
-## Estado de implementación
-
-| Feature | Estado |
-|---------|--------|
-| Landing + listado músicos | ✅ Conectado al API |
-| Detalle músico `/musicians/[id]` | ✅ Conectado al API |
-| Navbar / Footer / Hero | ✅ |
-| Sección "Cómo funciona" | ✅ |
-| Login / registro | ✅ Conectado al API |
-| Logout + sesión en navbar | ✅ |
-| Reserva protegida (solo contratistas) | ✅ Gate en botones y `/book` |
-| Perfil músico / contratista | ✅ Dashboards en `(musician)/musician/*` y `(contractor)/contractor/*` |
-| Dashboard de administración | ✅ `(admin)/admin/*` |
-| Búsqueda avanzada | ❌ (`searchMusicians()`/`toMusicianCardFromSearch` existen en `lib/` pero no están conectados a ninguna página) |
-| Bookings / contratos / pagos | ✅ `booking-confirmed-workspace` — ciclo de vida, contrato PDF, pagos/settlement, ubicación en vivo, reseñas |
-| Compartir perfil de músico | ✅ `share-profile-button` |
-| Tema claro/oscuro | ✅ `theme-toggle` + `next-themes` |
-| Invitación de integrantes de ensamble | ✅ `/invite/member/[token]` |
-| Auth middleware / rutas privadas | ⚠️ Gate por rol *client-side* (`RoleDashboardShell` + `useAuth`, redirige con `router.replace`) — no hay `middleware.ts` de Next |
-
-## Próximos pasos sugeridos
-
-1. Conectar `searchMusicians()`/`toMusicianCardFromSearch` a una página de búsqueda (hoy existen pero no se usan desde ninguna UI).
-2. Migrar el gate de rutas privadas de chequeo client-side a `middleware.ts` de Next, para evitar el flash de contenido antes de redirigir.
-3. Ampliar la suite de tests (ver sección Testing) a los dashboards de músico/contratista/admin y al flujo de booking.
-4. Alinear CORS si el dev server usa puerto distinto a 3000.

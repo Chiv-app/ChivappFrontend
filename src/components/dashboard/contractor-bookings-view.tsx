@@ -82,9 +82,11 @@ export default function ContractorBookingsView() {
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
     const [layout, setLayout] = useState<BookingLayoutMode>("cards");
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     async function loadBookings() {
         setIsLoading(true);
+        setLoadError(null);
         try {
             const data = await listBookings();
             setBookings(
@@ -95,12 +97,14 @@ export default function ContractorBookingsView() {
                 ),
             );
         } catch (error) {
+            const msg =
+                error instanceof Error
+                    ? error.message
+                    : "No se pudieron cargar las reservas.";
+            setLoadError(msg);
             addToast({
                 title: "Error",
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : "No se pudieron cargar las reservas.",
+                description: msg,
                 color: "danger",
             });
         } finally {
@@ -109,6 +113,7 @@ export default function ContractorBookingsView() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadBookings();
     }, []);
 
@@ -149,19 +154,12 @@ export default function ContractorBookingsView() {
     }, [bookings, filter, query]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
 
     const pageItems = useMemo(() => {
-        const start = (page - 1) * PAGE_SIZE;
+        const start = (currentPage - 1) * PAGE_SIZE;
         return filtered.slice(start, start + PAGE_SIZE);
-    }, [filtered, page]);
-
-    useEffect(() => {
-        setPage(1);
-    }, [filter, query]);
-
-    useEffect(() => {
-        if (page > totalPages) setPage(totalPages);
-    }, [page, totalPages]);
+    }, [filtered, currentPage]);
 
     if (isLoading) {
         return (
@@ -213,6 +211,20 @@ export default function ContractorBookingsView() {
                 </div>
             </div>
 
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar tus reservas
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={loadBookings}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                 {[
                     {
@@ -252,7 +264,7 @@ export default function ContractorBookingsView() {
                                 <Icon icon={item.icon} width={18} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[11px] sm:text-xs text-default-500">
+                                <p className="text-xs text-default-500">
                                     {item.label}
                                 </p>
                                 <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">
@@ -267,7 +279,10 @@ export default function ContractorBookingsView() {
             <div className="flex flex-col gap-4">
                 <Tabs
                     selectedKey={filter}
-                    onSelectionChange={(key) => setFilter(key as FilterKey)}
+                    onSelectionChange={(key) => {
+                        setFilter(key as FilterKey);
+                        setPage(1);
+                    }}
                     variant="underlined"
                     color="primary"
                     classNames={{
@@ -283,7 +298,10 @@ export default function ContractorBookingsView() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
                     <Input
                         value={query}
-                        onValueChange={setQuery}
+                        onValueChange={(val) => {
+                            setQuery(val);
+                            setPage(1);
+                        }}
                         placeholder="Buscar por evento, músico, ciudad o estado"
                         variant="bordered"
                         radius="lg"
@@ -382,12 +400,12 @@ export default function ContractorBookingsView() {
                     {filtered.length > PAGE_SIZE ? (
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                             <p className="text-sm text-default-500">
-                                Mostrando {(page - 1) * PAGE_SIZE + 1}–
-                                {Math.min(page * PAGE_SIZE, filtered.length)} de{" "}
+                                Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+                                {Math.min(currentPage * PAGE_SIZE, filtered.length)} de{" "}
                                 {filtered.length}
                             </p>
                             <Pagination
-                                page={page}
+                                page={currentPage}
                                 total={totalPages}
                                 onChange={setPage}
                                 showControls

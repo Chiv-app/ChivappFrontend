@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Button, Card, CardBody, Chip, Textarea, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import FileUploadField from "@/components/ui/file-upload-field";
+import { ApiError } from "@/lib/api";
 import {
     acceptBookingComplaint,
     getBookingComplaint,
@@ -39,6 +40,8 @@ const REFUND_STATUS_LABEL: Record<string, string> = {
 export default function BookingComplaintPanel({ bookingId, role, onUpdated }: Props) {
     const [complaint, setComplaint] = useState<BookingComplaint | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadCount, setReloadCount] = useState(0);
     const [response, setResponse] = useState("");
     const [evidence, setEvidence] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState("");
@@ -48,13 +51,25 @@ export default function BookingComplaintPanel({ bookingId, role, onUpdated }: Pr
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLoading(true);
+        setLoadError(null);
         getBookingComplaint(bookingId)
             .then((data) => {
                 if (!cancelled) setComplaint(data);
             })
-            .catch(() => {
-                if (!cancelled) setComplaint(null);
+            .catch((err) => {
+                if (cancelled) return;
+                if (err instanceof ApiError && err.status === 404) {
+                    setComplaint(null);
+                } else {
+                    setComplaint(null);
+                    setLoadError(
+                        err instanceof Error
+                            ? err.message
+                            : "No se pudo cargar el estado de la reclamación.",
+                    );
+                }
             })
             .finally(() => {
                 if (!cancelled) setIsLoading(false);
@@ -62,9 +77,33 @@ export default function BookingComplaintPanel({ bookingId, role, onUpdated }: Pr
         return () => {
             cancelled = true;
         };
-    }, [bookingId]);
+    }, [bookingId, reloadCount]);
 
-    if (isLoading || !complaint) return null;
+    if (isLoading) return null;
+
+    if (loadError) {
+        return (
+            <Card className="border border-danger/30 bg-danger/5 shadow-soft">
+                <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5">
+                    <div className="flex items-start gap-2.5 text-sm text-danger">
+                        <Icon icon="material-symbols:error-outline" width={20} className="shrink-0 mt-0.5" />
+                        <span>{loadError}</span>
+                    </div>
+                    <Button
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        onPress={() => setReloadCount((c) => c + 1)}
+                        startContent={<Icon icon="material-symbols:refresh" width={16} />}
+                    >
+                        Reintentar
+                    </Button>
+                </CardBody>
+            </Card>
+        );
+    }
+
+    if (!complaint) return null;
 
     async function handleAccept() {
         setBusy("accept");

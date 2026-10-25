@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useCallback, useEffect, useState } from "react";
 import {
     Button,
@@ -41,10 +42,15 @@ const STATUS_LABEL: Record<SupportTicketStatus, string> = {
     resolved: "Resuelto",
 };
 
+const PAGE_SIZE = 100;
+
 export default function AdminSupportPage() {
     const [tickets, setTickets] = useState<AdminSupportTicketOut[]>([]);
     const [status, setStatus] = useState<"all" | SupportTicketStatus>("open");
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [selected, setSelected] = useState<AdminSupportTicketOut | null>(null);
     const [response, setResponse] = useState("");
     const [nextStatus, setNextStatus] = useState<SupportTicketStatus>("resolved");
@@ -53,21 +59,54 @@ export default function AdminSupportPage() {
 
     const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const data = await getAdminSupportTickets({
                 status: status === "all" ? undefined : status,
-                limit: 100,
+                skip: 0,
+                limit: PAGE_SIZE,
             });
             setTickets(data);
-        } catch {
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
             setTickets([]);
+            setHasMore(false);
+            setLoadError(
+                err instanceof Error
+                    ? err.message
+                    : "No se pudieron cargar los tickets de soporte.",
+            );
         } finally {
             setLoading(false);
         }
     }, [status]);
 
+    async function loadMore() {
+        setLoadingMore(true);
+        try {
+            const data = await getAdminSupportTickets({
+                status: status === "all" ? undefined : status,
+                skip: tickets.length,
+                limit: PAGE_SIZE,
+            });
+            setTickets((current) => [...current, ...data]);
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más tickets",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMore(false);
+        }
+    }
+
     useEffect(() => {
-        void load();
+        const t = window.setTimeout(() => {
+            void load();
+        }, 0);
+        return () => window.clearTimeout(t);
     }, [load]);
 
     function openTicket(ticket: AdminSupportTicketOut) {
@@ -108,6 +147,20 @@ export default function AdminSupportPage() {
                 }
             />
 
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar los comentarios
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={load}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
+
             <div className="flex flex-col sm:flex-row gap-3">
                 <Select
                     label="Estado"
@@ -136,7 +189,9 @@ export default function AdminSupportPage() {
             ) : tickets.length === 0 ? (
                 <Card className="border border-default-200/70 shadow-soft">
                     <CardBody className="p-8 text-center text-default-500">
-                        No hay comentarios con este filtro.
+                        {loadError
+                            ? "No se pudieron cargar los comentarios."
+                            : "No hay comentarios con este filtro."}
                     </CardBody>
                 </Card>
             ) : (
@@ -188,7 +243,21 @@ export default function AdminSupportPage() {
                 </div>
             )}
 
-            <Modal isOpen={detailModal.isOpen} onOpenChange={detailModal.onOpenChange} size="2xl">
+            {hasMore && !loading ? (
+                <div className="flex justify-center">
+                    <Button
+                        variant="flat"
+                        color="primary"
+                        radius="lg"
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                    >
+                        Cargar más ({tickets.length} mostrados)
+                    </Button>
+                </div>
+            ) : null}
+
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={detailModal.isOpen} onOpenChange={detailModal.onOpenChange} size="2xl">
                 <ModalContent>
                     {(onClose) => (
                         <>

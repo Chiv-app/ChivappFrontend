@@ -92,12 +92,15 @@ export default function BookingRepertoirePicker({
     const [filter, setFilter] = useState("");
     const [expanded, setExpanded] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadCount, setReloadCount] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const videoPlayback = useVideoPlayback();
 
     useEffect(() => {
         const saved = booking.requested_repertoire ?? [];
         const other = saved.map(parseOtherTitle).find(Boolean) ?? null;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedCatalog(saved.filter((title) => !parseOtherTitle(title)));
         setOtherEnabled(Boolean(other));
         setOtherText(other ?? "");
@@ -109,7 +112,10 @@ export default function BookingRepertoirePicker({
         let cancelled = false;
 
         void Promise.resolve().then(() => {
-            if (!cancelled) setIsLoading(true);
+            if (!cancelled) {
+                setIsLoading(true);
+                setLoadError(null);
+            }
         });
 
         getMusicianById(booking.musician_id)
@@ -120,7 +126,10 @@ export default function BookingRepertoirePicker({
                 );
             })
             .catch(() => {
-                if (!cancelled) setAvailable([]);
+                if (!cancelled) {
+                    setAvailable([]);
+                    setLoadError("No se pudo cargar el catálogo de temas del músico.");
+                }
             })
             .finally(() => {
                 if (!cancelled) setIsLoading(false);
@@ -128,7 +137,7 @@ export default function BookingRepertoirePicker({
         return () => {
             cancelled = true;
         };
-    }, [booking.musician_id]);
+    }, [booking.musician_id, reloadCount]);
 
     const youtubeByTitle = useMemo(() => {
         const map = new Map<string, string>();
@@ -229,7 +238,20 @@ export default function BookingRepertoirePicker({
 
                 {canEdit ? (
                     <>
-                        {available.length > 0 ? (
+                        {loadError ? (
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
+                                <span>{loadError}</span>
+                                <Button
+                                    size="sm"
+                                    color="danger"
+                                    variant="flat"
+                                    onPress={() => setReloadCount((c) => c + 1)}
+                                    startContent={<Icon icon="material-symbols:refresh" width={16} />}
+                                >
+                                    Reintentar
+                                </Button>
+                            </div>
+                        ) : available.length > 0 ? (
                             <Input
                                 size="sm"
                                 variant="bordered"

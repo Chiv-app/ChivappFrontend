@@ -75,10 +75,29 @@ async function handleNotificationClick(
 export default function NotificationsDropdown({ role }: Props) {
     const router = useRouter();
     const nowMs = useNowMs();
-    const { notifications, unreadCount, isLoading, error, refresh, markRead } =
-        useNotifications();
+    const {
+        notifications,
+        unreadCount,
+        isLoading,
+        error,
+        refresh,
+        markRead,
+        markAllRead,
+    } = useNotifications();
+    const [isMarkingAll, setIsMarkingAll] = useState(false);
     const allNotificationsPath = getNotificationsPath(role);
     const recentNotifications = notifications.slice(0, 8);
+
+    async function handleMarkAllRead() {
+        setIsMarkingAll(true);
+        try {
+            await markAllRead();
+        } catch {
+            // Silently ignore in dropdown
+        } finally {
+            setIsMarkingAll(false);
+        }
+    }
 
     return (
         <div className="relative">
@@ -116,7 +135,22 @@ export default function NotificationsDropdown({ role }: Props) {
                                         : "Estás al día"}
                                 </p>
                             </div>
-                            {isLoading ? <Spinner size="sm" color="primary" /> : null}
+                            <div className="flex items-center gap-2">
+                                {unreadCount > 0 ? (
+                                    <Button
+                                        size="sm"
+                                        variant="light"
+                                        color="primary"
+                                        radius="lg"
+                                        className="text-xs font-semibold h-7 px-2"
+                                        isLoading={isMarkingAll}
+                                        onPress={() => void handleMarkAllRead()}
+                                    >
+                                        Marcar todas leídas
+                                    </Button>
+                                ) : null}
+                                {isLoading ? <Spinner size="sm" color="primary" /> : null}
+                            </div>
                         </div>
                     </div>
 
@@ -168,7 +202,7 @@ export default function NotificationsDropdown({ role }: Props) {
                                                 }}
                                             >
                                                 <div className="flex items-start gap-3">
-                                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text">
                                                         <Icon
                                                             icon={getNotificationIcon(
                                                                 notification.type,
@@ -185,7 +219,7 @@ export default function NotificationsDropdown({ role }: Props) {
                                                             {notification.message}
                                                         </p>
                                                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                            <p className="text-[11px] text-default-400">
+                                                            <p className="text-xs text-default-500">
                                                                 {nowMs
                                                                     ? formatRelativeTime(
                                                                           notification.created_at,
@@ -194,7 +228,7 @@ export default function NotificationsDropdown({ role }: Props) {
                                                                     : ""}
                                                             </p>
                                                             {actionLabel ? (
-                                                                <span className="text-[11px] font-semibold text-primary">
+                                                                <span className="text-xs font-semibold text-primary">
                                                                     {actionLabel}
                                                                 </span>
                                                             ) : null}
@@ -236,7 +270,7 @@ export default function NotificationsDropdown({ role }: Props) {
                 >
                     <span className="absolute inset-0 rounded-full bg-danger/50 animate-notification-pulse" />
                     <span className="absolute inset-0 rounded-full bg-danger/35 animate-notification-pulse [animation-delay:0.4s]" />
-                    <span className="relative flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-danger-foreground ring-2 ring-content1 animate-notification-badge">
+                    <span className="relative flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-xs font-bold leading-none text-danger-foreground ring-2 ring-content1 animate-notification-badge">
                         {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                 </span>

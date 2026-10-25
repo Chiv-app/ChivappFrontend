@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -96,6 +97,12 @@ export default function HelpWidget() {
         message.trim().length >= 5 &&
         (!!user || (guestName.trim() && guestEmail.trim()));
 
+    const hasBottomStickyBar =
+        /^\/musicians\/[^/]+/.test(pathname) ||
+        pathname.startsWith("/musician/profile") ||
+        pathname.startsWith("/contractor/profile") ||
+        pathname.startsWith("/pay/");
+
     return (
         <>
             <button
@@ -105,12 +112,16 @@ export default function HelpWidget() {
                     void loadMyTickets();
                 }}
                 aria-label="Ayuda y comentarios"
-                className="fixed bottom-24 right-4 sm:right-6 z-40 flex items-center justify-center size-12 rounded-full border border-default-200/70 bg-content1/90 backdrop-blur-md shadow-elevated text-default-600 hover:text-primary hover:border-primary/40 transition-colors"
+                className={`fixed right-4 sm:right-6 z-40 flex items-center justify-center size-12 rounded-full border border-default-200/70 bg-content1/90 backdrop-blur-md shadow-elevated text-default-600 hover:text-primary-text hover:border-primary/40 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                    hasBottomStickyBar
+                        ? "bottom-[calc(var(--cookie-h,0px)+10rem)] sm:bottom-[calc(var(--cookie-h,0px)+7rem)] lg:bottom-[calc(var(--cookie-h,0px)+6rem)]"
+                        : "bottom-[calc(var(--cookie-h,0px)+6rem)] lg:bottom-[calc(var(--cookie-h,0px)+1.5rem)]"
+                }`}
             >
                 <Icon icon="material-symbols:support-agent" width={24} height={24} />
             </button>
 
-            <Modal
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
                 placement="bottom-center" scrollBehavior="inside"

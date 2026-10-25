@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, CardBody, Chip, addToast } from "@heroui/react";
+import { Button, Chip, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import type { LiveMapPoint } from "@/components/booking/live-location-map-inner";
 import {
@@ -79,6 +79,7 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLoading(true);
         loadSession()
             .catch((error) => {
@@ -102,13 +103,14 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
     }, [loadSession]);
 
     // Poll mientras alguien comparte.
+    const sharingCount = session?.sharing_count ?? 0;
     useEffect(() => {
-        if (!session || session.sharing_count <= 0) return;
+        if (sharingCount <= 0) return;
         const id = window.setInterval(() => {
             void loadSession().catch(() => undefined);
         }, 8000);
         return () => window.clearInterval(id);
-    }, [session?.sharing_count, loadSession]);
+    }, [sharingCount, loadSession]);
 
     // Heartbeat GPS mientras yo comparto (mantiene viva la sesión).
     useEffect(() => {

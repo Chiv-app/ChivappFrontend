@@ -18,6 +18,7 @@ import BookingGuestUpsellModal from "@/components/booking/booking-guest-upsell-m
 import ContractDocumentView from "@/components/booking/contract-document-view";
 import SignaturePad from "@/components/ui/signature-pad";
 import { formatCurrency } from "@/lib/booking-labels";
+import { getBooking } from "@/lib/bookings";
 import { useAuth } from "@/contexts/auth-context";
 import {
     contractorPayableTotal,
@@ -51,7 +52,12 @@ export default function BookingContractConfirmCard({
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
     const [uploadedSignatureUrl, setUploadedSignatureUrl] = useState<string | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [pendingPayment, setPendingPayment] = useState<{
+        paymentId: string | null;
+        message: string;
+    } | null>(null);
     const [isUpsellModalOpen, setIsUpsellModalOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const fee = platformFeeAmount(booking);
@@ -62,6 +68,12 @@ export default function BookingContractConfirmCard({
 
     async function handleConfirm(event: FormEvent) {
         event.preventDefault();
+        setValidationError(null);
+
+        if (pendingPayment) {
+            setIsPaymentModalOpen(true);
+            return;
+        }
 
         if (isAlreadySigned) {
             if (contract?.contractor_signature_url && !uploadedSignatureUrl) {
@@ -75,18 +87,23 @@ export default function BookingContractConfirmCard({
             return;
         }
 
-        if (!termsAccepted) {
+        if (!signatureDataUrl) {
+            const msg = "Registra tu firma (dibujándola o escribiéndola con teclado) antes de continuar.";
+            setValidationError(msg);
             addToast({
-                title: "Aceptación requerida",
-                description: "Debes leer y aceptar los términos del contrato.",
+                title: "Firma requerida",
+                description: msg,
                 color: "warning",
             });
             return;
         }
-        if (!signatureDataUrl) {
+
+        if (!termsAccepted) {
+            const msg = "Marca la casilla para confirmar que leíste y aceptas los términos del contrato.";
+            setValidationError(msg);
             addToast({
-                title: "Firma requerida",
-                description: "Debes firmar para aceptar los términos y alimentar el contrato.",
+                title: "Aceptación requerida",
+                description: msg,
                 color: "warning",
             });
             return;
@@ -126,6 +143,7 @@ export default function BookingContractConfirmCard({
                         size="sm"
                         variant="bordered"
                         radius="lg"
+                        className="min-h-11"
                         startContent={
                             <Icon icon="material-symbols:edit" width={16} />
                         }
@@ -151,7 +169,7 @@ export default function BookingContractConfirmCard({
                             key={step}
                             className="rounded-2xl border border-default-200 bg-content1 px-4 py-3"
                         >
-                            <p className="text-xs font-semibold text-secondary">
+                            <p className="text-xs font-semibold text-primary-text">
                                 Paso {index + 1}
                             </p>
                             <p className="text-sm text-foreground mt-1">{step}</p>
@@ -181,14 +199,14 @@ export default function BookingContractConfirmCard({
                         </p>
                     </div>
                     <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                        <p className="text-xs text-default-500">Total a pagar</p>
+                        <p className="text-xs text-default-500">Total a pagar (pago único 100%)</p>
                         <p className="text-xl font-bold text-primary mt-1">
                             {contractorTotal != null
                                 ? formatCurrency(contractorTotal)
                                 : "—"}
                         </p>
                         <p className="text-xs text-default-500 mt-1">
-                            Pago único del 100 % con Mercado Pago
+                            Custodiado por Chivapp hasta finalizar tu evento
                         </p>
                     </div>
                 </div>
@@ -206,6 +224,33 @@ export default function BookingContractConfirmCard({
                     canEdit
                     onUpdated={onUpdated}
                 />
+
+                {/* Resumen de política de cancelación y protección antes de firmar */}
+                <div className="rounded-2xl border border-default-200 bg-default-50/70 p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <Icon icon="material-symbols:verified-user-outline" width={18} className="text-primary-text shrink-0" />
+                        <span>Política de cancelación y garantía Chivapp</span>
+                    </div>
+                    <ul className="text-xs text-default-600 space-y-1 list-disc list-inside leading-relaxed">
+                        <li>
+                            <strong>Cancelación del músico:</strong> recibes el 100 % del importe abonado.
+                        </li>
+                        <li>
+                            <strong>Cancelación del cliente:</strong> 15 días calendario o más de anticipación: 100 % de lo pagado (sin el costo de la pasarela); entre 7 y 14 días: 50 % (sin el costo de la pasarela); menos de 7 días: sin reembolso (salvo caso fortuito o fuerza mayor acreditado).{" "}
+                            <a
+                                href="/legal/reembolsos"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-primary-text underline underline-offset-2"
+                            >
+                                Ver política completa
+                            </a>
+                        </li>
+                        <li>
+                            <strong>Pago protegido:</strong> el monto se libera al músico únicamente después de realizado el evento.
+                        </li>
+                    </ul>
+                </div>
 
                 <Divider />
 
@@ -225,81 +270,82 @@ export default function BookingContractConfirmCard({
                         <>
                             <SignaturePad
                                 value={signatureDataUrl}
-                                onChange={setSignatureDataUrl}
+                                onChange={(val) => {
+                                    setSignatureDataUrl(val);
+                                    if (val) setValidationError(null);
+                                }}
                                 label="Firma para aceptar términos y condiciones"
-                                helperText="Tu firma se guarda como adjunto y alimenta el PDF al generarlo."
+                                helperText="Tu firma se guarda como adjunto y se inserta en el PDF del contrato."
                             />
 
                             <div className="rounded-2xl border border-default-200 bg-default-50/60 p-4">
                                 <Checkbox
                                     isSelected={termsAccepted}
-                                    onValueChange={setTermsAccepted}
+                                    onValueChange={(checked) => {
+                                        setTermsAccepted(checked);
+                                        if (checked) setValidationError(null);
+                                    }}
                                     classNames={{ label: "text-sm leading-relaxed" }}
                                 >
-                                    He leído el contrato de la solicitud, firmo y acepto sus términos
+                                    He leído el contrato de la solicitud y la política de cancelación, firmo y acepto sus términos
                                     y condiciones para continuar con la reserva.
                                 </Checkbox>
                             </div>
+
+                            {validationError && (
+                                <p role="alert" className="text-xs font-medium text-danger flex items-center gap-1.5">
+                                    <Icon icon="material-symbols:error-outline" width={16} className="shrink-0" />
+                                    <span>{validationError}</span>
+                                </p>
+                            )}
                         </>
                     )}
 
-                    {/* Selector de Modalidad de Pago - ÚNICA OPCIÓN */}
-                    <div className="flex flex-col gap-3">
-                        <p className="text-sm font-semibold text-foreground">
-                            Modalidad de pago
-                        </p>
-                        <div className="grid grid-cols-1 gap-3">
-                            <div
-                                className="cursor-default rounded-2xl border p-4 transition-all border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-secondary">
-                                        Pago completo del show
-                                    </span>
-                                    <div
-                                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center border-primary bg-primary"
-                                    >
-                                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                                    </div>
-                                </div>
-                                <p className="font-bold text-foreground text-lg">
-                                    {contractorTotal != null ? formatCurrency(contractorTotal) : "Total"}
-                                </p>
-                                <div className="text-xs text-default-500 mt-1">
-                                    Paga el 100% del servicio hoy en un solo pago seguro. No hay pagos posteriores.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Mercado Pago Security Banner */}
-                    <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="flex items-start sm:items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary-text shrink-0">
                                 <Icon icon="material-symbols:shield-lock" width={24} />
                             </div>
                             <div className="min-w-0">
                                 <div className="text-sm font-semibold text-foreground flex flex-wrap items-center gap-1.5">
-                                    <span>Pago 100% protegido con Mercado Pago</span>
-                                    <Chip size="sm" variant="flat" color="primary" className="text-[11px] h-5">
+                                    <span>Pago único 100% protegido con Mercado Pago</span>
+                                    <Chip size="sm" variant="flat" color="primary" className="text-xs h-5">
                                         Oficial
                                     </Chip>
                                 </div>
                                 <p className="text-xs text-default-500 mt-0.5">
-                                    Acepta Tarjetas (Crédito / Débito), Yape y Transferencia bancaria.
+                                    Acepta tarjetas de crédito o débito y Yape sin cargos posteriores.
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-default-400 text-xs self-end sm:self-auto shrink-0">
+                        <div className="flex items-center gap-2 text-default-500 text-xs self-end sm:self-auto shrink-0">
                             <Icon icon="logos:visa" width={28} />
                             <Icon icon="logos:mastercard" width={24} />
                             <span className="font-bold text-primary px-1">yape</span>
                         </div>
                     </div>
 
+                    {pendingPayment ? (
+                        <div
+                            role="status"
+                            aria-live="polite"
+                            className="rounded-2xl border border-warning/40 bg-warning/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                        >
+                            <div className="space-y-1">
+                                <p className="text-sm font-bold text-foreground">
+                                    Tienes un pago en proceso de verificación
+                                </p>
+                                <p className="text-xs text-default-600">
+                                    {pendingPayment.message}
+                                </p>
+                            </div>
+                        </div>
+                    ) : null}
+
                     <Button
                         type="submit"
-                        color="primary"
+                        color={pendingPayment ? "warning" : "primary"}
                         radius="lg"
                         size="lg"
                         isLoading={isConfirming}
@@ -310,9 +356,11 @@ export default function BookingContractConfirmCard({
                     >
                         {isConfirming
                             ? "Conectando con Mercado Pago..."
-                            : isAlreadySigned
-                              ? `Pagar ${payLabel} con Mercado Pago`
-                              : `Firmar contrato y pagar ${payLabel} con Mercado Pago`}
+                            : pendingPayment
+                              ? "Ver estado del pago en proceso"
+                              : isAlreadySigned
+                                ? `Pagar ${payLabel} con Mercado Pago`
+                                : `Firmar contrato y pagar ${payLabel} con Mercado Pago`}
                     </Button>
                 </form>
             </CardBody>
@@ -336,11 +384,15 @@ export default function BookingContractConfirmCard({
                 booking={booking}
                 amount={contractorTotal ?? 0}
                 signatureImageUrl={uploadedSignatureUrl || contract?.contractor_signature_url || null}
+                contractBodySha256={contract?.body_sha256}
+                onPendingChange={setPendingPayment}
                 onSuccess={() => {
-                    onUpdated({
-                        ...booking,
-                        status: "payment_retained" as BookingOut["status"],
-                    });
+                    setPendingPayment(null);
+                    void getBooking(booking.id)
+                        .then((fresh) => onUpdated(fresh))
+                        .catch(() => {
+                            // Keep current booking state if fetch fails; parent will poll/refresh.
+                        });
                 }}
             />
 

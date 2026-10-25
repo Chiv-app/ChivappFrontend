@@ -39,7 +39,15 @@ export default function Footer() {
                                 href="/legal/terminos"
                                 className="hover:text-primary-300 transition"
                             >
-                                Términos y Condiciones
+                                Términos y condiciones
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                href="/legal/reembolsos"
+                                className="hover:text-primary-300 transition"
+                            >
+                                Cancelación y reembolsos
                             </Link>
                         </li>
                         <li>
@@ -47,7 +55,7 @@ export default function Footer() {
                                 href="/legal/privacidad"
                                 className="hover:text-primary-300 transition"
                             >
-                                Privacidad y Cookies
+                                Privacidad y cookies
                             </Link>
                         </li>
                     </ul>

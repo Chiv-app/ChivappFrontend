@@ -1,89 +1,141 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { listMyEnsembleInvites, respondEnsembleInvite, listMyCalls, respondMyBookingMemberInvite } from "@/lib/ensemble-members";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { ApiError } from "@/lib/api";
+import {
+    listMyEnsembleInvites,
+    respondEnsembleInvite,
+    listMyCalls,
+    respondMyBookingMemberInvite,
+} from "@/lib/ensemble-members";
 import type { EnsembleMemberOut, BookingMemberInviteOut } from "@/types/api";
 
 export default function MusicianOnboardingOverlay() {
     const [ensembleInvites, setEnsembleInvites] = useState<EnsembleMemberOut[]>([]);
     const [bookingCalls, setBookingCalls] = useState<BookingMemberInviteOut[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [workingAction, setWorkingAction] = useState<"accept" | "decline" | null>(null);
 
     useEffect(() => {
+        let cancelled = false;
         const fetchInvites = async () => {
             try {
                 const [ens, calls] = await Promise.all([
                     listMyEnsembleInvites(),
-                    listMyCalls()
+                    listMyCalls(),
                 ]);
-                // only pending
-                const pendingEns = ens.filter(e => e.status === "invited");
-                const pendingCalls = calls.filter(c => c.status === "pending");
+                if (cancelled) return;
+                const pendingEns = ens.filter((e) => e.status === "invited");
+                const pendingCalls = calls.filter((c) => c.status === "pending");
                 setEnsembleInvites(pendingEns);
                 setBookingCalls(pendingCalls);
-                
+
                 if (pendingEns.length > 0 || pendingCalls.length > 0) {
                     setIsOpen(true);
                 }
-            } catch (err) {
-                console.error("Error fetching onboarding invites", err);
+            } catch {
+                // Silent on background check; musician can still manage invites from their panel.
             }
         };
-        fetchInvites();
+        void fetchInvites();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
-    const handleAcceptEnsemble = async (id: string) => {
-        setIsLoading(true);
-        try {
-            await respondEnsembleInvite(id, "accept");
-            setEnsembleInvites(prev => prev.filter(e => e.id !== id));
-            // if no more ensemble invites, but we have calls, modal stays open for calls
-            if (ensembleInvites.length <= 1 && bookingCalls.length === 0) {
-                setIsOpen(false);
-            }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsLoading(false);
+    const advanceOrClose = (nextEnsCount: number, nextCallsCount: number) => {
+        if (nextEnsCount === 0 && nextCallsCount === 0) {
+            setIsOpen(false);
         }
     };
 
-    const handleAcceptCall = async (bookingId: string) => {
-        setIsLoading(true);
+    const handleRespondEnsemble = async (id: string, action: "accept" | "decline") => {
+        setWorkingAction(action);
         try {
-            await respondMyBookingMemberInvite(bookingId, "accept");
-            setBookingCalls(prev => prev.filter(c => c.booking_id !== bookingId));
-            if (ensembleInvites.length === 0 && bookingCalls.length <= 1) {
-                setIsOpen(false);
-            }
+            await respondEnsembleInvite(id, action);
+            const remainingEns = ensembleInvites.filter((e) => e.id !== id);
+            setEnsembleInvites(remainingEns);
+            addToast({
+                title: action === "accept" ? "Te uniste a la agrupación" : "Invitación rechazada",
+                color: action === "accept" ? "success" : "default",
+            });
+            advanceOrClose(remainingEns.length, bookingCalls.length);
         } catch (err) {
-            console.error(err);
+            addToast({
+                title: "No pudimos procesar tu respuesta",
+                description: err instanceof ApiError ? err.message : "Inténtalo de nuevo en unos segundos.",
+                color: "danger",
+            });
         } finally {
-            setIsLoading(false);
+            setWorkingAction(null);
         }
+    };
+
+    const handleRespondCall = async (bookingId: string, action: "accept" | "decline") => {
+        setWorkingAction(action);
+        try {
+            await respondMyBookingMemberInvite(bookingId, action);
+            const remainingCalls = bookingCalls.filter((c) => c.booking_id !== bookingId);
+            setBookingCalls(remainingCalls);
+            addToast({
+                title: action === "accept" ? "Compromiso confirmado" : "Convocatoria rechazada",
+                color: action === "accept" ? "success" : "default",
+            });
+            advanceOrClose(ensembleInvites.length, remainingCalls.length);
+        } catch (err) {
+            addToast({
+                title: "No pudimos procesar tu respuesta",
+                description: err instanceof ApiError ? err.message : "Inténtalo de nuevo en unos segundos.",
+                color: "danger",
+            });
+        } finally {
+            setWorkingAction(null);
+        }
+    };
+
+    const handlePostponeCurrent = () => {
+        if (ensembleInvites.length > 0) {
+            const remainingEns = ensembleInvites.slice(1);
+            setEnsembleInvites(remainingEns);
+            advanceOrClose(remainingEns.length, bookingCalls.length);
+            return;
+        }
+        if (bookingCalls.length > 0) {
+            const remainingCalls = bookingCalls.slice(1);
+            setBookingCalls(remainingCalls);
+            advanceOrClose(ensembleInvites.length, remainingCalls.length);
+            return;
+        }
+        setIsOpen(false);
     };
 
     if (!isOpen) return null;
 
-    // Show ensemble invites first, then booking calls
     const currentEns = ensembleInvites[0];
     const currentCall = !currentEns ? bookingCalls[0] : null;
 
     return (
-        <Modal isOpen={isOpen} hideCloseButton isDismissable={false} isKeyboardDismissDisabled={true} backdrop="blur">
+        <Modal
+            isOpen={isOpen}
+            onOpenChange={setIsOpen}
+            closeButton={<ModalCloseButton />}
+            backdrop="blur"
+        >
             <ModalContent>
                 {() => (
                     <>
                         <ModalHeader className="flex flex-col gap-1">
-                            {currentEns ? "¡Tienes una invitación a una agrupación!" : "¡Tienes una invitación a un evento!"}
+                            {currentEns
+                                ? "¡Tienes una invitación a una agrupación!"
+                                : "¡Tienes una invitación a un evento!"}
                         </ModalHeader>
                         <ModalBody>
                             {currentEns ? (
                                 <div className="flex flex-col gap-4 text-center items-center py-4">
-                                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mb-2">
+                                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary-text mb-2">
                                         <Icon icon="lucide:music" width={32} />
                                     </div>
                                     <p className="text-lg">
@@ -95,38 +147,71 @@ export default function MusicianOnboardingOverlay() {
                                 </div>
                             ) : currentCall ? (
                                 <div className="flex flex-col gap-4 text-center items-center py-4">
-                                    <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center text-success mb-2">
+                                    <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center text-success-text mb-2">
                                         <Icon icon="lucide:calendar-check" width={32} />
                                     </div>
                                     <p className="text-lg">
                                         Has sido convocado a un evento.
                                     </p>
                                     <p className="text-sm text-default-500">
-                                        Acepta el compromiso para confirmar tu asistencia al evento.
+                                        Acepta el compromiso para confirmar tu asistencia al evento o recházalo si no tienes disponibilidad.
                                     </p>
                                 </div>
                             ) : null}
                         </ModalBody>
-                        <ModalFooter className="flex-col sm:flex-row">
+                        <ModalFooter className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                                variant="light"
+                                onPress={handlePostponeCurrent}
+                                isDisabled={workingAction !== null}
+                                className="w-full sm:w-auto"
+                            >
+                                Más tarde
+                            </Button>
                             {currentEns ? (
-                                <Button 
-                                    color="primary" 
-                                    fullWidth 
-                                    isLoading={isLoading} 
-                                    onPress={() => handleAcceptEnsemble(currentEns.id)}
-                                >
-                                    Aceptar y unirme
-                                </Button>
+                                <>
+                                    <Button
+                                        color="danger"
+                                        variant="flat"
+                                        isLoading={workingAction === "decline"}
+                                        isDisabled={workingAction === "accept"}
+                                        onPress={() => void handleRespondEnsemble(currentEns.id, "decline")}
+                                        className="w-full sm:w-auto"
+                                    >
+                                        Rechazar
+                                    </Button>
+                                    <Button
+                                        color="primary"
+                                        isLoading={workingAction === "accept"}
+                                        isDisabled={workingAction === "decline"}
+                                        onPress={() => void handleRespondEnsemble(currentEns.id, "accept")}
+                                        className="w-full sm:w-auto"
+                                    >
+                                        Aceptar y unirme
+                                    </Button>
+                                </>
                             ) : currentCall ? (
-                                <Button 
-                                    color="success" 
-                                    className="text-white font-bold"
-                                    fullWidth 
-                                    isLoading={isLoading} 
-                                    onPress={() => handleAcceptCall(currentCall.booking_id)}
-                                >
-                                    Aceptar compromiso
-                                </Button>
+                                <>
+                                    <Button
+                                        color="danger"
+                                        variant="flat"
+                                        isLoading={workingAction === "decline"}
+                                        isDisabled={workingAction === "accept"}
+                                        onPress={() => void handleRespondCall(currentCall.booking_id, "decline")}
+                                        className="w-full sm:w-auto"
+                                    >
+                                        Rechazar
+                                    </Button>
+                                    <Button
+                                        color="success"
+                                        className="text-success-foreground font-bold w-full sm:w-auto"
+                                        isLoading={workingAction === "accept"}
+                                        isDisabled={workingAction === "decline"}
+                                        onPress={() => void handleRespondCall(currentCall.booking_id, "accept")}
+                                    >
+                                        Aceptar compromiso
+                                    </Button>
+                                </>
                             ) : null}
                         </ModalFooter>
                     </>

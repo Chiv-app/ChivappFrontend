@@ -31,12 +31,12 @@ export default function CancellationRefundNotice({ booking, className = "" }: Pr
     const statusLabel = CANCELLATION_REFUND_STATUS_LABELS[status];
     const tone =
         status === "completed"
-            ? "border-success/30 bg-success/5 text-success"
+            ? "border-success/30 bg-success/5 text-success-text"
             : status === "failed" || status === "pending_approval"
-              ? "border-warning/30 bg-warning/5 text-warning"
+              ? "border-warning/30 bg-warning/5 text-warning-text"
               : isRejected
                 ? "border-default-200 bg-default-50 text-default-500"
-                : "border-primary/30 bg-primary/5 text-primary";
+                : "border-primary/30 bg-primary/5 text-primary-text";
 
     return (
         <div

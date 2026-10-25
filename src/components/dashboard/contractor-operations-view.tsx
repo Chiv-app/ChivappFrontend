@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
     Button,
@@ -129,39 +129,36 @@ function formatSignedAmount(
 export default function ContractorOperationsView() {
     const [summary, setSummary] = useState<ContractorOperationsSummary>(emptySummary());
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [tab, setTab] = useState<ViewTab>("action");
 
-    useEffect(() => {
-        let cancelled = false;
-
-        void Promise.resolve().then(() => {
-            if (!cancelled) setIsLoading(true);
-        });
-
-        getContractorOperations()
-            .then((data) => {
-                if (!cancelled) setSummary(normalizeSummary(data));
-            })
-            .catch((error) => {
-                if (cancelled) return;
-                addToast({
-                    title: "No se pudieron cargar las operaciones",
-                    description:
-                        error instanceof Error
-                            ? error.message
-                            : "Intenta de nuevo más tarde.",
-                    color: "danger",
-                });
-                setSummary(emptySummary());
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
+    const load = useCallback(async () => {
+        setIsLoading(true);
+        setLoadError(null);
+        try {
+            const data = await getContractorOperations();
+            setSummary(normalizeSummary(data));
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Intenta de nuevo más tarde.";
+            setLoadError(message);
+            addToast({
+                title: "No se pudieron cargar las operaciones",
+                description: message,
+                color: "danger",
             });
-
-        return () => {
-            cancelled = true;
-        };
+            setSummary(emptySummary());
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void load();
+    }, [load]);
 
     const filteredItems = useMemo(
         () => summary.items.filter((item) => matchesTab(item, tab)),
@@ -249,118 +246,146 @@ export default function ContractorOperationsView() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                <Card className="border border-warning/30 bg-warning/5 shadow-soft">
-                    <CardBody className="p-4 gap-1">
-                        <p className="text-sm text-default-500">Tu turno</p>
-                        <p className="text-2xl font-bold text-foreground">
-                            {summary.pending_me_count}
+            {loadError ? (
+                <Card className="border border-danger/30 bg-danger/5 shadow-soft">
+                    <CardBody className="gap-3 p-8 text-center">
+                        <Icon
+                            icon="material-symbols:error-outline"
+                            width={36}
+                            className="mx-auto text-danger"
+                        />
+                        <p className="font-semibold text-danger">
+                            No se pudieron cargar las operaciones
                         </p>
-                    </CardBody>
-                </Card>
-                <Card className="border border-secondary/30 bg-secondary/5 shadow-soft">
-                    <CardBody className="p-4 gap-1">
-                        <p className="text-sm text-default-500">En espera</p>
-                        <p className="text-2xl font-bold text-foreground">
-                            {summary.pending_other_count}
-                        </p>
-                    </CardBody>
-                </Card>
-                <Card className="border border-danger/20 bg-danger/5 shadow-soft">
-                    <CardBody className="p-4 gap-1">
-                        <p className="text-sm text-default-500">Disputas / reembolsos</p>
-                        <p className="text-2xl font-bold text-foreground">
-                            {summary.dispute_count}
-                        </p>
-                    </CardBody>
-                </Card>
-                <Card className="border border-default-200/70 shadow-soft">
-                    <CardBody className="p-4 gap-1">
-                        <p className="text-sm text-default-500">En revisión (pagos)</p>
-                        <p className="text-2xl font-bold text-foreground">
-                            {formatCurrency(summary.total_pending)}
-                        </p>
-                    </CardBody>
-                </Card>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                {moneyCards.map((card) => (
-                    <Card key={card.label} className="border border-default-200/70 shadow-soft">
-                        <CardBody className="gap-3 p-5">
-                            <div
-                                className={`flex size-10 items-center justify-center rounded-2xl ${card.bg} ${card.tone}`}
+                        <p className="text-sm text-default-600">{loadError}</p>
+                        <div>
+                            <Button
+                                color="danger"
+                                variant="flat"
+                                radius="lg"
+                                onPress={() => void load()}
                             >
-                                <Icon icon={card.icon} width={20} />
-                            </div>
-                            <div>
-                                <p className="text-sm text-default-500">{card.label}</p>
-                                <p className="text-2xl font-bold text-foreground mt-1">
-                                    {formatCurrency(card.value)}
+                                Reintentar
+                            </Button>
+                        </div>
+                    </CardBody>
+                </Card>
+            ) : (
+                <>
+                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                        <Card className="border border-warning/30 bg-warning/5 shadow-soft">
+                            <CardBody className="p-4 gap-1">
+                                <p className="text-sm text-default-500">Tu turno</p>
+                                <p className="text-2xl font-bold text-foreground">
+                                    {summary.pending_me_count}
                                 </p>
-                                <p className="text-xs text-default-400 mt-1">{card.hint}</p>
-                            </div>
-                        </CardBody>
-                    </Card>
-                ))}
-            </div>
-
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
-                    <div>
-                        <h2 className="text-xl font-bold text-foreground">Actividad</h2>
-                        <p className="text-sm text-default-500 mt-1">
-                            Cada ítem abre la reserva correspondiente.
-                        </p>
+                            </CardBody>
+                        </Card>
+                        <Card className="border border-secondary/30 bg-secondary/5 shadow-soft">
+                            <CardBody className="p-4 gap-1">
+                                <p className="text-sm text-default-500">En espera</p>
+                                <p className="text-2xl font-bold text-foreground">
+                                    {summary.pending_other_count}
+                                </p>
+                            </CardBody>
+                        </Card>
+                        <Card className="border border-danger/20 bg-danger/5 shadow-soft">
+                            <CardBody className="p-4 gap-1">
+                                <p className="text-sm text-default-500">Disputas / reembolsos</p>
+                                <p className="text-2xl font-bold text-foreground">
+                                    {summary.dispute_count}
+                                </p>
+                            </CardBody>
+                        </Card>
+                        <Card className="border border-default-200/70 shadow-soft">
+                            <CardBody className="p-4 gap-1">
+                                <p className="text-sm text-default-500">En revisión (pagos)</p>
+                                <p className="text-2xl font-bold text-foreground">
+                                    {formatCurrency(summary.total_pending)}
+                                </p>
+                            </CardBody>
+                        </Card>
                     </div>
-                    <Tabs
-                        selectedKey={tab}
-                        onSelectionChange={(key) => setTab(key as ViewTab)}
-                        size="sm"
-                        variant="solid"
-                        color="primary"
-                        classNames={{
-                            base: "w-full sm:w-auto overflow-x-auto",
-                            tabList: "gap-1",
-                        }}
-                    >
-                        <Tab
-                            key="action"
-                            title={`Pendientes (${summary.pending_me_count + summary.pending_other_count})`}
-                        />
-                        <Tab key="money" title="Dinero" />
-                        <Tab
-                            key="disputes"
-                            title={`Disputas (${summary.dispute_count})`}
-                        />
-                        <Tab key="all" title="Todas" />
-                    </Tabs>
-                </div>
 
-                {filteredItems.length === 0 ? (
-                    <Card className="border border-default-200/70 shadow-soft">
-                        <CardBody className="gap-3 p-10 text-center">
-                            <Icon
-                                icon="material-symbols:task-alt"
-                                width={36}
-                                className="mx-auto text-default-400"
-                            />
-                            <p className="font-semibold text-foreground">
-                                No hay operaciones en esta vista
-                            </p>
-                            <p className="text-sm text-default-500">
-                                Cuando tengas cotizaciones, pagos o disputas aparecerán aquí.
-                            </p>
-                        </CardBody>
-                    </Card>
-                ) : (
-                    <div className="flex flex-col gap-3">
-                        {filteredItems.map((item) => (
-                            <OperationRow key={item.id} item={item} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                        {moneyCards.map((card) => (
+                            <Card key={card.label} className="border border-default-200/70 shadow-soft">
+                                <CardBody className="gap-3 p-5">
+                                    <div
+                                        className={`flex size-10 items-center justify-center rounded-2xl ${card.bg} ${card.tone}`}
+                                    >
+                                        <Icon icon={card.icon} width={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-default-500">{card.label}</p>
+                                        <p className="text-2xl font-bold text-foreground mt-1">
+                                            {formatCurrency(card.value)}
+                                        </p>
+                                        <p className="text-xs text-default-400 mt-1">{card.hint}</p>
+                                    </div>
+                                </CardBody>
+                            </Card>
                         ))}
                     </div>
-                )}
-            </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <h2 className="text-xl font-bold text-foreground">Actividad</h2>
+                                <p className="text-sm text-default-500 mt-1">
+                                    Cada ítem abre la reserva correspondiente.
+                                </p>
+                            </div>
+                            <Tabs
+                                selectedKey={tab}
+                                onSelectionChange={(key) => setTab(key as ViewTab)}
+                                size="sm"
+                                variant="solid"
+                                color="primary"
+                                classNames={{
+                                    base: "w-full sm:w-auto overflow-x-auto",
+                                    tabList: "gap-1",
+                                }}
+                            >
+                                <Tab
+                                    key="action"
+                                    title={`Pendientes (${summary.pending_me_count + summary.pending_other_count})`}
+                                />
+                                <Tab key="money" title="Dinero" />
+                                <Tab
+                                    key="disputes"
+                                    title={`Disputas (${summary.dispute_count})`}
+                                />
+                                <Tab key="all" title="Todas" />
+                            </Tabs>
+                        </div>
+
+                        {filteredItems.length === 0 ? (
+                            <Card className="border border-default-200/70 shadow-soft">
+                                <CardBody className="gap-3 p-10 text-center">
+                                    <Icon
+                                        icon="material-symbols:task-alt"
+                                        width={36}
+                                        className="mx-auto text-default-400"
+                                    />
+                                    <p className="font-semibold text-foreground">
+                                        No hay operaciones en esta vista
+                                    </p>
+                                    <p className="text-sm text-default-500">
+                                        Cuando tengas cotizaciones, pagos o disputas aparecerán aquí.
+                                    </p>
+                                </CardBody>
+                            </Card>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {filteredItems.map((item) => (
+                                    <OperationRow key={item.id} item={item} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
@@ -378,12 +403,12 @@ function OperationRow({ item }: { item: ContractorOperationItem }) {
 
     const iconTone =
         item.status === "pending_me"
-            ? "bg-warning/15 text-warning"
+            ? "bg-warning/15 text-warning-text"
             : item.kind === "dispute"
-              ? "bg-danger/10 text-danger"
+              ? "bg-danger/10 text-danger-text"
               : item.direction === "in"
-                ? "bg-success/10 text-success"
-                : "bg-primary/10 text-primary";
+                ? "bg-success/10 text-success-text"
+                : "bg-primary/10 text-primary-text";
 
     return (
         <Card className="border border-default-200/70 shadow-soft">
@@ -449,7 +474,5 @@ function OperationRow({ item }: { item: ContractorOperationItem }) {
 }
 
 function paymentStatusLabel(status: PaymentStatus): string {
-    
     return PAYMENT_STATUS_LABELS[status] || status;
 }
-

@@ -6,6 +6,7 @@ describe("isEmailTakenError", () => {
         expect(isEmailTakenError("Ese correo ya está en uso")).toBe(true);
         expect(isEmailTakenError("El correo ya fue usado por otra cuenta")).toBe(true);
         expect(isEmailTakenError("Ese correo ya está registrado")).toBe(true);
+        expect(isEmailTakenError("Este correo ya tiene una cuenta. Por favor inicia sesión.")).toBe(true);
     });
 
     it("is case-insensitive", () => {

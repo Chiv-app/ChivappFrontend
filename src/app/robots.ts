@@ -15,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
                 "/register",
                 "/api/",
                 "/share/",
+                "/pay/",
                 "/invite/",
                 "/calendar-callback",
                 "/complete-role",

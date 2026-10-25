@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -56,8 +57,12 @@ export default function MemberPayoutHistoryModal({
     useEffect(() => {
         if (!isOpen || !member) return;
         let cancelled = false;
-        setIsLoading(true);
-        setFilter("all");
+        Promise.resolve().then(() => {
+            if (!cancelled) {
+                setIsLoading(true);
+                setFilter("all");
+            }
+        });
         getMemberPayoutHistory(member.id)
             .then((result) => {
                 if (!cancelled) setData(result);
@@ -86,7 +91,7 @@ export default function MemberPayoutHistoryModal({
         ) ?? [];
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="3xl"
@@ -142,7 +147,7 @@ export default function MemberPayoutHistoryModal({
                                                 className="border border-default-200 bg-default-50/70"
                                             >
                                                 <CardBody className="px-3 py-3">
-                                                    <p className="text-[11px] uppercase tracking-wide text-default-400">
+                                                    <p className="text-xs uppercase tracking-wide text-default-500">
                                                         {card.label}
                                                     </p>
                                                     <p className="mt-1 font-bold text-foreground">

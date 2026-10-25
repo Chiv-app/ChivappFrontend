@@ -25,12 +25,37 @@ function getUpstreamBase(request?: NextRequest): string {
     return "http://localhost:8000";
 }
 
+function extractClientIp(forwardedFor: string | null): string | undefined {
+    if (!forwardedFor) return undefined;
+    const ips = forwardedFor
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    if (ips.length === 0) return undefined;
+    const configuredHops = Number.parseInt(
+        process.env.TRUSTED_PROXY_HOPS || "1",
+        10,
+    );
+    const hopsFromRight =
+        Number.isFinite(configuredHops) && configuredHops >= 1
+            ? configuredHops
+            : 1;
+    const index = Math.max(0, ips.length - hopsFromRight);
+    return ips[index];
+}
+
+const UPSTREAM_TIMEOUT_MS = 30_000;
+
 async function fetchUpstream(
     targetUrl: string,
     init: RequestInit,
 ): Promise<Response> {
     // Never auto-follow redirects: OAuth start/callback must reach the browser.
-    return fetch(targetUrl, { ...init, redirect: "manual" });
+    return fetch(targetUrl, {
+        ...init,
+        redirect: "manual",
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 }
 
 function resolveRedirectUrl(currentUrl: string, location: string): string | null {
@@ -50,6 +75,23 @@ function isInternalSlashRedirect(fromUrl: string, toUrl: string, apiBase: string
 }
 
 async function proxyRequest(request: NextRequest, pathSegments: string[]) {
+    if (
+        !Array.isArray(pathSegments) ||
+        pathSegments.length === 0 ||
+        pathSegments.some(
+            (segment) =>
+                segment === "." ||
+                segment === ".." ||
+                segment.includes("..") ||
+                segment.includes("\\"),
+        )
+    ) {
+        return NextResponse.json(
+            { detail: "Ruta de API inválida." },
+            { status: 400 },
+        );
+    }
+
     const apiBase = getUpstreamBase(request);
     const hasTrailingSlash = request.nextUrl.pathname.endsWith("/");
     const path = pathSegments.join("/") + (hasTrailingSlash ? "/" : "");
@@ -77,11 +119,11 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
     if (userAgent) {
         headers.set("user-agent", userAgent);
     }
-    // IP real del cliente: la última entrada de X-Forwarded-For la agrega el
-    // balanceador (las anteriores las puede inventar el cliente). Se envía al
-    // backend firmada con el secreto compartido para el rate limit y auditoría.
+    // IP real del cliente: configurable según el número de proxies confiables
+    // (TRUSTED_PROXY_HOPS, por defecto 1 para el balanceador directo). Se envía
+    // al backend firmada con PROXY_SHARED_SECRET para rate limit y auditoría.
     const forwardedFor = request.headers.get("x-forwarded-for");
-    const clientIp = forwardedFor?.split(",").pop()?.trim();
+    const clientIp = extractClientIp(forwardedFor);
     const proxySecret = process.env.PROXY_SHARED_SECRET;
     if (clientIp && proxySecret) {
         headers.set("x-chivapp-client-ip", clientIp);
@@ -128,13 +170,17 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
                 body,
             });
         }
-    } catch {
+    } catch (error) {
+        const isTimeout =
+            error instanceof Error &&
+            (error.name === "TimeoutError" || error.name === "AbortError");
         return NextResponse.json(
             {
-                detail:
-                    "No se pudo conectar con el backend. Verifica que el servidor API esté en ejecución.",
+                detail: isTimeout
+                    ? "El servidor tardó demasiado en responder. Intenta nuevamente."
+                    : "No se pudo conectar con el backend. Verifica que el servidor API esté en ejecución.",
             },
-            { status: 503 },
+            { status: isTimeout ? 504 : 503 },
         );
     }
 

@@ -4,14 +4,13 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import {
     Button,
-    Card,
-    CardBody,
     Chip,
     Spinner,
     Textarea,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { ApiError } from "@/lib/api";
 import {
     getContractorRecommendation,
     recommendContractor,
@@ -30,19 +29,33 @@ export default function RecommendContractorCard({ booking }: Props) {
     const [existing, setExisting] = useState<ContractorRecommendationOut | null>(
         null,
     );
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadCount, setReloadCount] = useState(0);
 
     const isLocked = existing != null;
     const isCompleted = booking.status === "completed";
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLoading(true);
+        setLoadError(null);
         getContractorRecommendation(booking.id)
             .then((data) => {
                 if (!cancelled) setExisting(data);
             })
-            .catch(() => {
-                if (!cancelled) setExisting(null);
+            .catch((err) => {
+                if (cancelled) return;
+                if (err instanceof ApiError && err.status === 404) {
+                    setExisting(null);
+                } else {
+                    setExisting(null);
+                    setLoadError(
+                        err instanceof Error
+                            ? err.message
+                            : "No se pudo verificar el estado de tu recomendación.",
+                    );
+                }
             })
             .finally(() => {
                 if (!cancelled) setIsLoading(false);
@@ -50,7 +63,7 @@ export default function RecommendContractorCard({ booking }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [booking.id]);
+    }, [booking.id, reloadCount]);
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -138,6 +151,19 @@ export default function RecommendContractorCard({ booking }: Props) {
                 {isLoading ? (
                     <div className="flex justify-center py-6">
                         <Spinner size="sm" color="primary" />
+                    </div>
+                ) : loadError ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+                        <span>{loadError}</span>
+                        <Button
+                            size="sm"
+                            color="danger"
+                            variant="flat"
+                            onPress={() => setReloadCount((c) => c + 1)}
+                            startContent={<Icon icon="material-symbols:refresh" width={16} />}
+                        >
+                            Reintentar
+                        </Button>
                     </div>
                 ) : isLocked && existing ? (
                     <div className="rounded-2xl border border-default-200/70 bg-default-50 px-4 py-3 space-y-2">

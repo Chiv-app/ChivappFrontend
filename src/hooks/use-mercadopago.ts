@@ -73,7 +73,9 @@ export function useMercadoPago() {
                         }
                     }
                     if (isMounted) {
-                        setLoadError("NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY no está configurada.");
+                        setLoadError(
+                            "No pudimos inicializar la pasarela de pago en este momento. Intenta de nuevo en unos minutos."
+                        );
                     }
                 })
                 .catch(async () => {
@@ -90,7 +92,9 @@ export function useMercadoPago() {
                         // ignore
                     }
                     if (isMounted) {
-                        setLoadError("NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY no está configurada.");
+                        setLoadError(
+                            "No pudimos inicializar la pasarela de pago en este momento. Intenta de nuevo en unos minutos."
+                        );
                     }
                 });
         }
@@ -106,8 +110,7 @@ export function useMercadoPago() {
             if (!mpInstanceRef.current) {
                 mpInstanceRef.current = new window.MercadoPago(publicKey, { locale: "es-PE" });
             }
-            // eslint-disable-next-line
-            setIsLoaded(true);
+            queueMicrotask(() => setIsLoaded(true));
             return;
         }
 
@@ -181,7 +184,7 @@ export function useMercadoPago() {
             containerId: string;
             amount: number;
             payerEmail?: string;
-            onSubmit: (formData: any) => Promise<void>;
+            onSubmit: (formData: Record<string, unknown>) => Promise<void>;
             onError?: (error: unknown) => void;
             onReady?: () => void;
         }) => {
@@ -213,7 +216,7 @@ export function useMercadoPago() {
                         onReady: () => {
                             if (onReady) onReady();
                         },
-                        onSubmit: (cardFormData: any) => {
+                        onSubmit: (cardFormData: Record<string, unknown>) => {
                             return new Promise<void>((resolve, reject) => {
                                 onSubmit(cardFormData)
                                     .then(() => resolve())
@@ -243,7 +246,7 @@ export function useMercadoPago() {
                         onReady: () => {
                             if (onReady) onReady();
                         },
-                        onSubmit: (param: any) => {
+                        onSubmit: (param: { formData?: Record<string, unknown> } & Record<string, unknown>) => {
                             return new Promise<void>((resolve, reject) => {
                                 onSubmit(param?.formData || param)
                                     .then(() => resolve())

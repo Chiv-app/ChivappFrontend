@@ -16,15 +16,21 @@ function resolveGenre(genres: string[] | null | undefined): string {
     return "Sin género";
 }
 
+function toNullableNumber(val: number | string | null | undefined): number | null {
+    if (val == null || val === "") return null;
+    const n = typeof val === "number" ? val : Number(val);
+    return Number.isFinite(n) ? n : null;
+}
+
 function formatPriceLabel(
     availabilityType: MusicianProfileListOut["availability_type"],
-    pricePerHour: number | null | undefined,
-    pricePerEvent: number | null | undefined,
+    pricePerHour: number | string | null | undefined,
+    pricePerEvent: number | string | null | undefined,
 ): string {
     const visible = getVisibleMusicianPrices(
         availabilityType,
-        pricePerHour,
-        pricePerEvent,
+        toNullableNumber(pricePerHour),
+        toNullableNumber(pricePerEvent),
     );
     const parts: string[] = [];
     if (visible.pricePerHour != null) {
@@ -90,8 +96,8 @@ export function toMusicianCardFromList(
         zone: profile.location_zone,
         price: resolveDisplayPrice(
             profile.availability_type,
-            profile.price_per_hour,
-            profile.price_per_event,
+            toNullableNumber(profile.price_per_hour),
+            toNullableNumber(profile.price_per_event),
         ),
         priceLabel: formatPriceLabel(
             profile.availability_type,
@@ -109,7 +115,7 @@ export function toMusicianCardFromList(
 export function toMusicianCardFromSearch(
     result: MusicianSearchResult,
 ): MusicianCard {
-    const price = result.price_per_event;
+    const price = toNullableNumber(result.price_per_event);
     const image = resolveUploadUrl(result.main_image_url);
     return cardBase({
         id: result.musician_id,
@@ -172,8 +178,8 @@ export function toMusicianDetail(
         zone: profile.location_zone,
         price: resolveDisplayPrice(
             profile.availability_type,
-            profile.price_per_hour,
-            profile.price_per_event,
+            toNullableNumber(profile.price_per_hour),
+            toNullableNumber(profile.price_per_event),
         ),
         priceLabel: formatPriceLabel(
             profile.availability_type,
@@ -190,8 +196,8 @@ export function toMusicianDetail(
     return {
         ...card,
         availabilityType: profile.availability_type ?? null,
-        pricePerHour: profile.price_per_hour,
-        pricePerEvent: profile.price_per_event,
+        pricePerHour: toNullableNumber(profile.price_per_hour),
+        pricePerEvent: toNullableNumber(profile.price_per_event),
         galleryImages,
         videos: profile.videos ?? [],
         showreelVideoUrl: profile.showreel_video_url ?? null,

@@ -62,7 +62,7 @@ export default function ProcessSection() {
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-background border-4 border-content1 shadow-soft flex items-center justify-center text-3xl sm:text-4xl mb-6 group-hover:scale-110 group-hover:border-primary transition-all duration-300">
                                 {step.icon}
                             </div>
-                            <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3">
+                            <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary-text text-xs font-bold mb-3">
                                 {index + 1}
                             </div>
                             <h3 className="text-lg sm:text-xl font-bold mb-3 text-foreground">

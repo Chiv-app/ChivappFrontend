@@ -1,6 +1,7 @@
 "use client";
 
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
+import { MotionConfig } from "framer-motion";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import PasswordSetupGate from "@/components/auth/password-setup-gate";
 import CookieConsentBanner from "@/components/legal/cookie-consent-banner";
@@ -20,17 +21,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
             enableSystem
             disableTransitionOnChange
         >
-            <HeroUIProvider>
-                <ToastProvider />
-                <AuthProvider>
-                    <NotificationsProvider>
-                        <CookieConsentBanner />
-                        <HelpWidget />
-                        <AuthModalProvider>
-                            <PasswordSetupGate>{children}</PasswordSetupGate>
-                        </AuthModalProvider>
-                    </NotificationsProvider>
-                </AuthProvider>
+            <HeroUIProvider locale="es-PE">
+                <MotionConfig reducedMotion="user">
+                    <ToastProvider />
+                    <AuthProvider>
+                        <NotificationsProvider>
+                            <CookieConsentBanner />
+                            <HelpWidget />
+                            <AuthModalProvider>
+                                <PasswordSetupGate>{children}</PasswordSetupGate>
+                            </AuthModalProvider>
+                        </NotificationsProvider>
+                    </AuthProvider>
+                </MotionConfig>
             </HeroUIProvider>
         </NextThemesProvider>
     );

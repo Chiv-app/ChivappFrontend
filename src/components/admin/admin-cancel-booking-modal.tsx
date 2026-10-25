@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useEffect, useState } from "react";
 import {
     Button,
@@ -36,6 +37,7 @@ export default function AdminCancelBookingModal({
 
     useEffect(() => {
         if (isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setReason("");
             setRefundPercent("100");
         }
@@ -82,7 +84,7 @@ export default function AdminCancelBookingModal({
     }
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={!busy}>
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={!busy}>
             <ModalContent>
                 {(onClose) => (
                     <>

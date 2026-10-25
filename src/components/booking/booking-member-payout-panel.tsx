@@ -4,13 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
     Button,
-    Card,
-    CardBody,
     Chip,
     Input,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/booking-labels";
 import {
     getContractorRecommendation,
@@ -43,6 +42,7 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
     const [amounts, setAmounts] = useState<Record<string, string>>({});
     const [hasReview, setHasReview] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     const eventReady = EVENT_STATUSES.has(booking.status);
@@ -50,10 +50,16 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
     const accepted = invites.filter((i) => i.status === "accepted");
 
     const refresh = useCallback(async () => {
+        setLoadError(null);
         const [inviteRows, payoutRows, recommendation] = await Promise.all([
             listBookingMemberInvites(booking.id),
-            listBookingMemberPayouts(booking.id).catch(() => []),
-            getContractorRecommendation(booking.id).catch(() => null),
+            listBookingMemberPayouts(booking.id),
+            getContractorRecommendation(booking.id).catch((err) => {
+                if (err instanceof ApiError && err.status === 404) {
+                    return null;
+                }
+                throw err;
+            }),
         ]);
         setInvites(inviteRows);
         setPayouts(payoutRows);
@@ -74,18 +80,39 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
         setAmounts(next);
     }, [booking.id]);
 
+    const runRefresh = useCallback(() => {
+        setIsLoading(true);
+        refresh()
+            .catch((error) => {
+                const msg =
+                    error instanceof Error ? error.message : "No se pudo cargar el reparto.";
+                setLoadError(msg);
+                addToast({
+                    title: "No se pudo cargar el reparto",
+                    description: msg,
+                    color: "danger",
+                });
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [refresh]);
+
     useEffect(() => {
         let cancelled = false;
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refresh()
             .catch((error) => {
                 if (cancelled) return;
+                const msg =
+                    error instanceof Error ? error.message : "No se pudo cargar el reparto.";
+                setLoadError(msg);
                 addToast({
                     title: "No se pudo cargar el reparto",
-                    description:
-                        error instanceof Error ? error.message : "Intenta de nuevo.",
+                    description: msg,
                     color: "danger",
                 });
             })
@@ -108,11 +135,32 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
             });
             return;
         }
-        const each = Math.floor((total / accepted.length) * 100) / 100;
+        const unpaidInvites = accepted.filter((invite) => {
+            const p = payouts.find(
+                (item) => item.ensemble_member_id === invite.ensemble_member_id,
+            );
+            return p?.status !== "paid";
+        });
+        if (unpaidInvites.length === 0) return;
+
+        const paidCents = accepted.reduce((sum, invite) => {
+            const p = payouts.find(
+                (item) => item.ensemble_member_id === invite.ensemble_member_id,
+            );
+            return p?.status === "paid"
+                ? sum + Math.round(Number(p.amount || 0) * 100)
+                : sum;
+        }, 0);
+
+        const remainingCents = Math.max(0, Math.round(total * 100) - paidCents);
+        const baseCents = Math.floor(remainingCents / unpaidInvites.length);
+        const remainderCents = remainingCents - baseCents * unpaidInvites.length;
+
         const next: Record<string, string> = {};
-        for (const invite of accepted) {
-            next[invite.ensemble_member_id] = String(each);
-        }
+        unpaidInvites.forEach((invite, index) => {
+            const cents = baseCents + (index === 0 ? remainderCents : 0);
+            next[invite.ensemble_member_id] = (cents / 100).toFixed(2);
+        });
         setAmounts((prev) => ({ ...prev, ...next }));
     }
 
@@ -179,6 +227,20 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
         return <div className="h-32 rounded-4xl bg-default-100 animate-pulse" />;
     }
 
+    if (loadError) {
+        return (
+            <div
+                role="alert"
+                className="border border-danger/30 shadow-soft rounded-2xl bg-danger/5 p-5 flex flex-col items-start gap-3"
+            >
+                <p className="text-sm text-danger-text">{loadError}</p>
+                <Button size="sm" color="danger" variant="flat" onPress={runRefresh}>
+                    Reintentar
+                </Button>
+            </div>
+        );
+    }
+
     if (accepted.length === 0) {
         return null;
     }
@@ -193,7 +255,7 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
                 <p className="text-sm text-default-500">
                     Se habilita al finalizar el show y después de dejar tu reseña al
                     contratista. Si cierras sin pagar, la reserva seguirá en{" "}
-                    <Link href="/musician/payouts" className="text-primary underline">
+                    <Link href="/musician/payouts" className="text-primary-text underline">
                         Pagos
                     </Link>
                     .

@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import {
     Modal,
     ModalBody,
@@ -26,7 +27,7 @@ export default function VideoPlaybackModal({
     const heading = title ? `${platform} · ${title}` : platform;
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="3xl"

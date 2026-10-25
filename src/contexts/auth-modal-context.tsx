@@ -55,7 +55,8 @@ function AuthModalUrlSync({
         if (!urlMode) return;
 
         const nextRedirect = searchParams.get("redirect");
-        const nextOauthError = searchParams.get("oauth_error");
+        const nextOauthError =
+            searchParams.get("oauth_error") || searchParams.get("error");
         let cancelled = false;
 
         void Promise.resolve().then(() => {
@@ -69,6 +70,7 @@ function AuthModalUrlSync({
             next.delete("auth");
             next.delete("redirect");
             next.delete("oauth_error");
+            next.delete("error");
             const qs = next.toString();
             router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
         });

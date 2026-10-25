@@ -8,7 +8,6 @@ import {
     Card,
     CardBody,
     CardHeader,
-    Input,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";

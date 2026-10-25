@@ -9,7 +9,7 @@ export default function ContractorPublicView({
     contractor: ContractorProfilePublicOut;
 }) {
     return (
-        <main className="pt-6 sm:pt-10 pb-20 px-3 sm:px-4 md:px-8">
+        <div className="pt-6 sm:pt-10 pb-20 px-3 sm:px-4 md:px-8">
             <div className="max-w-3xl mx-auto">
                 <div className="rounded-4xl border border-default-200/70 bg-content1 shadow-soft p-4 sm:p-6 md:p-8 mb-8">
                     <p className="text-xs font-semibold uppercase tracking-wide text-default-400 mb-2">
@@ -85,7 +85,7 @@ export default function ContractorPublicView({
                     )}
                 </section>
             </div>
-        </main>
+        </div>
     );
 }
 

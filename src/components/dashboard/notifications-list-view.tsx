@@ -24,8 +24,40 @@ function canManageNotifications(
 export default function NotificationsListView() {
     const router = useRouter();
     const { user } = useAuth();
-    const { notifications, isLoading, error, refresh, markRead } = useNotifications();
+    const {
+        notifications,
+        unreadCount,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        refresh,
+        loadMore,
+        markRead,
+        markAllRead,
+    } = useNotifications();
     const [actionId, setActionId] = useState<string | null>(null);
+    const [isMarkingAll, setIsMarkingAll] = useState(false);
+
+    async function handleMarkAllRead() {
+        setIsMarkingAll(true);
+        try {
+            await markAllRead();
+            addToast({
+                title: "Notificaciones actualizadas",
+                description: "Todas las notificaciones se marcaron como leídas.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setIsMarkingAll(false);
+        }
+    }
 
     async function handleMarkRead(id: string) {
         setActionId(id);
@@ -78,13 +110,28 @@ export default function NotificationsListView() {
 
     return (
         <div className="max-w-3xl mx-auto flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-6 py-6 shadow-soft overflow-hidden relative">
-                <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                    Notificaciones
-                </h1>
-                <p className="text-default-500 mt-2">
-                    Alertas sobre verificación de perfil, reservas, cotizaciones, contratos y pagos.
-                </p>
+            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-6 py-6 shadow-soft overflow-hidden relative flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+                        Notificaciones
+                    </h1>
+                    <p className="text-default-500 mt-2">
+                        Alertas sobre verificación de perfil, reservas, cotizaciones, contratos y pagos.
+                    </p>
+                </div>
+                {unreadCount > 0 ? (
+                    <Button
+                        color="primary"
+                        variant="flat"
+                        radius="lg"
+                        size="sm"
+                        className="font-semibold"
+                        isLoading={isMarkingAll}
+                        onPress={() => void handleMarkAllRead()}
+                    >
+                        Marcar todas como leídas ({unreadCount})
+                    </Button>
+                ) : null}
             </div>
 
             {error ? (
@@ -151,7 +198,7 @@ export default function NotificationsListView() {
                                 <CardBody className="gap-3 p-5">
                                     <div className="flex flex-wrap items-start justify-between gap-3">
                                         <div className="flex items-start gap-3 min-w-0">
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text">
                                                 <Icon
                                                     icon={getNotificationIcon(notification.type)}
                                                     width={20}
@@ -210,9 +257,20 @@ export default function NotificationsListView() {
                             </Card>
                         );
                     })}
+                    {hasMore ? (
+                        <div className="flex justify-center pt-2">
+                            <Button
+                                variant="flat"
+                                radius="lg"
+                                isLoading={isLoadingMore}
+                                onPress={() => void loadMore()}
+                            >
+                                Cargar más notificaciones
+                            </Button>
+                        </div>
+                    ) : null}
                 </div>
             ) : null}
         </div>
     );
 }
-

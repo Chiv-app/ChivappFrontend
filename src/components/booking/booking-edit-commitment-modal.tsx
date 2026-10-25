@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { FormEvent, useEffect, useState } from "react";
 import {
     Button,
@@ -62,6 +63,7 @@ export default function BookingEditCommitmentModal({
 
     useEffect(() => {
         if (!isOpen) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAddress(booking.location_address);
         setCity(booking.location_city ?? "");
         const coords = parseLocationReference(booking.location_reference);
@@ -127,7 +129,7 @@ export default function BookingEditCommitmentModal({
     }
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="3xl"

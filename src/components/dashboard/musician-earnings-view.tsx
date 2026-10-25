@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -115,6 +116,8 @@ export default function MusicianEarningsView() {
     const [memberIncome, setMemberIncome] =
         useState<MyMemberIncomeSummary>(emptyMemberIncome());
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadTick, setReloadTick] = useState(0);
     const [isRequestingPayout, setIsRequestingPayout] = useState(false);
     const [debtFilter, setDebtFilter] = useState<DebtFilter>("all");
     const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
@@ -127,7 +130,10 @@ export default function MusicianEarningsView() {
     useEffect(() => {
         let cancelled = false;
         void Promise.resolve().then(() => {
-            if (!cancelled) setIsLoading(true);
+            if (!cancelled) {
+                setIsLoading(true);
+                setLoadError(null);
+            }
         });
 
         const tasks: Promise<void>[] = [];
@@ -140,12 +146,14 @@ export default function MusicianEarningsView() {
                     })
                     .catch((error) => {
                         if (cancelled) return;
+                        const msg =
+                            error instanceof Error
+                                ? error.message
+                                : "Intenta de nuevo más tarde.";
+                        setLoadError(msg);
                         addToast({
                             title: "No se pudieron cargar los ingresos",
-                            description:
-                                error instanceof Error
-                                    ? error.message
-                                    : "Intenta de nuevo más tarde.",
+                            description: msg,
                             color: "danger",
                         });
                         setSummary(emptySummary());
@@ -161,12 +169,14 @@ export default function MusicianEarningsView() {
                     })
                     .catch((error) => {
                         if (cancelled) return;
+                        const msg =
+                            error instanceof Error
+                                ? error.message
+                                : "Intenta de nuevo más tarde.";
+                        setLoadError(msg);
                         addToast({
                             title: "No se pudieron cargar tus ingresos de integrante",
-                            description:
-                                error instanceof Error
-                                    ? error.message
-                                    : "Intenta de nuevo más tarde.",
+                            description: msg,
                             color: "danger",
                         });
                         setMemberIncome(emptyMemberIncome());
@@ -181,7 +191,7 @@ export default function MusicianEarningsView() {
         return () => {
             cancelled = true;
         };
-    }, [isVerified, isEnsembleMember]);
+    }, [isVerified, isEnsembleMember, reloadTick]);
 
     useEffect(() => {
         if (!isVerified && isEnsembleMember) {
@@ -204,8 +214,12 @@ export default function MusicianEarningsView() {
                 description: `Se registró tu solicitud de retiro por ${formatCurrency(created.amount)}. El equipo administrativo procesará el desembolso.`,
                 color: "success",
             });
-            const data = await getMusicianEarnings();
-            setSummary(data);
+            try {
+                const data = await getMusicianEarnings();
+                setSummary(data);
+            } catch {
+                // La solicitud ya fue creada; si falla el refresco secundario, conservamos el estado optimista.
+            }
         } catch (error) {
             addToast({
                 title: "No se pudo solicitar el retiro",
@@ -217,10 +231,8 @@ export default function MusicianEarningsView() {
         }
     };
 
-    const debts = summary.debts ?? [];
-    const payments = summary.items ?? [];
-
     const filteredDebts = useMemo(() => {
+        const debts = summary.debts ?? [];
         return debts.filter((item) => {
             if (debtFilter === "payable") return item.debt_state === "payable";
             if (debtFilter === "disputed") {
@@ -232,14 +244,15 @@ export default function MusicianEarningsView() {
             if (debtFilter === "settled") return item.debt_state === "settled";
             return item.debt_state !== "in_progress" || item.retained_total > 0;
         });
-    }, [debts, debtFilter]);
+    }, [summary.debts, debtFilter]);
 
     const filteredPayments = useMemo(() => {
+        const payments = summary.items ?? [];
         return payments.filter((item) => {
             if (paymentFilter === "all") return true;
             return item.status === paymentFilter;
         });
-    }, [payments, paymentFilter]);
+    }, [summary.items, paymentFilter]);
 
     if (isLoading) {
         return (
@@ -286,6 +299,25 @@ export default function MusicianEarningsView() {
                     </Button>
                 </div>
             </div>
+
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar tus ingresos
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        onPress={() => setReloadTick((n) => n + 1)}
+                    >
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
 
             {showPlatform || showMember ? (
                 <Tabs
@@ -773,7 +805,7 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                             </p>
                         ) : null}
                         {item.debt_state === "awaiting_reviews" ? (
-                            <p className="text-xs text-warning-600 dark:text-warning-400 mt-1.5">
+                            <p className="text-xs text-warning-text mt-1.5">
                                 {!item.has_contractor_review && !item.has_musician_review
                                     ? "Para habilitar el desembolso, tanto el contratista como tú deben dejar su reseña tras culminar el evento."
                                     : !item.has_contractor_review
@@ -817,7 +849,7 @@ function PaymentDetailModal({
     onClose: () => void;
 }) {
     return (
-        <Modal isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()} scrollBehavior="inside" placement="bottom-center">
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()} scrollBehavior="inside" placement="bottom-center">
             <ModalContent>
                 {(close) => (
                     <>
@@ -914,7 +946,7 @@ function MemberIncomeDetailModal({
     onClose: () => void;
 }) {
     return (
-        <Modal isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()} scrollBehavior="inside" placement="bottom-center">
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={Boolean(item)} onOpenChange={(open) => !open && onClose()} scrollBehavior="inside" placement="bottom-center">
             <ModalContent>
                 {(close) => (
                     <>
@@ -998,7 +1030,7 @@ function MemberIncomeDetailModal({
 function DetailField({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-2xl border border-default-200 bg-default-50/60 px-3 py-2.5">
-            <dt className="text-[11px] uppercase tracking-wide text-default-400">
+            <dt className="text-xs uppercase tracking-wide text-default-500">
                 {label}
             </dt>
             <dd className="mt-1 font-medium text-foreground break-all">{value}</dd>

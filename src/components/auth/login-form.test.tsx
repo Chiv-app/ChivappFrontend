@@ -47,7 +47,7 @@ describe("LoginForm", () => {
     
     it("submits the entered credentials to loginUser", async () => {
         const { loginUser, loginStepOne } = await import("@/lib/auth");
-        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as any);
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as never);
         vi.mocked(loginUser).mockResolvedValue({
 
             id: "u1",
@@ -74,7 +74,7 @@ describe("LoginForm", () => {
     
     it("shows a specific message when the email is already taken", async () => {
         const { loginUser, loginStepOne } = await import("@/lib/auth");
-        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as any);
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as never);
         vi.mocked(loginUser).mockRejectedValue(
 
             new ApiError("/auth/login", 400, "Ese correo ya está en uso"),
@@ -97,7 +97,7 @@ describe("LoginForm", () => {
     
     it("shows the backend's raw message for other login errors", async () => {
         const { loginUser, loginStepOne } = await import("@/lib/auth");
-        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as any);
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as never);
         vi.mocked(loginUser).mockRejectedValue(
 
             new ApiError("/auth/login", 401, "Credenciales inválidas"),

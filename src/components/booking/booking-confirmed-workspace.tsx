@@ -1,10 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
     Button,
-    Card,
-    CardBody,
     Chip,
     Input,
     addToast,
@@ -16,16 +14,14 @@ import BookingEnsemblePanel from "@/components/booking/booking-ensemble-panel";
 import BookingLiveLocationCard from "@/components/booking/booking-live-location-card";
 import BookingMemberPayoutPanel from "@/components/booking/booking-member-payout-panel";
 import BookingFinalReviewModal from "@/components/booking/booking-final-review-modal";
-import BookingPaymentStatusCard from "@/components/booking/booking-payment-status-card";
 import BookingReviewsTimeline from "@/components/booking/booking-reviews-timeline";
 import BookingShareCard from "@/components/booking/booking-share-card";
 import RecommendContractorCard from "@/components/booking/recommend-contractor-card";
 import { useAuth } from "@/contexts/auth-context";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
-import { formatCurrency } from "@/lib/booking-labels";
-import { createMercadoPagoPreference } from "@/lib/payments";
 import { formatDateTime } from "@/lib/date-utils";
 import {
+    cancelBookingChange,
     completeBooking,
     getBooking,
     listBookingMessages,
@@ -93,18 +89,36 @@ export default function BookingConfirmedWorkspace({
     const isLocked = role === "contractor" && !profileIsVerified;
 
     const [messages, setMessages] = useState<BookingMessageOut[]>([]);
+    const [messagesError, setMessagesError] = useState<string | null>(null);
     const [messageBody, setMessageBody] = useState("");
     const [isSendingMessage, setIsSendingMessage] = useState(false);
 
     const [isCompleting, setIsCompleting] = useState(false);
     const [isStarting, setIsStarting] = useState(false);
+    const [isWithdrawingChange, setIsWithdrawingChange] = useState(false);
     const [isFinalReviewOpen, setIsFinalReviewOpen] = useState(false);
 
-    useEffect(() => {
+    const loadMessages = useCallback(() => {
+        setMessagesError(null);
         listBookingMessages(booking.id)
-            .then(setMessages)
-            .catch(() => setMessages([]));
-    }, [booking.id, booking.status, isMemberMode]);
+            .then((data) => {
+                setMessages(data);
+                setMessagesError(null);
+            })
+            .catch((err) => {
+                setMessages([]);
+                setMessagesError(
+                    err instanceof Error && err.message
+                        ? err.message
+                        : "No pudimos cargar los mensajes de la reserva.",
+                );
+            });
+    }, [booking.id]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        loadMessages();
+    }, [booking.status, isMemberMode, loadMessages]);
 
     async function handleSendMessage(event: FormEvent) {
         event.preventDefault();
@@ -146,6 +160,27 @@ export default function BookingConfirmedWorkspace({
             });
         } finally {
             setIsStarting(false);
+        }
+    }
+
+    async function handleWithdrawChange() {
+        setIsWithdrawingChange(true);
+        try {
+            const updated = await cancelBookingChange(booking.id);
+            onUpdated(updated);
+            addToast({
+                title: "Solicitud retirada",
+                description: "Se restauraron los datos vigentes de la reserva.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo retirar el cambio",
+                description: error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setIsWithdrawingChange(false);
         }
     }
 
@@ -278,7 +313,7 @@ export default function BookingConfirmedWorkspace({
                     defaultExpanded={true}
                 >
                     <div className="pt-2">
-                        <div className="border border-primary/30 shadow-soft rounded-2xl bg-primary/5 p-6 flex flex-col gap-2">
+                        <div className="border border-primary/30 shadow-soft rounded-2xl bg-primary/5 p-6 flex flex-col gap-3">
                             <Chip color="primary" variant="flat" size="sm" className="w-fit">
                                 En validación
                             </Chip>
@@ -287,6 +322,19 @@ export default function BookingConfirmedWorkspace({
                                 Esperando que el músico acepte o rechace tu propuesta.
                                 No se requiere una nueva firma.
                             </p>
+                            <div>
+                                <Button
+                                    size="sm"
+                                    color="danger"
+                                    variant="flat"
+                                    radius="lg"
+                                    className="font-semibold"
+                                    isLoading={isWithdrawingChange}
+                                    onPress={handleWithdrawChange}
+                                >
+                                    Retirar solicitud de cambio
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CollapsiblePhaseSection>
@@ -328,7 +376,22 @@ export default function BookingConfirmedWorkspace({
                     ) : (
                         <div className="flex flex-col gap-4">
                             <div className="max-h-72 overflow-y-auto rounded-xl border border-default-200 bg-default-50 p-4 flex flex-col gap-3">
-                                {messages.length === 0 ? (
+                                {messagesError ? (
+                                    <div
+                                        role="alert"
+                                        className="flex flex-col items-center gap-2 py-4 text-center"
+                                    >
+                                        <p className="text-sm text-danger-text">{messagesError}</p>
+                                        <Button
+                                            size="sm"
+                                            color="danger"
+                                            variant="flat"
+                                            onPress={loadMessages}
+                                        >
+                                            Reintentar
+                                        </Button>
+                                    </div>
+                                ) : messages.length === 0 ? (
                                     <p className="text-sm text-default-500 text-center py-6">
                                         Aún no hay mensajes. Coordina detalles del evento aquí.
                                     </p>
@@ -344,7 +407,7 @@ export default function BookingConfirmedWorkspace({
                                                         : "bg-content1 border border-default-200"
                                                 }`}
                                             >
-                                                <p className="text-[11px] opacity-80 mb-1">
+                                                <p className="text-xs opacity-80 mb-1">
                                                     {message.sender_name ?? "Usuario"} • {" "}
                                                     {formatDateTime(message.created_at)}
                                                 </p>
@@ -356,6 +419,7 @@ export default function BookingConfirmedWorkspace({
                             </div>
                             <form onSubmit={handleSendMessage} className="flex gap-2">
                                 <Input
+                                    aria-label="Escribe un mensaje"
                                     value={messageBody}
                                     onValueChange={setMessageBody}
                                     placeholder="Escribe un mensaje…"
@@ -594,5 +658,3 @@ export default function BookingConfirmedWorkspace({
         </div>
     );
 }
-
-

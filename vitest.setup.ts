@@ -9,7 +9,12 @@ afterEach(() => {
 
 // jsdom no soporta la optimización de imágenes de next/image; se renderiza como <img> plano.
 vi.mock("next/image", () => ({
-  default: ({ fill, priority, ...props }: Record<string, unknown>) => React.createElement("img", props),
+  default: (props: Record<string, unknown>) => {
+    const rest = { ...props };
+    delete rest.fill;
+    delete rest.priority;
+    return React.createElement("img", rest);
+  },
 }));
 
 // jsdom no implementa matchMedia; lo necesitan next-themes y otros hooks de UI.
@@ -27,11 +32,8 @@ if (!window.matchMedia) {
     }) as MediaQueryList;
 }
 
-vi.mock("@iconify/react", () => ({ Icon: (props: Record<string, unknown>) => React.createElement("span", { "data-icon": props.icon, className: props.className }) }));
-
-
-if (typeof ResizeObserver === "undefined") {
-  global.ResizeObserver = class ResizeObserver {
+if (!window.ResizeObserver) {
+  window.ResizeObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}

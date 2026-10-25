@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useEffect, useState } from "react";
 import {
     Button,
@@ -46,6 +47,7 @@ export default function CancelBookingModal({
     useEffect(() => {
         if (!isOpen || !bookingId) return;
         let active = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setQuote(null);
         setQuoteError(null);
         setReason("");
@@ -102,7 +104,7 @@ export default function CancelBookingModal({
     const refundAmount = toAmount(quote?.refund_amount);
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="md"
@@ -127,7 +129,7 @@ export default function CancelBookingModal({
                                     <Spinner size="md" label="Calculando reembolso..." />
                                 </div>
                             ) : quoteError ? (
-                                <div className="rounded-2xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
+                                <div className="rounded-2xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger-text">
                                     {quoteError}
                                 </div>
                             ) : quote ? (

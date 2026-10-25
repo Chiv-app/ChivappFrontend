@@ -13,12 +13,12 @@ const faqs = [
     {
         key: "cancelar",
         question: "¿Puedo cancelar una reserva?",
-        answer: "Sí, puedes cancelar. Dependiendo de la anticipación con la que canceles y las políticas específicas del músico (visibles al momento de reservar), podrías recibir un reembolso completo o parcial.",
+        answer: "Sí, puedes cancelar desde tu panel. Si cancelas con 15 días calendario o más de anticipación recibes el 100 % de lo pagado (sin el costo de la pasarela); entre 7 y 14 días recibes el 50 % (sin el costo de la pasarela); y con menos de 7 días no aplica reembolso salvo cancelación o inasistencia del músico o fuerza mayor acreditada. Puedes consultar el detalle en /legal/reembolsos.",
     },
     {
         key: "cotizar",
         question: "¿Cómo cotizo sin compromiso?",
-        answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Solicitar cotización'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviarán sus propuestas de precio. Es totalmente gratis.",
+        answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Pedir cotización'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviarán sus propuestas de precio. Es totalmente gratis.",
     },
     {
         key: "verificado",

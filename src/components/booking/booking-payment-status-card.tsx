@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardBody, Chip } from "@heroui/react";
+import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { PaymentEvidenceViewer } from "@/components/booking/contract-pdf-viewer";
 import { PAYMENT_TYPE_LABELS, formatCurrency } from "@/lib/booking-labels";
@@ -24,20 +24,32 @@ function paymentTypeLabel(type: string | null): string {
 export default function BookingPaymentStatusCard({ booking }: Props) {
     const [payments, setPayments] = useState<PaymentOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadCount, setReloadCount] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
 
         void Promise.resolve().then(() => {
-            if (!cancelled) setIsLoading(true);
+            if (!cancelled) {
+                setIsLoading(true);
+                setLoadError(null);
+            }
         });
 
         listBookingPayments(booking.id)
             .then((data) => {
                 if (!cancelled) setPayments(data);
             })
-            .catch(() => {
-                if (!cancelled) setPayments([]);
+            .catch((err) => {
+                if (!cancelled) {
+                    setPayments([]);
+                    setLoadError(
+                        err instanceof Error
+                            ? err.message
+                            : "No se pudo cargar el detalle del pago.",
+                    );
+                }
             })
             .finally(() => {
                 if (!cancelled) setIsLoading(false);
@@ -46,7 +58,7 @@ export default function BookingPaymentStatusCard({ booking }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [booking.id, booking.status]);
+    }, [booking.id, booking.status, reloadCount]);
 
     // Pago único; "advance" es metadata antigua equivalente al pago total.
     const relevant = payments.filter(
@@ -72,6 +84,19 @@ export default function BookingPaymentStatusCard({ booking }: Props) {
             <CardBody className="gap-5 p-6">
                 {isLoading ? (
                     <div className="h-32 rounded-2xl bg-default-100 animate-pulse" />
+                ) : loadError ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
+                        <span>{loadError}</span>
+                        <Button
+                            size="sm"
+                            color="danger"
+                            variant="flat"
+                            onPress={() => setReloadCount((c) => c + 1)}
+                            startContent={<Icon icon="material-symbols:refresh" width={16} />}
+                        >
+                            Reintentar
+                        </Button>
+                    </div>
                 ) : (
                     <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

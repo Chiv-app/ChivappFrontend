@@ -271,7 +271,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.\nSi EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o, de común acuerdo, se podrá proponer una fecha alternativa o un reemplazo de igual o mejor calidad artística. Toda reprogramación deberá constar por escrito.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con 15 días calendario o más de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 14 días, el 50 % (sin el costo de la pasarela de pagos); y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.\nSi EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o, de común acuerdo, se podrá proponer una fecha alternativa o un reemplazo de igual o mejor calidad artística. Toda reprogramación deberá constar por escrito.",
             },
             {
                 title: "Fuerza mayor y derechos de imagen",
@@ -324,7 +324,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Si EL ARTISTA cancela por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o se coordinará una alternativa de mutuo acuerdo.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con 15 días calendario o más de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 14 días, el 50 % (sin el costo de la pasarela de pagos); y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Si EL ARTISTA cancela por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o se coordinará una alternativa de mutuo acuerdo.",
             },
             {
                 title: "Disposiciones finales",
@@ -415,7 +415,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.",
+                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con 15 días calendario o más de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 14 días, el 50 % (sin el costo de la pasarela de pagos); y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.",
             },
             {
                 title: "Responsabilidad y permisos",
@@ -587,7 +587,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Si EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o se reprogramará de común acuerdo.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con 15 días calendario o más de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 14 días, el 50 % (sin el costo de la pasarela de pagos); y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Si EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del 100 % de lo pagado o se reprogramará de común acuerdo.",
             },
             {
                 title: "Fuerza mayor y derechos de imagen",
@@ -640,7 +640,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Toda reprogramación deberá coordinarse por escrito y quedará sujeta a la disponibilidad de EL ARTISTA.",
+                    "Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con 15 días calendario o más de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 14 días, el 50 % (sin el costo de la pasarela de pagos); y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp. Toda reprogramación deberá coordinarse por escrito y quedará sujeta a la disponibilidad de EL ARTISTA.",
             },
             {
                 title: "Disposiciones finales",
@@ -731,7 +731,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y cambios de horario",
                 content:
-                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con más de 15 días de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 15 días, el 50 %; y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.",
+                    "Cualquier cambio de fecha, hora o lugar deberá comunicarse con al menos 48 horas de anticipación. Las cancelaciones y reembolsos se rigen por la política de Chivapp: si EL CLIENTE cancela con 15 días calendario o más de anticipación se le reembolsa el 100 % de lo pagado (sin el costo de la pasarela de pagos); entre 7 y 14 días, el 50 % (sin el costo de la pasarela de pagos); y con menos de 7 días no hay reembolso. Los reembolsos son revisados y aprobados por Chivapp.",
             },
             {
                 title: "Disposiciones finales",

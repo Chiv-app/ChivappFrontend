@@ -1,9 +1,9 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
     Button,
-    DatePicker,
     Input,
     Modal,
     ModalBody,
@@ -14,16 +14,9 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import {
-    getLocalTimeZone,
-    parseDate,
-    today,
-    type DateValue,
-} from "@internationalized/date";
 import { getMusicianAvailability } from "@/lib/availability";
 import {
     formatTimeLabel,
-    getAvailableDaySet,
     getSlotsForDate,
     validateBookingAgainstAvailability,
 } from "@/lib/availability-calendar";
@@ -59,7 +52,8 @@ export default function BookingReopenQuoteModal({
     );
     const [isSaving, setIsSaving] = useState(false);
     const [slots, setSlots] = useState<AvailabilityOut[]>([]);
-    const availableDays = useMemo(() => getAvailableDaySet(slots), [slots]);
+    const [slotsError, setSlotsError] = useState(false);
+    const [slotsReloadCount, setSlotsReloadCount] = useState(0);
     const daySlots = useMemo(
         () => (eventDate ? getSlotsForDate(slots, eventDate) : []),
         [slots, eventDate],
@@ -67,6 +61,7 @@ export default function BookingReopenQuoteModal({
 
     useEffect(() => {
         if (!isOpen) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setEventDate(booking.event_date);
         setStartTime(booking.start_time.slice(0, 5));
         setEndTime(booking.end_time ? booking.end_time.slice(0, 5) : "");
@@ -76,26 +71,27 @@ export default function BookingReopenQuoteModal({
         setLocationReference(booking.location_reference ?? "");
         setEventDescription(booking.event_description ?? "");
         setIsSaving(false);
+        setSlotsError(false);
 
         let cancelled = false;
         getMusicianAvailability(booking.musician_id)
             .then((data) => {
-                if (!cancelled) setSlots(data);
+                if (!cancelled) {
+                    setSlots(data);
+                    setSlotsError(false);
+                }
             })
             .catch(() => {
-                if (!cancelled) setSlots([]);
+                if (!cancelled) {
+                    setSlots([]);
+                    setSlotsError(true);
+                }
             });
 
         return () => {
             cancelled = true;
         };
-    }, [isOpen, booking]);
-
-    function isDateUnavailable(date: DateValue): boolean {
-        if (availableDays.size === 0) return false;
-        const jsDay = date.toDate(getLocalTimeZone()).getDay();
-        return !availableDays.has(jsDay);
-    }
+    }, [isOpen, booking, slotsReloadCount]);
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -162,7 +158,7 @@ export default function BookingReopenQuoteModal({
     }
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="2xl"
@@ -185,6 +181,21 @@ export default function BookingReopenQuoteModal({
                             </span>
                         </ModalHeader>
                         <ModalBody className="gap-4">
+                            {slotsError ? (
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-danger/30 bg-danger/5 px-3 py-2 text-xs text-danger">
+                                    <span>
+                                        No se pudo verificar la disponibilidad del músico. El servidor validará el horario al guardar.
+                                    </span>
+                                    <Button
+                                        size="sm"
+                                        color="danger"
+                                        variant="flat"
+                                        onPress={() => setSlotsReloadCount((c) => c + 1)}
+                                    >
+                                        Reintentar
+                                    </Button>
+                                </div>
+                            ) : null}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
                                     type="date"

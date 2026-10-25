@@ -4,13 +4,11 @@ import Link from "next/link";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useAuth } from "@/contexts/auth-context";
-import { useAuthModal } from "@/contexts/auth-modal-context";
 import { useIsClient } from "@/hooks/use-is-client";
 
 export default function StartBookingButton() {
     const isClient = useIsClient();
     const { user, isLoading } = useAuth();
-    const { openLogin } = useAuthModal();
 
     // Keep SSR and first client paint identical to avoid hydration mismatches
     // when auth resolves in the parent before this subtree hydrates.

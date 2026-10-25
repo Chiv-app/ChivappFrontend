@@ -6,7 +6,7 @@ import {
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
 import { BOOKING_STATUS_LABELS } from '@/lib/booking-labels';
-import { Card, CardBody, Chip } from "@heroui/react";
+import { Button, Card, CardBody, Chip } from "@heroui/react";
 
 function formatDuration(start: string, end: string | null) {
     if (!end) return null;
@@ -26,7 +26,13 @@ function formatDuration(start: string, end: string | null) {
     }
 }
 
-export default function BookingCommitmentCard({ booking }: { booking: BookingOut }) {
+export default function BookingCommitmentCard({
+    booking,
+    onEdit,
+}: {
+    booking: BookingOut;
+    onEdit?: () => void;
+}) {
     const isMusician = booking.viewer_role === "member";
     const coords = parseLocationReference(booking.location_reference);
     const googleMapsUrl = buildGoogleMapsUrl({
@@ -50,20 +56,32 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                 {/* Cabecera */}
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-4">
-                        <p className="text-[11px] font-bold tracking-widest text-primary uppercase">
+                        <p className="text-xs font-bold tracking-widest text-primary uppercase">
                             RESUMEN DEL EVENTO
                         </p>
-                        <Chip
-                            size="sm"
-                            variant="flat"
-                            color="primary"
-                            className="bg-primary/20 text-primary"
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <span className="size-1.5 rounded-full bg-primary" />
-                                {BOOKING_STATUS_LABELS[booking.status] || booking.status}
-                            </span>
-                        </Chip>
+                        <div className="flex items-center gap-2">
+                            {onEdit ? (
+                                <Button
+                                    size="sm"
+                                    variant="flat"
+                                    onPress={onEdit}
+                                    startContent={<Icon icon="lucide:pencil" width={14} />}
+                                >
+                                    Editar
+                                </Button>
+                            ) : null}
+                            <Chip
+                                size="sm"
+                                variant="flat"
+                                color="primary"
+                                className="bg-primary/20 text-primary-text"
+                            >
+                                <span className="flex items-center gap-1.5">
+                                    <span className="size-1.5 rounded-full bg-primary" />
+                                    {BOOKING_STATUS_LABELS[booking.status] || booking.status}
+                                </span>
+                            </Chip>
+                        </div>
                     </div>
                     <h2 className="text-3xl font-extrabold text-foreground dark:text-white mt-2">
                         {booking.event_type}
@@ -148,7 +166,7 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                                         ? booking.musician_name || "Músico"
                                         : booking.contractor_name || "Cliente particular"}
                                 </p>
-                                <Chip size="sm" variant="flat" className="bg-content2/60 text-default-400 h-5 px-1 text-[10px]">
+                                <Chip size="sm" variant="flat" className="bg-content2/60 text-default-500 h-5 px-1 text-xs">
                                     Verificado
                                 </Chip>
                             </div>
@@ -161,8 +179,8 @@ export default function BookingCommitmentCard({ booking }: { booking: BookingOut
                     <div className="mt-4 flex flex-col gap-2">
                         <p className="text-xs text-default-500 font-medium">Mensaje del cliente:</p>
                         <div className="rounded-xl border border-default-100/5 bg-content2 p-4 relative">
-                            <p className="text-[15px] italic text-default-600 dark:text-default-300 leading-relaxed">
-                                "{booking.event_description}"
+                            <p className="text-[15px] italic text-default-600 leading-relaxed">
+                                &ldquo;{booking.event_description}&rdquo;
                             </p>
                         </div>
                     </div>

@@ -51,7 +51,7 @@ export default function ContractorProfileWizard() {
     const [fullname, setFullname] = useState("");
     const [username, setUsername] = useState("");
     const [usernameCheck, setUsernameCheck] = useState<{available: boolean, message: string} | null>(null);
-    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    const [, setIsCheckingUsername] = useState(false);
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
     const [documentType, setDocumentType] = useState("DNI");
@@ -141,6 +141,7 @@ export default function ContractorProfileWizard() {
 
     useEffect(() => {
         if (!username || username === user?.username) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setUsernameCheck(null);
             return;
         }
@@ -150,7 +151,7 @@ export default function ContractorProfileWizard() {
                 const { checkUsername } = await import("@/lib/profiles");
                 const res = await checkUsername(username);
                 setUsernameCheck(res);
-            } catch (e) {
+            } catch {
                 setUsernameCheck(null);
             } finally {
                 setIsCheckingUsername(false);
@@ -160,6 +161,7 @@ export default function ContractorProfileWizard() {
     }, [username, user?.username]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void loadData();
         // Carga inicial única al montar el wizard.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -351,7 +353,7 @@ export default function ContractorProfileWizard() {
                         />
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-default-200/80 bg-default-50/50 mt-1">
                             <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
+                                <div className="p-2.5 rounded-xl bg-primary/10 text-primary-text shrink-0">
                                     <Icon icon="solar:lock-password-bold-duotone" className="text-2xl" />
                                 </div>
                                 <div>
@@ -513,7 +515,7 @@ export default function ContractorProfileWizard() {
                     <Card className="border border-default-200/70 shadow-soft">
                         <CardHeader className="flex flex-col items-start gap-2 px-6 pt-6 pb-0">
                             <div className="flex items-center gap-3">
-                                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary-text">
                                     <Icon icon={currentStepDef.icon} width={24} height={24} />
                                 </div>
                                 <div>
@@ -530,9 +532,9 @@ export default function ContractorProfileWizard() {
                                         <Icon
                                             icon="material-symbols:check-circle"
                                             width={18}
-                                            className="text-success shrink-0"
+                                            className="text-success-text shrink-0"
                                         />
-                                        <p className="text-sm text-success font-medium">
+                                        <p className="text-sm text-success-text font-medium">
                                             Este paso está completo
                                         </p>
                                     </div>
@@ -542,7 +544,7 @@ export default function ContractorProfileWizard() {
                                             <Icon
                                                 icon="material-symbols:error-outline"
                                                 width={18}
-                                                className="text-warning shrink-0 mt-0.5"
+                                                className="text-warning-text shrink-0 mt-0.5"
                                             />
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-foreground">
@@ -575,7 +577,7 @@ export default function ContractorProfileWizard() {
                         <CardBody className="p-6">{renderStepContent()}</CardBody>
                     </Card>
 
-                    <div className="sticky bottom-4 z-10 rounded-4xl border border-default-200/70 bg-content1/90 backdrop-blur-xl p-4 shadow-elevated flex flex-wrap items-center justify-between gap-3">
+                    <div className="sticky bottom-[calc(var(--bottom-nav-h,0px)+1rem)] lg:bottom-4 z-20 rounded-4xl border border-default-200/70 bg-content1/90 backdrop-blur-xl p-4 shadow-elevated flex flex-wrap items-center justify-between gap-3">
                         <Button
                             variant="flat"
                             isDisabled={activeStep === 0 && !canReturnToPreview}

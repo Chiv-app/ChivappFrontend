@@ -19,6 +19,7 @@ import BookingQuoteForm from "@/components/booking/booking-quote-form";
 import BookingTimeline from "@/components/booking/booking-timeline";
 import CancelBookingModal from "@/components/booking/cancel-booking-modal";
 import CancellationRefundNotice from "@/components/booking/cancellation-refund-notice";
+import { ApiError } from "@/lib/api";
 import { getBooking, listBookingReviews } from "@/lib/bookings";
 import { checkMercadoPagoPaymentStatus } from "@/lib/payments";
 import { usePendingPaymentPolling } from "@/hooks/use-pending-payment-polling";
@@ -39,6 +40,8 @@ type Props = {
 export default function BookingDetailView({ bookingId, role }: Props) {
     const [booking, setBooking] = useState<BookingOut | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [notFound, setNotFound] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [hasReview, setHasReview] = useState(false);
@@ -67,33 +70,57 @@ export default function BookingDetailView({ bookingId, role }: Props) {
     const pathname = usePathname();
     const checkedMpRef = useRef(false);
 
-    function refreshReviews(bookingId: string) {
-        listBookingReviews(bookingId)
+    function refreshReviews(id: string) {
+        listBookingReviews(id)
             .then((reviews) =>
                 setHasReview(reviews.some((review) => Boolean(review.is_final))),
             )
-            .catch(() => setHasReview(false));
+            .catch((err) => {
+                if (err instanceof ApiError && err.status === 404) {
+                    setHasReview(false);
+                    return;
+                }
+                addToast({
+                    title: "Aviso",
+                    description:
+                        "No pudimos verificar el estado de las reseñas. Puedes reintentar en la sección de reseñas.",
+                    color: "warning",
+                });
+            });
     }
 
-    useEffect(() => {
+    const loadBooking = useCallback(() => {
         setIsLoading(true);
+        setLoadError(null);
+        setNotFound(false);
         getBooking(bookingId)
             .then((data) => {
                 setBooking(data);
                 refreshReviews(data.id);
             })
             .catch((error) => {
+                if (error instanceof ApiError && error.status === 404) {
+                    setNotFound(true);
+                    return;
+                }
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : "No se pudo cargar la reserva.";
+                setLoadError(message);
                 addToast({
                     title: "Error",
-                    description:
-                        error instanceof Error
-                            ? error.message
-                            : "No se pudo cargar la reserva.",
+                    description: message,
                     color: "danger",
                 });
             })
             .finally(() => setIsLoading(false));
     }, [bookingId]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        loadBooking();
+    }, [loadBooking]);
 
     useEffect(() => {
         const mpStatus =
@@ -225,6 +252,12 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     const handlePollTimeout = useCallback(() => {
         setMpPendingReturn(false);
+        addToast({
+            title: "Seguimos verificando tu pago",
+            description:
+                "Mercado Pago aún no confirma la transacción. Te avisaremos por correo apenas se acredite o puedes pulsar Actualizar.",
+            color: "warning",
+        });
     }, []);
 
     usePendingPaymentPolling({
@@ -255,6 +288,35 @@ export default function BookingDetailView({ bookingId, role }: Props) {
     }
 
     if (!booking) {
+        if (loadError && !notFound) {
+            return (
+                <div className="max-w-xl mx-auto text-center py-16 flex flex-col items-center gap-4">
+                    <Icon
+                        icon="material-symbols:error-outline"
+                        width={40}
+                        className="text-danger"
+                    />
+                    <div>
+                        <p className="font-semibold text-foreground">
+                            No se pudo cargar la reserva
+                        </p>
+                        <p className="text-sm text-default-500 mt-1">{loadError}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                        <Button
+                            color="primary"
+                            radius="lg"
+                            onPress={loadBooking}
+                        >
+                            Reintentar
+                        </Button>
+                        <Button as={Link} href={listHref} variant="flat" radius="lg">
+                            Volver al listado
+                        </Button>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="max-w-6xl mx-auto text-center py-16">
                 <p className="text-default-500 mb-4">No se encontró esta reserva.</p>
@@ -306,7 +368,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                 onUpdated={handleUpdated}
             />
 
-                        <BookingCalendarSyncModal
+            <BookingCalendarSyncModal
                 booking={booking}
                 isOpen={isCalendarSyncOpen}
                 onOpenChange={setIsCalendarSyncOpen}
@@ -323,7 +385,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                         onPress={() => setIsCalendarSyncOpen(true)}
                         startContent={<Icon icon="lucide:calendar-sync" width={16} />}
                     >
-                        {booking.calendar_event_id ? "Actualizar Agenda" : "Generar Agenda"}
+                        {booking.calendar_event_id ? "Actualizar agenda" : "Generar agenda"}
                     </Button>
                 )}
                 <Button
@@ -358,8 +420,9 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
             <div className="mt-4 sm:mt-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
                 <aside className="order-2 lg:order-1 lg:col-span-5 lg:sticky lg:top-[calc(var(--app-navbar-height)+var(--booking-timeline-height,0px)+0.75rem)] lg:self-start min-w-0">
-                                        <BookingCommitmentCard
+                    <BookingCommitmentCard
                         booking={booking}
+                        onEdit={canEditCommitment ? () => setIsEditOpen(true) : undefined}
                     />
                 </aside>
 
@@ -376,6 +439,36 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                             bookingId={booking.id}
                             role={role}
                         />
+                    ) : null}
+
+                    {hasPendingChanges ? (
+                        <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                                <Icon
+                                    icon="material-symbols:edit-calendar"
+                                    width={22}
+                                    className="text-warning shrink-0 mt-0.5"
+                                />
+                                <div>
+                                    <p className="text-sm font-semibold text-foreground">
+                                        El contratista solicitó cambios en la reserva
+                                    </p>
+                                    <p className="text-xs text-default-600 mt-0.5">
+                                        Revisa la nueva fecha, horario o ubicación propuesta para aceptar o rechazar el cambio.
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                color="warning"
+                                variant="solid"
+                                radius="lg"
+                                size="sm"
+                                className="shrink-0 font-semibold"
+                                onPress={() => setIsPendingOpen(true)}
+                            >
+                                Revisar cambios propuestos
+                            </Button>
+                        </div>
                     ) : null}
 
                     {!isMemberView &&
@@ -399,7 +492,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                                 startContent={<Icon icon="lucide:link" width={18} />}
                                 onPress={handleCopyPaymentLink}
                             >
-                                Copiar Link de Pago para el Cliente
+                                Copiar link de pago para el cliente
                             </Button>
                         </div>
                     ) : null}
@@ -433,7 +526,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                                 startContent={<Icon icon="lucide:link" width={18} />}
                                 onPress={handleCopyPaymentLink}
                             >
-                                Copiar Link de Pago para el Cliente
+                                Copiar link de pago para el cliente
                             </Button>
                         </div>
                     ) : null}
@@ -476,8 +569,3 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         </div>
     );
 }
-
-
-
-
-

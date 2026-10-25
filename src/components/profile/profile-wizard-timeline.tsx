@@ -87,22 +87,6 @@ function buildRailSteps(
     });
 }
 
-function phaseProgressRatio(steps: RailStep[]): number {
-    const currentIndex = steps.findIndex((step) => step.state === "current");
-    let progressIndex = currentIndex;
-    if (progressIndex < 0) {
-        progressIndex = -1;
-        for (let i = 0; i < steps.length; i += 1) {
-            if (steps[i].state === "done") progressIndex = i;
-        }
-        if (progressIndex < 0) progressIndex = 0;
-    }
-    if (steps.length <= 1) {
-        return progressIndex >= 0 && steps[0]?.state === "done" ? 1 : 0;
-    }
-    return progressIndex / (steps.length - 1);
-}
-
 function PhaseMarker({
     step,
     size = "md",
@@ -203,7 +187,6 @@ function PhaseRail({
                 {steps.map((step, index) => {
                     const isCurrent = step.state === "current";
                     const isDone = step.state === "done";
-                    const isUpcoming = step.state === "upcoming";
                     const phaseIcon = isDone ? "material-symbols:check-circle-rounded" : step.icon || "material-symbols:circle";
 
                     const Tag = onStepSelect ? "button" : "div";
@@ -213,26 +196,26 @@ function PhaseRail({
                         <li key={step.id} className="shrink-0">
                             <Tag
                                 {...props}
-                                className={`group relative flex items-center h-10 sm:h-11 rounded-full border backdrop-blur-md shadow-soft transition-all duration-300 ease-out px-4 gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                                className={`group relative flex items-center h-10 sm:h-11 rounded-full border backdrop-blur-md shadow-soft transition-all duration-300 ease-out px-4 gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                                     onStepSelect ? "cursor-pointer" : ""
                                 } ${
                                     isCurrent
-                                        ? "border-primary/50 bg-primary/10 text-primary hover:bg-primary/15"
+                                        ? "border-primary/50 bg-primary/10 text-primary-text hover:bg-primary/15"
                                         : isDone
-                                          ? "border-success/40 bg-success/10 text-success hover:bg-success/15"
+                                          ? "border-success/40 bg-success/10 text-success-text hover:bg-success/15"
                                           : "border-default-200/60 bg-content1/85 text-default-500 hover:border-primary/40 hover:text-foreground"
                                 }`}
                                 aria-current={isCurrent ? "step" : undefined}
                                 aria-label={`${index + 1}. ${step.title}${step.required ? "" : " (opcional)"}`}
                             >
-                                <span className={`flex items-center justify-center shrink-0 ${isDone ? "text-success" : isCurrent ? "text-primary" : "text-default-400 group-hover:text-primary"}`}>
+                                <span className={`flex items-center justify-center shrink-0 ${isDone ? "text-success-text" : isCurrent ? "text-primary-text" : "text-default-400 group-hover:text-primary-text"}`}>
                                     <Icon icon={phaseIcon} width={18} height={18} />
                                 </span>
-                                <span className={`text-sm font-semibold whitespace-nowrap ${isCurrent ? "text-primary" : isDone ? "text-success" : "text-default-600 group-hover:text-foreground"}`}>
+                                <span className={`text-sm font-semibold whitespace-nowrap ${isCurrent ? "text-primary-text" : isDone ? "text-success-text" : "text-default-600 group-hover:text-foreground"}`}>
                                     {compact ? step.shortTitle : step.title}
                                 </span>
                                 {!step.required && !compact ? (
-                                    <span className="text-[10px] font-medium opacity-60 ml-1">
+                                    <span className="text-xs font-medium opacity-60 ml-1">
                                         (Opcional)
                                     </span>
                                 ) : null}
@@ -296,8 +279,8 @@ function ExpandedTimelineCard({
                                 {badgeLabel}
                             </Chip>
                         ) : (
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1">
-                                Timeline
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
+                                Progreso del perfil
                             </p>
                         )}
                         <h1 className="text-xl sm:text-2xl font-bold text-foreground text-balance">
@@ -321,7 +304,7 @@ function ExpandedTimelineCard({
 
                 {validation.status === "rejected" && rejectionReason ? (
                     <div className="mt-3 rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5">
-                        <p className="text-[11px] text-danger font-semibold">
+                        <p className="text-xs text-danger font-semibold">
                             Necesita correcciones
                         </p>
                         <p className="text-xs text-default-700 mt-0.5">{rejectionReason}</p>

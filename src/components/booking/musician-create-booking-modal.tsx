@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import {
     Modal,
     ModalBody,
@@ -18,7 +19,7 @@ export default function MusicianCreateBookingModal({
     onOpenChange,
 }: Props) {
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="md"
@@ -32,7 +33,7 @@ export default function MusicianCreateBookingModal({
                 {(onClose) => (
                     <>
                         <ModalHeader className="flex flex-col items-start gap-1 pb-2">
-                            <span className="text-xl font-bold">Generar Contrata Rápida</span>
+                            <span className="text-xl font-bold">Generar contrata rápida</span>
                             <span className="text-sm font-normal text-default-500">
                                 Define el precio y obtén un enlace de pago para compartir con tu cliente.
                             </span>

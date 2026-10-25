@@ -3,9 +3,84 @@
 
 :root {
   --app-navbar-height: 5rem;
-  /* Empieza en 0 (navbar oculto): AppNavbar la actualiza a
-     var(--app-navbar-height) en cuanto detecta que está visible. */
-  --app-navbar-reveal-offset: 0px;
+  /* Tokens semánticos de texto con contraste WCAG AA (≥ 4.5:1, incluso sobre tintes flat /20) */
+  --color-primary-text: #1D6478;
+  --color-secondary-text: #2E4F55;
+  --color-success-text: #166534;
+  --color-warning-text: #92400E;
+  --color-danger-text: #991B1B;
+}
+
+.dark {
+  --color-primary-text: #6FD3E6;
+  --color-secondary-text: #9CC4C7;
+  --color-success-text: #4ADE80;
+  --color-warning-text: #FBBF24;
+  --color-danger-text: #FCA5A5;
+}
+
+/* Garantiza contraste AA para utilidades de texto y variantes flat de HeroUI sobre fondo claro o tintes suaves */
+html:not(.dark) :is(.text-primary:not(.bg-primary), .text-primary-600) {
+  color: var(--color-primary-text);
+}
+html:not(.dark) :is(.text-secondary:not(.bg-secondary), .text-secondary-600) {
+  color: var(--color-secondary-text);
+}
+html:not(.dark) :is(.text-success:not(.bg-success), .text-success-600, .text-success-700) {
+  color: var(--color-success-text);
+}
+html:not(.dark) :is(.text-warning:not(.bg-warning), .text-warning-600, .text-warning-700) {
+  color: var(--color-warning-text);
+}
+html:not(.dark) :is(.text-danger:not(.bg-danger), .text-danger-500, .text-danger-600) {
+  color: var(--color-danger-text);
+}
+.dark :is(.text-primary:not(.bg-primary), .text-primary-600) {
+  color: var(--color-primary-text);
+}
+.dark :is(.text-secondary:not(.bg-secondary), .text-secondary-600) {
+  color: var(--color-secondary-text);
+}
+.dark :is(.text-success:not(.bg-success), .text-success-600, .text-success-700) {
+  color: var(--color-success-text);
+}
+.dark :is(.text-warning:not(.bg-warning), .text-warning-600, .text-warning-700) {
+  color: var(--color-warning-text);
+}
+.dark :is(.text-danger:not(.bg-danger), .text-danger-500, .text-danger-600) {
+  color: var(--color-danger-text);
+}
+
+/* Indicador de foco accesible global en @layer base para respetar focus-visible:* de componentes (WCAG 2.4.7 / 2.4.11) */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-primary-text, #1D6478);
+    outline-offset: 2px;
+  }
+  .dark :focus-visible {
+    outline-color: #46C0D9;
+  }
+}
+
+/* Objetivo táctil mínimo recomendado (44×44 px) */
+.touch-target {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+/* Respeto de preferencia de movimiento reducido (WCAG 2.2.2 / 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 html {
@@ -208,6 +283,45 @@ body {
   margin: 1em 0;
 }
 
+/* En superficies oscuras (.bg-content1 en dark mode), garantizar contraste AA para el contrato,
+   manteniendo los colores oscuros originales cuando está sobre la hoja blanca (.contract-doc-page). */
+.dark .contract-doc {
+  color: #e4e4e7;
+}
+.dark .contract-doc h1,
+.dark .contract-doc h2,
+.dark .contract-doc h3 {
+  color: #f5f7f8;
+}
+.dark .contract-doc blockquote {
+  color: #d4d4d8;
+  border-left-color: #52525b;
+}
+.dark .contract-doc hr {
+  border-top-color: #3f3f46;
+}
+.dark .contract-doc-page .contract-doc,
+.dark .contract-doc.contract-doc-page {
+  color: #374151;
+}
+.dark .contract-doc-page .contract-doc h1,
+.dark .contract-doc-page .contract-doc h2,
+.dark .contract-doc-page .contract-doc h3,
+.dark .contract-doc.contract-doc-page h1,
+.dark .contract-doc.contract-doc-page h2,
+.dark .contract-doc.contract-doc-page h3 {
+  color: #111827;
+}
+.dark .contract-doc-page .contract-doc blockquote,
+.dark .contract-doc.contract-doc-page blockquote {
+  color: #4b5563;
+  border-left-color: #d1d5db;
+}
+.dark .contract-doc-page .contract-doc hr,
+.dark .contract-doc.contract-doc-page hr {
+  border-top-color: #d1d5db;
+}
+
 .contract-doc strong {
   font-weight: 700;
 }
@@ -276,15 +390,18 @@ div:has(> [data-slot="wrapper"]) > div:first-child,
 
 /* Harmonious Close Button ('X') inside Modal Cards */
 [data-slot="wrapper"] [role="dialog"] button[aria-label="Close"],
+[data-slot="wrapper"] [role="dialog"] button[aria-label="Cerrar"],
 [data-slot="wrapper"] section button[aria-label="Close"],
-[data-slot="wrapper"] button[aria-label="Close"] {
-  top: 1rem !important;
-  right: 1rem !important;
-  inset-inline-end: 1rem !important;
-  width: 2.25rem !important;
-  height: 2.25rem !important;
-  min-width: 2.25rem !important;
-  min-height: 2.25rem !important;
+[data-slot="wrapper"] section button[aria-label="Cerrar"],
+[data-slot="wrapper"] button[aria-label="Close"],
+[data-slot="wrapper"] button[aria-label="Cerrar"] {
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  inset-inline-end: 0.75rem !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  min-width: 2.75rem !important;
+  min-height: 2.75rem !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -301,8 +418,11 @@ div:has(> [data-slot="wrapper"]) > div:first-child,
 }
 
 [data-slot="wrapper"] [role="dialog"] button[aria-label="Close"]:hover,
+[data-slot="wrapper"] [role="dialog"] button[aria-label="Cerrar"]:hover,
 [data-slot="wrapper"] section button[aria-label="Close"]:hover,
-[data-slot="wrapper"] button[aria-label="Close"]:hover {
+[data-slot="wrapper"] section button[aria-label="Cerrar"]:hover,
+[data-slot="wrapper"] button[aria-label="Close"]:hover,
+[data-slot="wrapper"] button[aria-label="Cerrar"]:hover {
   color: hsl(var(--heroui-foreground, 222 47% 11%)) !important;
   background-color: hsl(var(--heroui-default-100, 240 5% 92%)) !important;
   border-color: hsl(var(--heroui-default-200, 240 6% 88%)) !important;
@@ -311,8 +431,11 @@ div:has(> [data-slot="wrapper"]) > div:first-child,
 }
 
 .dark [data-slot="wrapper"] [role="dialog"] button[aria-label="Close"]:hover,
+.dark [data-slot="wrapper"] [role="dialog"] button[aria-label="Cerrar"]:hover,
 .dark [data-slot="wrapper"] section button[aria-label="Close"]:hover,
-.dark [data-slot="wrapper"] button[aria-label="Close"]:hover {
+.dark [data-slot="wrapper"] section button[aria-label="Cerrar"]:hover,
+.dark [data-slot="wrapper"] button[aria-label="Close"]:hover,
+.dark [data-slot="wrapper"] button[aria-label="Cerrar"]:hover {
   color: hsl(var(--heroui-foreground, 0 0% 98%)) !important;
   background-color: hsl(var(--heroui-default-100, 240 4% 18%)) !important;
   border-color: hsl(var(--heroui-default-200, 240 4% 28%)) !important;
@@ -320,8 +443,11 @@ div:has(> [data-slot="wrapper"]) > div:first-child,
 }
 
 [data-slot="wrapper"] [role="dialog"] button[aria-label="Close"]:active,
+[data-slot="wrapper"] [role="dialog"] button[aria-label="Cerrar"]:active,
 [data-slot="wrapper"] section button[aria-label="Close"]:active,
-[data-slot="wrapper"] button[aria-label="Close"]:active {
+[data-slot="wrapper"] section button[aria-label="Cerrar"]:active,
+[data-slot="wrapper"] button[aria-label="Close"]:active,
+[data-slot="wrapper"] button[aria-label="Cerrar"]:active {
   transform: scale(0.94);
 }
 

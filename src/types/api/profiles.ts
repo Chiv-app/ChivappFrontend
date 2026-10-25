@@ -1,4 +1,4 @@
-﻿import type { AvailabilityType, ProfileStatus } from "./enums";
+import type { AvailabilityType, ProfileStatus } from "./enums";
 
 export type RepertoireItem = {
     title: string;
@@ -32,15 +32,15 @@ export type ProfileValidationOut = {
 
 export type MusicianProfileListOut = {
     id: string;
-    stage_name: string;
+    stage_name: string | null;
     slug?: string | null;
     bio?: string | null;
     genres: string[];
     instruments: string[];
     songs: string[];
     repertoire?: RepertoireItem[];
-    price_per_hour: number | null;
-    price_per_event: number | null;
+    price_per_hour: number | string | null;
+    price_per_event: number | string | null;
     availability_type?: AvailabilityType | null;
     location_city: string | null;
     location_zone: string | null;
@@ -78,8 +78,8 @@ export type MusicianProfilePublicOut = {
     instruments: string[];
     songs: string[];
     repertoire?: RepertoireItem[];
-    price_per_hour: number | null;
-    price_per_event: number | null;
+    price_per_hour: number | string | null;
+    price_per_event: number | string | null;
     portfolio_description: string | null;
     location_city: string | null;
     location_zone: string | null;
@@ -237,14 +237,14 @@ export type ContractorProfileCreate = {
 export type ContractorProfileUpdate = Partial<ContractorProfileCreate>;
 
 export type MusicianProfileAdminOut = MusicianProfileOut & {
-    user_email: string;
-    user_fullname: string;
+    user_email: string | null;
+    user_fullname: string | null;
     user_phone: string | null;
 };
 
 export type ContractorProfileAdminOut = ContractorProfileOut & {
-    user_email: string;
-    user_fullname: string;
+    user_email: string | null;
+    user_fullname: string | null;
     user_phone: string | null;
 };
 

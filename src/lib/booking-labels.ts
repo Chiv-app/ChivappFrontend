@@ -7,7 +7,7 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
     contract_signed: "Contrato firmado",
     payment_pending: "Pago en procesamiento",
     payment_retained: "Reserva confirmada",
-    change_pending: "Cambio en revisión",
+    change_pending: "Cambio solicitado",
     // Legacy (flujo anticipo/saldo, ya inalcanzable): se muestran como confirmadas.
     balance_pending: "Confirmada",
     balance_review: "Confirmada",
@@ -16,6 +16,32 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
     completed: "Finalizada",
     cancelled: "Cancelada",
 };
+
+export const MUSICIAN_BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+    requested: "Nueva solicitud",
+    accepted: "Cotización enviada",
+    contract_pending: "Esperando firma y pago",
+    contract_signed: "Contrato firmado (esperando pago)",
+    payment_pending: "Pago del cliente en verificación",
+    payment_retained: "Fecha reservada (pago en custodia)",
+    change_pending: "Cambio por confirmar",
+    balance_pending: "Fecha reservada",
+    balance_review: "Fecha reservada",
+    in_progress: "Show en curso",
+    payment_released: "Cobro liberado",
+    completed: "Evento finalizado",
+    cancelled: "Cancelada",
+};
+
+export function getBookingStatusLabel(
+    status: BookingStatus,
+    role?: "contractor" | "musician" | "admin",
+): string {
+    if (role === "musician" && MUSICIAN_BOOKING_STATUS_LABELS[status]) {
+        return MUSICIAN_BOOKING_STATUS_LABELS[status];
+    }
+    return BOOKING_STATUS_LABELS[status] || status;
+}
 
 export const BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
     requested: "El músico aún debe responder con una cotización.",
@@ -37,6 +63,37 @@ export const BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
     completed: "Finalizada. Servicio completado con éxito.",
     cancelled: "Esta reserva fue cancelada.",
 };
+
+export const MUSICIAN_BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
+    requested: "Envía una cotización o rechaza la solicitud.",
+    accepted: "Esperando respuesta del cliente a tu propuesta.",
+    contract_pending: "El cliente aceptó la cotización y debe firmar y pagar.",
+    contract_signed: "El cliente ya firmó el contrato y está completando el pago.",
+    payment_pending: "Mercado Pago está procesando la acreditación del pago del cliente.",
+    payment_retained:
+        "El pago del cliente está asegurado en custodia. Coordina detalles y prepárate para el show.",
+    change_pending:
+        "Hay cambios propuestos en el evento pendientes de aceptar o rechazar.",
+    balance_pending:
+        "El pago del cliente está asegurado en custodia. Coordina detalles y prepárate para el show.",
+    balance_review:
+        "El pago del cliente está asegurado en custodia. Coordina detalles y prepárate para el show.",
+    in_progress:
+        "Presentación en curso. Sube evidencias o finaliza el evento al terminar el show.",
+    payment_released: "El pago del evento fue liberado a tu billetera disponible.",
+    completed: "Presentación completada con éxito.",
+    cancelled: "Esta reserva fue cancelada.",
+};
+
+export function getBookingStatusHint(
+    status: BookingStatus,
+    role?: "contractor" | "musician" | "admin",
+): string {
+    if (role === "musician" && MUSICIAN_BOOKING_STATUS_HINTS[status]) {
+        return MUSICIAN_BOOKING_STATUS_HINTS[status]!;
+    }
+    return BOOKING_STATUS_HINTS[status] || "";
+}
 
 export const BOOKING_STATUS_COLORS: Record<
     BookingStatus,
@@ -110,11 +167,11 @@ export const BOOKING_STATUS_TONE_ICON: Record<BookingStatusTone, string> = {
 };
 
 export const BOOKING_STATUS_TONE_ICON_BOX: Record<BookingStatusTone, string> = {
-    progress: "bg-primary/10 text-primary",
-    action: "bg-warning/15 text-warning",
-    confirmed: "bg-success/10 text-success",
-    done: "bg-success/15 text-success",
-    cancelled: "bg-danger/10 text-danger",
+    progress: "bg-primary/10 text-primary-text",
+    action: "bg-warning/15 text-warning-text",
+    confirmed: "bg-success/10 text-success-text",
+    done: "bg-success/15 text-success-text",
+    cancelled: "bg-danger/10 text-danger-text",
 };
 
 export function getBookingStatusChipVariant(
@@ -158,7 +215,7 @@ export function isCancellableBookingStatus(status: BookingStatus): boolean {
 }
 
 export const CANCELLATION_REFUND_STATUS_LABELS: Record<string, string> = {
-    pending_approval: "En revisión por Chivapp",
+    pending_approval: "Reembolso en revisión",
     processing: "En proceso",
     completed: "Reembolsado a tu medio de pago",
     failed: "Pendiente: lo está revisando el equipo de Chivapp",
@@ -186,8 +243,8 @@ export function formatBookingTime(time: string): string {
     return time.slice(0, 5);
 }
 
-export function formatCurrency(amount: number): string {
-    return `S/ ${amount.toLocaleString("es-PE", {
+export function formatCurrency(amount: number | string | null | undefined): string {
+    return `S/ ${toAmount(amount).toLocaleString("es-PE", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     })}`;
@@ -195,7 +252,8 @@ export function formatCurrency(amount: number): string {
 
 export function formatQuotedAt(date: string | null): string | null {
     if (!date) return null;
-    return new Date(date).toLocaleString("es-PE", {
+    const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(date) ? date : `${date}Z`;
+    return new Date(normalized).toLocaleString("es-PE", {
         timeZone: "America/Lima",
         day: "numeric",
         month: "short",

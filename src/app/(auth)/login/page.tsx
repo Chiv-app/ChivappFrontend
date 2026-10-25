@@ -13,7 +13,9 @@ export default function LoginPage() {
         router.replace(
             buildAuthModalUrl("login", {
                 redirect: searchParams.get("redirect"),
-                oauthError: searchParams.get("oauth_error"),
+                oauthError:
+                    searchParams.get("oauth_error") ||
+                    searchParams.get("error"),
             }),
         );
     }, [router, searchParams]);

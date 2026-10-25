@@ -82,8 +82,8 @@ export const metadata: Metadata = {
         images: [
             {
                 url: "/logo-chivappv2.png",
-                width: 900,
-                height: 287,
+                width: 865,
+                height: 289,
                 alt: `${SITE_NAME} - ${SITE_TAGLINE}`,
             },
             {
@@ -129,6 +129,12 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable}`}
         >
             <body className="min-h-[100dvh] flex flex-col bg-background text-foreground">
+                <a
+                    href="#contenido"
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-primary focus:text-primary-foreground focus:font-semibold focus:shadow-elevated"
+                >
+                    Saltar al contenido
+                </a>
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{
@@ -142,7 +148,9 @@ export default function RootLayout({
                     }}
                 />
                 <Providers>
-                    <main className="flex-1">{children}</main>
+                    <main id="contenido" className="flex-1">
+                        {children}
+                    </main>
                 </Providers>
                 {process.env.NEXT_PUBLIC_GA_ID ? (
                     <AnalyticsGate gaId={process.env.NEXT_PUBLIC_GA_ID} />

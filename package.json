@@ -11,14 +11,14 @@
     "test": "vitest run --exclude src/__smoke__/**",
     "test:watch": "vitest",
     "test:smoke": "vitest run src/__smoke__",
-    "icons:generate": "node scripts/generate-icons.mjs"
+    "icons:generate": "node src/lib/generate-icons.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@heroui/react": "^2.8.10",
     "@iconify/react": "^6.0.2",
     "@internationalized/date": "^3.12.0",
-    "@next/third-parties": "^16.3.8",
+    "@next/third-parties": "16.4.3",
     "@tiptap/extension-color": "^3.31.4",
     "@tiptap/extension-font-family": "^3.31.4",
     "@tiptap/extension-image": "^3.31.4",
@@ -28,11 +28,11 @@
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "@types/leaflet": "^1.9.21",
-    "dompurify": "^3.4.16",
+    "dompurify": "^3.4.17",
     "framer-motion": "^13.4.0",
     "gsap": "^3.15.0",
     "leaflet": "^1.9.4",
-    "next": "16.3.8",
+    "next": "16.4.3",
     "next-themes": "^0.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -54,10 +54,14 @@
     "@vitejs/plugin-react": "^6.1.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.3",
     "jsdom": "^29.1.1",
+    "source-map-js": "^1.2.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "source-map-js": "^1.2.2"
   }
 }

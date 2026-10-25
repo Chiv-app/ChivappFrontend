@@ -1,11 +1,10 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
     Button,
-    Card,
-    CardBody,
     Checkbox,
     Chip,
     addToast,
@@ -175,6 +174,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refresh()
             .catch((error) => {
                 if (cancelled) return;
@@ -386,7 +386,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                                         </p>
                                                         <div className="flex flex-wrap items-center gap-2 mt-1">
                                                             {invite.specialties.map(spec => (
-                                                                <Chip key={spec} size="sm" variant="flat" className="text-[10px] h-5" startContent={<Icon icon={getInstrumentIcon(spec)} className="mr-1" />}>
+                                                                <Chip key={spec} size="sm" variant="flat" className="text-xs h-5" startContent={<Icon icon={getInstrumentIcon(spec)} className="mr-1" />}>
                                                                     {spec}
                                                                 </Chip>
                                                             ))}
@@ -467,7 +467,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                 )}
             </div>
 
-            <Modal isOpen={isFormOpen} onOpenChange={setIsFormOpen} scrollBehavior="inside">
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={isFormOpen} onOpenChange={setIsFormOpen} scrollBehavior="inside">
                 <ModalContent>
                     {(onClose) => (
                         <form onSubmit={handleCreateAndInvite}>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Button, Card, CardBody, Chip, Input, addToast } from "@heroui/react";
+import { Button, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { ApiError } from "@/lib/api";
 import {
     disableBookingShare,
     enableBookingShare,
@@ -26,13 +27,30 @@ function absoluteShareUrl(path: string | null | undefined): string | null {
 export default function BookingShareCard({ booking }: Props) {
     const [share, setShare] = useState<BookingShareOut | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [isWorking, setIsWorking] = useState(false);
 
     const refresh = useCallback(() => {
+        setLoadError(null);
         return getBookingShare(booking.id)
             .then(setShare)
-            .catch(() => setShare(null));
+            .catch((err) => {
+                setShare(null);
+                if (err instanceof ApiError && err.status === 404) {
+                    return;
+                }
+                setLoadError(
+                    err instanceof Error && err.message
+                        ? err.message
+                        : "No pudimos cargar el enlace para invitados.",
+                );
+            });
     }, [booking.id]);
+
+    const handleRetry = useCallback(() => {
+        setIsLoading(true);
+        refresh().finally(() => setIsLoading(false));
+    }, [refresh]);
 
     useEffect(() => {
         let cancelled = false;
@@ -41,6 +59,7 @@ export default function BookingShareCard({ booking }: Props) {
             if (!cancelled) setIsLoading(true);
         });
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refresh().finally(() => {
             if (!cancelled) setIsLoading(false);
         });
@@ -129,6 +148,20 @@ export default function BookingShareCard({ booking }: Props) {
         return <div className="h-36 rounded-2xl bg-default-100 animate-pulse" />;
     }
 
+    if (loadError) {
+        return (
+            <div
+                role="alert"
+                className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col items-start gap-2"
+            >
+                <p className="text-sm text-danger-text">{loadError}</p>
+                <Button size="sm" color="danger" variant="flat" onPress={handleRetry}>
+                    Reintentar
+                </Button>
+            </div>
+        );
+    }
+
     if (!share) return null;
 
     const locked =
@@ -142,73 +175,73 @@ export default function BookingShareCard({ booking }: Props) {
 
     return (
         <div className="flex flex-col gap-4">
-                {share.enabled && url ? (
-                    <>
-                        <Input
-                            label="Enlace para invitados"
-                            value={url}
-                            isReadOnly
-                            variant="bordered"
-                            endContent={
-                                <Button
-                                    size="sm"
-                                    variant="flat"
-                                    radius="lg"
-                                    onPress={handleCopy}
-                                >
-                                    Copiar
-                                </Button>
-                            }
-                        />
-                        <div className="flex flex-wrap gap-2">
+            {share.enabled && url ? (
+                <>
+                    <Input
+                        label="Enlace para invitados"
+                        value={url}
+                        isReadOnly
+                        variant="bordered"
+                        endContent={
                             <Button
-                                color="primary"
-                                radius="lg"
-                                className="font-semibold"
-                                isLoading={isWorking}
-                                onPress={handleNativeShare}
-                                startContent={
-                                    <Icon icon="material-symbols:share" width={18} />
-                                }
-                            >
-                                Compartir
-                            </Button>
-                            <Button
-                                color="danger"
+                                size="sm"
                                 variant="flat"
                                 radius="lg"
-                                isLoading={isWorking}
-                                onPress={handleDisable}
-                                startContent={
-                                    <Icon icon="material-symbols:link-off" width={18} />
-                                }
+                                onPress={handleCopy}
                             >
-                                Cancelar enlace
+                                Copiar
                             </Button>
-                        </div>
-                    </>
-                ) : null}
-
-                {!share.enabled && share.can_enable ? (
-                    <Button
-                        color="primary"
-                        radius="lg"
-                        className="font-semibold w-fit"
-                        isLoading={isWorking}
-                        onPress={handleEnable}
-                        startContent={
-                            <Icon icon="material-symbols:share" width={18} />
                         }
-                    >
-                        Generar enlace para invitados
-                    </Button>
-                ) : null}
-
-                {!share.enabled && !share.can_enable && share.reason ? (
-                    <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3">
-                        <p className="text-sm text-default-600">{share.reason}</p>
+                    />
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            color="primary"
+                            radius="lg"
+                            className="font-semibold"
+                            isLoading={isWorking}
+                            onPress={handleNativeShare}
+                            startContent={
+                                <Icon icon="material-symbols:share" width={18} />
+                            }
+                        >
+                            Compartir
+                        </Button>
+                        <Button
+                            color="danger"
+                            variant="flat"
+                            radius="lg"
+                            isLoading={isWorking}
+                            onPress={handleDisable}
+                            startContent={
+                                <Icon icon="material-symbols:link-off" width={18} />
+                            }
+                        >
+                            Cancelar enlace
+                        </Button>
                     </div>
-                ) : null}
-            </div>
+                </>
+            ) : null}
+
+            {!share.enabled && share.can_enable ? (
+                <Button
+                    color="primary"
+                    radius="lg"
+                    className="font-semibold w-fit"
+                    isLoading={isWorking}
+                    onPress={handleEnable}
+                    startContent={
+                        <Icon icon="material-symbols:share" width={18} />
+                    }
+                >
+                    Generar enlace para invitados
+                </Button>
+            ) : null}
+
+            {!share.enabled && !share.can_enable && share.reason ? (
+                <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3">
+                    <p className="text-sm text-default-600">{share.reason}</p>
+                </div>
+            ) : null}
+        </div>
     );
 }

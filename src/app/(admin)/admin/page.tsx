@@ -33,22 +33,84 @@ function formatSubtitle(item: AdminActivityItem): string | null {
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<AdminStatsOut | null>(null);
     const [activity, setActivity] = useState<AdminActivityItem[]>([]);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    function loadDashboard() {
+        setLoading(true);
+        setLoadError(null);
         Promise.all([getAdminStats(), getAdminActivity(12)])
             .then(([statsData, activityData]) => {
                 setStats(statsData);
                 setActivity(activityData);
             })
-            .catch(() => {
+            .catch((err) => {
                 setStats(null);
                 setActivity([]);
+                setLoadError(
+                    err instanceof Error
+                        ? err.message
+                        : "No se pudieron cargar las métricas del panel.",
+                );
+            })
+            .finally(() => {
+                setLoading(false);
             });
+    }
+
+    useEffect(() => {
+        let cancelled = false;
+        Promise.all([getAdminStats(), getAdminActivity(12)])
+            .then(([statsData, activityData]) => {
+                if (cancelled) return;
+                setStats(statsData);
+                setActivity(activityData);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                setStats(null);
+                setActivity([]);
+                setLoadError(
+                    err instanceof Error
+                        ? err.message
+                        : "No se pudieron cargar las métricas del panel.",
+                );
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
-    if (!stats) {
+    if (loading && !stats) {
         return (
             <div className="h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
+        );
+    }
+
+    if (loadError || !stats) {
+        return (
+            <div className="flex flex-col gap-6">
+                <AdminPageHeader
+                    title="Centro de control"
+                    description="Vista total de la plataforma: usuarios, moderación, reservas, pagos y actividad en tiempo casi real."
+                />
+                <div className="rounded-3xl border border-danger/30 bg-danger/10 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="font-semibold text-danger">
+                            Error al cargar el panel administrativo
+                        </p>
+                        <p className="text-sm text-default-600 mt-1">
+                            {loadError || "No se pudo obtener respuesta del servidor."}
+                        </p>
+                    </div>
+                    <Button color="danger" variant="flat" onPress={loadDashboard}>
+                        Reintentar
+                    </Button>
+                </div>
+            </div>
         );
     }
 
@@ -105,7 +167,7 @@ export default function AdminDashboardPage() {
                         >
                             <CardBody className="p-5 gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                                    <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary-text flex items-center justify-center">
                                         <Icon icon={module.icon} width={22} />
                                     </div>
                                     <h4 className="font-semibold text-foreground">

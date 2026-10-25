@@ -13,10 +13,24 @@ type Props = {
     hasMoreMusicians?: boolean;
 };
 
-export default function HomeIntroSection({ musicians, hasMoreMusicians = false }: Props) {
+const QUICK_CATEGORIES = [
+    { label: "Todos", href: "/musicians", active: true },
+    { label: "Mariachis", href: "/musicians?genre=Mariachi", active: false },
+    { label: "Orquestas", href: "/musicians?genre=Orquesta", active: false },
+    { label: "DJs", href: "/musicians?genre=DJ", active: false },
+    { label: "Bandas de rock", href: "/musicians?genre=Rock", active: false },
+];
+
+export default function HomeIntroSection({
+    musicians,
+    hasMoreMusicians = false,
+}: Props) {
     return (
-        <section id="musicians" className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pb-32">
-            <motion.div 
+        <section
+            id="musicians"
+            className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pb-32"
+        >
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
@@ -30,28 +44,31 @@ export default function HomeIntroSection({ musicians, hasMoreMusicians = false }
                         Descubre el talento mejor valorado por la comunidad.
                     </p>
                 </div>
-                
-                {/* Filtros visuales (UI placeholder para el futuro backend) */}
-                <div className="flex flex-wrap gap-2">
-                    <button className="px-5 py-2 rounded-full bg-foreground text-background text-sm font-semibold hover:scale-105 transition-transform">
-                        Todos
-                    </button>
-                    <button className="px-5 py-2 rounded-full bg-content1 border border-default-200/70 text-sm font-semibold text-foreground hover:bg-default-100 transition-colors shadow-soft">
-                        Orquestas
-                    </button>
-                    <button className="px-5 py-2 rounded-full bg-content1 border border-default-200/70 text-sm font-semibold text-foreground hover:bg-default-100 transition-colors shadow-soft">
-                        DJs
-                    </button>
-                    <button className="px-5 py-2 rounded-full bg-content1 border border-default-200/70 text-sm font-semibold text-foreground hover:bg-default-100 transition-colors shadow-soft">
-                        Mariachis
-                    </button>
-                </div>
+
+                <nav
+                    aria-label="Categorías rápidas de músicos"
+                    className="flex flex-wrap gap-2"
+                >
+                    {QUICK_CATEGORIES.map((category) => (
+                        <Link
+                            key={category.label}
+                            href={category.href}
+                            className={
+                                category.active
+                                    ? "px-5 py-2.5 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition-opacity inline-flex items-center min-h-11"
+                                    : "px-5 py-2.5 rounded-full bg-content1 border border-default-200/70 text-sm font-semibold text-foreground hover:bg-default-100 transition-colors shadow-soft inline-flex items-center min-h-11"
+                            }
+                        >
+                            {category.label}
+                        </Link>
+                    ))}
+                </nav>
             </motion.div>
 
             {musicians.length === 0 ? (
                 <EmptyMusiciansState />
             ) : (
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
@@ -67,7 +84,12 @@ export default function HomeIntroSection({ musicians, hasMoreMusicians = false }
                                 transition={{ duration: 0.5, delay: i * 0.05 }}
                                 className="h-full"
                             >
-                                <MusicianCard musician={m} index={i} size="large" />
+                                <MusicianCard
+                                    musician={m}
+                                    index={i}
+                                    size="large"
+                                    priority={i < 2}
+                                />
                             </motion.div>
                         </MasonryItem>
                     ))}
@@ -81,7 +103,11 @@ export default function HomeIntroSection({ musicians, hasMoreMusicians = false }
                         className="inline-flex items-center gap-2 rounded-full border border-default-200/70 bg-content1/80 backdrop-blur-md px-8 py-4 font-bold text-foreground shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all"
                     >
                         Explorar todos los artistas
-                        <Icon icon="material-symbols:arrow-forward" width={20} />
+                        <Icon
+                            icon="material-symbols:arrow-forward"
+                            width={20}
+                            aria-hidden="true"
+                        />
                     </Link>
                 </div>
             ) : null}

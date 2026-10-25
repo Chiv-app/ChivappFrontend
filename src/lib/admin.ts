@@ -35,6 +35,7 @@ function toQuery(params: AdminListParams = {}) {
     if (params.limit != null) search.set("limit", String(params.limit));
     if (params.q) search.set("q", params.q);
     if (params.status) search.set("status", String(params.status));
+    if (params.state) search.set("state", String(params.state));
     if (params.refund_status) search.set("refund_status", params.refund_status);
     if (params.role) search.set("role", params.role);
     if (params.is_verified != null) search.set("is_verified", String(params.is_verified));
@@ -232,6 +233,13 @@ export function getAdminPayments(params: AdminListParams = {}) {
     );
 }
 
+/** Ejecuta en Mercado Pago el reembolso de un pago marcado con needs_refund (SEC4-06). */
+export function refundAdminPayment(paymentId: string) {
+    return apiFetch<AdminPaymentOut>(`/admin/payments/${paymentId}/refund`, {
+        method: "POST",
+    });
+}
+
 export function getAdminPaymentInstructions() {
     return apiFetch<import("@/types/api").PlatformPaymentInstructions>(
         "/admin/payment-instructions",
@@ -255,9 +263,45 @@ export function updateAdminPaymentInstructions(payload: {
     );
 }
 
-export function getAdminSettlements(params: { state?: string; limit?: number } = {}) {
+export function getAdminSettlements(
+    params: { state?: string; skip?: number; limit?: number } = {},
+) {
     return apiFetch<import("@/types/api").AdminSettlementOut[]>(
         `/admin/settlements${toQuery({ limit: 50, ...params })}`,
+    );
+}
+
+export function getAdminPayoutRequests(
+    params: { status?: string; skip?: number; limit?: number } = {},
+) {
+    return apiFetch<import("@/types/api").AdminPayoutRequestOut[]>(
+        `/admin/payout-requests${toQuery({ limit: 50, ...params })}`,
+    );
+}
+
+export function processAdminPayoutRequest(
+    requestId: string,
+    payload: { notes?: string | null } = {},
+) {
+    return apiFetch<import("@/types/api").AdminPayoutRequestOut>(
+        `/admin/payout-requests/${requestId}/process`,
+        {
+            method: "POST",
+            body: JSON.stringify(payload),
+        },
+    );
+}
+
+export function rejectAdminPayoutRequest(
+    requestId: string,
+    payload: { notes?: string | null } = {},
+) {
+    return apiFetch<import("@/types/api").AdminPayoutRequestOut>(
+        `/admin/payout-requests/${requestId}/reject`,
+        {
+            method: "POST",
+            body: JSON.stringify(payload),
+        },
     );
 }
 

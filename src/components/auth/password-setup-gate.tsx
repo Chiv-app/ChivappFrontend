@@ -7,14 +7,17 @@ import { useIsClient } from "@/hooks/use-is-client";
 
 const ALLOWED_PREFIXES = [
     "/set-password",
+    "/reset-password",
+    "/forgot-password",
+    "/verify-email",
     "/invite/",
+    "/pay/",
     "/complete-role",
-    
     "/api/",
 ];
 
 /**
- * Si el usuario autenticado no tiene contrasea, obliga a crearla
+ * Si el usuario autenticado no tiene contraseña, obliga a crearla
  * antes de seguir usando la app (p. ej. OAuth o integrante invitado).
  */
 export default function PasswordSetupGate({
@@ -35,8 +38,22 @@ export default function PasswordSetupGate({
         if (!isClient || isLoading || !user) return;
         if (user.has_password !== false) return;
         if (isAllowed) return;
-        router.replace("/set-password?callbackUrl=" + encodeURIComponent(pathname));
-    }, [isClient, isLoading, user, isAllowed, router]);
+        const pendingRedirect =
+            typeof window !== "undefined"
+                ? window.sessionStorage.getItem("post_password_setup_redirect")
+                : null;
+        if (pendingRedirect && typeof window !== "undefined") {
+            window.sessionStorage.removeItem("post_password_setup_redirect");
+        }
+        const currentUrl =
+            pendingRedirect ||
+            (typeof window !== "undefined" && window.location.search
+                ? `${pathname}${window.location.search}`
+                : pathname);
+        router.replace(
+            "/set-password?callbackUrl=" + encodeURIComponent(currentUrl),
+        );
+    }, [isClient, isLoading, user, isAllowed, pathname, router]);
 
     // Keep children during SSR/hydration so auth cannot swap the tree early.
     if (

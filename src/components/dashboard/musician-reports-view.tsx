@@ -32,6 +32,7 @@ import {
     BOOKING_STATUS_LABELS,
     formatBookingDate,
     formatCurrency,
+    getBookingStatusLabel,
 } from "@/lib/booking-labels";
 import { getMusicianReports } from "@/lib/ensemble-members";
 import type {
@@ -79,6 +80,7 @@ export default function MusicianReportsView() {
         status: "",
     });
     const [data, setData] = useState<MusicianReportsOut | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [tableTab, setTableTab] = useState<"bookings" | "members">("bookings");
 
@@ -90,17 +92,41 @@ export default function MusicianReportsView() {
             status: applied.status || undefined,
         });
         setData(result);
+        setLoadError(null);
     }, [applied]);
+
+    const retryLoad = useCallback(async () => {
+        setIsLoading(true);
+        setLoadError(null);
+        try {
+            await refresh();
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : "Intenta de nuevo.";
+            setLoadError(msg);
+            addToast({
+                title: "No se pudieron cargar los reportes",
+                description: msg,
+                color: "danger",
+            });
+            setData(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [refresh]);
 
     useEffect(() => {
         let cancelled = false;
         
         const load = async () => {
             setIsLoading(true);
+            setLoadError(null);
             try {
                 await refresh();
             } catch (error) {
                 if (cancelled) return;
+                setLoadError(
+                    error instanceof Error ? error.message : "Intenta de nuevo.",
+                );
                 addToast({
                     title: "No se pudieron cargar los reportes",
                     description:
@@ -289,11 +315,30 @@ export default function MusicianReportsView() {
             </Card>
 
             {!data ? (
-                <Card className="border border-default-200/70 shadow-soft">
-                    <CardBody className="p-10 text-center text-default-500">
-                        No hay datos para mostrar con estos filtros.
-                    </CardBody>
-                </Card>
+                loadError ? (
+                    <Card className="border border-danger-200 bg-danger-50/40 shadow-soft">
+                        <CardBody className="flex flex-col items-center gap-3 p-10 text-center">
+                            <p className="text-sm font-semibold text-danger">
+                                No se pudieron cargar los reportes
+                            </p>
+                            <p className="text-xs text-default-500">{loadError}</p>
+                            <Button
+                                size="sm"
+                                color="danger"
+                                variant="flat"
+                                onPress={() => void retryLoad()}
+                            >
+                                Reintentar
+                            </Button>
+                        </CardBody>
+                    </Card>
+                ) : (
+                    <Card className="border border-default-200/70 shadow-soft">
+                        <CardBody className="p-10 text-center text-default-500">
+                            No hay datos para mostrar con estos filtros.
+                        </CardBody>
+                    </Card>
+                )
             ) : (
                 <>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -326,7 +371,7 @@ export default function MusicianReportsView() {
                                 <CardBody className="gap-1 p-4">
                                     <p className="text-xs text-default-500">{card.label}</p>
                                     <p className="text-xl font-bold">{card.value}</p>
-                                    <p className="text-[11px] text-default-400">
+                                    <p className="text-xs text-default-500">
                                         {card.hint}
                                     </p>
                                 </CardBody>
@@ -343,7 +388,7 @@ export default function MusicianReportsView() {
                                         ? `${data.rating_avg.toFixed(1)}★`
                                         : "—"}
                                 </p>
-                                <p className="text-xs text-default-400 mt-1">
+                                <p className="text-xs text-default-500 mt-1">
                                     {data.rating_count} reseñas finales
                                 </p>
                             </CardBody>
@@ -354,7 +399,7 @@ export default function MusicianReportsView() {
                                 <p className="text-2xl font-bold mt-1">
                                     {data.complaints_total}
                                 </p>
-                                <p className="text-xs text-default-400 mt-1">
+                                <p className="text-xs text-default-500 mt-1">
                                     {data.complaints_open} abiertas ·{" "}
                                     {data.complaints_settled} liquidadas
                                 </p>
@@ -367,7 +412,7 @@ export default function MusicianReportsView() {
                                     {formatBookingDate(data.period_from)} –{" "}
                                     {formatBookingDate(data.period_to)}
                                 </p>
-                                <p className="text-xs text-default-400 mt-1">
+                                <p className="text-xs text-default-500 mt-1">
                                     Agrupado por {data.group_by === "week" ? "semana" : "mes"}
                                 </p>
                             </CardBody>
@@ -380,7 +425,11 @@ export default function MusicianReportsView() {
                                 <h2 className="text-lg font-bold">
                                     Reservas e ingresos
                                 </h2>
-                                <div className="h-72">
+                                <div
+                                    className="h-72"
+                                    role="img"
+                                    aria-label="Gráfico de barras de reservas, monto cotizado y monto liberado por periodo"
+                                >
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={data.series}>
                                             <CartesianGrid
@@ -420,7 +469,11 @@ export default function MusicianReportsView() {
                                 <h2 className="text-lg font-bold">
                                     Pagos a integrantes
                                 </h2>
-                                <div className="h-72">
+                                <div
+                                    className="h-72"
+                                    role="img"
+                                    aria-label="Gráfico de barras de pagos a integrantes y monto retenido por periodo"
+                                >
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={data.series}>
                                             <CartesianGrid
@@ -461,7 +514,11 @@ export default function MusicianReportsView() {
                                         Sin datos
                                     </p>
                                 ) : (
-                                    <div className="h-72">
+                                    <div
+                                        className="h-72"
+                                        role="img"
+                                        aria-label="Gráfico circular de distribución de reservas por estado"
+                                    >
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
@@ -502,7 +559,11 @@ export default function MusicianReportsView() {
                                         Sin repartos en el periodo
                                     </p>
                                 ) : (
-                                    <div className="h-72">
+                                    <div
+                                        className="h-72"
+                                        role="img"
+                                        aria-label="Gráfico circular de distribución de repartos por estado"
+                                    >
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
@@ -558,6 +619,8 @@ export default function MusicianReportsView() {
                                 ) : (
                                     <div
                                         className="w-full"
+                                        role="img"
+                                        aria-label="Gráfico de barras horizontales de paga asignada, pagada y pendiente por integrante"
                                         style={{
                                             height: Math.max(
                                                 280,
@@ -643,7 +706,11 @@ export default function MusicianReportsView() {
                                         Sin montos asignados para graficar.
                                     </p>
                                 ) : (
-                                    <div className="h-80">
+                                    <div
+                                        className="h-80"
+                                        role="img"
+                                        aria-label="Gráfico circular de participación del reparto por integrante"
+                                    >
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
@@ -701,14 +768,17 @@ export default function MusicianReportsView() {
                             {tableTab === "bookings" ? (
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full text-sm">
+                                        <caption className="sr-only">
+                                            Detalle de reservas e ingresos del periodo filtrado
+                                        </caption>
                                         <thead>
                                             <tr className="text-left text-default-500 border-b border-default-200">
-                                                <th className="py-2 pr-3 font-medium">Evento</th>
-                                                <th className="py-2 pr-3 font-medium">Fecha</th>
-                                                <th className="py-2 pr-3 font-medium">Estado</th>
-                                                <th className="py-2 pr-3 font-medium">Precio</th>
-                                                <th className="py-2 pr-3 font-medium">Liberado</th>
-                                                <th className="py-2 font-medium">Acción</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Evento</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Fecha</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Estado</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Precio</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Liberado</th>
+                                                <th scope="col" className="py-2 font-medium">Acción</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -724,9 +794,10 @@ export default function MusicianReportsView() {
                                                         {formatBookingDate(row.event_date)}
                                                     </td>
                                                     <td className="py-2.5 pr-3">
-                                                        {BOOKING_STATUS_LABELS[
-                                                            row.status as BookingStatus
-                                                        ] || row.status}
+                                                        {getBookingStatusLabel(
+                                                            row.status as BookingStatus,
+                                                            "musician",
+                                                        )}
                                                     </td>
                                                     <td className="py-2.5 pr-3">
                                                         {row.price_agreed != null
@@ -760,17 +831,20 @@ export default function MusicianReportsView() {
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full text-sm">
+                                        <caption className="sr-only">
+                                            Detalle de shows y pagos por integrante en el periodo filtrado
+                                        </caption>
                                         <thead>
                                             <tr className="text-left text-default-500 border-b border-default-200">
-                                                <th className="py-2 pr-3 font-medium">
+                                                <th scope="col" className="py-2 pr-3 font-medium">
                                                     Integrante
                                                 </th>
-                                                <th className="py-2 pr-3 font-medium">Shows</th>
-                                                <th className="py-2 pr-3 font-medium">
+                                                <th scope="col" className="py-2 pr-3 font-medium">Shows</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">
                                                     Asignado
                                                 </th>
-                                                <th className="py-2 pr-3 font-medium">Pagado</th>
-                                                <th className="py-2 font-medium">Pendiente</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Pagado</th>
+                                                <th scope="col" className="py-2 font-medium">Pendiente</th>
                                             </tr>
                                         </thead>
                                         <tbody>

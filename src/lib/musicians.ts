@@ -57,9 +57,18 @@ export async function getPlatformStats(): Promise<PlatformStatsOut | null> {
     }
 }
 
-export async function getLatestReviews(limit: number = 6): Promise<any[]> {
+export interface PublicLatestReview {
+    id: string;
+    rating: number;
+    comment: string;
+    author_label: string;
+    event_type: string | null;
+    created_at: string;
+}
+
+export async function getLatestReviews(limit: number = 6): Promise<PublicLatestReview[]> {
     try {
-        return await apiFetch<any[]>(`/profiles/reviews/latest?limit=${limit}`);
+        return await apiFetch<PublicLatestReview[]>(`/profiles/reviews/latest?limit=${limit}`);
     } catch {
         return [];
     }

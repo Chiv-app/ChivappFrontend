@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { MusicianCard } from "@/types/ui/musician";
 import { Icon } from "@iconify/react";
+import { useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Card, CardFooter, Image as HeroImage } from "@heroui/react";
 
 type Props = {
   musician: MusicianCard;
@@ -13,6 +13,8 @@ type Props = {
   index?: number;
   /** "large" para la intro del home, donde hay pocas cards y deben ocupar más espacio. */
   size?: "default" | "large";
+  /** Solo las primeras tarjetas visibles por encima del pliegue deben precargarse con priority. */
+  priority?: boolean;
 };
 
 const FALLBACK_IMAGE =
@@ -54,7 +56,9 @@ export default function MusicianCardComponent({
   musician,
   index = 0,
   size = "default",
+  priority = false,
 }: Props) {
+  const shouldReduceMotion = useReducedMotion();
   const location = locationLabel(musician);
   const genreTags = musician.genres.slice(0, 3);
   const instrumentTags = musician.instruments.slice(0, 2);
@@ -71,29 +75,35 @@ export default function MusicianCardComponent({
   }, [musician.image, musician.images]);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const canRotate = slides.length > 1;
-
-
+  const [isHovered, setIsHovered] = useState(false);
+  const canRotate = slides.length > 1 && !shouldReduceMotion;
 
   useEffect(() => {
-    if (!canRotate || paused) return;
+    if (!canRotate || !isHovered) return;
     const id = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, CAROUSEL_MS);
     return () => window.clearInterval(id);
-  }, [canRotate, paused, slides.length]);
+  }, [canRotate, isHovered, slides.length]);
 
-  const metaLine = [
-    musician.priceLabel,
+  const activeSlideIndex = activeIndex % slides.length;
+  const activeSrc = slides[activeSlideIndex] ?? FALLBACK_IMAGE;
+
+  const ratingLabel =
     musician.rating != null
       ? `★ ${musician.rating.toFixed(1)}${
           musician.ratingCount != null && musician.ratingCount > 0
             ? ` (${musician.ratingCount})`
             : ""
         }`
-      : "Nuevo",
-  ].join("  ·  ");
+      : "Nuevo";
+
+  const metaParts = [
+    musician.price == null ? musician.priceLabel : null,
+    ratingLabel,
+    musician.verified ? "Verificado" : null,
+  ].filter(Boolean);
+  const metaLine = metaParts.join("  ·  ");
 
   return (
     <Link
@@ -109,10 +119,11 @@ export default function MusicianCardComponent({
         EASE,
         "hover:-translate-y-1 hover:shadow-elevated hover:ring-primary/40",
       ].join(" ")}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setActiveIndex(0);
+      }}
     >
       <div
         className={[
@@ -122,24 +133,15 @@ export default function MusicianCardComponent({
           "group-hover:scale-[1.08]",
         ].join(" ")}
       >
-        {slides.map((src, slideIndex) => {
-          const isActive = slideIndex === activeIndex;
-          return (
-            <Image
-              key={`${musician.id}-${src}-${slideIndex}`}
-              src={src}
-              alt={`${musician.name} — foto ${slideIndex + 1}`}
-              fill={true}
-              className={[
-                "object-cover",
-                "transition-opacity duration-700 ease-in-out",
-                isActive ? "opacity-100" : "opacity-0",
-              ].join(" ")}
-              sizes="(max-width: 479px) 100vw, (max-width: 1023px) 50vw, 33vw"
-              priority={slideIndex === 0 ? true : undefined}
-            />
-          );
-        })}
+        <Image
+          key={`${musician.id}-${activeSrc}-${activeSlideIndex}`}
+          src={activeSrc}
+          alt={`${musician.name} — foto ${activeSlideIndex + 1}`}
+          fill={true}
+          className="object-cover transition-opacity duration-700 ease-in-out opacity-100"
+          sizes="(max-width: 479px) 100vw, (max-width: 1023px) 50vw, 33vw"
+          priority={priority && activeSlideIndex === 0 ? true : undefined}
+        />
       </div>
 
       {/* Scrims for contrast */}
@@ -157,10 +159,6 @@ export default function MusicianCardComponent({
         ].join(" ")}
       />
 
-      {/*
-              Content anchored to the bottom. On hover the detail block expands
-              upward in normal document flow; CTA stays last.
-            */}
       <div className="absolute inset-x-0 bottom-0 z-10 p-3.5 sm:p-5">
         <div className="flex flex-col items-stretch gap-0">
           <h3
@@ -175,36 +173,34 @@ export default function MusicianCardComponent({
             {musician.price != null ? ` · S/ ${musician.price}` : ""}
           </p>
 
+          {location ? (
+            <p
+              className={`text-xs sm:text-sm text-white/95 flex items-center gap-1 mt-1 ${TEXT_SHADOW}`}
+            >
+              <Icon
+                icon="material-symbols:location-on-outline"
+                width={15}
+                className="shrink-0"
+              />
+              <span className="truncate">{location}</span>
+            </p>
+          ) : null}
+
           {/* Expandable details — grows upward from the bottom stack */}
           <div
             className={[
               "grid transition-[grid-template-rows,opacity,margin] duration-500",
               EASE,
-              // Touch: keep a compact meta line visible
-              "grid-rows-[1fr] opacity-100 mt-2",
-              // Hover devices: collapsed until hover
+              "grid-rows-[1fr] opacity-100 mt-1.5",
               "[@media(hover:hover)]:grid-rows-[0fr] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:mt-0",
-              "[@media(hover:hover)]:group-hover:grid-rows-[1fr] [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:mt-2.5",
+              "[@media(hover:hover)]:group-hover:grid-rows-[1fr] [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:mt-2",
+              "[@media(hover:hover)]:group-focus-within:grid-rows-[1fr] [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-focus-within:mt-2",
               "[@media(hover:hover)]:group-hover:delay-75",
             ].join(" ")}
           >
             <div className="min-h-0 overflow-hidden">
               <div className="flex flex-col gap-1.5 pt-0.5">
-                {/* On touch show only meta; on hover show full detail */}
                 <div className="hidden [@media(hover:hover)]:contents">
-                  {location ? (
-                    <p
-                      className={`text-xs sm:text-sm text-white/95 flex items-center gap-1 ${TEXT_SHADOW}`}
-                    >
-                      <Icon
-                        icon="material-symbols:location-on-outline"
-                        width={15}
-                        className="shrink-0"
-                      />
-                      <span className="truncate">{location}</span>
-                    </p>
-                  ) : null}
-
                   {musician.bio ? (
                     <p
                       className={`text-xs sm:text-sm text-white/95 leading-relaxed line-clamp-2 ${TEXT_SHADOW}`}
@@ -215,7 +211,7 @@ export default function MusicianCardComponent({
 
                   {previewTags.length > 0 ? (
                     <p
-                      className={`text-[11px] sm:text-xs text-white/90 leading-snug line-clamp-1 ${TEXT_SHADOW}`}
+                      className={`text-xs text-white/90 leading-snug line-clamp-1 ${TEXT_SHADOW}`}
                     >
                       {previewTags.join(" · ")}
                     </p>
@@ -231,7 +227,7 @@ export default function MusicianCardComponent({
             </div>
           </div>
 
-          {/* CTA: last in stack; only on hover (visible on touch devices) */}
+          {/* CTA: last in stack; only on hover/focus (visible on touch devices) */}
           <div
             className={[
               "grid transition-[grid-template-rows,opacity,margin,transform] duration-500",
@@ -239,6 +235,7 @@ export default function MusicianCardComponent({
               "grid-rows-[1fr] opacity-100 mt-3 translate-y-0",
               "[@media(hover:hover)]:grid-rows-[0fr] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:mt-0 [@media(hover:hover)]:translate-y-1.5",
               "[@media(hover:hover)]:group-hover:grid-rows-[1fr] [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:mt-3 [@media(hover:hover)]:group-hover:translate-y-0",
+              "[@media(hover:hover)]:group-focus-within:grid-rows-[1fr] [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-focus-within:mt-3 [@media(hover:hover)]:group-focus-within:translate-y-0",
               "[@media(hover:hover)]:group-hover:delay-150",
             ].join(" ")}
           >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     Button,
     Card,
@@ -45,22 +45,21 @@ export default function AdminEmailsPage() {
     const [form, setForm] = useState<EmailTemplateOut | null>(null);
     const [logs, setLogs] = useState<EmailLogOut[]>([]);
     const [loadingTemplates, setLoadingTemplates] = useState(true);
+    const [templatesError, setTemplatesError] = useState<string | null>(null);
     const [loadingLogs, setLoadingLogs] = useState(true);
+    const [logsError, setLogsError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [previewing, setPreviewing] = useState(false);
     const [rendered, setRendered] = useState<EmailTemplateRenderOut | null>(null);
     const [renderLoading, setRenderLoading] = useState(false);
+    const [renderError, setRenderError] = useState<string | null>(null);
     const [previewFormat, setPreviewFormat] = useState<"html" | "text">("html");
     const [logStatus, setLogStatus] = useState<string>("");
     const [logQuery, setLogQuery] = useState("");
 
-    const selectedTemplate = useMemo(
-        () => templates.find((item) => item.slug === selectedSlug) ?? null,
-        [templates, selectedSlug],
-    );
-
     const loadTemplates = useCallback(async () => {
         setLoadingTemplates(true);
+        setTemplatesError(null);
         try {
             const data = await getAdminEmailTemplates();
             setTemplates(data);
@@ -71,8 +70,13 @@ export default function AdminEmailsPage() {
                 }
                 return data[0] ?? null;
             });
-        } catch {
+        } catch (err) {
             setTemplates([]);
+            setTemplatesError(
+                err instanceof Error && err.message
+                    ? err.message
+                    : "No pudimos cargar las plantillas de correo.",
+            );
         } finally {
             setLoadingTemplates(false);
         }
@@ -80,43 +84,53 @@ export default function AdminEmailsPage() {
 
     const loadLogs = useCallback(async () => {
         setLoadingLogs(true);
+        setLogsError(null);
         try {
             const data = await getAdminEmailLogs({
-                limit: 80,
+                limit: 200,
                 status: logStatus || undefined,
                 q: logQuery.trim() || undefined,
             });
             setLogs(data);
-        } catch {
+        } catch (err) {
             setLogs([]);
+            setLogsError(
+                err instanceof Error && err.message
+                    ? err.message
+                    : "No pudimos cargar el historial de envíos.",
+            );
         } finally {
             setLoadingLogs(false);
         }
     }, [logStatus, logQuery]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void loadTemplates();
     }, [loadTemplates]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void loadLogs();
     }, [loadLogs]);
 
-    useEffect(() => {
-        if (selectedTemplate) {
-            setForm(selectedTemplate);
+    const handleSelectTemplate = (slug: string) => {
+        setSelectedSlug(slug);
+        const match = templates.find((item) => item.slug === slug) ?? null;
+        if (match) {
+            setForm(match);
         }
-    }, [selectedTemplate]);
+    };
 
     useEffect(() => {
         if (!form) {
-            setRendered(null);
             return;
         }
 
         let cancelled = false;
         const timer = window.setTimeout(async () => {
             setRenderLoading(true);
+            setRenderError(null);
             try {
                 const result = await renderAdminEmailTemplate(form.slug, {
                     subject: form.subject,
@@ -126,9 +140,14 @@ export default function AdminEmailsPage() {
                 if (!cancelled) {
                     setRendered(result);
                 }
-            } catch {
+            } catch (err) {
                 if (!cancelled) {
                     setRendered(null);
+                    setRenderError(
+                        err instanceof Error && err.message
+                            ? err.message
+                            : "No se pudo pre-renderizar la plantilla. Mostrando contenido sin variables sustituidas.",
+                    );
                 }
             } finally {
                 if (!cancelled) {
@@ -256,13 +275,22 @@ export default function AdminEmailsPage() {
                 </Tabs>
             </div>
 
+            {renderError ? (
+                <div
+                    role="alert"
+                    className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-2.5 text-xs text-warning-text"
+                >
+                    {renderError}
+                </div>
+            ) : null}
+
             <div className="rounded-xl border border-default-200/70 bg-default-100 p-3 sm:p-4 flex flex-col gap-3 min-h-[420px]">
                 <div className="rounded-lg bg-content1 border border-default-200 px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wide text-default-400 mb-1">
+                    <p className="text-xs uppercase tracking-wide text-default-500 mb-1">
                         Asunto
                     </p>
                     {renderLoading ? (
-                        <p className="text-sm text-default-400">Generando vista previa…</p>
+                        <p className="text-sm text-default-500">Generando vista previa…</p>
                     ) : (
                         <p className="text-sm font-medium break-words">
                             {rendered?.subject ?? form.subject}
@@ -272,7 +300,7 @@ export default function AdminEmailsPage() {
 
                 <div className="flex-1 rounded-lg bg-white border border-default-200 overflow-hidden min-h-[320px]">
                     {renderLoading ? (
-                        <p className="text-sm text-default-400 p-4">Generando vista previa…</p>
+                        <p className="text-sm text-default-500 p-4">Generando vista previa…</p>
                     ) : previewFormat === "html" ? (
                         <iframe
                             title={`Vista previa: ${form.name}`}
@@ -304,12 +332,31 @@ export default function AdminEmailsPage() {
                             <CardBody className="p-4 gap-2">
                                 {loadingTemplates ? (
                                     <p className="text-sm text-default-500">Cargando…</p>
+                                ) : templatesError ? (
+                                    <div
+                                        role="alert"
+                                        className="rounded-xl border border-danger/30 bg-danger/10 p-3 flex flex-col gap-2"
+                                    >
+                                        <p className="text-xs text-danger-text">{templatesError}</p>
+                                        <Button
+                                            size="sm"
+                                            color="danger"
+                                            variant="flat"
+                                            onPress={loadTemplates}
+                                        >
+                                            Reintentar
+                                        </Button>
+                                    </div>
+                                ) : templates.length === 0 ? (
+                                    <p className="text-sm text-default-500">
+                                        No hay plantillas configuradas.
+                                    </p>
                                 ) : (
                                     templates.map((template) => (
                                         <button
                                             key={template.slug}
                                             type="button"
-                                            onClick={() => setSelectedSlug(template.slug)}
+                                            onClick={() => handleSelectTemplate(template.slug)}
                                             className={`text-left rounded-xl px-3 py-3 transition-colors ${
                                                 selectedSlug === template.slug
                                                     ? "bg-primary/10 border border-primary/20"
@@ -411,6 +458,7 @@ export default function AdminEmailsPage() {
                     <div className="flex flex-col gap-4 pt-4">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <Input
+                                aria-label="Buscar por destinatario o asunto"
                                 placeholder="Buscar por destinatario o asunto"
                                 value={logQuery}
                                 onValueChange={setLogQuery}
@@ -418,6 +466,7 @@ export default function AdminEmailsPage() {
                                 className="sm:max-w-md"
                             />
                             <Select
+                                aria-label="Filtrar por estado de envío"
                                 placeholder="Estado"
                                 selectedKeys={logStatus ? [logStatus] : []}
                                 onSelectionChange={(keys) => {
@@ -448,6 +497,21 @@ export default function AdminEmailsPage() {
                                     <p className="text-sm text-default-500 text-center py-10">
                                         Cargando historial…
                                     </p>
+                                ) : logsError ? (
+                                    <div
+                                        role="alert"
+                                        className="p-6 flex flex-col items-center gap-3 text-center"
+                                    >
+                                        <p className="text-sm text-danger-text">{logsError}</p>
+                                        <Button
+                                            size="sm"
+                                            color="danger"
+                                            variant="flat"
+                                            onPress={loadLogs}
+                                        >
+                                            Reintentar
+                                        </Button>
+                                    </div>
                                 ) : logs.length === 0 ? (
                                     <p className="text-sm text-default-500 text-center py-10">
                                         No hay envíos registrados.
@@ -467,7 +531,7 @@ export default function AdminEmailsPage() {
                                                         {log.recipient} · {log.template_slug}
                                                     </p>
                                                     {log.error_message ? (
-                                                        <p className="text-xs text-danger mt-1">
+                                                        <p className="text-xs text-danger-text mt-1">
                                                             {log.error_message}
                                                         </p>
                                                     ) : null}
@@ -480,7 +544,7 @@ export default function AdminEmailsPage() {
                                                     >
                                                         {STATUS_LABEL[log.status] ?? log.status}
                                                     </Chip>
-                                                    <span className="text-xs text-default-400">
+                                                    <span className="text-xs text-default-500">
                                                         {formatDateTime(log.created_at)}
                                                     </span>
                                                 </div>
@@ -496,5 +560,3 @@ export default function AdminEmailsPage() {
         </div>
     );
 }
-
-

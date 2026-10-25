@@ -23,7 +23,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                             type="button"
                             onClick={toggleVisibility}
                             aria-label={isVisible ? "Ocultar contraseña" : "Ver contraseña"}
-                            className="text-default-400 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded p-1 transition-colors"
+                            className="text-default-400 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus rounded p-1 transition-colors"
                         >
                             <Icon
                                 icon={

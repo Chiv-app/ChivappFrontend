@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import {
@@ -30,6 +31,7 @@ import {
     getAdminBookingDetail,
     retryAdminCancellationRefund,
 } from "@/lib/admin";
+import { ApiError } from "@/lib/api";
 import {
     BOOKING_STATUS_COLORS,
     BOOKING_STATUS_LABELS,
@@ -90,6 +92,8 @@ export default function AdminBookingDetailPage({ params }: Props) {
     const { id } = use(params);
     const [booking, setBooking] = useState<AdminBookingDetailOut | null>(null);
     const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isRetryingRefund, setIsRetryingRefund] = useState(false);
     const [refundAmountInput, setRefundAmountInput] = useState("");
@@ -98,15 +102,24 @@ export default function AdminBookingDetailPage({ params }: Props) {
 
     const load = useCallback(async () => {
         setLoading(true);
+        setNotFound(false);
+        setLoadError(null);
         try {
             const data = await getAdminBookingDetail(id);
             setBooking(data);
         } catch (error) {
-            addToast({
-                title: "No se pudo cargar la reserva",
-                description: error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
+            const is404 = error instanceof ApiError && error.status === 404;
+            setNotFound(is404);
+            const message =
+                error instanceof Error ? error.message : "Intenta de nuevo.";
+            if (!is404) {
+                setLoadError(message);
+                addToast({
+                    title: "No se pudo cargar la reserva",
+                    description: message,
+                    color: "danger",
+                });
+            }
             setBooking(null);
         } finally {
             setLoading(false);
@@ -114,6 +127,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
     }, [id]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 
@@ -124,6 +138,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
             : null;
     useEffect(() => {
         if (pendingPolicyAmount != null) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setRefundAmountInput(formatAmountInput(pendingPolicyAmount));
         }
     }, [pendingPolicyAmount]);
@@ -242,6 +257,26 @@ export default function AdminBookingDetailPage({ params }: Props) {
     }
 
     if (!booking) {
+        if (!notFound && loadError) {
+            return (
+                <Card className="border border-danger/30 bg-danger/5 shadow-soft">
+                    <CardBody className="gap-4 p-8 text-center">
+                        <p className="font-semibold text-danger">
+                            No se pudo cargar la reserva
+                        </p>
+                        <p className="text-sm text-default-600">{loadError}</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                            <Button color="danger" variant="flat" radius="lg" onPress={load}>
+                                Reintentar
+                            </Button>
+                            <Button as={Link} href="/admin/bookings" variant="flat" radius="lg">
+                                Volver al listado
+                            </Button>
+                        </div>
+                    </CardBody>
+                </Card>
+            );
+        }
         return (
             <div className="text-center py-16">
                 <p className="text-default-500 mb-4">No se encontró esta reserva.</p>
@@ -331,14 +366,14 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                 <p className="text-xs text-default-500">Precio acordado</p>
                                 <p className="font-semibold">
                                     {booking.price_agreed != null
-                                        ? formatCurrency(booking.price_agreed)
+                                        ? formatCurrency(toAmount(booking.price_agreed))
                                         : "—"}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-xs text-default-500">Pagado</p>
                                 <p className="font-semibold">
-                                    {formatCurrency(booking.amount_paid)}
+                                    {formatCurrency(toAmount(booking.amount_paid))}
                                 </p>
                             </div>
                             <div>
@@ -619,7 +654,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
                 </Card>
             ) : null}
 
-            <Modal
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
                 isOpen={isRejectRefundOpen}
                 onOpenChange={(open) => {
                     if (!isApprovingRefund) setIsRejectRefundOpen(open);

@@ -22,7 +22,7 @@ export default function CalendarConnectionCard() {
             } else {
                 throw new Error("No se recibio URL de Google");
             }
-        } catch (error) {
+        } catch {
             addToast({
                 title: "Error de conexión",
                 description: "No se pudo iniciar la conexión con Google Calendar.",
@@ -42,7 +42,7 @@ export default function CalendarConnectionCard() {
                 description: "Ya no se sincronizarán nuevas reservas.",
                 color: "success",
             });
-        } catch (error) {
+        } catch {
             addToast({
                 title: "Error al desvincular",
                 description: "Ocurrió un error al intentar desconectar Google Calendar.",

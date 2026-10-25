@@ -17,6 +17,7 @@ import {
     addToast,
 } from "@heroui/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { formatDateTime } from "@/lib/date-utils";
 import { getAdminUsers, updateAdminUser } from "@/lib/admin";
 import { UI } from "@/lib/ui-classes";
@@ -28,28 +29,65 @@ const ROLE_LABELS: Record<string, string> = {
     admin: "Admin",
 };
 
+const PAGE_SIZE = 100;
+
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<AdminUserOut[]>([]);
     const [q, setQ] = useState("");
     const [role, setRole] = useState<string>("");
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [suspendTarget, setSuspendTarget] = useState<AdminUserOut | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const data = await getAdminUsers({
                 q: q.trim() || undefined,
                 role: role || undefined,
-                limit: 100,
+                skip: 0,
+                limit: PAGE_SIZE,
             });
             setUsers(data);
-        } catch {
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
             setUsers([]);
+            setHasMore(false);
+            setLoadError(
+                err instanceof Error
+                    ? err.message
+                    : "No se pudieron cargar los usuarios.",
+            );
         } finally {
             setLoading(false);
         }
     }, [q, role]);
+
+    async function loadMore() {
+        setLoadingMore(true);
+        try {
+            const data = await getAdminUsers({
+                q: q.trim() || undefined,
+                role: role || undefined,
+                skip: users.length,
+                limit: PAGE_SIZE,
+            });
+            setUsers((current) => [...current, ...data]);
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más usuarios",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMore(false);
+        }
+    }
 
     useEffect(() => {
         const t = window.setTimeout(() => {
@@ -86,6 +124,20 @@ export default function AdminUsersPage() {
                 title="Usuarios y acceso"
                 description="Busca cuentas, verifica identidad y suspende accesos sin tocar el resto del sistema."
             />
+
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar los usuarios
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={load}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
 
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
@@ -166,6 +218,7 @@ export default function AdminUsersPage() {
                                 <TableCell>
                                     <Switch
                                         size="sm"
+                                        aria-label={`Verificar a ${user.fullname || user.email}`}
                                         isSelected={user.is_verified}
                                         isDisabled={busyId === user.id || user.role === "admin"}
                                         onValueChange={(value) =>
@@ -177,11 +230,16 @@ export default function AdminUsersPage() {
                                     <Switch
                                         size="sm"
                                         color="danger"
+                                        aria-label={`Activar o suspender a ${user.fullname || user.email}`}
                                         isSelected={user.is_active !== false}
                                         isDisabled={busyId === user.id || user.role === "admin"}
-                                        onValueChange={(value) =>
-                                            patchUser(user.id, { is_active: value })
-                                        }
+                                        onValueChange={(value) => {
+                                            if (!value) {
+                                                setSuspendTarget(user);
+                                            } else {
+                                                void patchUser(user.id, { is_active: true });
+                                            }
+                                        }}
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -201,7 +259,38 @@ export default function AdminUsersPage() {
                     </TableBody>
                 </Table>
             </div>
+
+            {hasMore && !loading ? (
+                <div className="flex justify-center">
+                    <Button
+                        variant="flat"
+                        color="primary"
+                        radius="lg"
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                    >
+                        Cargar más ({users.length} mostrados)
+                    </Button>
+                </div>
+            ) : null}
+
+            <ConfirmDialog
+                isOpen={suspendTarget != null}
+                onOpenChange={(open) => {
+                    if (!open) setSuspendTarget(null);
+                }}
+                title="¿Suspender acceso del usuario?"
+                description={`Se suspenderá el acceso de ${suspendTarget?.fullname || suspendTarget?.email || "este usuario"} a la plataforma.`}
+                confirmLabel="Suspender cuenta"
+                color="danger"
+                isLoading={busyId != null && busyId === suspendTarget?.id}
+                onConfirm={async () => {
+                    if (!suspendTarget) return;
+                    const targetId = suspendTarget.id;
+                    await patchUser(targetId, { is_active: false });
+                    setSuspendTarget(null);
+                }}
+            />
         </div>
     );
 }
-

@@ -24,9 +24,16 @@ export type AdminStatsOut = {
     share_enabled_bookings: number;
 };
 
-export type AdminUserOut = UserOut & {
-    is_active?: boolean;
-    registration_type?: string | null;
+export type AdminUserOut = Omit<
+    UserOut,
+    "is_email_verified" | "has_password" | "is_ensemble_member"
+> & {
+    is_active: boolean;
+    registration_type: string | null;
+    created_at?: string | null;
+    is_email_verified?: boolean;
+    has_password?: boolean;
+    is_ensemble_member?: boolean;
 };
 
 export type AdminUserUpdate = {
@@ -60,7 +67,7 @@ export type AdminBookingOut = {
     start_time: string;
     location_address: string;
     location_city: string | null;
-    price_agreed: number | null;
+    price_agreed: number | string | null;
     share_enabled: boolean;
     change_requested_by: string | null;
     musician_id: string;
@@ -101,7 +108,7 @@ export type AdminBookingCancel = {
 export type AdminBookingDetailOut = AdminBookingOut & {
     musician_phone: string | null;
     contractor_phone: string | null;
-    amount_paid: number;
+    amount_paid: number | string;
     contract: ContractOut | null;
     payments: PaymentOut[];
     messages: BookingMessageOut[];
@@ -112,7 +119,7 @@ export type AdminBookingDetailOut = AdminBookingOut & {
 export type AdminPaymentOut = {
     id: string;
     booking_id: string;
-    amount: number;
+    amount: number | string;
     currency: string;
     payment_type: string | null;
     evidence_url: string | null;
@@ -123,6 +130,8 @@ export type AdminPaymentOut = {
     reviewed_by_user_id?: string | null;
     reviewed_at?: string | null;
     rejection_reason?: string | null;
+    needs_refund?: boolean;
+    needs_refund_reason?: string | null;
     created_at: string;
     event_type: string | null;
     event_date: string | null;
@@ -135,6 +144,7 @@ export type AdminListParams = {
     limit?: number;
     q?: string;
     status?: ProfileStatus | BookingStatus | PaymentStatus | string;
+    state?: string;
     /** Solo reservas: filtra por estado del reembolso (p. ej. "pending_approval"). */
     refund_status?: string;
     role?: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useCallback, useEffect, useState } from "react";
 import {
     Button,
@@ -20,6 +21,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import {
     approveContractorProfile,
     getAdminContractors,
@@ -39,7 +41,7 @@ const STATUS_OPTIONS = [
     { key: "draft", label: "Borradores" },
 ];
 
-const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "En revisión", published: "Publicado", rejected: "Rechazado" };
+const STATUS_LABELS: Record<string, string> = { draft: "Borrador", pending_review: "Perfil en revisión", published: "Publicado", rejected: "Rechazado" };
 
 const STATUS_COLOR: Record<
     string,
@@ -51,30 +53,76 @@ const STATUS_COLOR: Record<
     rejected: "danger",
 };
 
+const PAGE_SIZE = 100;
+
 export default function AdminContractorsPage() {
     const [profiles, setProfiles] = useState<ContractorProfileAdminOut[]>([]);
     const [selected, setSelected] = useState<ContractorProfileAdminOut | null>(null);
     const [rejectionReason, setRejectionReason] = useState("");
-    const [status, setStatus] = useState("pending_review");
+    const [status, setStatus] = useState(() => {
+        if (typeof window === "undefined") return "pending_review";
+        const param = new URLSearchParams(window.location.search).get("status");
+        return STATUS_OPTIONS.some((opt) => opt.key === param) ? (param as string) : "pending_review";
+    });
     const [q, setQ] = useState("");
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [confirmAction, setConfirmAction] = useState<{
+        id: string;
+        name: string;
+        type: "approve" | "unpublish";
+    } | null>(null);
+    const [confirmBusy, setConfirmBusy] = useState(false);
     const rejectModal = useDisclosure();
 
     const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const data = await getAdminContractors({
                 status: status === "all" ? undefined : (status as ProfileStatus),
                 q: q.trim() || undefined,
-                limit: 100,
+                skip: 0,
+                limit: PAGE_SIZE,
             });
             setProfiles(data);
-        } catch {
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
             setProfiles([]);
+            setHasMore(false);
+            setLoadError(
+                err instanceof Error
+                    ? err.message
+                    : "No se pudieron cargar los perfiles de contratistas.",
+            );
         } finally {
             setLoading(false);
         }
     }, [q, status]);
+
+    async function loadMore() {
+        setLoadingMore(true);
+        try {
+            const data = await getAdminContractors({
+                status: status === "all" ? undefined : (status as ProfileStatus),
+                q: q.trim() || undefined,
+                skip: profiles.length,
+                limit: PAGE_SIZE,
+            });
+            setProfiles((current) => [...current, ...data]);
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más perfiles",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMore(false);
+        }
+    }
 
     useEffect(() => {
         const t = window.setTimeout(() => {
@@ -122,8 +170,9 @@ export default function AdminContractorsPage() {
         try {
             setSelected(await getContractorAdminDetail(id));
             window.scrollTo({ top: 0, behavior: "smooth" });
-        } catch (error: any) {
-            addToast({ title: "Error al cargar detalle", description: error.message, color: "danger" });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Intenta de nuevo.";
+            addToast({ title: "Error al cargar detalle", description: message, color: "danger" });
         }
     }
 
@@ -138,6 +187,20 @@ export default function AdminContractorsPage() {
                     </Chip>
                 }
             />
+
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar los perfiles
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={load}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
 
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
@@ -172,7 +235,9 @@ export default function AdminContractorsPage() {
             ) : profiles.length === 0 ? (
                 <Card className="border border-default-200/70 shadow-soft">
                     <CardBody className="p-8 text-center text-default-500">
-                        No hay perfiles con este filtro.
+                        {loadError
+                            ? "No se pudieron cargar los perfiles."
+                            : "No hay perfiles con este filtro."}
                     </CardBody>
                 </Card>
             ) : (
@@ -201,7 +266,7 @@ export default function AdminContractorsPage() {
                                             {STATUS_LABELS[profile.status] ?? profile.status}
                                         </Chip>
                                         {profile.submitted_at ? (
-                                            <span className="text-xs text-default-400">
+                                            <span className="text-xs text-default-500">
                                                 Enviado {formatRelativeTime(profile.submitted_at)}
                                             </span>
                                         ) : null}
@@ -232,7 +297,13 @@ export default function AdminContractorsPage() {
                                         <Button
                                             size="sm"
                                             color="success"
-                                            onPress={() => handleApprove(profile.id)}
+                                            onPress={() =>
+                                                setConfirmAction({
+                                                    id: profile.id,
+                                                    name: profile.user_fullname || profile.user_email || "este contratista",
+                                                    type: "approve",
+                                                })
+                                            }
                                         >
                                             Aprobar
                                         </Button>
@@ -257,7 +328,11 @@ export default function AdminContractorsPage() {
                                             color="warning"
                                             variant="flat"
                                             onPress={() =>
-                                                handleModerate(profile.id, "unpublish")
+                                                setConfirmAction({
+                                                    id: profile.id,
+                                                    name: profile.user_fullname || profile.user_email || "este contratista",
+                                                    type: "unpublish",
+                                                })
                                             }
                                         >
                                             Despublicar
@@ -270,7 +345,21 @@ export default function AdminContractorsPage() {
                 </div>
             )}
 
-                        <Modal isOpen={!!selected && !rejectModal.isOpen} onOpenChange={(open) => { if (!open) setSelected(null); }} size="2xl">
+            {hasMore && !loading ? (
+                <div className="flex justify-center">
+                    <Button
+                        variant="flat"
+                        color="primary"
+                        radius="lg"
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                    >
+                        Cargar más ({profiles.length} mostrados)
+                    </Button>
+                </div>
+            ) : null}
+
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={!!selected && !rejectModal.isOpen} onOpenChange={(open) => { if (!open) setSelected(null); }} size="2xl">
                 <ModalContent>
                     {(onClose) => (
                         <>
@@ -347,7 +436,7 @@ export default function AdminContractorsPage() {
                 </ModalContent>
             </Modal>
 
-            <Modal isOpen={rejectModal.isOpen} onOpenChange={rejectModal.onOpenChange}>
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={rejectModal.isOpen} onOpenChange={rejectModal.onOpenChange}>
                 <ModalContent>
                     <ModalHeader>Rechazar perfil</ModalHeader>
                     <ModalBody>
@@ -368,10 +457,40 @@ export default function AdminContractorsPage() {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
+
+            <ConfirmDialog
+                isOpen={confirmAction != null}
+                onOpenChange={(open) => {
+                    if (!open) setConfirmAction(null);
+                }}
+                title={
+                    confirmAction?.type === "approve"
+                        ? "¿Aprobar perfil de contratista?"
+                        : "¿Despublicar perfil de contratista?"
+                }
+                description={
+                    confirmAction?.type === "approve"
+                        ? `El perfil de ${confirmAction.name} quedará verificado y aprobado.`
+                        : `El perfil de ${confirmAction?.name ?? "este contratista"} quedará despublicado.`
+                }
+                confirmLabel={confirmAction?.type === "approve" ? "Aprobar perfil" : "Despublicar"}
+                color={confirmAction?.type === "approve" ? "success" : "warning"}
+                isLoading={confirmBusy}
+                onConfirm={async () => {
+                    if (!confirmAction) return;
+                    setConfirmBusy(true);
+                    try {
+                        if (confirmAction.type === "approve") {
+                            await handleApprove(confirmAction.id);
+                        } else {
+                            await handleModerate(confirmAction.id, "unpublish");
+                        }
+                        setConfirmAction(null);
+                    } finally {
+                        setConfirmBusy(false);
+                    }
+                }}
+            />
         </div>
     );
 }
-
-
-
-

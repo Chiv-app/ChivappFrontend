@@ -18,6 +18,7 @@ function originOf(value: string | undefined): string | null {
 const gcsBucketOrigin = originOf(process.env.NEXT_PUBLIC_GCS_BUCKET_URL);
 const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_URL);
 const uploadsOrigin = originOf(process.env.NEXT_PUBLIC_UPLOADS_URL);
+const cspReportUri = process.env.CSP_REPORT_URI?.trim() || "/api/csp-report";
 
 /** Archivos subidos: bucket GCS (NEXT_PUBLIC_GCS_BUCKET_URL) y, si aplica, un host de uploads propio. */
 const uploadSources = [
@@ -35,7 +36,6 @@ const uploadSources = [
 //   y miniaturas (img.youtube.com, i.ytimg.com).
 // - Mapas: teselas OSM (*.tile.openstreetmap.org) e iconos de Leaflet (unpkg.com).
 //   La geocodificación (Nominatim) va por el servidor (/api/geocode), no desde el navegador.
-// - Visor de PDF alternativo: docs.google.com (gview).
 // - Imágenes: lh3.googleusercontent.com (avatar Google), images.pexels.com,
 //   ui-avatars.com, storage.googleapis.com / bucket de uploads.
 // - Fuentes: next/font/google las autoaloja en build, no requiere fonts.googleapis.com.
@@ -98,7 +98,6 @@ const reportOnlyDirectives: Record<string, string[]> = {
     "https://www.youtube.com",
     "https://www.youtube-nocookie.com",
     "https://player.vimeo.com",
-    "https://docs.google.com",
     "https://www.google.com",
     ...uploadSources,
     ...mercadoPagoSources,
@@ -110,6 +109,7 @@ const reportOnlyDirectives: Record<string, string[]> = {
   "base-uri": ["'self'"],
   "form-action": ["'self'", "https://*.mercadopago.com", "https://*.mercadopago.com.pe"],
   "frame-ancestors": ["'none'"],
+  "report-uri": [cspReportUri],
 };
 
 const serializeCsp = (directives: Record<string, string[]>) =>
@@ -128,7 +128,11 @@ const baseSecurityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
+  {
+    key: "Permissions-Policy",
+    value:
+      'camera=(), microphone=(), geolocation=(self), payment=(self "https://www.mercadopago.com" "https://www.mercadopago.com.pe" "https://mercadopago.com" "https://mercadopago.com.pe" "https://sdk.mercadopago.com" "https://api.mercadopago.com")',
+  },
 ];
 
 const devImagePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = isProduction

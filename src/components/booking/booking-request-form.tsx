@@ -1,41 +1,33 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useAuthModal } from "@/contexts/auth-modal-context";
 import { Icon } from "@iconify/react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
-    Select,
+  Select,
   SelectItem,
   Textarea,
   addToast,
-    Input,
+  Input,
   Card,
   CardBody,
-  Divider,
 } from "@heroui/react";
-import {
-  getLocalTimeZone,
-  parseDate,
-  today,
-  type DateValue,
-  Time,
-} from "@internationalized/date";
 import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
 import { getMusicianAvailability } from "@/lib/availability";
 import {
-  formatAvailabilitySummary,
   formatTimeLabel,
-  getAvailableDaySet,
   getSlotsForDate,
   validateBookingAgainstAvailability,
 } from "@/lib/availability-calendar";
 import { createBooking } from "@/lib/bookings";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
+import { isEmailTakenError } from "@/lib/auth-errors";
 import {
   formatLocationReference,
   normalizeStartTime,
@@ -70,6 +62,8 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [attemptedGuestSubmit, setAttemptedGuestSubmit] = useState(false);
 
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,32 +76,36 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const [eventDescription, setEventDescription] = useState("");
   const [location, setLocation] = useState<MapLocation | null>(null);
 
-  const timeValue = startTime
-    ? new Time(
-        parseInt(startTime.split(":")[0]),
-        parseInt(startTime.split(":")[1]),
-      )
-    : null;
+  const todayIso = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }, []);
 
-  const availableDays = useMemo(() => getAvailableDaySet(slots), [slots]);
   const daySlots = useMemo(
     () => (eventDate ? getSlotsForDate(slots, eventDate) : []),
     [slots, eventDate],
   );
+  const availabilityMismatch = useMemo(() => {
+    if (!eventDate || !startTime || isLoadingSlots || slotsError) return null;
+    return validateBookingAgainstAvailability({
+      eventDate,
+      startTime,
+      slots,
+    });
+  }, [eventDate, startTime, slots, isLoadingSlots, slotsError]);
 
-  useEffect(() => {
-    let cancelled = false;
-
+  const loadAvailability = useCallback(() => {
     setIsLoadingSlots(true);
     setSlotsError(null);
 
     getMusicianAvailability(musician.id)
       .then((data) => {
-        if (cancelled) return;
         setSlots(data);
       })
       .catch((error) => {
-        if (cancelled) return;
         setSlots([]);
         setSlotsError(
           error instanceof Error
@@ -116,16 +114,18 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         );
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingSlots(false);
+        setIsLoadingSlots(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
   }, [musician.id]);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAvailability();
+  }, [loadAvailability]);
 
   async function submitRequest() {
+    setAttemptedSubmit(true);
+
     const validationError = validateBookingRequest({
       eventDate,
       startTime,
@@ -142,59 +142,79 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       return;
     }
 
-    const availabilityError = validateBookingAgainstAvailability({
-      eventDate,
-      startTime,
-      slots,
-    });
-    if (availabilityError) {
-      addToast({
-        title: "Fuera de disponibilidad",
-        description: availabilityError,
-        color: "warning",
+    if (!slotsError) {
+      const availabilityError = validateBookingAgainstAvailability({
+        eventDate,
+        startTime,
+        slots,
       });
-      return;
+      if (availabilityError) {
+        addToast({
+          title: "Fuera de disponibilidad",
+          description: availabilityError,
+          color: "warning",
+        });
+        return;
+      }
     }
 
-    
     if (!user && !showAuthSection) {
       setShowAuthSection(true);
       return;
     }
 
+    let registeredAsGuest = false;
     if (!user) {
-      if (!contactName || !contactPhone || !contactEmail) {
-         addToast({ title: "Faltan datos de contacto", description: "Completa tus datos para enviar la cotizaci\u00f3n.", color: "warning" });
-         return;
+      setAttemptedGuestSubmit(true);
+      if (!contactName.trim() || !contactPhone.trim() || !contactEmail.trim()) {
+        addToast({
+          title: "Faltan datos de contacto",
+          description: "Completa tus datos para enviar la solicitud.",
+          color: "warning",
+        });
+        return;
       }
-      
+
       setIsSubmitting(true);
       try {
-          await apiFetch("/auth/guest-register", {
-              method: "POST",
-              body: JSON.stringify({
-                  fullname: contactName,
-                  email: contactEmail,
-                  phone: contactPhone,
-              }),
-              headers: { "Content-Type": "application/json" }
+        await apiFetch("/auth/guest-register", {
+          method: "POST",
+          body: JSON.stringify({
+            fullname: contactName.trim(),
+            email: contactEmail.trim(),
+            phone: contactPhone.trim(),
+          }),
+          headers: { "Content-Type": "application/json" },
+        });
+        registeredAsGuest = true;
+      } catch (error: unknown) {
+        setIsSubmitting(false);
+        const status =
+          error instanceof ApiError
+            ? error.status
+            : error && typeof error === "object" && "status" in error
+              ? (error as { status?: number }).status
+              : undefined;
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Ocurrió un error al registrar tus datos.";
+        if ((status === 400 || status === 409) && isEmailTakenError(message)) {
+          addToast({
+            title: "Cuenta existente",
+            description:
+              "Este correo ya tiene una cuenta. Inicia sesión con código por correo o contraseña para continuar.",
+            color: "warning",
           });
-          
-          await refresh(); // Load the newly created/logged-in user session
-          
-      } catch (error: any) {
-          setIsSubmitting(false);
-          if (error.status === 400 || error.status === 409) {
-              addToast({
-                  title: "Cuenta existente",
-                  description: "Este correo ya tiene una cuenta. Inicia sesi\u00f3n para continuar (si nunca creaste contrase\u00f1a, usa \u00abOlvid\u00e9 mi contrase\u00f1a\u00bb).",
-                  color: "warning"
-              });
-              openLogin({ redirect: `${window.location.pathname}?reservar=1` });
-          } else {
-              addToast({ title: "Error", description: "Ocurri\u00f3 un error al registrar tus datos.", color: "danger" });
-          }
-          return;
+          openLogin({ redirect: `${window.location.pathname}?reservar=1` });
+        } else {
+          addToast({
+            title: "No se pudo registrar",
+            description: message,
+            color: "danger",
+          });
+        }
+        return;
       }
     } else {
       setIsSubmitting(true);
@@ -215,6 +235,16 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         event_type: eventType,
         event_description: eventDescription.trim() || null,
       });
+      const targetUrl = `/contractor/bookings/${booking.id}`;
+      if (registeredAsGuest) {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(
+            "post_password_setup_redirect",
+            targetUrl,
+          );
+        }
+        await refresh();
+      }
       addToast({
         title: "Solicitud enviada",
         description:
@@ -222,7 +252,11 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         color: "success",
       });
       onSuccess?.();
-      router.push(`/contractor/bookings/${booking.id}`);
+      router.push(
+        registeredAsGuest
+          ? `/set-password?callbackUrl=${encodeURIComponent(targetUrl)}`
+          : targetUrl,
+      );
     } catch (error) {
       addToast({
         title: "No se pudo enviar",
@@ -240,55 +274,91 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     await submitRequest();
   }
 
-  const canSubmit = !isLoadingSlots && !slotsError;
+  const canSubmit = !isLoadingSlots && !availabilityMismatch;
+
+  const missingStepReason = useMemo(() => {
+    if (isLoadingSlots) return "Verificando horarios disponibles del músico…";
+    if (availabilityMismatch) return availabilityMismatch;
+    const missing: string[] = [];
+    if (!eventDate) missing.push("fecha");
+    if (!startTime) missing.push("hora");
+    if (!eventType) missing.push("motivo");
+    if (!location?.address) missing.push("ubicación en el mapa");
+    if (missing.length > 0) {
+      return `Completa: ${missing.join(", ")}.`;
+    }
+    return null;
+  }, [isLoadingSlots, availabilityMismatch, eventDate, startTime, eventType, location]);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       <style>
         {".hide-scroll::-webkit-scrollbar { display: none !important; }"}
       </style>
-      {/* Ultra-dense Row 1 */}
+      {/* Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* 1. Fecha */}
         <div className="flex flex-col justify-center">
-          <Input type="date" label="Fecha" variant="bordered" isRequired value={eventDate} onValueChange={(val) => { setEventDate(val); if (startTime) { const mismatch = validateBookingAgainstAvailability({ eventDate: val, startTime, slots }); setSlotsError(mismatch); } }} isDisabled={isLoadingSlots}
+          <Input
+            type="date"
+            label="Fecha"
+            variant="bordered"
+            isRequired
+            min={todayIso}
+            value={eventDate}
+            onValueChange={(val) => {
+              setEventDate(val);
+            }}
+            isDisabled={isLoadingSlots}
+            isInvalid={
+              Boolean(availabilityMismatch) || (attemptedSubmit && !eventDate)
+            }
+            errorMessage={
+              attemptedSubmit && !eventDate ? "Selecciona la fecha" : undefined
+            }
             classNames={{
-              label: "uppercase font-bold tracking-wider text-[0.55rem]",
-              input: "font-bold text-xs",
+              label: "font-semibold text-xs",
+              input: "font-semibold text-base sm:text-sm",
             }}
           />
         </div>
 
-        {/* 2. Hora (TimeInput) */}
+        {/* 2. Hora */}
         <div className="flex flex-col justify-center">
           <Input
-              type="time"
-              label="Hora"
-              variant="bordered"
-              isRequired
-              value={startTime}
-              onValueChange={(val) => {
-                setStartTime(val);
-              }}
-              isDisabled={isLoadingSlots}
-              description={
-                daySlots.length > 0
-                  ? `Disp: ${daySlots
-                      .map(
-                        (s) =>
-                          `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
-                      )
-                      .join(", ")}`
-                  : undefined
-              }
-              classNames={{
-                label: "uppercase font-bold tracking-wider text-[0.55rem]",
-                input: "font-bold text-xs",
-              }}
-            />
+            type="time"
+            label="Hora"
+            variant="bordered"
+            isRequired
+            value={startTime}
+            onValueChange={(val) => {
+              setStartTime(val);
+            }}
+            isDisabled={isLoadingSlots}
+            isInvalid={
+              Boolean(availabilityMismatch) || (attemptedSubmit && !startTime)
+            }
+            errorMessage={
+              attemptedSubmit && !startTime ? "Selecciona la hora" : undefined
+            }
+            description={
+              daySlots.length > 0
+                ? `Disp: ${daySlots
+                    .map(
+                      (s) =>
+                        `${formatTimeLabel(s.start_time)} - ${formatTimeLabel(s.end_time)}`,
+                    )
+                    .join(", ")}`
+                : undefined
+            }
+            classNames={{
+              label: "font-semibold text-xs",
+              input: "font-semibold text-base sm:text-sm",
+            }}
+          />
         </div>
 
-        {/* 3. Tipo de Evento */}
+        {/* 3. Tipo de evento */}
         <Select
           label="Motivo"
           placeholder="Elegir"
@@ -300,9 +370,13 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           }}
           variant="bordered"
           isRequired
+          isInvalid={attemptedSubmit && !eventType}
+          errorMessage={
+            attemptedSubmit && !eventType ? "Elige el motivo" : undefined
+          }
           classNames={{
-            label: "uppercase font-bold tracking-wider text-[0.55rem]",
-            value: "font-bold text-xs",
+            label: "font-semibold text-xs",
+            value: "font-semibold text-base sm:text-sm",
           }}
         >
           {EVENT_TYPES.map((type) => (
@@ -311,68 +385,125 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         </Select>
       </div>
 
+      {(slotsError || availabilityMismatch) && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-2.5 text-xs font-medium text-warning-700 dark:text-warning-400"
+        >
+          <span>
+            {slotsError
+              ? `${slotsError} Puedes continuar y el músico confirmará su disponibilidad.`
+              : availabilityMismatch}
+          </span>
+          {slotsError && (
+            <Button
+              size="sm"
+              variant="flat"
+              color="warning"
+              onPress={loadAvailability}
+              className="font-semibold"
+            >
+              Reintentar
+            </Button>
+          )}
+        </div>
+      )}
+
       <LocationMapPickerField value={location} onChange={setLocation} />
+      {attemptedSubmit && !location?.address && (
+        <p role="alert" className="text-xs text-danger -mt-2">
+          Busca la dirección o mueve el pin en el mapa para confirmar la ubicación.
+        </p>
+      )}
 
       <Textarea
-        label="Detalles (Opcional)"
-        placeholder="Ej: Es sorpresa..."
+        label="Detalles (opcional)"
+        placeholder="Ej: Es sorpresa, repertorio especial, indicaciones de llegada..."
         value={eventDescription}
         onValueChange={setEventDescription}
         variant="bordered"
         minRows={2}
         classNames={{
-          label: "uppercase font-bold tracking-wider text-[0.55rem]",
-          input: "font-medium text-xs",
+          label: "font-semibold text-xs",
+          input: "font-medium text-base sm:text-sm",
         }}
       />
 
       {/* Footer / Continue / Auth Section */}
-      {(!user && !showAuthSection) && (
-        <div className="pt-2 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full shrink-0">
-              <Icon icon="lucide:shield-check" className="w-4 h-4" />
+      {!user && !showAuthSection && (
+        <div className="pt-2 flex flex-col gap-2">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 text-primary-text p-1.5 rounded-full shrink-0">
+                <Icon icon="lucide:shield-check" className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col">
+                <p className="text-xs text-foreground font-bold leading-tight">
+                  Pago protegido
+                </p>
+                <p className="text-xs text-default-500 leading-tight mt-0.5">
+                  por <span className="font-bold text-primary-text">Mercado Pago</span>
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <p className="text-[0.65rem] text-foreground font-bold leading-tight">
-                Pago Protegido
-              </p>
-              <p className="text-[0.6rem] text-default-500 leading-tight mt-0.5">
-                por <span className="font-bold text-blue-500">mercado</span>
-                <span className="font-bold text-blue-900 dark:text-blue-400">
-                  pago
-                </span>
-              </p>
-            </div>
+            <Button
+              color="primary"
+              radius="lg"
+              size="md"
+              onPress={() => {
+                setAttemptedSubmit(true);
+                const validationError = validateBookingRequest({
+                  eventDate,
+                  startTime,
+                  eventType,
+                  location,
+                });
+                if (validationError) {
+                  addToast({
+                    title: "Campos incompletos",
+                    description: validationError,
+                    color: "warning",
+                  });
+                  return;
+                }
+                if (!canSubmit) return;
+                setShowAuthSection(true);
+              }}
+              isDisabled={!canSubmit}
+              className="w-full md:w-auto font-bold shadow-md min-h-11"
+              endContent={<Icon icon="lucide:arrow-right" className="w-4 h-4" />}
+            >
+              Continuar
+            </Button>
           </div>
-          <Button
-            color="primary"
-            radius="lg"
-            size="md"
-            onPress={() => setShowAuthSection(true)}
-            isDisabled={!canSubmit}
-            className="w-full md:w-auto font-bold shadow-md"
-            endContent={<Icon icon="lucide:arrow-right" className="w-4 h-4" />}
-          >
-            Continuar
-          </Button>
+          {missingStepReason && (
+            <p className="text-xs text-default-500 text-right">
+              {missingStepReason}
+            </p>
+          )}
         </div>
       )}
 
-      {(!user && showAuthSection) && (
+      {!user && showAuthSection && (
         <div className="flex flex-col gap-3 mt-2 border-t border-divider pt-4 animate-appearance-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Icon icon="lucide:user-circle" className="text-primary w-5 h-5" />
-              <h3 className="text-sm font-bold m-0 uppercase tracking-wide">Tus Datos de Contacto</h3>
+              <h3 className="text-sm font-bold m-0">
+                Tus datos de contacto
+              </h3>
             </div>
             <Button
               as="a"
-              href={(process.env.NEXT_PUBLIC_API_URL || "/api/v1") + "/auth/oauth/google/start?intent=login"}
+              href={
+                (process.env.NEXT_PUBLIC_API_URL || "/api/v1") +
+                "/auth/oauth/google/start?intent=login"
+              }
               variant="flat"
               radius="md"
               size="sm"
-              className="bg-default-100 text-foreground font-bold shadow-sm"
+              className="bg-default-100 text-foreground font-bold shadow-sm min-h-10"
               startContent={<Icon icon="logos:google-icon" width={14} />}
             >
               Usar Google
@@ -381,40 +512,91 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
 
           <Card className="bg-default-50/50 border border-default-200 shadow-none overflow-visible">
             <CardBody className="p-4 flex flex-col gap-3 relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-              
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <Input
                   label="Nombre completo"
                   placeholder="Ej. Juan Pérez"
+                  autoComplete="name"
                   variant="bordered"
+                  isRequired
                   value={contactName}
                   onValueChange={setContactName}
-                  classNames={{ label: "uppercase font-bold tracking-wider text-[0.55rem]", input: "font-bold text-xs" }}
+                  isInvalid={attemptedGuestSubmit && !contactName.trim()}
+                  errorMessage={
+                    attemptedGuestSubmit && !contactName.trim()
+                      ? "Ingresa tu nombre"
+                      : undefined
+                  }
+                  classNames={{
+                    label: "font-semibold text-xs",
+                    input: "font-semibold text-base sm:text-sm",
+                  }}
                 />
                 <Input
                   label="Celular"
                   placeholder="+51 999 999 999"
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   variant="bordered"
+                  isRequired
                   value={contactPhone}
                   onValueChange={setContactPhone}
-                  classNames={{ label: "uppercase font-bold tracking-wider text-[0.55rem]", input: "font-bold text-xs" }}
+                  isInvalid={attemptedGuestSubmit && !contactPhone.trim()}
+                  errorMessage={
+                    attemptedGuestSubmit && !contactPhone.trim()
+                      ? "Ingresa tu celular"
+                      : undefined
+                  }
+                  classNames={{
+                    label: "font-semibold text-xs",
+                    input: "font-semibold text-base sm:text-sm",
+                  }}
                 />
                 <Input
                   label="Correo"
                   placeholder="correo@ejemplo.com"
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   variant="bordered"
+                  isRequired
                   value={contactEmail}
                   onValueChange={setContactEmail}
-                  classNames={{ label: "uppercase font-bold tracking-wider text-[0.55rem]", input: "font-bold text-xs" }}
+                  isInvalid={attemptedGuestSubmit && !contactEmail.trim()}
+                  errorMessage={
+                    attemptedGuestSubmit && !contactEmail.trim()
+                      ? "Ingresa tu correo"
+                      : undefined
+                  }
+                  classNames={{
+                    label: "font-semibold text-xs",
+                    input: "font-semibold text-base sm:text-sm",
+                  }}
                 />
               </div>
 
-              <div className="pt-1 flex justify-end items-center gap-4">
-                <p className="text-[10px] text-default-500 text-right leading-tight m-0 hidden md:block">
-                  Crearemos tu cuenta automáticamente.<br /><b>Sin contraseñas.</b>
+              <div className="pt-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <p className="text-xs text-default-500 leading-snug m-0">
+                  Crearemos tu cuenta automáticamente sin contraseñas. Al continuar aceptas los{" "}
+                  <Link
+                    href="/legal/terminos"
+                    target="_blank"
+                    className="text-primary underline font-semibold"
+                  >
+                    Términos y condiciones
+                  </Link>{" "}
+                  y la{" "}
+                  <Link
+                    href="/legal/privacidad"
+                    target="_blank"
+                    className="text-primary underline font-semibold"
+                  >
+                    Política de privacidad
+                  </Link>
+                  .
                 </p>
                 <Button
                   type="submit"
@@ -422,10 +604,10 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   radius="lg"
                   size="md"
                   isLoading={isSubmitting}
-                  className="w-full md:w-auto font-bold shadow-md"
+                  className="w-full sm:w-auto font-bold shadow-md shrink-0 min-h-11"
                   endContent={<Icon icon="lucide:send" className="w-4 h-4" />}
                 >
-                  Solicitar Reserva
+                  Pedir cotización
                 </Button>
               </div>
             </CardBody>
@@ -434,34 +616,38 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       )}
 
       {user && (
-        <div className="pt-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-100 text-blue-600 p-1.5 rounded-full shrink-0">
-              <Icon icon="lucide:shield-check" className="w-4 h-4" />
+        <div className="pt-2 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 text-primary-text p-1.5 rounded-full shrink-0">
+                <Icon icon="lucide:shield-check" className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col">
+                <p className="text-xs text-foreground font-bold leading-tight">
+                  Pago protegido
+                </p>
+                <p className="text-xs text-default-500 leading-tight mt-0.5">
+                  por <span className="font-bold text-primary-text">Mercado Pago</span>
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <p className="text-[0.65rem] text-foreground font-bold leading-tight">
-                Pago Protegido
-              </p>
-              <p className="text-[0.6rem] text-default-500 leading-tight mt-0.5">
-                por <span className="font-bold text-blue-500">mercado</span>
-                <span className="font-bold text-blue-900 dark:text-blue-400">
-                  pago
-                </span>
-              </p>
-            </div>
+            <Button
+              type="submit"
+              color="primary"
+              radius="lg"
+              size="md"
+              isLoading={isSubmitting}
+              isDisabled={!canSubmit}
+              className="font-bold shadow-md min-h-11"
+            >
+              Pedir cotización
+            </Button>
           </div>
-          <Button
-            type="submit"
-            color="primary"
-            radius="lg"
-            size="md"
-            isLoading={isSubmitting}
-            isDisabled={!canSubmit}
-            className="font-bold shadow-md"
-          >
-            Solicitar Reserva
-          </Button>
+          {missingStepReason && (
+            <p className="text-xs text-default-500 text-right">
+              {missingStepReason}
+            </p>
+          )}
         </div>
       )}
     </form>

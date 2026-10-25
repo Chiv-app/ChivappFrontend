@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Button,
@@ -89,6 +90,7 @@ function ContractDesignerEditor(props: Props) {
         const withTitle = ensureTitleHeading(body, title || config.defaultTitle);
         if (withTitle !== body) {
             onBodyChange(withTitle);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setTemplateVersion((current) => current + 1);
         }
         if (!title) {
@@ -221,7 +223,7 @@ function ContractDesignerEditor(props: Props) {
                 />
             </div>
 
-            <Modal
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
                 isOpen={isPreviewOpen}
                 onOpenChange={setIsPreviewOpen}
                 size="3xl"

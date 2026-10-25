@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata({
-    title: "Términos y Condiciones",
+    title: "Términos y condiciones",
     description: `Términos y condiciones de uso de ${SITE_NAME}.`,
     path: "/legal/terminos",
 });
@@ -32,7 +32,7 @@ export default function TermsPage() {
         <div className="container mx-auto max-w-content px-4 sm:px-6 py-12 sm:py-16 flex flex-col gap-10">
             <header className="flex flex-col gap-2">
                 <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
-                    Términos y Condiciones de Uso
+                    Términos y condiciones de uso
                 </h1>
                 <p className="text-default-500 text-sm">
                     Última actualización: 8 de septiembre de 2026 · Legislación de la República del Perú
@@ -44,13 +44,17 @@ export default function TermsPage() {
                     Al crear una cuenta, navegar o utilizar la plataforma {SITE_NAME}, aceptas estos Términos y
                     Condiciones en su totalidad, así como nuestra{" "}
                     <Link href="/legal/privacidad" className="text-primary underline underline-offset-2">
-                        Política de Privacidad
+                        Política de privacidad
+                    </Link>{" "}
+                    y nuestra{" "}
+                    <Link href="/legal/reembolsos" className="text-primary underline underline-offset-2">
+                        Política de cancelación y reembolsos
                     </Link>
                     . Si no estás de acuerdo con alguna de las disposiciones aquí establecidas, debes abstenerte de usar la plataforma.
                 </p>
             </Section>
 
-            <Section title="2. Naturaleza del Servicio">
+            <Section title="2. Naturaleza del servicio">
                 <p>
                     {SITE_NAME} es una plataforma tecnológica de intermediación que conecta a{" "}
                     <strong className="text-foreground">contratistas</strong> (personas naturales o jurídicas que requieren servicios musicales para eventos)
@@ -63,7 +67,7 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="3. Cuentas, Registro y Verificación">
+            <Section title="3. Cuentas, registro y verificación">
                 <p>
                     Para acceder a las funcionalidades de contratación o publicación de servicios debes registrarte proporcionando información veraz,
                     vigente y comprobable. Puedes registrarte mediante tu correo electrónico y contraseña, o mediante el inicio de sesión con{" "}
@@ -75,7 +79,7 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="4. Firma Electrónica y Validez Contractual (Ley N° 27269)">
+            <Section title="4. Firma electrónica y validez contractual (Ley N° 27269)">
                 <p>
                     Al formalizar una reserva dentro de {SITE_NAME}, el contratista y el músico prestan su consentimiento expreso para celebrar el{" "}
                     <strong className="text-foreground">Contrato de Prestación de Servicios Artísticos</strong> mediante{" "}
@@ -89,35 +93,38 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="5. Pagos, Pasarela Mercado Pago, Fondos en Custodia y Liquidaciones">
+            <Section title="5. Pagos, pasarela Mercado Pago, fondos en custodia y liquidaciones">
                 <p>
                     Para asegurar la transparencia y el cumplimiento de las obligaciones pactadas, el esquema de pagos opera bajo las siguientes condiciones:
                 </p>
                 <ul className="list-disc pl-5 flex flex-col gap-2">
                     <li>
-                        <strong className="text-foreground">Pasarela de Pagos (Mercado Pago):</strong>{" "}
+                        <strong className="text-foreground">Pasarela de pagos (Mercado Pago):</strong>{" "}
                         Los pagos con tarjeta de crédito, débito u otros medios autorizados son procesados a través de{" "}
                         <strong className="text-foreground">Mercado Pago Perú S.R.L.</strong> Al efectuar un pago, el contratista declara aceptar también los
                         términos y condiciones de la pasarela de pagos. {SITE_NAME} no almacena datos confidenciales de tarjetas (PCI-DSS).
                     </li>
                     <li>
-                        <strong className="text-foreground">Fondos Retenidos en Custodia (Escrow):</strong>{" "}
+                        <strong className="text-foreground">Fondos retenidos en custodia (Escrow):</strong>{" "}
                         Para protección del contratista y garantía del músico, el contratista paga el 100 % del show en un único pago a través
                         de Mercado Pago al confirmar la reserva; no existen pagos posteriores. Dicho pago es retenido en custodia
-                        por {SITE_NAME} hasta la fecha y hora de culminación del evento. Si la reserva se cancela, el reembolso se rige por la
-                        política de cancelación: si cancela el contratista, se le reembolsa el 100 % de lo pagado (sin incluir el costo de la
-                        pasarela de pagos) cuando faltan más de 15 días para el evento, el 50 % cuando faltan entre 7 y 15 días y 0 % cuando faltan
-                        menos de 7 días; si cancela el músico, se reembolsa el 100 % al contratista. Todo reembolso es revisado y aprobado por{" "}
+                        por {SITE_NAME} hasta la fecha y hora de culminación del evento. Si la reserva se cancela, el reembolso se rige por la{" "}
+                        <Link href="/legal/reembolsos" className="text-primary underline underline-offset-2">
+                            política de cancelación
+                        </Link>
+                        : si cancela el contratista, se le reembolsa el 100 % de lo pagado (sin incluir el costo de la
+                        pasarela de pagos) cuando faltan 15 días calendario o más para el evento, el 50 % cuando faltan entre 7 y 14 días y 0 % cuando faltan
+                        menos de 7 días; si cancela el músico, se reembolsa el 100 % del importe abonado al contratista. Todo reembolso es revisado y aprobado por{" "}
                         {SITE_NAME} antes de enviarse a través de Mercado Pago.
                     </li>
                     <li>
-                        <strong className="text-foreground">Liquidación y Desembolso al Músico:</strong>{" "}
+                        <strong className="text-foreground">Liquidación y desembolso al músico:</strong>{" "}
                         Una vez finalizado el show sin que medie una queja formal justificada dentro de la ventana de protección, {SITE_NAME} procede a
                         liberar y desembolsar el monto neto acordado hacia la cuenta bancaria, Código de Cuenta Interbancario (CCI), billetera digital
                         (Yape / Plin) o cuenta de Mercado Pago registrada confidencialmente por el músico en su perfil.
                     </li>
                     <li>
-                        <strong className="text-foreground">Comisiones y Obligaciones Tributarias (SUNAT):</strong>{" "}
+                        <strong className="text-foreground">Comisiones y obligaciones tributarias (SUNAT):</strong>{" "}
                         {SITE_NAME} cobra una comisión por servicio de intermediación tecnológica detallada de forma transparente antes de confirmar la operación.
                         El músico, como prestador directo del servicio artístico, es responsable de emitir al contratista el comprobante de pago legal
                         correspondiente (Recibo por Honorarios Electrónico o Factura) de conformidad con la normativa de la SUNAT.
@@ -125,25 +132,25 @@ export default function TermsPage() {
                 </ul>
             </Section>
 
-            <Section title="6. Cancelaciones, Disputas y Prohibición de Contracargos Injustificados">
+            <Section title="6. Cancelaciones, disputas y prohibición de contracargos injustificados">
                 <p>
                     Las políticas de cancelación aplicables a cada reserva se encuentran estipuladas en el contrato específico suscrito entre las partes:
                 </p>
                 <ul className="list-disc pl-5 flex flex-col gap-1.5">
                     <li>
-                        <strong className="text-foreground">Disputas y Mediación:</strong> En caso de retrasos graves, inasistencia o discrepancias sobre
+                        <strong className="text-foreground">Disputas y mediación:</strong> En caso de retrasos graves, inasistencia o discrepancias sobre
                         el servicio prestado, cualquiera de las partes puede abrir una queja dentro de la reserva antes de la liberación del pago retenido.
                         El equipo de administración evaluará las pruebas documentales y podrá disponer el reembolso total o parcial al contratista y/o el desembolso proporcional al músico.
                     </li>
                     <li>
-                        <strong className="text-foreground">Contracargos Fraudulentos:</strong> Queda terminantemente prohibido iniciar desconocimientos de pago o
+                        <strong className="text-foreground">Contracargos fraudulentos:</strong> Queda terminantemente prohibido iniciar desconocimientos de pago o
                         contracargos bancarios fraudulentos o de mala fe ante la entidad financiera emisora de la tarjeta habiendo recibido el servicio musical conforme.
                         Cualquier contracargo no justificado facultará a {SITE_NAME} a suspender la cuenta del usuario e iniciar las acciones legales de cobranza e indemnización correspondientes.
                     </li>
                 </ul>
             </Section>
 
-            <Section title="7. Uso Aceptable y Conducta">
+            <Section title="7. Uso aceptable y conducta">
                 <p>Los usuarios se comprometen a utilizar la plataforma con respeto, honestidad y apego a la ley. Queda prohibido:</p>
                 <ul className="list-disc pl-5 flex flex-col gap-1.5">
                     <li>Suplantar la identidad de terceros o utilizar documentos o cuentas bancarias ajenas sin autorización.</li>
@@ -153,7 +160,7 @@ export default function TermsPage() {
                 </ul>
             </Section>
 
-            <Section title="8. Seguridad, Privacidad y Cookies">
+            <Section title="8. Seguridad, privacidad y cookies">
                 <p>
                     {SITE_NAME} implementa estándares de seguridad técnicos estrictos para proteger tu información. 
                     Tus sesiones de usuario (logins) están protegidas utilizando <strong>Cookies HTTP-Only</strong> y 
@@ -167,14 +174,14 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="9. Suspensión y Cierre de Cuentas">
+            <Section title="9. Suspensión y cierre de cuentas">
                 <p>
                     {SITE_NAME} se reserva la potestad de suspender temporal o permanentemente el acceso a cualquier cuenta que incumpla estos términos,
                     incurra en actos de estafa, acumule quejas graves no resueltas de contratistas o músicos, o genere riesgos de seguridad para la plataforma.
                 </p>
             </Section>
 
-            <Section title="10. Protección al Consumidor y Libro de Reclamaciones (Ley N° 29571)">
+            <Section title="10. Protección al consumidor y Libro de Reclamaciones (Ley N° 29571)">
                 <p>
                     En cumplimiento de la <strong className="text-foreground">Ley N° 29571 (Código de Protección y Defensa del Consumidor de la República del Perú)</strong>,
                     {SITE_NAME} garantiza los derechos de los usuarios y pone a disposición su sistema de atención de consultas, solicitudes y Libro de Reclamaciones Virtual
@@ -182,7 +189,7 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="11. Ley Aplicable y Jurisdicción">
+            <Section title="11. Ley aplicable y jurisdicción">
                 <p>
                     Estos Términos y Condiciones se rigen e interpretan en su totalidad por las{" "}
                     <strong className="text-foreground">leyes de la República del Perú</strong>.
@@ -192,7 +199,7 @@ export default function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="12. Contacto y Soporte">
+            <Section title="12. Contacto y soporte">
                 <p>
                     Para consultas, dudas sobre estos términos o requerimientos de asistencia, puedes comunicarte a través del módulo de{" "}
                     <span className="text-foreground font-semibold">ayuda y comentarios</span> en la aplicación o escribiéndonos directamente a{" "}

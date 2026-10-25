@@ -17,6 +17,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     const [price, setPrice] = useState("");
     const [eventDate, setEventDate] = useState("");
     const [startTime, setStartTime] = useState("");
+    const [clientEmail, setClientEmail] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [createdLink, setCreatedLink] = useState<string | null>(null);
 
@@ -34,14 +35,32 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const numericPrice = Number(price);
+        if (!Number.isFinite(numericPrice) || numericPrice < 10 || numericPrice > 50000) {
+            addToast({
+                title: "Precio fuera de rango",
+                description: "El precio acordado debe estar entre S/ 10.00 y S/ 50,000.00.",
+                color: "danger",
+            });
+            return;
+        }
+        if (Math.round(numericPrice * 100) !== numericPrice * 100) {
+            addToast({
+                title: "Precio inválido",
+                description: "El precio puede tener como máximo 2 decimales.",
+                color: "danger",
+            });
+            return;
+        }
         setIsSubmitting(true);
         try {
             const res = await apiFetch<BookingLinkOut>("/booking-links", {
                 method: "POST",
                 body: JSON.stringify({
-                    price: parseFloat(price),
+                    price: numericPrice,
                     event_date: eventDate || null,
                     start_time: startTime || null,
+                    client_email: clientEmail.trim() || null,
                 })
             });
             const url = `${window.location.origin}/pay/${res.token}`;
@@ -66,12 +85,13 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
         return (
             <div className="flex flex-col gap-4 py-4 text-center">
                 <Icon icon="lucide:check-circle-2" className="text-success mx-auto" width={48} />
-                <h3 className="text-xl font-bold">¡Contrata Rápida Lista!</h3>
+                <h3 className="text-xl font-bold">¡Contrata rápida lista!</h3>
                 <p className="text-sm text-default-500">Comparte este link con tu cliente. El link expira en 24 horas.</p>
                 <div className="bg-content2 p-3 rounded-lg flex items-center justify-between gap-2 border border-default-200">
                     <span className="text-sm truncate select-all">{createdLink}</span>
                     <Button 
                         isIconOnly 
+                        aria-label="Copiar enlace de pago"
                         size="sm" 
                         color="primary" 
                         variant="flat"
@@ -99,10 +119,12 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
             <Input
-                label="Precio acordado (Obligatorio)"
+                label="Precio acordado (obligatorio)"
                 type="number"
-                min={1}
+                min={10}
+                max={50000}
                 step="0.01"
+                description="Monto entre S/ 10.00 y S/ 50,000.00"
                 isRequired
                 value={price}
                 onValueChange={setPrice}
@@ -125,7 +147,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                         <span className="font-bold">Total a pagar por el cliente</span>
                         <span className="font-bold text-primary">{formatCurrency(totalToPay)}</span>
                     </div>
-                    <p className="text-[11px] text-default-400 mt-1 leading-tight">
+                    <p className="text-xs text-default-500 mt-1 leading-tight">
                         * El cliente pagará esta cantidad. Incluye la comisión de la plataforma y los cargos de procesamiento bancario.
                     </p>
                 </div>
@@ -133,20 +155,29 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
 
             <div className="grid grid-cols-2 gap-4">
                 <Input
-                    label="Fecha del evento (Opcional)"
+                    label="Fecha del evento (opcional)"
                     type="date"
                     value={eventDate}
                     onValueChange={setEventDate}
                     variant="bordered"
                 />
                 <Input
-                    label="Hora (Opcional)"
+                    label="Hora (opcional)"
                     type="time"
                     value={startTime}
                     onValueChange={setStartTime}
                     variant="bordered"
                 />
             </div>
+            <Input
+                label="Correo del cliente (opcional)"
+                type="email"
+                placeholder="cliente@ejemplo.com"
+                description="Si lo indicas, el enlace quedará reservado únicamente para ese correo."
+                value={clientEmail}
+                onValueChange={setClientEmail}
+                variant="bordered"
+            />
             <div className="bg-primary/10 p-3 rounded-lg mt-2">
                 <p className="text-xs text-primary-800 dark:text-primary-300">
                     El cliente abrirá el link, llenará sus datos personales, la direcci&oacute;n del evento y pagar&aacute; de forma segura. Se generará el contrato y la reserva automáticamente.
@@ -154,7 +185,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
             </div>
             <div className="flex justify-end gap-2 mt-2">
                 <Button type="submit" color="primary" isLoading={isSubmitting}>
-                    Generar Link
+                    Generar link
                 </Button>
             </div>
         </form>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
     Button,
@@ -31,18 +32,22 @@ import { formatDateTime } from "@/lib/date-utils";
 import {
     getAdminPaymentInstructions,
     getAdminPayments,
+    getAdminPayoutRequests,
     getAdminSettlements,
     getAdminSettlementsExportUrl,
-    releaseAdminSettlement,
+    processAdminPayoutRequest,
+    refundAdminPayment,
+    rejectAdminPayoutRequest,
     sendAdminRefundTransfer,
     settleAdminBooking,
     updateAdminPaymentInstructions,
 } from "@/lib/admin";
-import { formatCurrency } from "@/lib/booking-labels";
+import { formatCurrency, PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";
 import { UI } from "@/lib/ui-classes";
 import { resolveUploadUrl } from "@/lib/uploads";
 import type {
     AdminPaymentOut,
+    AdminPayoutRequestOut,
     AdminSettlementOut,
     PlatformPaymentInstructions,
 } from "@/types/api";
@@ -56,8 +61,6 @@ const STATUS_FILTERS = [
     { key: "failed", label: "Fallidos" },
     { key: "refunded", label: "Reembolsados" },
 ];
-
-import { PAYMENT_STATUS_LABELS } from "@/lib/booking-labels";
 
 const STATUS_COLOR: Record<
     string,
@@ -73,20 +76,32 @@ const STATUS_COLOR: Record<
 const SETTLEMENT_LABEL: Record<string, string> = {
     payable: "Por desembolsar",
     disputed: "En disputa (espera músico)",
-    awaiting_admin: "Listo para liquidar",
+    awaiting_admin: "Disputa por liquidar",
     refund_pending_transfer: "Devolver al contratista",
     refund_pending_validation: "Espera validación contratista",
     settled: "Liquidado",
 };
 
+const PAGE_SIZE = 100;
+
 export default function AdminPaymentsPage() {
     const [payments, setPayments] = useState<AdminPaymentOut[]>([]);
     const [settlements, setSettlements] = useState<AdminSettlementOut[]>([]);
+    const [payoutRequests, setPayoutRequests] = useState<AdminPayoutRequestOut[]>([]);
     const [instructions, setInstructions] = useState<PlatformPaymentInstructions | null>(
         null,
     );
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
+    const [loadingMorePayments, setLoadingMorePayments] = useState(false);
+    const [hasMorePayments, setHasMorePayments] = useState(false);
+    const [loadingMoreSettlements, setLoadingMoreSettlements] = useState(false);
+    const [hasMoreSettlements, setHasMoreSettlements] = useState(false);
+    const [loadingMorePayouts, setLoadingMorePayouts] = useState(false);
+    const [hasMorePayouts, setHasMorePayouts] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [processingPayoutId, setProcessingPayoutId] = useState<string | null>(null);
+    const [payoutActionNotes, setPayoutActionNotes] = useState("");
     const [savingInstructions, setSavingInstructions] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState("");
     const [phoneLabel, setPhoneLabel] = useState("Yape / Plin");
@@ -105,6 +120,12 @@ export default function AdminPaymentsPage() {
     const [refundEvidence, setRefundEvidence] = useState<string | null>(null);
     const [refundNotes, setRefundNotes] = useState("");
     const [sendingRefund, setSendingRefund] = useState(false);
+    const [payoutActionConfirm, setPayoutActionConfirm] = useState<{
+        id: string;
+        action: "process" | "reject";
+        musicianName: string;
+        amount: number;
+    } | null>(null);
 
     function renderMusicianPayoutCard(payout?: AdminSettlementOut["musician_payout_info"]) {
         if (!payout || !payout.payout_method) {
@@ -138,6 +159,7 @@ export default function AdminPaymentsPage() {
                                 size="sm"
                                 variant="light"
                                 isIconOnly
+                                aria-label="Copiar número de cuenta"
                                 className="h-6 w-6 min-w-6 text-default-500"
                                 onPress={() => copyToClipboard(payout.payout_account_number!, "Número de cuenta")}
                             >
@@ -152,6 +174,7 @@ export default function AdminPaymentsPage() {
                                 size="sm"
                                 variant="light"
                                 isIconOnly
+                                aria-label="Copiar CCI"
                                 className="h-6 w-6 min-w-6 text-default-500"
                                 onPress={() => copyToClipboard(payout.payout_cci!, "CCI")}
                             >
@@ -186,6 +209,7 @@ export default function AdminPaymentsPage() {
                                 size="sm"
                                 variant="light"
                                 isIconOnly
+                                aria-label="Copiar teléfono"
                                 className="h-6 w-6 min-w-6 text-default-500"
                                 onPress={() => copyToClipboard(payout.payout_phone!, "Teléfono")}
                             >
@@ -220,6 +244,7 @@ export default function AdminPaymentsPage() {
                                 size="sm"
                                 variant="light"
                                 isIconOnly
+                                aria-label="Copiar correo de Mercado Pago"
                                 className="h-6 w-6 min-w-6 text-default-500"
                                 onPress={() => copyToClipboard(payout.payout_mp_email!, "Email Mercado Pago")}
                             >
@@ -239,24 +264,172 @@ export default function AdminPaymentsPage() {
         return null;
     }
 
-
-
     const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
-            const [paymentData, settlementData] = await Promise.all([
+            const [paymentRes, settlementRes, payoutRes] = await Promise.allSettled([
                 getAdminPayments({
                     status: status === "all" ? undefined : status,
-                    limit: 100,
-                }).catch(() => [] as AdminPaymentOut[]),
-                getAdminSettlements({ limit: 100 }).catch(() => [] as AdminSettlementOut[]),
+                    skip: 0,
+                    limit: PAGE_SIZE,
+                }),
+                getAdminSettlements({ skip: 0, limit: PAGE_SIZE }),
+                getAdminPayoutRequests({ skip: 0, limit: PAGE_SIZE }),
             ]);
-            setPayments(paymentData);
-            setSettlements(settlementData);
+
+            const errors: string[] = [];
+
+            if (paymentRes.status === "fulfilled") {
+                setPayments(paymentRes.value);
+                setHasMorePayments(paymentRes.value.length === PAGE_SIZE);
+            } else {
+                setHasMorePayments(false);
+                errors.push(
+                    paymentRes.reason instanceof Error
+                        ? `Pagos: ${paymentRes.reason.message}`
+                        : "No se pudieron cargar los pagos.",
+                );
+            }
+
+            if (settlementRes.status === "fulfilled") {
+                setSettlements(settlementRes.value);
+                setHasMoreSettlements(settlementRes.value.length === PAGE_SIZE);
+            } else {
+                setHasMoreSettlements(false);
+                errors.push(
+                    settlementRes.reason instanceof Error
+                        ? `Liquidaciones: ${settlementRes.reason.message}`
+                        : "No se pudieron cargar las liquidaciones.",
+                );
+            }
+
+            if (payoutRes.status === "fulfilled") {
+                setPayoutRequests(payoutRes.value);
+                setHasMorePayouts(payoutRes.value.length === PAGE_SIZE);
+            } else {
+                setHasMorePayouts(false);
+                errors.push(
+                    payoutRes.reason instanceof Error
+                        ? `Retiros: ${payoutRes.reason.message}`
+                        : "No se pudieron cargar las solicitudes de retiro.",
+                );
+            }
+
+            if (errors.length > 0) {
+                const msg = errors.join(" · ");
+                setLoadError(msg);
+                addToast({
+                    title: "Carga parcial de tesorería",
+                    description: msg,
+                    color: "danger",
+                });
+            }
         } finally {
             setLoading(false);
         }
     }, [status]);
+
+    async function loadMoreSettlements() {
+        setLoadingMoreSettlements(true);
+        try {
+            const data = await getAdminSettlements({
+                skip: settlements.length,
+                limit: PAGE_SIZE,
+            });
+            setSettlements((current) => [...current, ...data]);
+            setHasMoreSettlements(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más liquidaciones",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMoreSettlements(false);
+        }
+    }
+
+    async function loadMorePayouts() {
+        setLoadingMorePayouts(true);
+        try {
+            const data = await getAdminPayoutRequests({
+                skip: payoutRequests.length,
+                limit: PAGE_SIZE,
+            });
+            setPayoutRequests((current) => [...current, ...data]);
+            setHasMorePayouts(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más solicitudes de retiro",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMorePayouts(false);
+        }
+    }
+
+    async function loadMorePayments() {
+        setLoadingMorePayments(true);
+        try {
+            const data = await getAdminPayments({
+                status: status === "all" ? undefined : status,
+                skip: payments.length,
+                limit: PAGE_SIZE,
+            });
+            setPayments((current) => [...current, ...data]);
+            setHasMorePayments(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más pagos",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMorePayments(false);
+        }
+    }
+
+    async function handleProcessPayoutRequest(requestId: string, notes?: string | null) {
+        setProcessingPayoutId(requestId);
+        try {
+            await processAdminPayoutRequest(requestId, { notes: notes || null });
+            addToast({
+                title: "Solicitud de retiro procesada",
+                color: "success",
+            });
+            await load();
+        } catch (error) {
+            addToast({
+                title: "No se pudo procesar la solicitud",
+                description: error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setProcessingPayoutId(null);
+        }
+    }
+
+    async function handleRejectPayoutRequest(requestId: string, notes?: string | null) {
+        setProcessingPayoutId(requestId);
+        try {
+            await rejectAdminPayoutRequest(requestId, { notes: notes || null });
+            addToast({
+                title: "Solicitud de retiro rechazada",
+                color: "warning",
+            });
+            await load();
+        } catch (error) {
+            addToast({
+                title: "No se pudo rechazar la solicitud",
+                description: error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setProcessingPayoutId(null);
+        }
+    }
 
     const loadInstructions = useCallback(async () => {
         try {
@@ -279,11 +452,17 @@ export default function AdminPaymentsPage() {
     }, []);
 
     useEffect(() => {
-        void load();
+        const t = window.setTimeout(() => {
+            void load();
+        }, 0);
+        return () => window.clearTimeout(t);
     }, [load]);
 
     useEffect(() => {
-        void loadInstructions();
+        const t = window.setTimeout(() => {
+            void loadInstructions();
+        }, 0);
+        return () => window.clearTimeout(t);
     }, [loadInstructions]);
 
     async function saveInstructions(event: FormEvent) {
@@ -434,6 +613,7 @@ export default function AdminPaymentsPage() {
             s.settlement_state,
         ),
     );
+    const pendingPayoutRequests = payoutRequests.filter((r) => r.status === "pending");
 
     return (
         <div className="flex flex-col gap-6">
@@ -441,6 +621,20 @@ export default function AdminPaymentsPage() {
                 title="Tesorería y pagos"
                 description="Configura la cuenta de cobro, liquida deudas a músicos y consulta el historial de pagos. Para validar o rechazar el comprobante de una reserva, entra a su detalle en Reservas."
             />
+
+            {loadError ? (
+                <Card className="border border-danger/30 bg-danger/5">
+                    <CardBody className="flex flex-row flex-wrap items-center justify-between gap-3 p-4">
+                        <div className="flex items-center gap-2 text-danger text-sm">
+                            <Icon icon="material-symbols:error" width={20} />
+                            <span>{loadError}</span>
+                        </div>
+                        <Button size="sm" color="danger" variant="flat" onPress={load}>
+                            Reintentar
+                        </Button>
+                    </CardBody>
+                </Card>
+            ) : null}
 
             <Card className="border border-default-200 shadow-soft">
                 <CardBody className="gap-4 p-6">
@@ -518,6 +712,146 @@ export default function AdminPaymentsPage() {
                     </form>
                 </CardBody>
             </Card>
+
+            <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 className="text-lg font-bold">Solicitudes de retiro de músicos</h2>
+                        <p className="text-sm text-default-500">
+                            Solicitudes enviadas por músicos para el desembolso de sus eventos culminados.
+                        </p>
+                    </div>
+                    <Chip color={pendingPayoutRequests.length > 0 ? "warning" : "default"} variant="flat">
+                        {pendingPayoutRequests.length} pendientes
+                    </Chip>
+                </div>
+
+                {payoutRequests.length === 0 ? (
+                    <Card className="border border-default-200">
+                        <CardBody className="p-6 text-center text-default-500 text-sm">
+                            {loading
+                                ? "Cargando…"
+                                : loadError
+                                  ? "No se pudieron cargar las solicitudes de retiro."
+                                  : "No hay solicitudes de retiro registradas."}
+                        </CardBody>
+                    </Card>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        {payoutRequests.map((req) => (
+                            <Card key={req.id} className="border border-default-200 shadow-soft">
+                                <CardBody className="gap-3 p-5">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="font-semibold">
+                                                    {req.musician_name || "Músico"}
+                                                </p>
+                                                <Chip
+                                                    size="sm"
+                                                    variant="flat"
+                                                    color={
+                                                        req.status === "pending"
+                                                            ? "warning"
+                                                            : req.status === "processed"
+                                                              ? "success"
+                                                              : "danger"
+                                                    }
+                                                >
+                                                    {req.status === "pending"
+                                                        ? "Pendiente"
+                                                        : req.status === "processed"
+                                                          ? "Procesado"
+                                                          : "Rechazado"}
+                                                </Chip>
+                                            </div>
+                                            {req.musician_email ? (
+                                                <p className="text-xs text-default-500 mt-0.5">
+                                                    {req.musician_email}
+                                                </p>
+                                            ) : null}
+                                            <p className="text-xs text-default-500 mt-1">
+                                                Solicitado: {formatDateTime(req.created_at)}
+                                                {req.processed_at
+                                                    ? ` · Procesado: ${formatDateTime(req.processed_at)}`
+                                                    : ""}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xl font-bold">
+                                                {formatCurrency(Number(req.amount))}
+                                            </p>
+                                            <p className="text-xs text-default-500">monto solicitado</p>
+                                        </div>
+                                    </div>
+
+                                    {renderMusicianPayoutCard(req.musician_payout_info)}
+
+                                    {req.notes ? (
+                                        <p className="text-xs text-default-600 bg-default-100/70 rounded-lg px-3 py-2">
+                                            <span className="font-semibold">Nota: </span>
+                                            {req.notes}
+                                        </p>
+                                    ) : null}
+
+                                    {req.status === "pending" ? (
+                                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                                            <Button
+                                                size="sm"
+                                                color="success"
+                                                className="font-semibold"
+                                                isLoading={processingPayoutId === req.id}
+                                                onPress={() => {
+                                                    setPayoutActionNotes("");
+                                                    setPayoutActionConfirm({
+                                                        id: req.id,
+                                                        action: "process",
+                                                        musicianName: req.musician_name || "Músico",
+                                                        amount: Number(req.amount),
+                                                    });
+                                                }}
+                                            >
+                                                Marcar procesado
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                color="danger"
+                                                variant="flat"
+                                                isLoading={processingPayoutId === req.id}
+                                                onPress={() => {
+                                                    setPayoutActionNotes("");
+                                                    setPayoutActionConfirm({
+                                                        id: req.id,
+                                                        action: "reject",
+                                                        musicianName: req.musician_name || "Músico",
+                                                        amount: Number(req.amount),
+                                                    });
+                                                }}
+                                            >
+                                                Rechazar solicitud
+                                            </Button>
+                                        </div>
+                                    ) : null}
+                                </CardBody>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+                {hasMorePayouts && !loading ? (
+                    <div className="flex justify-center pt-2">
+                        <Button
+                            variant="flat"
+                            color="primary"
+                            radius="lg"
+                            isLoading={loadingMorePayouts}
+                            onPress={loadMorePayouts}
+                        >
+                            Cargar más solicitudes de retiro ({payoutRequests.length} mostradas)
+                        </Button>
+                    </div>
+                ) : null}
+            </div>
 
             <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -611,7 +945,7 @@ export default function AdminPaymentsPage() {
                                                 pool músico (sin comisión)
                                             </p>
                                             {(item.retained_gross ?? 0) > 0 ? (
-                                                <p className="text-xs text-default-400 mt-1">
+                                                <p className="text-xs text-default-500 mt-1">
                                                     Bruto retenido{" "}
                                                     {formatCurrency(item.retained_gross ?? 0)}
                                                     {(item.platform_fee_on_retained ?? 0) > 0
@@ -722,7 +1056,7 @@ export default function AdminPaymentsPage() {
                                     ) : null}
 
                                     {item.settlement_state === "refund_pending_validation" ? (
-                                        <p className="text-sm text-secondary">
+                                        <p className="text-sm text-secondary-text">
                                             Comprobante enviado. Esperando validación del
                                             contratista.
                                             {item.complaint?.refund_evidence_url ? (
@@ -749,6 +1083,20 @@ export default function AdminPaymentsPage() {
                         ))}
                     </div>
                 )}
+
+                {hasMoreSettlements && !loading ? (
+                    <div className="flex justify-center pt-2">
+                        <Button
+                            variant="flat"
+                            color="primary"
+                            radius="lg"
+                            isLoading={loadingMoreSettlements}
+                            onPress={loadMoreSettlements}
+                        >
+                            Cargar más liquidaciones ({settlements.length} mostradas)
+                        </Button>
+                    </div>
+                ) : null}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -820,13 +1168,69 @@ export default function AdminPaymentsPage() {
                                     {formatCurrency(Number(payment.amount))}
                                 </TableCell>
                                 <TableCell>
-                                    <Chip
-                                        size="sm"
-                                        variant="flat"
-                                        color={STATUS_COLOR[payment.status] ?? "default"}
-                                    >
-                                        {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
-                                    </Chip>
+                                    <div className="flex flex-col items-start gap-1.5">
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <Chip
+                                                size="sm"
+                                                variant="flat"
+                                                color={STATUS_COLOR[payment.status] ?? "default"}
+                                            >
+                                                {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
+                                            </Chip>
+                                            {payment.needs_refund ? (
+                                                <Chip size="sm" variant="flat" color="danger">
+                                                    Requiere devolución
+                                                </Chip>
+                                            ) : null}
+                                        </div>
+                                        {payment.needs_refund_reason ? (
+                                            <p className="text-xs text-danger-text max-w-xs">
+                                                {{
+                                                    invalid_amount_or_currency:
+                                                        "Monto o moneda cobrada no coincide con lo acordado",
+                                                    event_passed:
+                                                        "El pago ingresó cuando la fecha del evento ya había pasado",
+                                                    schedule_overlap:
+                                                        "Conflicto de horario: otro cliente confirmó primero",
+                                                    duplicate_or_unpayable:
+                                                        "Pago duplicado o recibido en una reserva cancelada/no pagable",
+                                                }[payment.needs_refund_reason] ?? payment.needs_refund_reason}
+                                            </p>
+                                        ) : null}
+                                        {(payment.needs_refund || payment.status === "needs_refund") ? (
+                                            <Button
+                                                size="sm"
+                                                color="danger"
+                                                variant="flat"
+                                                onPress={async () => {
+                                                    try {
+                                                        const updated = await refundAdminPayment(payment.id);
+                                                        setPayments((prev) =>
+                                                            prev.map((item) =>
+                                                                item.id === updated.id ? updated : item,
+                                                            ),
+                                                        );
+                                                        addToast({
+                                                            title: "Reembolso ejecutado",
+                                                            description: "Mercado Pago procesó la devolución del cobro huérfano.",
+                                                            color: "success",
+                                                        });
+                                                    } catch (err) {
+                                                        addToast({
+                                                            title: "Error al reembolsar",
+                                                            description:
+                                                                err instanceof Error
+                                                                    ? err.message
+                                                                    : "No se pudo ejecutar el reembolso en Mercado Pago.",
+                                                            color: "danger",
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                Reembolsar en MP
+                                            </Button>
+                                        ) : null}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     {payment.evidence_url &&
@@ -840,7 +1244,7 @@ export default function AdminPaymentsPage() {
                                             Ver
                                         </HeroLink>
                                     ) : (
-                                        <span className="text-xs text-default-400">—</span>
+                                        <span className="text-xs text-default-500">—</span>
                                     )}
                                 </TableCell>
                             </TableRow>
@@ -849,7 +1253,21 @@ export default function AdminPaymentsPage() {
                 </Table>
             </div>
 
-            <Modal
+            {hasMorePayments && !loading ? (
+                <div className="flex justify-center">
+                    <Button
+                        variant="flat"
+                        color="primary"
+                        radius="lg"
+                        isLoading={loadingMorePayments}
+                        onPress={loadMorePayments}
+                    >
+                        Cargar más pagos ({payments.length} mostrados)
+                    </Button>
+                </div>
+            ) : null}
+
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
                 isOpen={!!settleTarget}
                 onOpenChange={(open) => {
                     if (!open) setSettleTarget(null);
@@ -935,6 +1353,7 @@ export default function AdminPaymentsPage() {
                                     value={payoutEvidenceUrl}
                                     onChange={setPayoutEvidenceUrl}
                                     accept="image/jpeg,image/png,image/webp,application/pdf"
+                                    privateUpload
                                 />
                                 <Textarea
                                     label="Notas internas (opcional)"
@@ -963,7 +1382,7 @@ export default function AdminPaymentsPage() {
                 </ModalContent>
             </Modal>
 
-            <Modal
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
                 isOpen={!!refundTarget}
                 onOpenChange={(open) => {
                     if (!open) setRefundTarget(null);
@@ -994,6 +1413,7 @@ export default function AdminPaymentsPage() {
                                     value={refundEvidence}
                                     onChange={setRefundEvidence}
                                     accept="image/jpeg,image/png,image/webp,application/pdf"
+                                    privateUpload
                                 />
                                 <Textarea
                                     label="Notas (opcional)"
@@ -1024,8 +1444,93 @@ export default function AdminPaymentsPage() {
                     )}
                 </ModalContent>
             </Modal>
+
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
+                isOpen={payoutActionConfirm != null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPayoutActionConfirm(null);
+                        setPayoutActionNotes("");
+                    }
+                }}
+                size="md"
+                placement="center"
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader>
+                                {payoutActionConfirm?.action === "process"
+                                    ? "¿Marcar retiro como procesado?"
+                                    : "¿Rechazar solicitud de retiro?"}
+                            </ModalHeader>
+                            <ModalBody className="gap-3">
+                                <p className="text-sm text-default-600">
+                                    {payoutActionConfirm?.action === "process"
+                                        ? `Confirmas que se procesó el desembolso de ${formatCurrency(payoutActionConfirm.amount)} para ${payoutActionConfirm.musicianName}.`
+                                        : `Se rechazará la solicitud de retiro de ${formatCurrency(payoutActionConfirm?.amount ?? 0)} de ${payoutActionConfirm?.musicianName ?? "este músico"}.`}
+                                </p>
+                                <Textarea
+                                    label={
+                                        payoutActionConfirm?.action === "process"
+                                            ? "Referencia / notas de operación (opcional)"
+                                            : "Motivo del rechazo (opcional)"
+                                    }
+                                    placeholder={
+                                        payoutActionConfirm?.action === "process"
+                                            ? "Ej. Transferencia BCP Op. 129384"
+                                            : "Ej. Datos bancarios incompletos o cuenta inválida"
+                                    }
+                                    value={payoutActionNotes}
+                                    onValueChange={setPayoutActionNotes}
+                                    variant="bordered"
+                                    minRows={2}
+                                />
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button
+                                    variant="light"
+                                    onPress={onClose}
+                                    isDisabled={
+                                        processingPayoutId != null &&
+                                        processingPayoutId === payoutActionConfirm?.id
+                                    }
+                                >
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    color={
+                                        payoutActionConfirm?.action === "process"
+                                            ? "success"
+                                            : "danger"
+                                    }
+                                    className="font-semibold"
+                                    isLoading={
+                                        processingPayoutId != null &&
+                                        processingPayoutId === payoutActionConfirm?.id
+                                    }
+                                    onPress={async () => {
+                                        if (!payoutActionConfirm) return;
+                                        const { id, action } = payoutActionConfirm;
+                                        const trimmedNotes = payoutActionNotes.trim() || null;
+                                        if (action === "process") {
+                                            await handleProcessPayoutRequest(id, trimmedNotes);
+                                        } else {
+                                            await handleRejectPayoutRequest(id, trimmedNotes);
+                                        }
+                                        setPayoutActionConfirm(null);
+                                        setPayoutActionNotes("");
+                                    }}
+                                >
+                                    {payoutActionConfirm?.action === "process"
+                                        ? "Marcar procesado"
+                                        : "Rechazar solicitud"}
+                                </Button>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
         </div>
     );
 }
-
-

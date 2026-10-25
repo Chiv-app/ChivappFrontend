@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button, Card, CardBody, CardHeader, Chip, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { ApiError } from "@/lib/api";
@@ -14,12 +15,29 @@ const PROVIDER_META = {
     google: { label: "Google", icon: "logos:google-icon" },
 } as const;
 
+const OAUTH_LINK_ERROR_MESSAGES: Record<string, string> = {
+    account_already_linked:
+        "Esta cuenta de Google ya está vinculada a otro usuario.",
+    session_required:
+        "Tu sesión expiró antes de completar la vinculación. Inicia sesión e inténtalo de nuevo.",
+    access_denied: "Cancelaste la vinculación en Google.",
+    invalid_state:
+        "La solicitud de vinculación expiró. Vuelve a intentarlo desde tu perfil.",
+    google_not_configured:
+        "La vinculación con Google no está disponible en este momento.",
+    oauth_failed:
+        "No se pudo vincular tu cuenta de Google. Inténtalo nuevamente.",
+};
+
 function oauthStartUrl(provider: "google" | "facebook") {
     const base = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
     return `${base}/auth/oauth/${provider}/start?intent=link`;
 }
 
 export default function ConnectedAccountsCard() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [data, setData] = useState<OAuthAccountsOut | null>(null);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
@@ -42,8 +60,43 @@ export default function ConnectedAccountsCard() {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void refresh();
     }, [refresh]);
+
+    useEffect(() => {
+        const linkedProvider = searchParams.get("linked");
+        const oauthError = searchParams.get("oauth_error");
+        if (!linkedProvider && !oauthError) return;
+
+        if (linkedProvider) {
+            const label =
+                linkedProvider === "google"
+                    ? PROVIDER_META.google.label
+                    : linkedProvider;
+            addToast({
+                title: "Cuenta vinculada",
+                description: `${label} se conectó correctamente a tu cuenta.`,
+                color: "success",
+            });
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            void refresh();
+        } else if (oauthError) {
+            addToast({
+                title: "No se pudo vincular la cuenta",
+                description:
+                    OAUTH_LINK_ERROR_MESSAGES[oauthError] ||
+                    "Ocurrió un problema al conectar tu cuenta social.",
+                color: "danger",
+            });
+        }
+
+        const next = new URLSearchParams(searchParams.toString());
+        next.delete("linked");
+        next.delete("oauth_error");
+        const qs = next.toString();
+        router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    }, [searchParams, pathname, router, refresh]);
 
     async function handleUnlink(provider: "google") {
         setBusy(provider);
@@ -137,7 +190,3 @@ export default function ConnectedAccountsCard() {
         </Card>
     );
 }
-
-
-
-

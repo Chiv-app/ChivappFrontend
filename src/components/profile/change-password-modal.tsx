@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useState } from "react";
 import {
     Button,
@@ -89,7 +90,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
     };
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={(open) => {
                 if (!open) handleClose();
@@ -112,7 +113,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: Props) {
 
                     <ModalBody className="py-4 gap-4">
                         {errorMsg && (
-                            <div className="flex items-start gap-2 rounded-xl bg-danger/10 border border-danger/30 p-3 text-xs text-danger">
+                            <div className="flex items-start gap-2 rounded-xl bg-danger/10 border border-danger/30 p-3 text-xs text-danger-text">
                                 <Icon icon="material-symbols:error-rounded" className="text-base shrink-0 mt-0.5" />
                                 <span>{errorMsg}</span>
                             </div>

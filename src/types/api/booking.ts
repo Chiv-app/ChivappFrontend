@@ -203,9 +203,9 @@ export type BookingOut = {
     event_type: string;
     event_description: string | null;
     requested_repertoire?: string[] | null;
-    price_agreed: number | null;
-    platform_fee_percent?: number | null;
-    platform_fee_amount?: number | null;
+    price_agreed: number | string | null;
+    platform_fee_percent?: number | string | null;
+    platform_fee_amount?: number | string | null;
     musician_quote_notes: string | null;
     quoted_at: string | null;
     rejection_reason: string | null;
@@ -219,7 +219,7 @@ export type BookingOut = {
     pending_location_reference: string | null;
     pending_event_description: string | null;
     pending_change_notes: string | null;
-    pending_price_agreed: number | null;
+    pending_price_agreed: number | string | null;
     change_requested_by: "contractor" | "musician" | string | null;
     change_requested_at: string | null;
     status: BookingStatus;

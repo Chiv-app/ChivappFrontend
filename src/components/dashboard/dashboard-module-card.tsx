@@ -21,7 +21,7 @@ export default function DashboardModuleCard({ module, locked = false }: Props) {
         >
             <CardBody className="gap-4 p-6">
                 <div className="flex items-start justify-between gap-3">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-brand text-white shadow-soft shrink-0">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-brand text-primary-foreground shadow-soft shrink-0">
                         <Icon icon={module.icon} width={24} height={24} />
                     </div>
                     <div className="flex flex-wrap gap-2 justify-end">

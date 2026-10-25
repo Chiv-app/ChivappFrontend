@@ -38,26 +38,34 @@ export default function MusicianPayoutsView() {
 
     const [rows, setRows] = useState<MemberSettlementBookingOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [filter, setFilter] = useState<FilterKey>("pending");
     const [amounts, setAmounts] = useState<Record<string, Record<string, string>>>(
         {},
     );
     const [savingId, setSavingId] = useState<string | null>(null);
 
-    const refresh = useCallback(async () => {
+    const refresh = useCallback(async (onlyBookingId?: string) => {
         const data = await listMemberSettlements();
         setRows(data);
+        setLoadError(null);
         setIsLoading(false);
-        const next: Record<string, Record<string, string>> = {};
-        for (const row of data) {
-            next[row.booking_id] = {};
-            for (const member of row.members) {
-                next[row.booking_id][member.ensemble_member_id] = String(
-                    member.amount ?? "",
-                );
+        setAmounts((prev) => {
+            const next: Record<string, Record<string, string>> = { ...prev };
+            for (const row of data) {
+                if (onlyBookingId && row.booking_id !== onlyBookingId && prev[row.booking_id]) {
+                    continue;
+                }
+                const rowAmounts: Record<string, string> = {};
+                for (const member of row.members) {
+                    rowAmounts[member.ensemble_member_id] = String(
+                        member.amount ?? "",
+                    );
+                }
+                next[row.booking_id] = rowAmounts;
             }
-        }
-        setAmounts(next);
+            return next;
+        });
     }, []);
 
     useEffect(() => {
@@ -65,15 +73,18 @@ export default function MusicianPayoutsView() {
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refresh()
             .catch((error) => {
                 if (cancelled) return;
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : "Intenta de nuevo más tarde.";
+                setLoadError(message);
                 addToast({
                     title: "No se pudieron cargar los pagos",
-                    description:
-                        error instanceof Error
-                            ? error.message
-                            : "Intenta de nuevo más tarde.",
+                    description: message,
                     color: "danger",
                 });
             })
@@ -146,7 +157,6 @@ export default function MusicianPayoutsView() {
         );
     }
 
-
     async function saveRow(row: MemberSettlementBookingOut, lock: boolean) {
         const items = row.members.map((member) => ({
             ensemble_member_id: member.ensemble_member_id,
@@ -167,7 +177,7 @@ export default function MusicianPayoutsView() {
         setSavingId(row.booking_id);
         try {
             await upsertBookingMemberPayouts(row.booking_id, items, lock);
-            await refresh();
+            await refresh(row.booking_id);
             addToast({
                 title: lock ? "Reparto confirmado" : "Borrador guardado",
                 color: "success",
@@ -188,7 +198,7 @@ export default function MusicianPayoutsView() {
         setSavingId(bookingId);
         try {
             await markBookingMemberPayoutPaid(bookingId, payoutId);
-            await refresh();
+            await refresh(bookingId);
             addToast({ title: "Marcado como pagado", color: "success" });
         } catch (error) {
             addToast({
@@ -205,15 +215,30 @@ export default function MusicianPayoutsView() {
     function splitEqual(row: MemberSettlementBookingOut) {
         const total = Number(row.price_agreed || 0);
         if (!total || row.members.length === 0) return;
-        const each = Math.floor((total / row.members.length) * 100) / 100;
+        const unpaidMembers = row.members.filter(
+            (member) => member.payout_status !== "paid",
+        );
+        if (unpaidMembers.length === 0) return;
+
+        const paidCents = row.members.reduce(
+            (sum, member) =>
+                member.payout_status === "paid"
+                    ? sum + Math.round(Number(member.amount || 0) * 100)
+                    : sum,
+            0,
+        );
+        const remainingCents = Math.max(0, Math.round(total * 100) - paidCents);
+        const baseCents = Math.floor(remainingCents / unpaidMembers.length);
+        const remainderCents = remainingCents - baseCents * unpaidMembers.length;
+
         setAmounts((prev) => {
             const bookingAmounts: Record<string, string> = {
                 ...(prev[row.booking_id] ?? {}),
             };
-            for (const member of row.members) {
-                if (member.payout_status === "paid") continue;
-                bookingAmounts[member.ensemble_member_id] = String(each);
-            }
+            unpaidMembers.forEach((member, index) => {
+                const cents = baseCents + (index === 0 ? remainderCents : 0);
+                bookingAmounts[member.ensemble_member_id] = (cents / 100).toFixed(2);
+            });
             return { ...prev, [row.booking_id]: bookingAmounts };
         });
     }
@@ -242,6 +267,47 @@ export default function MusicianPayoutsView() {
                     pendiente se queda en este módulo.
                 </p>
             </div>
+
+            {loadError ? (
+                <Card className="border border-danger/30 bg-danger/5 shadow-soft">
+                    <CardBody className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
+                        <div className="flex items-start gap-3">
+                            <Icon
+                                icon="material-symbols:error-outline"
+                                width={22}
+                                className="text-danger shrink-0 mt-0.5"
+                            />
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                    No se pudieron cargar los repartos
+                                </p>
+                                <p className="text-xs text-default-600 mt-0.5">
+                                    {loadError}
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            size="sm"
+                            color="danger"
+                            variant="flat"
+                            radius="lg"
+                            onPress={() => {
+                                setIsLoading(true);
+                                void refresh().catch((err) => {
+                                    setLoadError(
+                                        err instanceof Error
+                                            ? err.message
+                                            : "Intenta de nuevo.",
+                                    );
+                                    setIsLoading(false);
+                                });
+                            }}
+                        >
+                            Reintentar
+                        </Button>
+                    </CardBody>
+                </Card>
+            ) : null}
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                 {[
@@ -275,7 +341,7 @@ export default function MusicianPayoutsView() {
                                 width={20}
                                 className="text-secondary"
                             />
-                            <p className="text-[11px] sm:text-xs text-default-500">
+                            <p className="text-xs text-default-500">
                                 {item.label}
                             </p>
                             <p

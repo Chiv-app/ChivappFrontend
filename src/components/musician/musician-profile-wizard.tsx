@@ -20,6 +20,7 @@ import FileUploadField from "@/components/ui/file-upload-field";
 import SignaturePad from "@/components/ui/signature-pad";
 import RepertoireListInput from "@/components/ui/repertoire-list-input";
 import MusicianVerifiedPreview from "@/components/musician/musician-verified-preview";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import ChangePasswordModal from "@/components/profile/change-password-modal";
 import ProfileWizardStepper, {
     WIZARD_STEPS,
@@ -144,7 +145,7 @@ export default function MusicianProfileWizard() {
 
     const [username, setUsername] = useState("");
     const [usernameCheck, setUsernameCheck] = useState<{available: boolean, message: string} | null>(null);
-    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    const [, setIsCheckingUsername] = useState(false);
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
     const [stageName, setStageName] = useState("");
@@ -182,6 +183,7 @@ export default function MusicianProfileWizard() {
     const [payoutBeneficiaryName, setPayoutBeneficiaryName] = useState("");
     const [payoutBeneficiaryDocument, setPayoutBeneficiaryDocument] = useState("");
     const [payoutMpEmail, setPayoutMpEmail] = useState("");
+    const [isRevertConfirmOpen, setIsRevertConfirmOpen] = useState(false);
 
     const [availabilityDay, setAvailabilityDay] = useState("1");
 
@@ -403,12 +405,27 @@ export default function MusicianProfileWizard() {
             applyProfileData(profileData);
             setActiveStep(getInitialStepIndex(statusData.steps));
 
+            let secondaryFailed = false;
             const [availabilityData, mediaData] = await Promise.all([
-                getMyAvailability().catch(() => [] as AvailabilityOut[]),
-                getMyMedia().catch(() => [] as MusicianMediaOut[]),
+                getMyAvailability().catch(() => {
+                    secondaryFailed = true;
+                    return [] as AvailabilityOut[];
+                }),
+                getMyMedia().catch(() => {
+                    secondaryFailed = true;
+                    return [] as MusicianMediaOut[];
+                }),
             ]);
             setAvailability(availabilityData);
             setMedia(mediaData);
+            if (secondaryFailed) {
+                addToast({
+                    title: "Carga parcial",
+                    description:
+                        "No pudimos cargar tu disponibilidad o galería. Recarga antes de editar esas secciones.",
+                    color: "warning",
+                });
+            }
         } catch (error) {
             const message =
                 error instanceof Error
@@ -424,16 +441,15 @@ export default function MusicianProfileWizard() {
 
     useEffect(() => {
         if (!username || username === user?.username) {
-            setUsernameCheck(null);
             return;
         }
-        setIsCheckingUsername(true);
         const timer = setTimeout(async () => {
+            setIsCheckingUsername(true);
             try {
                 const { checkUsername } = await import("@/lib/profiles");
                 const res = await checkUsername(username);
                 setUsernameCheck(res);
-            } catch (e) {
+            } catch {
                 setUsernameCheck(null);
             } finally {
                 setIsCheckingUsername(false);
@@ -443,6 +459,7 @@ export default function MusicianProfileWizard() {
     }, [username, user?.username]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void loadData();
         // Carga inicial única al montar el wizard.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -716,7 +733,11 @@ export default function MusicianProfileWizard() {
                                 errorMessage={usernameCheck && !usernameCheck.available ? usernameCheck.message : undefined}
                                 value={username}
                                 onValueChange={(val) => {
-                                    setUsername(val.toLowerCase().replace(/\s+/g, "-"));
+                                    const nextVal = val.toLowerCase().replace(/\s+/g, "-");
+                                    setUsername(nextVal);
+                                    if (!nextVal || nextVal === user?.username) {
+                                        setUsernameCheck(null);
+                                    }
                                 }}
                                 variant="bordered"
                                 isRequired
@@ -768,7 +789,7 @@ export default function MusicianProfileWizard() {
                         />
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-default-200/80 bg-default-50/50 mt-1">
                             <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
+                                <div className="p-2.5 rounded-xl bg-primary/10 text-primary-text shrink-0">
                                     <Icon icon="solar:lock-password-bold-duotone" className="text-2xl" />
                                 </div>
                                 <div>
@@ -861,6 +882,7 @@ export default function MusicianProfileWizard() {
                                     onValueChange={setPricePerHour}
                                     variant="bordered"
                                     type="number"
+                                    inputMode="decimal"
                                 />
                             ) : null}
                             {availabilityType === "per_event" ||
@@ -871,6 +893,7 @@ export default function MusicianProfileWizard() {
                                     onValueChange={setPricePerEvent}
                                     variant="bordered"
                                     type="number"
+                                    inputMode="decimal"
                                 />
                             ) : null}
                         </div>
@@ -1189,6 +1212,7 @@ export default function MusicianProfileWizard() {
                                                 ) : null}
                                                 <Button
                                                     isIconOnly
+                                                    aria-label="Eliminar video"
                                                     size="sm"
                                                     variant="light"
                                                     color="danger"
@@ -1507,6 +1531,25 @@ export default function MusicianProfileWizard() {
 
     return (
         <div className="max-w-6xl mx-auto flex flex-col gap-8">
+            <ConfirmDialog
+                isOpen={isRevertConfirmOpen}
+                onOpenChange={setIsRevertConfirmOpen}
+                title="Volver a perfil básico"
+                description="¿Estás seguro de que deseas descartar el perfil Pro y volver a tu perfil básico de integrante?"
+                confirmLabel="Volver a perfil básico"
+                color="danger"
+                isLoading={isSaving}
+                onConfirm={async () => {
+                    try {
+                        setIsSaving(true);
+                        await updateMusicianProfile({ is_ensemble_only: true });
+                        window.location.reload();
+                    } catch {
+                        addToast({ title: "Error", description: "No se pudo volver a perfil básico", color: "danger" });
+                        setIsSaving(false);
+                    }
+                }}
+            />
             <div className="flex justify-end gap-2">
                 {user?.is_ensemble_member && profile?.status === "draft" && !profile?.is_ensemble_only ? (
                     <Button
@@ -1515,17 +1558,7 @@ export default function MusicianProfileWizard() {
                         color="danger"
                         radius="lg"
                         isLoading={isSaving}
-                        onPress={async () => {
-                            if (!window.confirm("¿Estás seguro que deseas descartar el Perfil PRO y volver a tu perfil básico de integrante?")) return;
-                            try {
-                                setIsSaving(true);
-                                await updateMusicianProfile({ is_ensemble_only: true });
-                                window.location.reload();
-                            } catch (e) {
-                                addToast({ title: "Error", description: "No se pudo volver a perfil básico", color: "danger" });
-                                setIsSaving(false);
-                            }
-                        }}
+                        onPress={() => setIsRevertConfirmOpen(true)}
                     >
                         Volver a perfil básico
                     </Button>
@@ -1559,7 +1592,7 @@ export default function MusicianProfileWizard() {
                     <Card className="border border-default-200/70 shadow-soft">
                         <CardHeader className="flex flex-col items-start gap-2 px-6 pt-6 pb-0">
                             <div className="flex items-center gap-3">
-                                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary-text">
                                     <Icon icon={currentStepDef.icon} width={24} height={24} />
                                 </div>
                                 <div>
@@ -1635,7 +1668,7 @@ export default function MusicianProfileWizard() {
                         <CardBody className="p-6"><Form id="wizard-form" onSubmit={(e) => { e.preventDefault(); handleNext(); }} validationBehavior="native" className="w-full">{renderStepContent()}</Form></CardBody>
                     </Card>
 
-                    <div className="sticky bottom-4 z-10 rounded-4xl border border-default-200/70 bg-content1/90 backdrop-blur-xl p-4 shadow-elevated flex flex-wrap items-center justify-between gap-3">
+                    <div className="sticky bottom-[calc(var(--bottom-nav-h,0px)+1rem)] lg:bottom-4 z-20 rounded-4xl border border-default-200/70 bg-content1/90 backdrop-blur-xl p-4 shadow-elevated flex flex-wrap items-center justify-between gap-3">
                         <Button
                             variant="flat"
                             isDisabled={activeStep === 0 && !canReturnToPreview}

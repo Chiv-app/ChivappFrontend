@@ -55,31 +55,38 @@ function isSafeSegment(segment: string): boolean {
     return true;
 }
 
-function securityHeaders(contentType: string): Headers {
+function securityHeaders(contentType: string, isError = false): Headers {
     const headers = new Headers();
     headers.set("X-Content-Type-Options", "nosniff");
     headers.set(
         "Content-Security-Policy",
         contentType === "application/pdf" ? BASE_CSP : SANDBOXED_CSP,
     );
-    // Algunos archivos son privados (DNI, firmas, comprobantes): nada de caché compartida.
-    headers.set("Cache-Control", "private, max-age=300");
+    // Los errores no deben cachearse para no retener 401/404 transitorios en el navegador.
+    headers.set(
+        "Cache-Control",
+        isError ? "no-store" : "private, max-age=300",
+    );
     return headers;
 }
 
-export async function GET(
+async function handleUploadRequest(
     request: NextRequest,
-    context: { params: Promise<{ path: string[] }> }
+    context: { params: Promise<{ path: string[] }> },
+    method: "GET" | "HEAD",
 ) {
     const { path } = await context.params;
     if (!path || path.length === 0) {
-        return new NextResponse("Not Found", { status: 404 });
+        return new NextResponse(method === "HEAD" ? null : "Not Found", {
+            status: 404,
+            headers: securityHeaders("text/plain", true),
+        });
     }
 
     if (!path.every(isSafeSegment)) {
-        return new NextResponse("Ruta inválida", {
+        return new NextResponse(method === "HEAD" ? null : "Ruta inválida", {
             status: 400,
-            headers: securityHeaders("text/plain"),
+            headers: securityHeaders("text/plain", true),
         });
     }
 
@@ -108,9 +115,11 @@ export async function GET(
         }
 
         const upstreamRes = await fetch(targetUrl, {
+            method,
             headers: forwardHeaders,
             cache: "no-store",
             redirect: "manual",
+            signal: AbortSignal.timeout(15_000),
         });
 
         // Redirects del backend (p. ej. a un bucket) se delegan al navegador sin reenviar cookies.
@@ -127,9 +136,9 @@ export async function GET(
         if (!upstreamRes.ok) {
             // Se propaga el status (401/403/404/416…) sin exponer el cuerpo del backend.
             const status = upstreamRes.status >= 400 ? upstreamRes.status : 502;
-            return new NextResponse("Archivo no encontrado", {
+            return new NextResponse(method === "HEAD" ? null : "Archivo no encontrado", {
                 status,
-                headers: securityHeaders("text/plain"),
+                headers: securityHeaders("text/plain", true),
             });
         }
 
@@ -140,7 +149,7 @@ export async function GET(
         const isInline = INLINE_CONTENT_TYPES.has(upstreamType);
         const contentType = isInline ? upstreamType : "application/octet-stream";
 
-        const headers = securityHeaders(contentType);
+        const headers = securityHeaders(contentType, false);
         headers.set("Content-Type", contentType);
         // "inline" permite visualizar imágenes, videos y PDFs; el resto se descarga.
         headers.set("Content-Disposition", isInline ? "inline" : "attachment");
@@ -149,15 +158,36 @@ export async function GET(
             if (value) headers.set(name, value);
         }
 
-        return new NextResponse(upstreamRes.body, {
+        return new NextResponse(method === "HEAD" ? null : upstreamRes.body, {
             status: upstreamRes.status,
             headers,
         });
     } catch (err) {
         console.error("Error cargando archivo desde backend upstream:", err);
-        return new NextResponse("Error al conectar con el servidor de archivos", {
-            status: 502,
-            headers: securityHeaders("text/plain"),
-        });
+        return new NextResponse(
+            method === "HEAD" ? null : "Error al conectar con el servidor de archivos",
+            {
+                status:
+                    err instanceof Error &&
+                    (err.name === "TimeoutError" || err.name === "AbortError")
+                        ? 504
+                        : 502,
+                headers: securityHeaders("text/plain", true),
+            },
+        );
     }
+}
+
+export async function GET(
+    request: NextRequest,
+    context: { params: Promise<{ path: string[] }> },
+) {
+    return handleUploadRequest(request, context, "GET");
+}
+
+export async function HEAD(
+    request: NextRequest,
+    context: { params: Promise<{ path: string[] }> },
+) {
+    return handleUploadRequest(request, context, "HEAD");
 }

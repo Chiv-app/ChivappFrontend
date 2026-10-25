@@ -132,7 +132,6 @@ export default function LocationMapPicker({ value, onChange }: Props) {
 
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.trim().length < 3) {
-      setSuggestions([]);
       return;
     }
 
@@ -184,7 +183,12 @@ export default function LocationMapPicker({ value, onChange }: Props) {
             placeholder="Escribe una dirección o zona..."
             description="Busca una dirección o toca el mapa para marcar el lugar exacto."
             value={searchQuery}
-            onValueChange={setSearchQuery}
+            onValueChange={(val) => {
+              setSearchQuery(val);
+              if (!val.trim() || val.trim().length < 3) {
+                setSuggestions([]);
+              }
+            }}
             variant="bordered"
             endContent={
               <div className="flex items-center gap-1">
@@ -195,8 +199,8 @@ export default function LocationMapPicker({ value, onChange }: Props) {
                   size="sm"
                   isIconOnly
                   onPress={requestCurrentLocation}
-                  title="Mi ubicación actual"
-                  className="text-primary hover:bg-primary-50"
+                  aria-label="Usar mi ubicación actual"
+                  className="text-primary-text hover:bg-primary-50"
                 >
                   <Icon icon="lucide:crosshair" className="w-5 h-5" />
                 </Button>
@@ -267,7 +271,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
           ) : null}
           {value ? (
             <div className="absolute bottom-2 left-2 right-2 z-[400] rounded-xl border border-primary/20 bg-background/90 backdrop-blur-sm px-3 py-2 shadow-sm">
-              <p className="text-[0.65rem] font-bold text-primary uppercase tracking-wider mb-0.5">
+              <p className="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">
                 Lugar seleccionado
               </p>
               <p className="text-xs font-medium text-foreground truncate">

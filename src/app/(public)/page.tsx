@@ -9,14 +9,14 @@ export const metadata: Metadata = buildPageMetadata({
     path: "/",
 });
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const HOME_MUSICIANS_LIMIT = 5;
 
 export default async function Page() {
     let musicians: Awaited<ReturnType<typeof getMusicians>> = [];
     let stats = null;
-    let reviews: any[] = [];
+    let reviews: Awaited<ReturnType<typeof getLatestReviews>> = [];
 
     try {
         [musicians, stats, reviews] = await Promise.all([

@@ -20,8 +20,15 @@ export type MusicianLinkProfile = {
     rating_avg?: number | null;
     rating_count?: number | null;
     genres?: string[] | null;
+    instruments?: string[] | null;
     location_city?: string | null;
     reviews?: MusicianReviewOut[] | null;
+};
+
+export type CancellationPolicyPublicOut = {
+    full_refund_min_days: number;
+    partial_refund_min_days: number;
+    partial_refund_percent: number;
 };
 
 export type BookingLinkPublicOut = {
@@ -32,9 +39,13 @@ export type BookingLinkPublicOut = {
     total_payable?: number | null;
     event_date: string | null;
     start_time: string | null;
+    client_email?: string | null;
     musician: MusicianLinkProfile;
     status: BookingLinkStatus;
     expires_at: string;
+    cancellation_policy?: CancellationPolicyPublicOut | null;
+    contract_template_title?: string | null;
+    contract_template_body?: string | null;
 };
 
 export type BookingLinkCheckout = {
@@ -48,6 +59,7 @@ export type BookingLinkCheckout = {
     phone: string;
     document_number?: string | null;
     signature_image_url?: string | null;
+    accept_terms?: boolean;
     otp?: string | null;
     password?: string | null;
 };
@@ -59,8 +71,18 @@ export async function getBookingLinkPublic(token: string): Promise<BookingLinkPu
 export async function checkoutBookingLink(
     token: string,
     payload: BookingLinkCheckout
-): Promise<{ message: string; booking_id: string; signature_image_url?: string | null }> {
-    return apiFetch<{ message: string; booking_id: string; signature_image_url?: string | null }>(
+): Promise<{
+    message: string;
+    booking_id: string;
+    signature_image_url?: string | null;
+    contract_body_sha256?: string | null;
+}> {
+    return apiFetch<{
+        message: string;
+        booking_id: string;
+        signature_image_url?: string | null;
+        contract_body_sha256?: string | null;
+    }>(
         `/booking-links/${token}/checkout`,
         {
             method: "POST",

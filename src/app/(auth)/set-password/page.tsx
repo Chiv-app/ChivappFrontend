@@ -9,14 +9,13 @@ import {
     CardBody,
     CardHeader,
     Chip,
-    Input,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { PasswordInput } from "@/components/auth/password-input";
 import PasswordRequirementsChecklist from "@/components/auth/password-requirements-checklist";
 import { useAuth } from "@/contexts/auth-context";
-import { ApiError } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import { previewPasswordSetup, setPassword } from "@/lib/ensemble-members";
 import { evaluatePasswordRules } from "@/lib/password-rules";
 import { getPostLoginPath, resolveAuthRedirect } from "@/lib/profiles";
@@ -36,6 +35,29 @@ function SetPasswordForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
     const [previewLoaded, setPreviewLoaded] = useState(false);
+    const [isResendingVerification, setIsResendingVerification] = useState(false);
+
+    const needsEmailVerification = !token && Boolean(user && user.is_email_verified === false);
+
+    async function handleResendVerification() {
+        setIsResendingVerification(true);
+        try {
+            await apiFetch("/auth/resend-verification", { method: "POST" });
+            addToast({
+                title: "Correo de verificación enviado",
+                description: "Revisa tu bandeja de entrada y haz clic en el enlace para verificar tu correo.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo reenviar el correo",
+                description: error instanceof ApiError ? error.message : "Intenta de nuevo en unos segundos.",
+                color: "danger",
+            });
+        } finally {
+            setIsResendingVerification(false);
+        }
+    }
 
     const loadingPreview = Boolean(token) && !previewLoaded && !previewError;
 
@@ -203,6 +225,29 @@ function SetPasswordForm() {
                     <div className="mb-4 rounded-xl bg-default-100 p-3 text-xs text-default-600">
                         Tu cuenta aún no tiene contraseña. Créala para continuar.
                         <p className="mt-1 font-medium">{user.email}</p>
+                        {needsEmailVerification ? (
+                            <div className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3 text-warning-text" role="alert">
+                                <p className="font-semibold">Verifica tu correo antes de continuar</p>
+                                <p className="mt-1">
+                                    Por seguridad, debes confirmar tu correo electrónico antes de guardar tu contraseña.
+                                    También puedes usar{" "}
+                                    <Link href="/forgot-password" className="underline font-semibold">
+                                        Olvidé mi contraseña
+                                    </Link>{" "}
+                                    para recibir un enlace directo.
+                                </p>
+                                <Button
+                                    size="sm"
+                                    variant="flat"
+                                    color="warning"
+                                    className="mt-2 font-medium"
+                                    isLoading={isResendingVerification}
+                                    onPress={handleResendVerification}
+                                >
+                                    Reenviar correo de verificación
+                                </Button>
+                            </div>
+                        ) : null}
                     </div>
                 ) : null}
 
@@ -239,7 +284,7 @@ function SetPasswordForm() {
                         radius="lg"
                         className={UI.primaryButton}
                         isLoading={isSubmitting}
-                        isDisabled={!passwordEvaluation.isValid}
+                        isDisabled={!passwordEvaluation.isValid || needsEmailVerification}
                         startContent={
                             !isSubmitting ? (
                                 <Icon icon="material-symbols:lock" width={18} />

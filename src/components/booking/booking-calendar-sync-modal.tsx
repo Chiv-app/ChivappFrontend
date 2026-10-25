@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useState, useEffect } from "react";
 import {
     Modal,
@@ -40,13 +41,14 @@ export default function BookingCalendarSyncModal({
     const [membersLoading, setMembersLoading] = useState(false);
     useEffect(() => {
         if (!isOpen) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIncludeContractor(true);
         setSelectedMembers([]);
         
         // Fetch booking members
         let cancelled = false;
         setMembersLoading(true);
-        apiFetch<any[]>(`/bookings/${booking.id}/member-invites`)
+        apiFetch<{ status: string; ensemble_member_id: string; member_fullname: string }[]>(`/bookings/${booking.id}/member-invites`)
             .then(data => {
                 if (!cancelled) {
                     const acceptedMembers = data.filter(d => d.status === "accepted");
@@ -89,7 +91,7 @@ export default function BookingCalendarSyncModal({
     const title = booking.calendar_event_id ? "Actualizar Agenda" : "Generar Agenda";
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="md" scrollBehavior="inside" placement="bottom-center">
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />} isOpen={isOpen} onOpenChange={onOpenChange} size="md" scrollBehavior="inside" placement="bottom-center">
             <ModalContent>
                 {(onClose) => (
                     <>

@@ -32,6 +32,7 @@ export default function BookingContractorActions({
             booking.status !== "contract_signed" &&
             booking.status !== "payment_pending"
         ) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setContract(null);
             return;
         }

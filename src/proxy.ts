@@ -58,11 +58,11 @@ export function proxy(request: NextRequest) {
     const isAuthenticated = Boolean(payload && !isExpired);
     const userRole = isAuthenticated ? payload?.role : null;
 
+    // /forgot-password y /reset-password deben permanecer accesibles aunque exista sesión
+    // (por ejemplo, cuentas invitadas sin contraseña o usuarios que abren un enlace de recuperación).
     const isAuthRoute =
         pathname.startsWith("/login") ||
-        pathname.startsWith("/register") ||
-        pathname.startsWith("/forgot-password") ||
-        pathname.startsWith("/reset-password");
+        pathname.startsWith("/register");
 
     const isMusicianDashboard =
         pathname === "/musician" || pathname.startsWith("/musician/");

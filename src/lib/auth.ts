@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import type { LoginRequest, RegisterRequest, TokenOut, UserOut } from "@/types/api";
 
 export type OAuthAccountOut = {
@@ -22,8 +22,11 @@ export type OAuthPendingOut = {
 export async function getCurrentUser(): Promise<UserOut | null> {
     try {
         return await apiFetch<UserOut>("/auth/me");
-    } catch {
-        return null;
+    } catch (error) {
+        if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+            return null;
+        }
+        throw error;
     }
 }
 
@@ -42,29 +45,44 @@ export async function loginUser(credentials: LoginRequest): Promise<UserOut> {
 }
 
 export async function registerUser(data: RegisterRequest): Promise<UserOut> {
-    await apiFetch<UserOut>("/auth/register", {
+    return apiFetch<UserOut>("/auth/register", {
         method: "POST",
         body: JSON.stringify(data),
     });
-
-    return loginUser({ email: data.email, password: data.password });
 }
 
 export async function logoutUser(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
 }
 
+const verifyEmailPromiseCache = new Map<
+    string,
+    Promise<{ message: string; email_verified: boolean }>
+>();
+
 export async function verifyEmail(token: string) {
-    return apiFetch<{ message: string; email_verified: boolean }>(
+    const existing = verifyEmailPromiseCache.get(token);
+    if (existing) {
+        return existing;
+    }
+    const request = apiFetch<{ message: string; email_verified: boolean }>(
         `/auth/verify-email/${encodeURIComponent(token)}`,
         { method: "POST" },
-    );
+    ).catch((err) => {
+        verifyEmailPromiseCache.delete(token);
+        throw err;
+    });
+    verifyEmailPromiseCache.set(token, request);
+    return request;
 }
 
-export async function resendVerificationEmail() {
+export async function resendVerificationEmail(email?: string) {
     return apiFetch<{ message: string; email_verified: boolean }>(
         "/auth/resend-verification",
-        { method: "POST" },
+        {
+            method: "POST",
+            ...(email ? { body: JSON.stringify({ email }) } : {}),
+        },
     );
 }
 

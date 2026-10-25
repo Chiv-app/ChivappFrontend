@@ -1,11 +1,10 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
     Button,
-    Card,
-    CardBody,
     Chip,
     Input,
     Modal,
@@ -20,6 +19,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import ChipListInput from "@/components/ui/chip-list-input";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import MemberPayoutHistoryModal from "@/components/dashboard/member-payout-history-modal";
 import { ApiError } from "@/lib/api";
 import {
@@ -119,6 +119,7 @@ function getDisplayState(member: EnsembleMemberOut): DisplayState {
 
 export default function MusicianMembersView() {
     const [members, setMembers] = useState<EnsembleMemberOut[]>([]);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -134,22 +135,51 @@ export default function MusicianMembersView() {
     const [historyMember, setHistoryMember] = useState<EnsembleMemberOut | null>(
         null,
     );
+    const [memberToDeactivate, setMemberToDeactivate] = useState<EnsembleMemberOut | null>(
+        null,
+    );
 
     const refresh = useCallback(async () => {
         const data = await listEnsembleMembers({
             q: query.trim() || undefined,
         });
         setMembers(data);
+        setLoadError(null);
     }, [query]);
+
+    const retryLoad = useCallback(async () => {
+        setIsLoading(true);
+        setLoadError(null);
+        try {
+            await refresh();
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : "Intenta de nuevo.";
+            setLoadError(msg);
+            addToast({
+                title: "No se pudieron cargar los integrantes",
+                description: msg,
+                color: "danger",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [refresh]);
 
     useEffect(() => {
         let cancelled = false;
         void Promise.resolve().then(() => {
-            if (!cancelled) setIsLoading(true);
+            if (!cancelled) {
+                setIsLoading(true);
+                setLoadError(null);
+            }
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refresh()
             .catch((error) => {
                 if (cancelled) return;
+                setLoadError(
+                    error instanceof Error ? error.message : "Intenta de nuevo.",
+                );
                 addToast({
                     title: "No se pudieron cargar los integrantes",
                     description:
@@ -481,9 +511,25 @@ export default function MusicianMembersView() {
                 </div>
             </div>
 
-            {filteredMembers.length === 0 ? (
+            {loadError ? (
+                <div className="rounded-4xl border border-danger-200 bg-danger-50/40 px-6 py-10 text-center">
+                    <p className="text-sm font-semibold text-danger">
+                        No se pudieron cargar los integrantes
+                    </p>
+                    <p className="mt-1 text-xs text-default-500">{loadError}</p>
+                    <Button
+                        className="mt-4"
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        onPress={() => void retryLoad()}
+                    >
+                        Reintentar
+                    </Button>
+                </div>
+            ) : filteredMembers.length === 0 ? (
                 <div className="rounded-4xl border border-dashed border-default-300 bg-content1/60 px-6 py-14 text-center">
-                    <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary-text">
                         <Icon icon="material-symbols:groups" width={28} />
                     </div>
                     <h2 className="text-lg font-semibold text-foreground">
@@ -732,7 +778,7 @@ export default function MusicianMembersView() {
                                                     aria-label="Desactivar integrante"
                                                     isLoading={workingId === member.id}
                                                     onPress={() =>
-                                                        handleDeactivate(member)
+                                                        setMemberToDeactivate(member)
                                                     }
                                                 >
                                                     <Icon
@@ -750,7 +796,7 @@ export default function MusicianMembersView() {
                 </div>
             )}
 
-            <Modal
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
                 isOpen={isFormOpen}
                 onOpenChange={(open) => {
                     setIsFormOpen(open);
@@ -789,7 +835,7 @@ export default function MusicianMembersView() {
                                     <div className="flex flex-col gap-4">
                                         <div className="rounded-2xl border border-success/30 bg-success/10 px-4 py-4">
                                             <div className="flex items-start gap-3">
-                                                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
+                                                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-success/20 text-success-text">
                                                     <Icon
                                                         icon="material-symbols:check-circle"
                                                         width={22}
@@ -1103,7 +1149,7 @@ export default function MusicianMembersView() {
                                                             />
                                                         }
                                                         onPress={() =>
-                                                            handleDeactivate(editing)
+                                                            setMemberToDeactivate(editing)
                                                         }
                                                     >
                                                         Desactivar integrante
@@ -1164,6 +1210,28 @@ export default function MusicianMembersView() {
                 isOpen={Boolean(historyMember)}
                 onOpenChange={(open) => {
                     if (!open) setHistoryMember(null);
+                }}
+            />
+            <ConfirmDialog
+                isOpen={Boolean(memberToDeactivate)}
+                onOpenChange={(open) => {
+                    if (!open) setMemberToDeactivate(null);
+                }}
+                title="¿Desactivar a este integrante?"
+                description={
+                    memberToDeactivate
+                        ? `${memberToDeactivate.fullname} dejará de aparecer al convocar a shows. Podrás reactivarlo cuando lo necesites.`
+                        : "Dejará de aparecer al convocar a shows."
+                }
+                confirmLabel="Desactivar integrante"
+                cancelLabel="Volver"
+                color="danger"
+                isLoading={Boolean(memberToDeactivate && workingId === memberToDeactivate.id)}
+                onConfirm={async () => {
+                    if (!memberToDeactivate) return;
+                    const target = memberToDeactivate;
+                    await handleDeactivate(target);
+                    setMemberToDeactivate(null);
                 }}
             />
         </div>

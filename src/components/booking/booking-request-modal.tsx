@@ -22,6 +22,13 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "M";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+}
+
 export default function BookingRequestModal({
   musician,
   isOpen,
@@ -51,24 +58,34 @@ export default function BookingRequestModal({
                   isIconOnly
                   variant="light"
                   onPress={onClose}
-                  className="absolute top-2 right-2 text-default-500 hover:text-foreground z-10"
+                  aria-label="Cerrar"
+                  className="absolute top-2 right-2 text-default-500 hover:text-foreground z-10 min-w-11 min-h-11"
                   size="sm"
                 >
                   <Icon icon="lucide:x" className="w-5 h-5" />
                 </Button>
-                <div className="flex items-center gap-3.5 mr-8">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={musician.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(musician.name)}&background=0891b2&color=fff&rounded=true&bold=true&size=128`}
-                    alt={musician.name}
-                    className="w-11 h-11 rounded-full shadow-sm border border-default-200 object-cover"
-                  />
+                <div className="flex items-center gap-3.5 mr-10">
+                  {musician.image ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={musician.image}
+                      alt={musician.name}
+                      className="w-11 h-11 rounded-full shadow-sm border border-default-200 object-cover"
+                    />
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="w-11 h-11 rounded-full shadow-sm border border-default-200 bg-primary/15 text-primary-text font-bold text-sm flex items-center justify-center shrink-0"
+                    >
+                      {getInitials(musician.name)}
+                    </div>
+                  )}
                   <div className="flex-1">
                     <h2 className="text-base font-bold leading-tight text-foreground">
                       {musician.name}
                     </h2>
-                    <p className="text-[0.7rem] text-primary font-bold tracking-wide uppercase mt-0.5">
-                      Solicitar Reserva
+                    <p className="text-xs text-primary-text font-semibold mt-0.5">
+                      Pedir cotización
                     </p>
                   </div>
                 </div>

@@ -26,6 +26,7 @@ export type MercadoPagoPreferenceRequest = {
     payment_type: "full";
     signature_image_url?: string | null;
     sign_ip?: string | null;
+    contract_body_sha256?: string | null;
 };
 
 export type MercadoPagoPreferenceResponse = {
@@ -40,6 +41,7 @@ export type MercadoPagoPreferenceResponse = {
 
 export type MercadoPagoPaymentCheckResponse = {
     status: "approved" | "pending" | "rejected" | string;
+    status_detail?: string | null;
     payment_id?: string | null;
     booking_status: string;
     is_approved: boolean;
@@ -60,6 +62,7 @@ export type MercadoPagoProcessPaymentRequest = {
     identification_number?: string;
     signature_image_url?: string | null;
     sign_ip?: string | null;
+    contract_body_sha256?: string | null;
 };
 
 export type MercadoPagoProcessPaymentResponse = {
@@ -94,6 +97,20 @@ export type PayoutRequestOut = {
     status: "pending" | "processed" | "rejected" | string;
     created_at: string;
     processed_at?: string | null;
+};
+
+export type AdminPayoutRequestOut = {
+    id: string;
+    musician_id: string;
+    musician_name: string | null;
+    musician_email: string | null;
+    musician_phone?: string | null;
+    amount: number;
+    status: "pending" | "processed" | "rejected" | string;
+    notes?: string | null;
+    created_at: string;
+    processed_at?: string | null;
+    musician_payout_info?: MusicianPayoutInfoOut | null;
 };
 
 export type MusicianDebtItem = {

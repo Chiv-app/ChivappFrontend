@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Card, CardBody } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { resolveUploadUrl, toAbsoluteUploadUrl } from "@/lib/uploads";
+import { resolveUploadUrl } from "@/lib/uploads";
 
 type Props = {
     pdfUrl: string | null;
@@ -20,7 +20,7 @@ function useAvailabilityProbe(resolvedUrl: string | null) {
         if (!resolvedUrl) return;
 
         let cancelled = false;
-        fetch(resolvedUrl, { method: "GET", credentials: "omit" })
+        fetch(resolvedUrl, { method: "HEAD", credentials: "same-origin" })
             .then((res) => {
                 if (!cancelled && (res.status === 404 || res.status === 410)) {
                     setUnavailable(true);
@@ -40,21 +40,15 @@ function useAvailabilityProbe(resolvedUrl: string | null) {
 
 function ContractPdfViewerLoaded({
     resolvedUrl,
-    absoluteUrl,
     title,
     description,
 }: {
     resolvedUrl: string;
-    absoluteUrl: string;
     title: string;
     description: string;
 }) {
-    const [useAltViewer, setUseAltViewer] = useState(false);
     const unavailable = useAvailabilityProbe(resolvedUrl);
-
-    const embedSrc = useAltViewer
-        ? `https://docs.google.com/gview?url=${encodeURIComponent(absoluteUrl)}&embedded=true`
-        : `${resolvedUrl}#toolbar=1&view=FitH`;
+    const embedSrc = `${resolvedUrl}#toolbar=1&view=FitH`;
 
     return (
         <div className="flex flex-col gap-4">
@@ -92,24 +86,15 @@ function ContractPdfViewerLoaded({
                     >
                         Descargar
                     </Button>
-                    <Button
-                        variant="light"
-                        radius="lg"
-                        className="col-span-2 sm:col-span-1 w-full sm:w-auto"
-                        onPress={() => setUseAltViewer((value) => !value)}
-                    >
-                        {useAltViewer ? "Vista nativa" : "Vista alternativa"}
-                    </Button>
                 </div>
             </div>
 
             {unavailable ? (
                 <Card shadow="none" className="border border-danger/20 bg-danger/5">
                     <CardBody className="p-4">
-                        <p className="text-sm text-default-700">
-                            El archivo no está disponible en el servidor (404). Verifica
-                            que el backend esté corriendo y que el archivo exista en
-                            uploads.
+                        <p className="text-sm text-default-700" role="alert">
+                            El documento no está disponible en este momento. Intenta
+                            descargarlo o recarga la página.
                         </p>
                     </CardBody>
                 </Card>
@@ -134,7 +119,6 @@ export default function ContractPdfViewer({
     isLoading = false,
 }: Props) {
     const resolvedUrl = resolveUploadUrl(pdfUrl);
-    const absoluteUrl = toAbsoluteUploadUrl(pdfUrl);
 
     if (isLoading) {
         return (
@@ -142,7 +126,7 @@ export default function ContractPdfViewer({
         );
     }
 
-    if (!resolvedUrl || !absoluteUrl) {
+    if (!resolvedUrl) {
         return (
             <Card shadow="none" className="border border-warning/30 bg-warning/5">
                 <CardBody className="gap-3 p-5">
@@ -171,7 +155,6 @@ export default function ContractPdfViewer({
         <ContractPdfViewerLoaded
             key={resolvedUrl}
             resolvedUrl={resolvedUrl}
-            absoluteUrl={absoluteUrl}
             title={title}
             description={description}
         />
@@ -184,22 +167,16 @@ function isImageEvidence(url: string): boolean {
 
 function PaymentEvidenceViewerLoaded({
     resolvedUrl,
-    absoluteUrl,
     label,
 }: {
     resolvedUrl: string;
-    absoluteUrl: string | null;
     label: string;
 }) {
     const [imageFailed, setImageFailed] = useState(false);
-    const [useAltViewer, setUseAltViewer] = useState(false);
     const unavailable = useAvailabilityProbe(resolvedUrl);
 
     const asImage = isImageEvidence(resolvedUrl) && !imageFailed;
-    const embedSrc =
-        useAltViewer && absoluteUrl
-            ? `https://docs.google.com/gview?url=${encodeURIComponent(absoluteUrl)}&embedded=true`
-            : `${resolvedUrl}#toolbar=1`;
+    const embedSrc = `${resolvedUrl}#toolbar=1`;
 
     return (
         <div className="flex flex-col gap-3">
@@ -233,25 +210,15 @@ function PaymentEvidenceViewerLoaded({
                     >
                         Descargar
                     </Button>
-                    {!asImage ? (
-                        <Button
-                            size="sm"
-                            variant="light"
-                            radius="lg"
-                            onPress={() => setUseAltViewer((value) => !value)}
-                        >
-                            {useAltViewer ? "Vista nativa" : "Vista alternativa"}
-                        </Button>
-                    ) : null}
                 </div>
             </div>
 
             {unavailable ? (
                 <Card shadow="none" className="border border-danger/20 bg-danger/5">
                     <CardBody className="p-4">
-                        <p className="text-sm text-default-700">
-                            El adjunto no está disponible en el servidor (404). Verifica
-                            que el archivo exista en uploads.
+                        <p className="text-sm text-default-700" role="alert">
+                            El comprobante no está disponible en este momento. Intenta
+                            descargarlo o recarga la página.
                         </p>
                     </CardBody>
                 </Card>
@@ -304,7 +271,6 @@ export function PaymentEvidenceViewer({
 
     if (urls.length === 1) {
         const resolvedUrl = resolveUploadUrl(urls[0]);
-        const absoluteUrl = toAbsoluteUploadUrl(urls[0]);
         if (!resolvedUrl) {
             return (
                 <p className="text-sm text-default-500">No hay comprobante disponible.</p>
@@ -314,7 +280,6 @@ export function PaymentEvidenceViewer({
             <PaymentEvidenceViewerLoaded
                 key={resolvedUrl}
                 resolvedUrl={resolvedUrl}
-                absoluteUrl={absoluteUrl}
                 label={label}
             />
         );
@@ -324,13 +289,11 @@ export function PaymentEvidenceViewer({
         <div className="flex flex-col gap-5">
             {urls.map((url, index) => {
                 const resolvedUrl = resolveUploadUrl(url);
-                const absoluteUrl = toAbsoluteUploadUrl(url);
                 if (!resolvedUrl) return null;
                 return (
                     <PaymentEvidenceViewerLoaded
                         key={`${resolvedUrl}-${index}`}
                         resolvedUrl={resolvedUrl}
-                        absoluteUrl={absoluteUrl}
                         label={`${label} · ${index + 1}`}
                     />
                 );

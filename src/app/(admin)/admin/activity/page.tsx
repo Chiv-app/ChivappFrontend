@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Card, CardBody, Chip } from "@heroui/react";
 import AdminPageHeader from "@/components/admin/admin-page-header";
@@ -41,21 +41,31 @@ function formatSubtitle(item: AdminActivityItem): string | null {
 export default function AdminActivityPage() {
     const [activity, setActivity] = useState<AdminActivityItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
-    async function load() {
+    const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             setActivity(await getAdminActivity(80));
-        } catch {
+        } catch (err) {
             setActivity([]);
+            setLoadError(
+                err instanceof Error
+                    ? err.message
+                    : "No se pudo cargar la actividad reciente.",
+            );
         } finally {
             setLoading(false);
         }
-    }
+    }, []);
 
     useEffect(() => {
-        void load();
-    }, []);
+        const t = window.setTimeout(() => {
+            void load();
+        }, 0);
+        return () => window.clearTimeout(t);
+    }, [load]);
 
     return (
         <div className="flex flex-col gap-6">
@@ -69,6 +79,20 @@ export default function AdminActivityPage() {
                 }
             />
 
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar la actividad
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={load}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
+
             <Card className="border border-default-200/70 shadow-soft">
                 <CardBody className="p-6 gap-3">
                     {loading ? (
@@ -77,7 +101,9 @@ export default function AdminActivityPage() {
                         </p>
                     ) : activity.length === 0 ? (
                         <p className="text-sm text-default-500 text-center py-8">
-                            No hay actividad reciente.
+                            {loadError
+                                ? "No se pudo cargar la actividad."
+                                : "No hay actividad reciente."}
                         </p>
                     ) : (
                         activity.map((item) => (
@@ -112,5 +138,3 @@ export default function AdminActivityPage() {
         </div>
     );
 }
-
-

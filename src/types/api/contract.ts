@@ -3,6 +3,8 @@ export type ContractOut = {
     booking_id: string;
     title: string | null;
     body: string | null;
+    body_sha256?: string | null;
+    signed_body_sha256?: string | null;
     context: Record<string, string> | null;
     /** Legacy: PDF en disco. Preferir snapshot + GET /contracts/booking/:id/pdf */
     contract_pdf_url: string | null;

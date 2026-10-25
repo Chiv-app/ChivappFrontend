@@ -68,8 +68,14 @@ export function rejectQuote(id: string, payload: BookingReject = {}) {
     });
 }
 
-export function acceptQuote(id: string) {
-    return apiFetch<BookingOut>(`/bookings/${id}/accept-quote`, { method: "POST" });
+export function acceptQuote(
+    id: string,
+    payload?: { contract_body_sha256?: string | null },
+) {
+    return apiFetch<BookingOut>(`/bookings/${id}/accept-quote`, {
+        method: "POST",
+        ...(payload ? { body: JSON.stringify(payload) } : {}),
+    });
 }
 
 export function updateRequestedRepertoire(
@@ -123,6 +129,12 @@ export function decideBookingChange(id: string, payload: BookingChangeDecision) 
     return apiFetch<BookingOut>(`/bookings/${id}/decide-change`, {
         method: "POST",
         body: JSON.stringify(payload),
+    });
+}
+
+export function cancelBookingChange(id: string) {
+    return apiFetch<BookingOut>(`/bookings/${id}/cancel-change`, {
+        method: "POST",
     });
 }
 

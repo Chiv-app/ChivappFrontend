@@ -1,5 +1,6 @@
 "use client";
 
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useMemo, useState } from "react";
 import {
     Button,
@@ -130,7 +131,7 @@ export default function BookingPendingChangesModal({
     }
 
     return (
-        <Modal
+        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             size="3xl"
@@ -195,7 +196,7 @@ export default function BookingPendingChangesModal({
                                                         {row.label}
                                                     </div>
                                                     <div>
-                                                        <p className="sm:hidden text-[11px] uppercase text-default-400 mb-0.5">
+                                                        <p className="sm:hidden text-xs uppercase text-default-500 mb-0.5">
                                                             Antes
                                                         </p>
                                                         <p className="text-default-600 break-words">
@@ -203,7 +204,7 @@ export default function BookingPendingChangesModal({
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p className="sm:hidden text-[11px] uppercase text-default-400 mb-0.5">
+                                                        <p className="sm:hidden text-xs uppercase text-default-500 mb-0.5">
                                                             Después
                                                         </p>
                                                         <p

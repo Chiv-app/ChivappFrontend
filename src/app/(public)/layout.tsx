@@ -11,10 +11,9 @@ export default function PublicLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    // El home y las vistas de músicos (listado y perfil) tienen su propio
-    // hero/barra flotante a pantalla completa (sin navbar visible al
-    // inicio): el navbar arranca oculto y solo aparece con scroll u hover
-    // cerca del borde superior, igual que en el perfil del músico.
+    // El home y las vistas de músicos (listado y perfil) manejan su propio
+    // espaciado superior para convivir con la barra flotante siempre visible
+    // (compacta antes de hacer scroll en el inicio).
     const isFullBleed = pathname === "/" || pathname.startsWith("/musicians");
 
     return (

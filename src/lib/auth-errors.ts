@@ -2,7 +2,7 @@
 // teléfono/nombre de artista ("Ya existe una cuenta con ese número de
 // teléfono") se mostraran incorrectamente como error de correo duplicado.
 export function isEmailTakenError(message: string): boolean {
-    return /correo.*(uso|usado|registrad)/i.test(message);
+    return /correo.*(uso|usado|registrad|tiene una cuenta)/i.test(message);
 }
 
 export function isUsernameTakenError(message: string): boolean {

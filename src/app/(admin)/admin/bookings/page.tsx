@@ -18,6 +18,7 @@ import {
 } from "@heroui/react";
 import AdminCancelBookingModal from "@/components/admin/admin-cancel-booking-modal";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { disableAdminBookingShare, getAdminBookings } from "@/lib/admin";
 import { formatPeruDate, formatPeruTime } from "@/lib/date-utils";
 import {
@@ -41,14 +42,20 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
 ];
 
 const REFUND_PENDING_FILTER = "refund_pending_approval";
+const PAGE_SIZE = 100;
 
 export default function AdminBookingsPage() {
     const [bookings, setBookings] = useState<AdminBookingOut[]>([]);
     const [q, setQ] = useState("");
     const [status, setStatus] = useState("all");
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
-    const [pendingRefundCount, setPendingRefundCount] = useState(0);
+    const [disableShareTarget, setDisableShareTarget] = useState<AdminBookingOut | null>(null);
+    const [disablingShare, setDisablingShare] = useState(false);
+    const [pendingRefundCount, setPendingRefundCount] = useState<number | null>(0);
 
     const loadPendingRefundCount = useCallback(async () => {
         try {
@@ -58,28 +65,61 @@ export default function AdminBookingsPage() {
             });
             setPendingRefundCount(data.length);
         } catch {
-            setPendingRefundCount(0);
+            setPendingRefundCount(null);
         }
     }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
+        setLoadError(null);
         const refundPending = status === REFUND_PENDING_FILTER;
         try {
             const data = await getAdminBookings({
                 q: q.trim() || undefined,
                 status: status === "all" || refundPending ? undefined : status,
                 refund_status: refundPending ? "pending_approval" : undefined,
-                limit: 100,
+                skip: 0,
+                limit: PAGE_SIZE,
             });
             setBookings(data);
-        } catch {
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
             setBookings([]);
+            setHasMore(false);
+            setLoadError(
+                err instanceof Error
+                    ? err.message
+                    : "No se pudieron cargar las reservas.",
+            );
         } finally {
             setLoading(false);
         }
         void loadPendingRefundCount();
     }, [q, status, loadPendingRefundCount]);
+
+    async function loadMore() {
+        setLoadingMore(true);
+        const refundPending = status === REFUND_PENDING_FILTER;
+        try {
+            const data = await getAdminBookings({
+                q: q.trim() || undefined,
+                status: status === "all" || refundPending ? undefined : status,
+                refund_status: refundPending ? "pending_approval" : undefined,
+                skip: bookings.length,
+                limit: PAGE_SIZE,
+            });
+            setBookings((current) => [...current, ...data]);
+            setHasMore(data.length === PAGE_SIZE);
+        } catch (err) {
+            addToast({
+                title: "No se pudieron cargar más reservas",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setLoadingMore(false);
+        }
+    }
 
     useEffect(() => {
         const t = window.setTimeout(() => {
@@ -123,11 +163,19 @@ export default function AdminBookingsPage() {
                     <div className="flex flex-wrap gap-2">
                         <Chip
                             as="button"
-                            color={pendingRefundCount > 0 ? "warning" : "default"}
+                            color={
+                                pendingRefundCount === null
+                                    ? "danger"
+                                    : pendingRefundCount > 0
+                                      ? "warning"
+                                      : "default"
+                            }
                             variant="flat"
                             onClick={() => setStatus(REFUND_PENDING_FILTER)}
                         >
-                            {pendingRefundCount} reembolsos por aprobar
+                            {pendingRefundCount === null
+                                ? "Reembolsos por aprobar: no disponible"
+                                : `${pendingRefundCount} reembolsos por aprobar`}
                         </Chip>
                         <Chip color={failedRefundCount > 0 ? "danger" : "default"} variant="flat">
                             {failedRefundCount} reembolsos con error
@@ -135,6 +183,20 @@ export default function AdminBookingsPage() {
                     </div>
                 }
             />
+
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar las reservas
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={load}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
 
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
@@ -175,7 +237,7 @@ export default function AdminBookingsPage() {
                         <TableColumn>Partes</TableColumn>
                         <TableColumn>Estado</TableColumn>
                         <TableColumn>Monto</TableColumn>
-                        <TableColumn>Flags</TableColumn>
+                        <TableColumn>Alertas</TableColumn>
                         <TableColumn>Acciones</TableColumn>
                     </TableHeader>
                     <TableBody
@@ -200,11 +262,11 @@ export default function AdminBookingsPage() {
                                     <TableCell>
                                         <div className="text-xs space-y-1">
                                             <p>
-                                                <span className="text-default-400">M: </span>
+                                                <span className="text-default-500">M: </span>
                                                 {booking.musician_name || "—"}
                                             </p>
                                             <p>
-                                                <span className="text-default-400">C: </span>
+                                                <span className="text-default-500">C: </span>
                                                 {booking.contractor_name || "—"}
                                             </p>
                                         </div>
@@ -273,7 +335,7 @@ export default function AdminBookingsPage() {
                                                     size="sm"
                                                     variant="flat"
                                                     onPress={() =>
-                                                        handleDisableShare(booking)
+                                                        setDisableShareTarget(booking)
                                                     }
                                                 >
                                                     Cortar share
@@ -299,6 +361,20 @@ export default function AdminBookingsPage() {
                 </Table>
             </div>
 
+            {hasMore && !loading ? (
+                <div className="flex justify-center">
+                    <Button
+                        variant="flat"
+                        color="primary"
+                        radius="lg"
+                        isLoading={loadingMore}
+                        onPress={loadMore}
+                    >
+                        Cargar más ({bookings.length} mostradas)
+                    </Button>
+                </div>
+            ) : null}
+
             <AdminCancelBookingModal
                 bookingId={cancelTargetId}
                 isOpen={cancelTargetId != null}
@@ -306,6 +382,28 @@ export default function AdminBookingsPage() {
                     if (!open) setCancelTargetId(null);
                 }}
                 onCancelled={handleCancelled}
+            />
+
+            <ConfirmDialog
+                isOpen={disableShareTarget != null}
+                onOpenChange={(open) => {
+                    if (!open) setDisableShareTarget(null);
+                }}
+                title="¿Deshabilitar enlace público de la reserva?"
+                description={`Se revocará el enlace compartido para el evento "${disableShareTarget?.event_type || "Reserva"}".`}
+                confirmLabel="Cortar share"
+                color="warning"
+                isLoading={disablingShare}
+                onConfirm={async () => {
+                    if (!disableShareTarget) return;
+                    setDisablingShare(true);
+                    try {
+                        await handleDisableShare(disableShareTarget);
+                        setDisableShareTarget(null);
+                    } finally {
+                        setDisablingShare(false);
+                    }
+                }}
             />
         </div>
     );

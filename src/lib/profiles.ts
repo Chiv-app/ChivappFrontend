@@ -7,7 +7,36 @@ import type {
     MusicianProfileOut,
     MusicianProfileUpdate,
     ProfileValidationOut,
+    UserRole,
 } from "@/types/api";
+
+export type ProfileVerificationRole = Extract<UserRole, "musician" | "contractor">;
+
+export const PROFILE_VERIFICATION_INVALIDATED_EVENT =
+    "chivapp:profile-verification-invalidated";
+
+type CacheEntry = {
+    data?: ProfileValidationOut;
+    expiresAt: number;
+    promise?: Promise<ProfileValidationOut>;
+};
+
+export const profileStatusCache = new Map<ProfileVerificationRole, CacheEntry>();
+
+export function invalidateProfileVerificationCache(role?: ProfileVerificationRole) {
+    if (role) {
+        profileStatusCache.delete(role);
+    } else {
+        profileStatusCache.clear();
+    }
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(
+            new CustomEvent(PROFILE_VERIFICATION_INVALIDATED_EVENT, {
+                detail: { role },
+            }),
+        );
+    }
+}
 
 export function getMusicianProfile() {
     return apiFetch<MusicianProfileOut>("/profiles/musician/me");
@@ -17,23 +46,29 @@ export function getMusicianProfileStatus() {
     return apiFetch<ProfileValidationOut>("/profiles/musician/me/status");
 }
 
-export function updateMusicianProfile(payload: MusicianProfileUpdate) {
-    return apiFetch<MusicianProfileOut>("/profiles/musician", {
+export async function updateMusicianProfile(payload: MusicianProfileUpdate) {
+    const res = await apiFetch<MusicianProfileOut>("/profiles/musician", {
         method: "PUT",
         body: JSON.stringify(payload),
     });
+    invalidateProfileVerificationCache("musician");
+    return res;
 }
 
-export function submitMusicianProfile() {
-    return apiFetch<MusicianProfileOut>("/profiles/musician/submit", {
+export async function submitMusicianProfile() {
+    const res = await apiFetch<MusicianProfileOut>("/profiles/musician/submit", {
         method: "POST",
     });
+    invalidateProfileVerificationCache("musician");
+    return res;
 }
 
-export function onboardMusicianProfile() {
-    return apiFetch<MusicianProfileOut>("/profiles/musician/onboard", {
+export async function onboardMusicianProfile() {
+    const res = await apiFetch<MusicianProfileOut>("/profiles/musician/onboard", {
         method: "POST",
     });
+    invalidateProfileVerificationCache("musician");
+    return res;
 }
 
 export function generateMusicianContractPdf() {
@@ -50,17 +85,21 @@ export function getContractorProfileStatus() {
     return apiFetch<ProfileValidationOut>("/profiles/contractor/me/status");
 }
 
-export function updateContractorProfile(payload: ContractorProfileUpdate) {
-    return apiFetch<ContractorProfileOut>("/profiles/contractor", {
+export async function updateContractorProfile(payload: ContractorProfileUpdate) {
+    const res = await apiFetch<ContractorProfileOut>("/profiles/contractor", {
         method: "PUT",
         body: JSON.stringify(payload),
     });
+    invalidateProfileVerificationCache("contractor");
+    return res;
 }
 
-export function submitContractorProfile() {
-    return apiFetch<ContractorProfileOut>("/profiles/contractor/submit", {
+export async function submitContractorProfile() {
+    const res = await apiFetch<ContractorProfileOut>("/profiles/contractor/submit", {
         method: "POST",
     });
+    invalidateProfileVerificationCache("contractor");
+    return res;
 }
 
 export function generateContractorContractPdf() {
@@ -132,7 +171,7 @@ export function resolveAuthRedirect(
     }
 
     if (role === "contractor") {
-        if (matchesPathPrefix(pathOnly, "/contractor")) {
+        if (matchesPathPrefix(pathOnly, "/contractor") || matchesPathPrefix(pathOnly, "/pay")) {
             return requestedRedirect;
         }
         if (

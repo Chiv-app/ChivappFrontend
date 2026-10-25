@@ -226,7 +226,7 @@ export default function MusicianDashboardOverview({
                                 className="border border-warning/30 bg-warning/5 shadow-soft"
                             >
                                 <CardBody className="flex flex-row items-center gap-4 p-5">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning-text">
                                         <Icon
                                             icon="material-symbols:calendar-add-on"
                                             width={22}
@@ -256,7 +256,7 @@ export default function MusicianDashboardOverview({
                             const href = getNotificationHref(notification, "musician");
                             const body = (
                                 <CardBody className="flex flex-row items-start gap-4 p-5">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text">
                                         <Icon
                                             icon={getNotificationIcon(notification.type)}
                                             width={20}

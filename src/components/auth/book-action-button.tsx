@@ -1,10 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useAuth } from "@/contexts/auth-context";
-import { useAuthModal } from "@/contexts/auth-modal-context";
 import { useIsClient } from "@/hooks/use-is-client";
 
 type Props = {
@@ -19,7 +17,6 @@ type Props = {
 };
 
 export default function BookActionButton({
-    musicianId,
     label = "Contratar",
     size = "lg",
     radius = "lg",
@@ -30,13 +27,6 @@ export default function BookActionButton({
 }: Props) {
     const isClient = useIsClient();
     const { user, isLoading } = useAuth();
-    const { openLogin } = useAuthModal();
-    const pathname = usePathname();
-
-    // Usa la ruta actual (slug o UUID, la que sea que esté en la barra de
-    // direcciones) en vez de reconstruirla desde el id, para no "saltar" a
-    // la URL con UUID después de loguearse.
-    const bookRedirect = `${pathname || `/musicians/${musicianId}`}?reservar=1`;
     const widthClass = fullWidth ? "w-full" : "";
 
     // Keep SSR and first client paint identical to avoid hydration mismatches.

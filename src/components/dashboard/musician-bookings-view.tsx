@@ -23,6 +23,7 @@ import { listBookings } from "@/lib/bookings";
 import {
     BOOKING_STATUS_LABELS,
     formatCurrency,
+    getBookingStatusLabel,
     isCancellableBookingStatus,
 } from "@/lib/booking-labels";
 import type { BookingOut, BookingStatus } from "@/types/api";
@@ -33,7 +34,6 @@ const PAGE_SIZE = 10;
 
 const ACTION_STATUSES: BookingStatus[] = [
     "requested",
-    "payment_pending",
     "change_pending",
 ];
 
@@ -41,6 +41,7 @@ const UPCOMING_STATUSES: BookingStatus[] = [
     "accepted",
     "contract_pending",
     "contract_signed",
+    "payment_pending",
     "payment_retained",
     // Legacy (inalcanzables): equivalen a una reserva confirmada.
     "balance_pending",
@@ -51,7 +52,10 @@ const UPCOMING_STATUSES: BookingStatus[] = [
 
 const DONE_STATUSES: BookingStatus[] = ["completed", "cancelled"];
 
-function needsMusicianAction(booking: BookingOut) {
+export function needsMusicianAction(booking: BookingOut) {
+    if (booking.viewer_role === "member") {
+        return booking.member_invite_status === "pending";
+    }
     if (booking.complaint_status === "open") return true;
     return ACTION_STATUSES.includes(booking.status);
 }
@@ -75,6 +79,7 @@ export default function MusicianBookingsView() {
     const [page, setPage] = useState(1);
     const [layout, setLayout] = useState<BookingLayoutMode>("cards");
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     const hasOwnedBookings = bookings.some((b) => b.viewer_role !== "member");
     const memberOnly =
@@ -82,6 +87,7 @@ export default function MusicianBookingsView() {
 
     async function loadBookings() {
         setIsLoading(true);
+        setLoadError(null);
         try {
             const data = await listBookings();
             setBookings(
@@ -92,12 +98,14 @@ export default function MusicianBookingsView() {
                 ),
             );
         } catch (error) {
+            const msg =
+                error instanceof Error
+                    ? error.message
+                    : "No se pudieron cargar las reservas.";
+            setLoadError(msg);
             addToast({
                 title: "Error",
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : "No se pudieron cargar las reservas.",
+                description: msg,
                 color: "danger",
             });
         } finally {
@@ -106,19 +114,13 @@ export default function MusicianBookingsView() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadBookings();
     }, []);
 
     const stats = useMemo(() => {
         const owned = bookings.filter((b) => b.viewer_role !== "member");
-        const pendingMemberInvites = bookings.filter(
-            (b) =>
-                b.viewer_role === "member" &&
-                b.member_invite_status === "pending",
-        ).length;
-        const action =
-            owned.filter((b) => needsMusicianAction(b)).length +
-            pendingMemberInvites;
+        const action = bookings.filter((b) => needsMusicianAction(b)).length;
         const upcoming = bookings.filter((b) =>
             UPCOMING_STATUSES.includes(b.status),
         ).length;
@@ -134,11 +136,8 @@ export default function MusicianBookingsView() {
         const q = query.trim().toLowerCase();
         return bookings.filter((booking) => {
             const isMember = booking.viewer_role === "member";
-            if (filter === "action") {
-                const needsAction = isMember
-                    ? booking.member_invite_status === "pending"
-                    : needsMusicianAction(booking);
-                if (!needsAction) return false;
+            if (filter === "action" && !needsMusicianAction(booking)) {
+                return false;
             }
             if (filter === "upcoming" && !UPCOMING_STATUSES.includes(booking.status)) {
                 return false;
@@ -154,6 +153,7 @@ export default function MusicianBookingsView() {
                 booking.contractor_name,
                 booking.musician_name,
                 BOOKING_STATUS_LABELS[booking.status],
+                getBookingStatusLabel(booking.status, "musician"),
                 isMember ? "integrante" : "",
             ]
                 .filter(Boolean)
@@ -164,19 +164,12 @@ export default function MusicianBookingsView() {
     }, [bookings, filter, query]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
 
     const pageItems = useMemo(() => {
-        const start = (page - 1) * PAGE_SIZE;
+        const start = (currentPage - 1) * PAGE_SIZE;
         return filtered.slice(start, start + PAGE_SIZE);
-    }, [filtered, page]);
-
-    useEffect(() => {
-        setPage(1);
-    }, [filter, query]);
-
-    useEffect(() => {
-        if (page > totalPages) setPage(totalPages);
-    }, [page, totalPages]);
+    }, [filtered, currentPage]);
 
     if (isLoading) {
         return (
@@ -235,6 +228,20 @@ export default function MusicianBookingsView() {
                 />
             ) : null}
 
+            {loadError ? (
+                <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-semibold text-danger">
+                            Error al cargar las reservas
+                        </p>
+                        <p className="text-xs text-default-600">{loadError}</p>
+                    </div>
+                    <Button size="sm" color="danger" variant="flat" onPress={loadBookings}>
+                        Reintentar
+                    </Button>
+                </div>
+            ) : null}
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                 {[
                     {
@@ -275,7 +282,7 @@ export default function MusicianBookingsView() {
                                 <Icon icon={item.icon} width={18} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[11px] sm:text-xs text-default-500">
+                                <p className="text-xs text-default-500">
                                     {item.label}
                                 </p>
                                 <p
@@ -296,7 +303,10 @@ export default function MusicianBookingsView() {
             <div className="flex flex-col gap-4">
                 <Tabs
                     selectedKey={filter}
-                    onSelectionChange={(key) => setFilter(key as FilterKey)}
+                    onSelectionChange={(key) => {
+                        setFilter(key as FilterKey);
+                        setPage(1);
+                    }}
                     variant="underlined"
                     color="primary"
                     classNames={{
@@ -312,7 +322,10 @@ export default function MusicianBookingsView() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
                     <Input
                         value={query}
-                        onValueChange={setQuery}
+                        onValueChange={(val) => {
+                            setQuery(val);
+                            setPage(1);
+                        }}
                         placeholder="Buscar por evento, cliente, ciudad o estado"
                         variant="bordered"
                         radius="lg"
@@ -396,9 +409,7 @@ export default function MusicianBookingsView() {
                             const memberPending =
                                 isMember &&
                                 booking.member_invite_status === "pending";
-                            const urgent =
-                                memberPending ||
-                                (!isMember && needsMusicianAction(booking));
+                            const urgent = needsMusicianAction(booking);
                             const canCancel =
                                 !isMember && isCancellableBookingStatus(booking.status);
 
@@ -429,12 +440,12 @@ export default function MusicianBookingsView() {
                     {filtered.length > PAGE_SIZE ? (
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                             <p className="text-sm text-default-500">
-                                Mostrando {(page - 1) * PAGE_SIZE + 1}–
-                                {Math.min(page * PAGE_SIZE, filtered.length)} de{" "}
+                                Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+                                {Math.min(currentPage * PAGE_SIZE, filtered.length)} de{" "}
                                 {filtered.length}
                             </p>
                             <Pagination
-                                page={page}
+                                page={currentPage}
                                 total={totalPages}
                                 onChange={setPage}
                                 showControls

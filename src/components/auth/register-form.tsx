@@ -8,8 +8,6 @@ import {
     Checkbox,
     Divider,
     Input,
-    
-    Tabs, Tab,
     addToast,
     Form,
 } from "@heroui/react";
@@ -29,7 +27,6 @@ type Props = {
     redirect?: string | null;
     oauthError?: string | null;
     defaultRole?: UserRole;
-    
     onSuccess?: (destination: string) => void;
 };
 
@@ -37,7 +34,6 @@ export default function RegisterForm({
     redirect = "/",
     oauthError,
     defaultRole,
-    
     onSuccess,
 }: Props) {
     const { register } = useAuth();
@@ -171,9 +167,9 @@ export default function RegisterForm({
     return (
         <div className="flex flex-col gap-4">
             {oauthError ? (
-                <p className="text-sm text-danger rounded-xl bg-danger/10 px-3 py-2 leading-relaxed">
+                <p role="alert" className="text-sm text-danger-text rounded-xl bg-danger/10 px-3 py-2 leading-relaxed">
                     {oauthError === "google_not_configured"
-                        ? "El registro con Google requiere configurar GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el servidor. Puedes crear tu cuenta con correo y contraseña."
+                        ? "El registro con Google no está disponible en este momento. Puedes crear tu cuenta con correo y contraseña."
                         : oauthError === "access_denied"
                           ? "Acceso cancelado en Google. Intenta nuevamente si deseas registrarte con tu cuenta."
                           : "No se pudo completar el registro social. Intenta de nuevo o ingresa con tu correo."}
@@ -182,7 +178,7 @@ export default function RegisterForm({
             <SocialAuthButtons intent="login" />
             <div className="flex items-center gap-3">
                 <Divider className="flex-1" />
-                <span className="text-xs font-medium text-default-400 uppercase tracking-widest">
+                <span className="text-xs font-medium text-default-500">
                     O con correo
                 </span>
                 <Divider className="flex-1" />
@@ -192,9 +188,9 @@ export default function RegisterForm({
                     <div
                         role="alert"
                         aria-live="polite"
-                        className="flex items-start gap-3 rounded-xl border border-danger-200 bg-danger-50/90 p-3.5 text-danger-800 dark:border-danger-900/40 dark:bg-danger-950/40 dark:text-danger-200 shadow-sm"
+                        className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger/10 p-3.5 text-danger-text shadow-sm"
                     >
-                        <Icon icon="solar:danger-triangle-bold" className="mt-0.5 text-lg shrink-0 text-danger-600 dark:text-danger-400" />
+                        <Icon icon="solar:danger-triangle-bold" className="mt-0.5 text-lg shrink-0 text-danger-text" />
                         <div className="flex-1 text-sm">
                             <p className="font-semibold">{formAlert.title}</p>
                             <p className="mt-0.5 text-xs opacity-90">{formAlert.description}</p>
@@ -202,33 +198,40 @@ export default function RegisterForm({
                     </div>
                 ) : null}
 
-                <div className="flex bg-transparent border border-default-200/50 p-1 rounded-md w-full">
+                <div
+                    role="group"
+                    aria-label="Tipo de cuenta"
+                    className="flex bg-transparent border border-default-200/50 p-1 rounded-md w-full"
+                >
                     <button
                         type="button"
+                        aria-pressed={role === "contractor"}
                         onClick={() => {
                             setRole("contractor");
                             setPasswordError("");
                             setFormAlert(null);
                         }}
-                        className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-sm text-xs font-semibold transition-colors ${role === "contractor" ? "bg-default-200/60 text-foreground shadow-md" : "text-default-500 hover:text-default-700"}`}
+                        className={`flex-1 flex items-center justify-center gap-2 min-h-11 rounded-sm text-xs font-semibold transition-colors ${role === "contractor" ? "bg-default-200/60 text-foreground shadow-md" : "text-default-500 hover:text-default-700"}`}
                     >
                         <Icon icon="lucide:party-popper" /> Busco músicos
                     </button>
                     <button
                         type="button"
+                        aria-pressed={role === "musician"}
                         onClick={() => {
                             setRole("musician");
                             setPasswordError("");
                             setFormAlert(null);
                         }}
-                        className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-sm text-xs font-semibold transition-colors ${role === "musician" ? "bg-default-200/60 text-foreground shadow-md" : "text-default-500 hover:text-default-700"}`}
+                        className={`flex-1 flex items-center justify-center gap-2 min-h-11 rounded-sm text-xs font-semibold transition-colors ${role === "musician" ? "bg-default-200/60 text-foreground shadow-md" : "text-default-500 hover:text-default-700"}`}
                     >
                         <Icon icon="lucide:music" /> Soy músico
                     </button>
                 </div>
 
                 <Input
-                    aria-label="Correo electrónico"
+                    label="Correo electrónico"
+                    labelPlacement="outside"
                     placeholder="correo@ejemplo.com"
                     type="email"
                     variant="bordered"
@@ -244,14 +247,15 @@ export default function RegisterForm({
                     startContent={<Icon icon="lucide:mail" className="text-default-400" width={18} />}
                     classNames={{
                         ...UI.authInput,
-                        inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                        inputWrapper: "bg-transparent border-default-200/50 shadow-none",
                     }}
                 />
 
                 {role === "contractor" && (
                     <>
                         <Input
-                            aria-label="Nombre completo"
+                            label="Nombre completo"
+                            labelPlacement="outside"
                             placeholder="Nombre y apellido"
                             type="text"
                             variant="bordered"
@@ -267,13 +271,15 @@ export default function RegisterForm({
                             startContent={<Icon icon="lucide:user" className="text-default-400" width={18} />}
                             classNames={{
                                 ...UI.authInput,
-                                inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                                inputWrapper: "bg-transparent border-default-200/50 shadow-none",
                             }}
                         />
                         <Input
-                            aria-label="Número de celular"
-                            placeholder="Número de celular"
+                            label="Número de celular"
+                            labelPlacement="outside"
+                            placeholder="Ej. 999 888 777"
                             type="tel"
+                            inputMode="tel"
                             variant="bordered"
                             radius="md"
                             size="lg"
@@ -287,59 +293,61 @@ export default function RegisterForm({
                             startContent={<Icon icon="lucide:phone" className="text-default-400" width={18} />}
                             classNames={{
                                 ...UI.authInput,
-                                inputWrapper: "bg-transparent border-default-200/50 shadow-none"
+                                inputWrapper: "bg-transparent border-default-200/50 shadow-none",
                             }}
                         />
                     </>
                 )}
 
-                    <PasswordInput
-                        aria-label="Contraseña"
-                        placeholder="Contraseña"
-                        variant="bordered"
-                        radius="md"
-                        size="lg"
-                        value={password}
-                        onValueChange={(val) => {
-                            setPassword(val);
-                            setPasswordError("");
-                            setFormAlert(null);
-                        }}
-                        isRequired
-                        autoComplete="new-password"
-                        startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
-                        classNames={{
-                            ...UI.authInput,
-                            inputWrapper: "bg-transparent border-default-200/50 shadow-none"
-                        }}
-                    />
+                <PasswordInput
+                    label="Contraseña"
+                    labelPlacement="outside"
+                    placeholder="Crea una contraseña"
+                    variant="bordered"
+                    radius="md"
+                    size="lg"
+                    value={password}
+                    onValueChange={(val) => {
+                        setPassword(val);
+                        setPasswordError("");
+                        setFormAlert(null);
+                    }}
+                    isRequired
+                    autoComplete="new-password"
+                    startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
+                    classNames={{
+                        ...UI.authInput,
+                        inputWrapper: "bg-transparent border-default-200/50 shadow-none",
+                    }}
+                />
 
-                    <PasswordInput
-                        aria-label="Validar contraseña"
-                        placeholder="Confirmar contraseña"
-                        variant="bordered"
-                        radius="md"
-                        size="lg"
-                        value={confirmPassword}
-                        onValueChange={(val) => {
-                            setConfirmPassword(val);
-                            setPasswordError("");
-                            setFormAlert(null);
-                        }}
-                        isRequired
-                        autoComplete="new-password"
-                        isInvalid={passwordsDoNotMatch || Boolean(passwordError)}
-                        errorMessage={
-                            passwordsDoNotMatch
-                                ? "Las contraseñas no coinciden"
-                                : passwordError
-                        }
-                        startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
-                        classNames={{
-                            ...UI.authInput,
-                            inputWrapper: "bg-transparent border-default-200/50 shadow-none"
-                        }}
-                    />
+                <PasswordInput
+                    label="Repetir contraseña"
+                    labelPlacement="outside"
+                    placeholder="Repite tu contraseña"
+                    variant="bordered"
+                    radius="md"
+                    size="lg"
+                    value={confirmPassword}
+                    onValueChange={(val) => {
+                        setConfirmPassword(val);
+                        setPasswordError("");
+                        setFormAlert(null);
+                    }}
+                    isRequired
+                    autoComplete="new-password"
+                    isInvalid={passwordsDoNotMatch || Boolean(passwordError)}
+                    errorMessage={
+                        passwordsDoNotMatch
+                            ? "Las contraseñas no coinciden"
+                            : passwordError
+                    }
+                    startContent={<Icon icon="lucide:lock" className="text-default-400" width={18} />}
+                    classNames={{
+                        ...UI.authInput,
+                        inputWrapper: "bg-transparent border-default-200/50 shadow-none",
+                    }}
+                />
 
                 <PasswordRequirementsChecklist
                     password={password}
@@ -359,7 +367,7 @@ export default function RegisterForm({
                         target="_blank"
                         className="text-primary underline underline-offset-2"
                     >
-                        Términos y Condiciones
+                        Términos y condiciones
                     </Link>{" "}
                     y la{" "}
                     <Link
@@ -367,7 +375,7 @@ export default function RegisterForm({
                         target="_blank"
                         className="text-primary underline underline-offset-2"
                     >
-                        Política de Privacidad
+                        Política de privacidad
                     </Link>{" "}
                     de Chivapp.
                 </Checkbox>
@@ -383,8 +391,16 @@ export default function RegisterForm({
                 >
                     Crear cuenta gratis
                 </Button>
+                {(!acceptedTerms || !passwordEvaluation.isValid) && (
+                    <p className="text-xs text-default-500 text-center">
+                        {!passwordEvaluation.isValid && !acceptedTerms
+                            ? "Completa los requisitos de contraseña y acepta los términos para activar el botón."
+                            : !passwordEvaluation.isValid
+                              ? "Completa los requisitos de contraseña para continuar."
+                              : "Acepta los términos y condiciones para continuar."}
+                    </p>
+                )}
             </Form>
-            
         </div>
     );
 }

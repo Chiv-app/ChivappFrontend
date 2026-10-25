@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { formatPeruDateTime } from "@/lib/date-utils";
-import { Button, Card, CardBody, Chip, Textarea, addToast } from "@heroui/react";
+import { Button, Chip, Textarea, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import FileUploadField from "@/components/ui/file-upload-field";
 import {
@@ -62,7 +62,7 @@ function ReviewTimelineItem({
                             </Chip>
                         ) : null}
                     </div>
-                    <p className="text-xs text-default-400">
+                    <p className="text-xs text-default-500">
                         {formatReviewTime(review.created_at)}
                     </p>
                 </div>
@@ -71,7 +71,7 @@ function ReviewTimelineItem({
                         {review.comment}
                     </p>
                 ) : (
-                    <p className="mt-2 text-sm text-default-400 italic">
+                    <p className="mt-2 text-sm text-default-500 italic">
                         Sin comentario — solo reacción
                     </p>
                 )}
@@ -105,36 +105,58 @@ export default function BookingReviewsTimeline({
 }: Props) {
     const [reviews, setReviews] = useState<BookingReviewOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [rating, setRating] = useState(5);
     const [emoji, setEmoji] = useState("🤩");
     const [comment, setComment] = useState("");
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
-    function notifyChanged(next: BookingReviewOut[]) {
-        onReviewsChanged?.(
-            next.length,
-            next.some((review) => Boolean(review.is_final)),
-        );
-    }
+    const notifyChanged = useCallback(
+        (next: BookingReviewOut[]) => {
+            onReviewsChanged?.(
+                next.length,
+                next.some((review) => Boolean(review.is_final)),
+            );
+        },
+        [onReviewsChanged],
+    );
 
-    function refreshReviews() {
+    const refreshReviews = useCallback(() => {
+        setLoadError(null);
         return listBookingReviews(booking.id)
             .then((data) => {
                 setReviews(data);
                 notifyChanged(data);
             })
-            .catch(() => {
+            .catch((err) => {
                 setReviews([]);
-                notifyChanged([]);
+                setLoadError(
+                    err instanceof Error && err.message
+                        ? err.message
+                        : "No pudimos cargar las reseñas del evento.",
+                );
             });
-    }
+    }, [booking.id, notifyChanged]);
 
-    useEffect(() => {
+    const handleRetry = useCallback(() => {
         setIsLoading(true);
         refreshReviews().finally(() => setIsLoading(false));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [booking.id, booking.status]);
+    }, [refreshReviews]);
+
+    useEffect(() => {
+        let cancelled = false;
+        void Promise.resolve().then(() => {
+            if (!cancelled) setIsLoading(true);
+        });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        refreshReviews().finally(() => {
+            if (!cancelled) setIsLoading(false);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [booking.status, refreshReviews]);
 
     async function handleAddReaction(event: FormEvent) {
         event.preventDefault();
@@ -175,107 +197,122 @@ export default function BookingReviewsTimeline({
 
     return (
         <div className="border border-default-200/70 shadow-soft rounded-2xl bg-content1 p-6 flex flex-col gap-6">
-                {canAdd ? (
-                    <form
-                        onSubmit={handleAddReaction}
-                        className="rounded-2xl border border-secondary/25 bg-secondary/5 p-4 flex flex-col gap-4"
-                    >
-                        <div className="flex items-center gap-2">
-                            <Icon
-                                icon="material-symbols:add-comment"
-                                width={20}
-                                className="text-secondary"
-                            />
-                            <p className="font-semibold text-foreground">
-                                Nueva reacción (opcional)
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {[1, 2, 3, 4, 5].map((value) => (
-                                <Button
-                                    key={value}
-                                    size="sm"
-                                    radius="lg"
-                                    variant={rating === value ? "solid" : "bordered"}
-                                    color="warning"
-                                    onPress={() => setRating(value)}
-                                >
-                                    {value}★
-                                </Button>
-                            ))}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            {REVIEW_EMOJIS.map((item) => (
-                                <Button
-                                    key={item}
-                                    size="sm"
-                                    radius="lg"
-                                    variant={emoji === item ? "solid" : "flat"}
-                                    color="secondary"
-                                    onPress={() => setEmoji(item)}
-                                >
-                                    {item}
-                                </Button>
-                            ))}
-                        </div>
-                        <Textarea
-                            label="Comentario (opcional)"
-                            placeholder="¿Qué está pasando en el show?"
-                            value={comment}
-                            onValueChange={setComment}
-                            variant="bordered"
-                            minRows={2}
+            {canAdd ? (
+                <form
+                    onSubmit={handleAddReaction}
+                    className="rounded-2xl border border-secondary/25 bg-secondary/5 p-4 flex flex-col gap-4"
+                >
+                    <div className="flex items-center gap-2">
+                        <Icon
+                            icon="material-symbols:add-comment"
+                            width={20}
+                            className="text-secondary-text"
                         />
-                        <FileUploadField
-                            label="Foto del momento"
-                            value={photoUrl}
-                            onChange={setPhotoUrl}
-                            accept="image/jpeg,image/png,image/webp"
-                        />
-                        {photoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={resolveUploadUrl(photoUrl) ?? undefined}
-                                alt="Vista previa"
-                                className="max-h-40 w-fit rounded-xl border border-default-200 object-cover"
-                            />
-                        ) : null}
-                        <Button
-                            type="submit"
-                            color="secondary"
-                            radius="lg"
-                            isLoading={isSaving}
-                            className="font-semibold w-fit"
-                            startContent={
-                                <Icon icon="material-symbols:send" width={18} />
-                            }
-                        >
-                            Publicar en el timeline
-                        </Button>
-                    </form>
-                ) : null}
-
-                {isLoading ? (
-                    <div className="h-40 rounded-2xl bg-default-100 animate-pulse" />
-                ) : reviews.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-default-300 px-4 py-8 text-center">
-                        <p className="text-sm text-default-500">
-                            {role === "contractor"
-                                ? "Aún no hay reacciones. La reseña final se pedirá al finalizar."
-                                : "Todavía no hay reseñas del contratista."}
+                        <p className="font-semibold text-foreground">
+                            Nueva reacción (opcional)
                         </p>
                     </div>
-                ) : (
-                    <ol className="flex flex-col">
-                        {reviews.map((review, index) => (
-                            <ReviewTimelineItem
-                                key={review.id}
-                                review={review}
-                                isLast={index === reviews.length - 1}
-                            />
+                    <div className="flex flex-wrap gap-2">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                            <Button
+                                key={value}
+                                size="sm"
+                                radius="lg"
+                                variant={rating === value ? "solid" : "bordered"}
+                                color="warning"
+                                onPress={() => setRating(value)}
+                            >
+                                {value}★
+                            </Button>
                         ))}
-                    </ol>
-                )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {REVIEW_EMOJIS.map((item) => (
+                            <Button
+                                key={item}
+                                size="sm"
+                                radius="lg"
+                                variant={emoji === item ? "solid" : "flat"}
+                                color="secondary"
+                                onPress={() => setEmoji(item)}
+                            >
+                                {item}
+                            </Button>
+                        ))}
+                    </div>
+                    <Textarea
+                        label="Comentario (opcional)"
+                        placeholder="¿Qué está pasando en el show?"
+                        value={comment}
+                        onValueChange={setComment}
+                        variant="bordered"
+                        minRows={2}
+                    />
+                    <FileUploadField
+                        label="Foto del momento"
+                        value={photoUrl}
+                        onChange={setPhotoUrl}
+                        accept="image/jpeg,image/png,image/webp"
+                    />
+                    {photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={resolveUploadUrl(photoUrl) ?? undefined}
+                            alt="Vista previa"
+                            className="max-h-40 w-fit rounded-xl border border-default-200 object-cover"
+                        />
+                    ) : null}
+                    <Button
+                        type="submit"
+                        color="secondary"
+                        radius="lg"
+                        isLoading={isSaving}
+                        className="font-semibold w-fit"
+                        startContent={
+                            <Icon icon="material-symbols:send" width={18} />
+                        }
+                    >
+                        Publicar en el timeline
+                    </Button>
+                </form>
+            ) : null}
+
+            {isLoading ? (
+                <div className="h-40 rounded-2xl bg-default-100 animate-pulse" />
+            ) : loadError ? (
+                <div
+                    role="alert"
+                    className="rounded-2xl border border-danger/30 bg-danger/10 px-4 py-5 flex flex-col items-center gap-3 text-center"
+                >
+                    <p className="text-sm text-danger-text">{loadError}</p>
+                    <Button
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        onPress={handleRetry}
+                    >
+                        Reintentar
+                    </Button>
+                </div>
+            ) : reviews.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-default-300 px-4 py-8 text-center">
+                    <p className="text-sm text-default-500">
+                        {role === "contractor"
+                            ? "Aún no hay reacciones. La reseña final se pedirá al finalizar."
+                            : "Todavía no hay reseñas del contratista."}
+                    </p>
+                </div>
+            ) : (
+                <ol className="flex flex-col">
+                    {reviews.map((review, index) => (
+                        <ReviewTimelineItem
+                            key={review.id}
+                            review={review}
+                            isLast={index === reviews.length - 1}
+                        />
+                    ))}
+                </ol>
+            )}
         </div>
     );
 }

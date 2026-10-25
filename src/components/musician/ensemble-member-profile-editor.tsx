@@ -12,8 +12,9 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import ChipListInput from "@/components/ui/chip-list-input";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { useAuth } from "@/contexts/auth-context";
-import { getMusicianProfile, updateMusicianProfile } from "@/lib/profiles";
+import { updateMusicianProfile } from "@/lib/profiles";
 import { COMMON_INSTRUMENTS, getInstrumentIcon } from "@/lib/instrument-icons";
 import type { MusicianProfileOut } from "@/types/api";
 
@@ -34,8 +35,10 @@ export default function EnsembleMemberProfileEditor({
     
     const [isSaving, setIsSaving] = useState(false);
     const [isUpgrading, setIsUpgrading] = useState(false);
+    const [isUpgradeConfirmOpen, setIsUpgradeConfirmOpen] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFullname(user?.fullname || "");
         setPhone(user?.phone || "");
         setInstruments(profile.instruments || []);
@@ -71,20 +74,18 @@ export default function EnsembleMemberProfileEditor({
     };
 
     const handleUpgrade = async () => {
-        if (!window.confirm("¿Estás seguro que deseas convertir tu perfil a PRO? Deberás completar información adicional como precios y fotos para recibir reservaciones.")) {
-            return;
-        }
         setIsUpgrading(true);
         try {
             await updateMusicianProfile({
                 is_ensemble_only: false,
-                stage_name: profile.stage_name || fullname || "Mi Agrupación",
+                stage_name: profile.stage_name || fullname || "Mi agrupación",
             });
             addToast({
                 title: "¡Perfil Pro habilitado!",
                 description: "Ahora debes completar el resto de tus datos.",
                 color: "success",
             });
+            setIsUpgradeConfirmOpen(false);
             onUpgradeToPro();
         } catch (error: unknown) {
             addToast({
@@ -99,9 +100,19 @@ export default function EnsembleMemberProfileEditor({
 
     return (
         <div className="space-y-6">
+            <ConfirmDialog
+                isOpen={isUpgradeConfirmOpen}
+                onOpenChange={setIsUpgradeConfirmOpen}
+                title="Convertir a perfil Pro"
+                description="Al convertir tu perfil a Pro, deberás completar información adicional como precios, DNI y fotos para aparecer en el directorio y recibir reservaciones."
+                confirmLabel="Convertir a perfil Pro"
+                color="primary"
+                isLoading={isUpgrading}
+                onConfirm={handleUpgrade}
+            />
             <Card className="shadow-sm border-default-200">
                 <CardHeader className="flex flex-col items-start gap-1 pb-0 px-6 pt-6">
-                    <h2 className="text-xl font-bold text-default-900">Perfil de Integrante</h2>
+                    <h2 className="text-xl font-bold text-default-900">Perfil de integrante</h2>
                     <p className="text-sm text-default-500">
                         Como integrante de una agrupación, tienes un perfil básico.
                     </p>
@@ -126,11 +137,11 @@ export default function EnsembleMemberProfileEditor({
                         />
                         <Input
                             label="Teléfono"
-                            placeholder="+52 55 1234 5678"
+                            placeholder="+51 987 654 321"
                             value={phone}
                             onValueChange={setPhone}
                             variant="bordered"
-                            description="Debe incluir código de país (ej. +52 o +57)"
+                            description="Incluye el código de país (ej. +51 para Perú)"
                         />
                     </div>
 
@@ -173,10 +184,10 @@ export default function EnsembleMemberProfileEditor({
                         size="lg"
                         className="shrink-0"
                         isLoading={isUpgrading}
-                        onPress={handleUpgrade}
+                        onPress={() => setIsUpgradeConfirmOpen(true)}
                         startContent={!isUpgrading && <Icon icon="material-symbols:rocket-launch" />}
                     >
-                        Convertir Perfil Pro
+                        Convertir a perfil Pro
                     </Button>
                 </CardBody>
             </Card>

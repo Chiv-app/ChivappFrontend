@@ -30,8 +30,6 @@ type Props = {
     backHref?: string;
 };
 
-const TRANSITION = "duration-250 ease-out";
-
 const PHASE_ICON: Record<string, string> = {
     request: "material-symbols:edit-note-outline-rounded",
     quote: "material-symbols:request-quote-outline-rounded",
@@ -195,14 +193,14 @@ function PhaseRail({
                     />
                 </li>
 
-                                {steps.map((step, index) => (
+                {steps.map((step) => (
                     <li
                         key={step.id}
                         className="relative z-10 flex flex-col items-center text-center min-w-0 px-1"
                     >
                         <button
                             type="button"
-                            className="flex flex-col items-center group focus:outline-none transition-transform active:scale-95 cursor-pointer w-full"
+                            className="flex flex-col items-center group rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-transform active:scale-95 cursor-pointer w-full"
                             aria-label={`Ver fase ${step.title}`}
                         >
                             <div
@@ -215,13 +213,13 @@ function PhaseRail({
                             <span
                                 className={`${compact ? "mt-0.5" : "mt-2"} w-full font-semibold leading-tight line-clamp-2 transition-colors group-hover:text-foreground ${
                                     compact
-                                        ? "text-[9px] sm:text-[10px] md:text-xs"
-                                        : "text-[10px] sm:text-xs"
+                                        ? "text-xs"
+                                        : "text-xs"
                                 } ${
                                     step.state === "current"
-                                        ? "text-primary group-hover:text-primary-500"
+                                        ? "text-primary-text"
                                         : step.state === "done"
-                                          ? "text-success group-hover:text-success-500"
+                                          ? "text-success-text"
                                           : step.state === "skipped"
                                             ? "text-default-400 group-hover:text-default-600"
                                             : "text-default-600 group-hover:text-default-800"
@@ -240,7 +238,7 @@ function PhaseRail({
                                 )}
                             </span>
                             {!compact ? (
-                                <span className="mt-1 text-[9px] sm:text-[10px] tabular-nums text-default-400 group-hover:text-default-500 transition-colors opacity-0">
+                                <span className="mt-1 text-xs tabular-nums text-default-500 transition-colors opacity-0">
                                     -
                                 </span>
                             ) : null}
@@ -263,23 +261,22 @@ function CollapsedPhaseRail({
                 const isLast = index === steps.length - 1;
                 const isDone = step.state === "done";
                 const isCurrent = step.state === "current";
-                const isSkipped = step.state === "skipped";
 
                 return (
                     <div key={step.id} className="flex items-center gap-1 shrink-0">
                         <button
                             type="button"
-                            className={`flex items-center gap-1 focus:outline-none transition-transform active:scale-95 cursor-pointer rounded-full px-1.5 sm:px-2 py-1 ${
+                            className={`flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus transition-transform active:scale-95 cursor-pointer rounded-full px-1.5 sm:px-2 py-1 ${
                                 isCurrent
-                                    ? "bg-primary/20 text-primary border border-primary/30"
+                                    ? "bg-primary/20 text-primary-text border border-primary/30"
                                     : isDone
-                                      ? "text-success hover:bg-success/10"
+                                      ? "text-success-text hover:bg-success/10"
                                       : "text-default-500 hover:text-default-700"
                             }`}
                             title={step.title}
                         >
                             <span
-                                className={`flex items-center justify-center size-5 sm:size-6 rounded-full text-[10px] sm:text-xs font-bold ${
+                                className={`flex items-center justify-center size-5 sm:size-6 rounded-full text-xs font-bold ${
                                     isDone
                                         ? "bg-success text-success-foreground"
                                         : isCurrent
@@ -369,7 +366,7 @@ function ExpandedTimelineCard({
                     <div className="flex items-start gap-2.5 min-w-0">
                         {backHref ? <TimelineBackButton href={backHref} /> : null}
                         <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                                 Timeline
                             </p>
                             <h2 className="text-base sm:text-lg font-bold text-foreground mt-0.5">
@@ -418,7 +415,7 @@ function ExpandedTimelineCard({
                             : "border-default-200 bg-default-50/70"
                     }`}
                 >
-                    <p className="text-[11px] text-default-500">
+                    <p className="text-xs text-default-500">
                         {status === "completed" ? "Estado" : "Siguiente paso"}
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-snug mt-0.5">
@@ -451,7 +448,10 @@ function StickyCollapsingHorizontalTimeline({
     const expandedRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        setPortalTarget(document.getElementById("navbar-center-slot"));
+        const raf = requestAnimationFrame(() => {
+            setPortalTarget(document.getElementById("navbar-center-slot"));
+        });
+        return () => cancelAnimationFrame(raf);
     }, []);
 
     useEffect(() => {
@@ -573,7 +573,7 @@ function VerticalTimeline({
             }`}
         >
             <div className="bg-gradient-to-b from-primary/15 via-primary/5 to-transparent px-4 py-4 border-b border-default-200">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                     Timeline
                 </p>
                 <h3 className="text-base font-bold text-foreground mt-1">
@@ -610,7 +610,7 @@ function VerticalTimeline({
                             : "border-primary/20"
                     }`}
                 >
-                    <p className="text-[11px] text-default-500">
+                    <p className="text-xs text-default-500">
                         {status === "completed" ? "Estado" : "Tu turno"}
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-snug mt-0.5">

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Card, CardBody, Chip, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import BookingLocationLinks from "@/components/booking/booking-location-links";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import {
     formatBookingDate,
     formatBookingTime,
@@ -12,8 +14,6 @@ import {
 import {
     contractorPayableTotal,
     platformFeeAmount,
-    platformAppFeeAmount,
-    platformGatewayFeeAmount,
 } from "@/lib/platform-fee";
 import type { BookingOut } from "@/types/api";
 
@@ -25,35 +25,6 @@ type Props = {
     onReject: () => void;
 };
 
-function PriceStat({
-    label,
-    value,
-    highlight = false,
-}: {
-    label: string;
-    value: string;
-    highlight?: boolean;
-}) {
-    return (
-        <div
-            className={`rounded-2xl border p-4 ${
-                highlight
-                    ? "border-primary/30 bg-primary/10"
-                    : "border-default-200 bg-content1"
-            }`}
-        >
-            <p className="text-xs uppercase tracking-wide text-default-500">{label}</p>
-            <p
-                className={`mt-1 font-bold ${
-                    highlight ? "text-2xl text-primary" : "text-lg text-foreground"
-                }`}
-            >
-                {value}
-            </p>
-        </div>
-    );
-}
-
 export default function BookingQuoteReviewCard({
     booking,
     isAccepting,
@@ -61,10 +32,9 @@ export default function BookingQuoteReviewCard({
     onAccept,
     onReject,
 }: Props) {
+    const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
     const total = booking.price_agreed != null ? Number(booking.price_agreed) : null;
     const fee = platformFeeAmount(booking);
-    const appFee = platformAppFeeAmount(booking);
-    const gatewayFee = platformGatewayFeeAmount(booking);
     const contractorTotal = contractorPayableTotal(booking);
     const quotedAt = formatQuotedAt(booking.quoted_at);
 
@@ -197,9 +167,9 @@ export default function BookingQuoteReviewCard({
 
                 <Divider />
 
-                <div className="rounded-2xl border border-default-200 bg-default-50/60 p-4">
-                    <p className="text-sm font-semibold text-foreground mb-3">
-                        ¿Qué pasa después?
+                <div className="rounded-2xl border border-default-200 bg-default-50/60 p-4 space-y-3">
+                    <p className="text-sm font-semibold text-foreground">
+                        ¿Qué pasa después y cómo te protege Chivapp?
                     </p>
                     <ol className="flex flex-col gap-2 text-sm text-default-600">
                         <li className="flex items-start gap-2">
@@ -208,7 +178,15 @@ export default function BookingQuoteReviewCard({
                                 width={18}
                                 className="text-success shrink-0 mt-0.5"
                             />
-                            Si aceptas, revisarás el contrato del músico, firmarás y realizarás el pago de forma segura con Mercado Pago.
+                            Si aceptas, pasarás al contrato digital para elegir repertorio, firmar y pagar de forma segura con Mercado Pago (aún no se realiza ningún cobro en este paso).
+                        </li>
+                        <li className="flex items-start gap-2">
+                            <Icon
+                                icon="material-symbols:shield-lock"
+                                width={18}
+                                className="text-primary shrink-0 mt-0.5"
+                            />
+                            Tu dinero queda protegido en custodia hasta que el evento se realice. Si el músico cancela, recibes el 100% de reembolso; si tú cancelas después de pagar, la devolución se calcula según la anticipación al evento estipulada en el contrato.
                         </li>
                         <li className="flex items-start gap-2">
                             <Icon
@@ -216,7 +194,7 @@ export default function BookingQuoteReviewCard({
                                 width={18}
                                 className="text-danger shrink-0 mt-0.5"
                             />
-                            Si rechazas, la reserva se cancelará y el músico será notificado.
+                            Si rechazas esta propuesta, la solicitud se cerrará sin costo y el músico será notificado.
                         </li>
                     </ol>
                 </div>
@@ -228,11 +206,25 @@ export default function BookingQuoteReviewCard({
                         radius="lg"
                         size="lg"
                         isLoading={isRejecting}
-                        onPress={onReject}
+                        onPress={() => setIsRejectConfirmOpen(true)}
                         className="font-semibold w-full sm:w-auto sm:min-w-44"
                     >
                         Rechazar cotización
                     </Button>
+                    <ConfirmDialog
+                        isOpen={isRejectConfirmOpen}
+                        onOpenChange={setIsRejectConfirmOpen}
+                        title="¿Rechazar esta cotización?"
+                        description="Si rechazas esta propuesta, la solicitud se cerrará sin costo y el músico será notificado."
+                        confirmLabel="Rechazar cotización"
+                        cancelLabel="Volver"
+                        color="danger"
+                        isLoading={isRejecting}
+                        onConfirm={() => {
+                            setIsRejectConfirmOpen(false);
+                            onReject();
+                        }}
+                    />
                     <Button
                         color="primary"
                         radius="lg"

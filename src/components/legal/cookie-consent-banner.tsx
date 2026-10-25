@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
@@ -22,6 +22,28 @@ function hasConsented(): boolean {
 export default function CookieConsentBanner() {
     const isClient = useIsClient();
     const [dismissed, setDismissed] = useState(false);
+    const bannerRef = useRef<HTMLDivElement | null>(null);
+    const isVisible = isClient && !dismissed && !hasConsented();
+
+    useEffect(() => {
+        if (!isVisible) {
+            document.documentElement.style.removeProperty("--cookie-h");
+            return;
+        }
+        const el = bannerRef.current;
+        if (!el) return;
+        const updateHeight = () => {
+            const h = el.getBoundingClientRect().height;
+            document.documentElement.style.setProperty("--cookie-h", `${Math.ceil(h)}px`);
+        };
+        updateHeight();
+        const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateHeight) : null;
+        ro?.observe(el);
+        return () => {
+            ro?.disconnect();
+            document.documentElement.style.removeProperty("--cookie-h");
+        };
+    }, [isVisible]);
 
     function handleAccept() {
         try {
@@ -37,16 +59,34 @@ export default function CookieConsentBanner() {
         setDismissed(true);
     }
 
+    function handleReject() {
+        try {
+            window.localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify({ accepted: false, at: new Date().toISOString() }),
+            );
+        } catch {
+            // ignore
+        }
+        window.dispatchEvent(new Event(COOKIE_CONSENT_EVENT));
+        setDismissed(true);
+    }
+
     // SSR + hydration: nada hasta que el cliente pueda leer localStorage.
-    if (!isClient || dismissed || hasConsented()) return null;
+    if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-default-200/70 bg-content1/95 backdrop-blur-md shadow-elevated">
+        <div
+            ref={bannerRef}
+            role="region"
+            aria-label="Preferencias de cookies"
+            className="fixed inset-x-0 bottom-0 z-[60] border-t border-default-200/70 bg-content1/95 backdrop-blur-md shadow-elevated"
+        >
             <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-start gap-2 text-sm text-foreground max-w-3xl">
                     <Icon
                         icon="material-symbols:cookie-outline"
-                        className="text-lg text-primary shrink-0 mt-0.5"
+                        className="text-lg text-primary-text shrink-0 mt-0.5"
                     />
                     <p>
                         Usamos una cookie esencial para mantener tu sesión iniciada y, si
@@ -54,21 +94,32 @@ export default function CookieConsentBanner() {
                         servicio.{" "}
                         <Link
                             href="/legal/privacidad#cookies"
-                            className="underline underline-offset-2 hover:text-primary"
+                            className="underline underline-offset-2 hover:text-primary-text"
                         >
                             Más información
                         </Link>
                     </p>
                 </div>
-                <Button
-                    size="sm"
-                    color="primary"
-                    radius="lg"
-                    className="shrink-0"
-                    onPress={handleAccept}
-                >
-                    Aceptar
-                </Button>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    <Button
+                        size="md"
+                        variant="bordered"
+                        radius="lg"
+                        className="min-h-11 font-semibold"
+                        onPress={handleReject}
+                    >
+                        Solo esenciales
+                    </Button>
+                    <Button
+                        size="md"
+                        color="primary"
+                        radius="lg"
+                        className="min-h-11 font-semibold"
+                        onPress={handleAccept}
+                    >
+                        Aceptar analítica
+                    </Button>
+                </div>
             </div>
         </div>
     );

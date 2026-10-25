@@ -1,17 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { Button, Card, CardBody, Divider } from "@heroui/react";
+import { useEffect, useState } from "react";
+import { Button, Card, CardBody } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import ContractPdfViewer from "@/components/booking/contract-pdf-viewer";
 import { getBookingContractPdfBlob } from "@/lib/contracts";
-import { normalizeContractBodyToHtml } from "@/lib/contract-templates";
-import { sanitizeContractHtml } from "@/lib/sanitize-html";
 import { resolveUploadUrl } from "@/lib/uploads";
-import { formatCurrency, formatBookingDate } from "@/lib/booking-labels";
-import { formatDateTime } from "@/lib/date-utils";
-import type { BookingOut, ContractOut } from "@/types/api";
+import type { ContractOut } from "@/types/api";
 
 type Props = {
     contract: ContractOut | null;
@@ -22,14 +16,6 @@ type Props = {
     /** Por defecto usa el endpoint del participante; el admin pasa su propia función. */
     fetchPdfBlob?: (bookingId: string) => Promise<Blob>;
 };
-
-function contextValue(
-    context: Record<string, string> | null | undefined,
-    key: string,
-): string | null {
-    const value = context?.[key]?.trim();
-    return value && value !== "—" ? value : null;
-}
 
 export default function ContractDocumentView({
     contract,
@@ -44,39 +30,10 @@ export default function ContractDocumentView({
     const [isLoadingPdf, setIsLoadingPdf] = useState(false);
     const [showPdfPreview, setShowPdfPreview] = useState(false);
 
-    const hasSnapshot = Boolean(contract?.title && contract?.body);
     const legacyPdfUrl =
         contract?.contract_signed_pdf_url || contract?.contract_pdf_url || null;
     const contractorSignatureUrl = resolveUploadUrl(contract?.contractor_signature_url);
     const musicianSignatureUrl = resolveUploadUrl(contract?.musician_signature_url);
-    const bodyHtml = useMemo(
-        () =>
-            contract?.body
-                ? sanitizeContractHtml(normalizeContractBodyToHtml(contract.body))
-                : "",
-        [contract?.body],
-    );
-
-    const meta = useMemo(() => {
-        const ctx = contract?.context;
-        if (!ctx) return [];
-        return [
-            { label: "Artista", value: contextValue(ctx, "{{nombre_artista}}") },
-            { label: "Cliente", value: contextValue(ctx, "{{nombre_cliente}}") },
-            {
-                label: "Evento",
-                value: [
-                    contextValue(ctx, "{{tipo_evento}}"),
-                    contextValue(ctx, "{{fecha_evento}}"),
-                    contextValue(ctx, "{{hora_evento}}"),
-                ]
-                    .filter(Boolean)
-                    .join(" · "),
-            },
-            { label: "Lugar", value: contextValue(ctx, "{{lugar_evento}}") },
-            { label: "Monto", value: contextValue(ctx, "{{monto_total}}") },
-        ].filter((item) => item.value);
-    }, [contract?.context]);
 
     useEffect(() => {
         return () => {
@@ -85,6 +42,7 @@ export default function ContractDocumentView({
     }, [pdfObjectUrl]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setShowPdfPreview(false);
         setPdfError(null);
         if (pdfObjectUrl) {
@@ -114,17 +72,6 @@ export default function ContractDocumentView({
         } finally {
             setIsLoadingPdf(false);
         }
-    }
-
-    async function handleDownloadPdf() {
-        const url = await ensurePdfObjectUrl();
-        if (!url) return;
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = contract?.contractor_signed
-            ? `contrato-firmado-${bookingId}.pdf`
-            : `contrato-${bookingId}.pdf`;
-        link.click();
     }
 
     async function handleTogglePdfPreview() {

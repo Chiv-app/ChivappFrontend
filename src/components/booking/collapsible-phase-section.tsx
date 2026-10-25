@@ -36,17 +36,16 @@ export default function CollapsiblePhaseSection({
 
     const isSuccess = customBadgeColor === "success" || (!customBadgeColor && done);
     const isWarning = customBadgeColor === "warning" || (!customBadgeColor && !done);
-    const isDefault = customBadgeColor === "default";
 
     const badgeText = customBadgeLabel || (done ? doneLabel : pendingLabel);
 
     let iconColorClass = "bg-default-100 text-default-600";
-    if (isSuccess) iconColorClass = "bg-success/15 text-success";
-    if (isWarning) iconColorClass = "bg-warning/15 text-warning";
+    if (isSuccess) iconColorClass = "bg-success/15 text-success-text";
+    if (isWarning) iconColorClass = "bg-warning/15 text-warning-text";
 
     let badgeColorClass = "bg-default-100 text-default-600";
-    if (isSuccess) badgeColorClass = "bg-success/15 text-success";
-    if (isWarning) badgeColorClass = "bg-warning/15 text-warning";
+    if (isSuccess) badgeColorClass = "bg-success/15 text-success-text";
+    if (isWarning) badgeColorClass = "bg-warning/15 text-warning-text";
 
     return (
         <div className="flex flex-col gap-3">
@@ -75,7 +74,7 @@ export default function CollapsiblePhaseSection({
                 </span>
                 <span className="flex items-center gap-2 shrink-0">
                     <span
-                        className={`hidden sm:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${badgeColorClass}`}
+                        className={`hidden sm:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColorClass}`}
                     >
                         {badgeText}
                     </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
     Avatar,
@@ -11,19 +11,18 @@ import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-    Spinner,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import {
     BOOKING_STATUS_COLORS,
-    BOOKING_STATUS_HINTS,
-    BOOKING_STATUS_LABELS,
     BOOKING_STATUS_TONE_ACCENT_BAR,
     BOOKING_STATUS_TONE_CARD,
     formatBookingDate,
     formatBookingTime,
     formatCurrency,
     getBookingStatusChipVariant,
+    getBookingStatusHint,
+    getBookingStatusLabel,
     getBookingStatusTone,
     type BookingStatusTone,
 } from "@/lib/booking-labels";
@@ -110,9 +109,11 @@ function resolveCounterparty(booking: BookingOut, role: Role): Party {
 
 function StatusChip({
     booking,
+    role,
     urgent,
 }: {
     booking: BookingOut;
+    role: Role;
     urgent: boolean;
 }) {
     const complaintOpen = booking.complaint_status === "open";
@@ -145,8 +146,8 @@ function StatusChip({
                   ? COMPLAINT_STATUS_LABEL[booking.complaint_status || ""] ||
                     "En disputa"
                   : urgent
-                    ? `Acción: ${BOOKING_STATUS_LABELS[booking.status]}`
-                    : BOOKING_STATUS_LABELS[booking.status]}
+                    ? `Acción: ${getBookingStatusLabel(booking.status, role)}`
+                    : getBookingStatusLabel(booking.status, role)}
         </Chip>
     );
 }
@@ -171,7 +172,7 @@ function FactRow({
             <Icon
                 icon={icon}
                 width={16}
-                className="text-default-400 justify-self-center"
+                className="text-default-500 justify-self-center"
                 aria-hidden
             />
             <span className="text-default-500">{label}</span>
@@ -185,7 +186,7 @@ function PartyValue({ party }: { party: Party }) {
     return (
         <Link
             href={party.profileHref}
-            className="inline-flex items-center gap-2 min-w-0 max-w-full rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="inline-flex items-center gap-2 min-w-0 max-w-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             title={`Ver perfil de ${party.name}`}
         >
             <Avatar
@@ -199,7 +200,7 @@ function PartyValue({ party }: { party: Party }) {
                     <Icon
                         icon={party.icon}
                         width={14}
-                        className="text-default-400"
+                        className="text-default-500"
                     />
                 }
             />
@@ -443,7 +444,7 @@ export default function BookingReservationItem({
                     Como integrante
                 </Chip>
             ) : null}
-            <StatusChip booking={booking} urgent={urgent} />
+            <StatusChip booking={booking} role={role} urgent={urgent} />
         </div>
     );
 
@@ -494,12 +495,12 @@ export default function BookingReservationItem({
                         </div>
 
                         {disputeHint ? (
-                            <p className="text-sm text-danger-700 dark:text-danger-400 bg-danger/10 rounded-xl px-3 py-2">
+                            <p className="text-sm text-danger-text bg-danger/10 rounded-xl px-3 py-2">
                                 {disputeHint}
                             </p>
                         ) : urgent ? (
-                            <p className="text-sm text-warning-700 dark:text-warning-500 bg-warning/10 rounded-xl px-3 py-2">
-                                {BOOKING_STATUS_HINTS[booking.status]}
+                            <p className="text-sm text-warning-text bg-warning/10 rounded-xl px-3 py-2">
+                                {getBookingStatusHint(booking.status, role)}
                             </p>
                         ) : null}
 
@@ -523,25 +524,25 @@ export default function BookingReservationItem({
                                 {whenLabel}
                             </p>
                             {disputeHint ? (
-                                <p className="text-xs text-danger-700 dark:text-danger-400 mt-1.5 line-clamp-2">
+                                <p className="text-xs text-danger-text mt-1.5 line-clamp-2">
                                     {disputeHint}
                                 </p>
                             ) : urgent ? (
-                                <p className="text-xs text-warning-700 dark:text-warning-500 mt-1.5 line-clamp-2">
-                                    {BOOKING_STATUS_HINTS[booking.status]}
+                                <p className="text-xs text-warning-text mt-1.5 line-clamp-2">
+                                    {getBookingStatusHint(booking.status, role)}
                                 </p>
                             ) : null}
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[11px] uppercase tracking-wide text-default-500 mb-1">
+                            <p className="text-xs uppercase tracking-wide text-default-500 mb-1">
                                 {party.label}
                             </p>
                             <PartyValue party={party} />
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[11px] uppercase tracking-wide text-default-500 mb-1">
+                            <p className="text-xs uppercase tracking-wide text-default-500 mb-1">
                                 Lugar
                             </p>
                             <div className="flex items-center gap-2 min-w-0">
@@ -558,7 +559,7 @@ export default function BookingReservationItem({
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[11px] uppercase tracking-wide text-default-500 mb-1">
+                            <p className="text-xs uppercase tracking-wide text-default-500 mb-1">
                                 Precio
                             </p>
                             <PriceValue booking={booking} priceLabel={priceLabel} />
@@ -630,7 +631,7 @@ export default function BookingReservationItem({
                     </p>
                 ) : urgent ? (
                     <p className="text-sm text-warning-700 dark:text-warning-500 bg-warning/10 rounded-xl px-3 py-2">
-                        {BOOKING_STATUS_HINTS[booking.status]}
+                        {getBookingStatusHint(booking.status, role)}
                     </p>
                 ) : null}
 
