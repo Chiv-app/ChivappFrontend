@@ -51,9 +51,12 @@ export default function BookingComplaintPanel({ bookingId, role, onUpdated }: Pr
 
     useEffect(() => {
         let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoading(true);
-        setLoadError(null);
+        void Promise.resolve().then(() => {
+            if (!cancelled) {
+                setIsLoading(true);
+                setLoadError(null);
+            }
+        });
         getBookingComplaint(bookingId)
             .then((data) => {
                 if (!cancelled) setComplaint(data);

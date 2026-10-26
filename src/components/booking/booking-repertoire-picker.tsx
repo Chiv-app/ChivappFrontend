@@ -100,12 +100,13 @@ export default function BookingRepertoirePicker({
     useEffect(() => {
         const saved = booking.requested_repertoire ?? [];
         const other = saved.map(parseOtherTitle).find(Boolean) ?? null;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectedCatalog(saved.filter((title) => !parseOtherTitle(title)));
-        setOtherEnabled(Boolean(other));
-        setOtherText(other ?? "");
-        setFilter("");
-        setExpanded(false);
+        void Promise.resolve().then(() => {
+            setSelectedCatalog(saved.filter((title) => !parseOtherTitle(title)));
+            setOtherEnabled(Boolean(other));
+            setOtherText(other ?? "");
+            setFilter("");
+            setExpanded(false);
+        });
     }, [booking.id, booking.requested_repertoire]);
 
     useEffect(() => {

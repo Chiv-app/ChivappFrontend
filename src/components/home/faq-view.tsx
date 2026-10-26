@@ -3,41 +3,47 @@
 import { Accordion, AccordionItem } from "@heroui/react";
 import { serializeJsonLd } from "@/lib/seo";
 import { motion } from "framer-motion";
+import { formatFaqCancellationAnswer } from "@/lib/cancellation-policy";
+import { useCancellationPolicy } from "@/hooks/use-cancellation-policy";
 
-const faqs = [
-    {
-        key: "pago",
-        question: "¿Cómo funciona el pago protegido?",
-        answer: "Al reservar, tu pago se guarda en una cuenta segura. El artista solo recibe el dinero una vez que el evento ha finalizado satisfactoriamente. Si el artista no se presenta, se te devuelve el 100% de tu dinero.",
-    },
-    {
-        key: "cancelar",
-        question: "¿Puedo cancelar una reserva?",
-        answer: "Sí, puedes cancelar desde tu panel. Si cancelas con 15 días calendario o más de anticipación recibes el 100 % de lo pagado (sin el costo de la pasarela); entre 7 y 14 días recibes el 50 % (sin el costo de la pasarela); y con menos de 7 días no aplica reembolso salvo cancelación o inasistencia del músico o fuerza mayor acreditada. Puedes consultar el detalle en /legal/reembolsos.",
-    },
-    {
-        key: "cotizar",
-        question: "¿Cómo cotizo sin compromiso?",
-        answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Pedir cotización'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviarán sus propuestas de precio. Es totalmente gratis.",
-    },
-    {
-        key: "verificado",
-        question: "¿Cómo sé que el músico es real?",
-        answer: "Cada perfil pasa por un proceso de verificación e incluye fotos, videos y repertorio propio, para que veas exactamente lo que vas a contratar antes de reservar.",
-    },
-    {
-        key: "contrato",
-        question: "¿Hay un contrato de por medio?",
-        answer: "Sí. Antes del evento se genera un contrato con los términos acordados, firmado digitalmente por ambas partes desde la plataforma para proteger a ambos.",
-    },
-    {
-        key: "musico",
-        question: "¿Cómo me uno como músico?",
-        answer: "Publica tu perfil gratis con tu bio, géneros, fotos y videos. En cuanto esté listo, empiezas a recibir solicitudes de contratistas de tu ciudad.",
-    },
-];
+function buildFaqs(cancelAnswer: string) {
+    return [
+        {
+            key: "pago",
+            question: "¿Cómo funciona el pago protegido?",
+            answer: "Al reservar, tu pago se guarda en una cuenta segura. El artista solo recibe el dinero una vez que el evento ha finalizado satisfactoriamente. Si el artista no se presenta, se te devuelve el 100% de tu dinero.",
+        },
+        {
+            key: "cancelar",
+            question: "¿Puedo cancelar una reserva?",
+            answer: cancelAnswer,
+        },
+        {
+            key: "cotizar",
+            question: "¿Cómo cotizo sin compromiso?",
+            answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Pedir cotización'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviarán sus propuestas de precio. Es totalmente gratis.",
+        },
+        {
+            key: "verificado",
+            question: "¿Cómo sé que el músico es real?",
+            answer: "Cada perfil pasa por un proceso de verificación e incluye fotos, videos y repertorio propio, para que veas exactamente lo que vas a contratar antes de reservar.",
+        },
+        {
+            key: "contrato",
+            question: "¿Hay un contrato de por medio?",
+            answer: "Sí. Antes del evento se genera un contrato con los términos acordados, firmado digitalmente por ambas partes desde la plataforma para proteger a ambos.",
+        },
+        {
+            key: "musico",
+            question: "¿Cómo me uno como músico?",
+            answer: "Publica tu perfil gratis con tu bio, géneros, fotos y videos. En cuanto esté listo, empiezas a recibir solicitudes de contratistas de tu ciudad.",
+        },
+    ];
+}
 
 export default function FaqSection() {
+    const policy = useCancellationPolicy();
+    const faqs = buildFaqs(formatFaqCancellationAnswer(policy));
     const faqSchema = {
         "@context": "https://schema.org",
         "@type": "FAQPage",

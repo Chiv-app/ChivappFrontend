@@ -79,24 +79,25 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
 
     useEffect(() => {
         let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoading(true);
-        loadSession()
-            .catch((error) => {
-                if (!cancelled) {
-                    addToast({
-                        title: "Ubicación",
-                        description:
-                            error instanceof Error
-                                ? error.message
-                                : "No se pudo cargar la sesión de ubicación.",
-                        color: "danger",
-                    });
-                }
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
-            });
+        void Promise.resolve().then(() => {
+            if (!cancelled) setIsLoading(true);
+            return loadSession()
+                .catch((error) => {
+                    if (!cancelled) {
+                        addToast({
+                            title: "Ubicación",
+                            description:
+                                error instanceof Error
+                                    ? error.message
+                                    : "No se pudo cargar la sesión de ubicación.",
+                            color: "danger",
+                        });
+                    }
+                })
+                .finally(() => {
+                    if (!cancelled) setIsLoading(false);
+                });
+        });
         return () => {
             cancelled = true;
         };

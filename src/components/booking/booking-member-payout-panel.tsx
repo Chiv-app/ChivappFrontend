@@ -102,23 +102,22 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
         let cancelled = false;
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
-        });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        refresh()
-            .catch((error) => {
-                if (cancelled) return;
-                const msg =
-                    error instanceof Error ? error.message : "No se pudo cargar el reparto.";
-                setLoadError(msg);
-                addToast({
-                    title: "No se pudo cargar el reparto",
-                    description: msg,
-                    color: "danger",
+            return refresh()
+                .catch((error) => {
+                    if (cancelled) return;
+                    const msg =
+                        error instanceof Error ? error.message : "No se pudo cargar el reparto.";
+                    setLoadError(msg);
+                    addToast({
+                        title: "No se pudo cargar el reparto",
+                        description: msg,
+                        color: "danger",
+                    });
+                })
+                .finally(() => {
+                    if (!cancelled) setIsLoading(false);
                 });
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
-            });
+        });
         return () => {
             cancelled = true;
         };

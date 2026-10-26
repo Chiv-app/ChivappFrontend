@@ -64,8 +64,7 @@ export default function ContractorDashboardPage() {
     }, []);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadDashboard();
+        void Promise.resolve().then(() => loadDashboard());
     }, [loadDashboard]);
 
     return (

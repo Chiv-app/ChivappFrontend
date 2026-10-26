@@ -72,25 +72,24 @@ export default function MusicianPayoutsView() {
         let cancelled = false;
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
-        });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        refresh()
-            .catch((error) => {
-                if (cancelled) return;
-                const message =
-                    error instanceof Error
-                        ? error.message
-                        : "Intenta de nuevo más tarde.";
-                setLoadError(message);
-                addToast({
-                    title: "No se pudieron cargar los pagos",
-                    description: message,
-                    color: "danger",
+            return refresh()
+                .catch((error) => {
+                    if (cancelled) return;
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : "Intenta de nuevo más tarde.";
+                    setLoadError(message);
+                    addToast({
+                        title: "No se pudieron cargar los pagos",
+                        description: message,
+                        color: "danger",
+                    });
+                })
+                .finally(() => {
+                    if (!cancelled) setIsLoading(false);
                 });
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
-            });
+        });
         return () => {
             cancelled = true;
         };

@@ -87,11 +87,20 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             return;
         }
 
-        const price = Number(priceAgreed);
-        if (!price || price <= 0) {
+        const trimmedPrice = priceAgreed.trim();
+        const price = Number(trimmedPrice);
+        if (!trimmedPrice || Number.isNaN(price) || price < 10 || price > 50000) {
             addToast({
-                title: "Precio requerido",
-                description: "Indica el precio total de la contrata.",
+                title: "Precio inválido",
+                description: "El precio acordado debe estar entre S/ 10 y S/ 50,000.",
+                color: "warning",
+            });
+            return;
+        }
+        if (!/^\d+(\.\d{1,2})?$/.test(trimmedPrice)) {
+            addToast({
+                title: "Demasiados decimales",
+                description: "El precio acordado admite como máximo 2 decimales.",
                 color: "warning",
             });
             return;
@@ -275,7 +284,8 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                     <Input
                         label="Lo que tú recibes (precio total)"
                         type="number"
-                        min={1}
+                        min={10}
+                        max={50000}
                         step="0.01"
                         isRequired
                         value={priceAgreed}

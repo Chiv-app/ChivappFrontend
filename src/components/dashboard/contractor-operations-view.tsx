@@ -156,8 +156,7 @@ export default function ContractorOperationsView() {
     }, []);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void load();
+        void Promise.resolve().then(() => load());
     }, [load]);
 
     const filteredItems = useMemo(

@@ -23,8 +23,7 @@ export default function MusicianProfileEditor() {
     };
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadProfile();
+        void Promise.resolve().then(() => loadProfile());
     }, []);
 
     if (isLoading) {

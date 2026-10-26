@@ -148,10 +148,9 @@ export default function BookingReviewsTimeline({
         let cancelled = false;
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
-        });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        refreshReviews().finally(() => {
-            if (!cancelled) setIsLoading(false);
+            return refreshReviews().finally(() => {
+                if (!cancelled) setIsLoading(false);
+            });
         });
         return () => {
             cancelled = true;

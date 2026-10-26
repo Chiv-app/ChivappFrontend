@@ -41,8 +41,7 @@ export default function MusicianLinksView() {
     }
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadLinks();
+        void Promise.resolve().then(() => loadLinks());
     }, []);
 
     if (isLoading) {

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
+import {
+    fetchCancellationPolicy,
+    getPartialRefundMaxDays,
+} from "@/lib/cancellation-policy";
 
 export const metadata: Metadata = buildPageMetadata({
     title: "Términos y condiciones",
@@ -27,7 +31,9 @@ function Section({
     );
 }
 
-export default function TermsPage() {
+export default async function TermsPage() {
+    const policy = await fetchCancellationPolicy();
+    const maxPartialDays = getPartialRefundMaxDays(policy);
     return (
         <div className="container mx-auto max-w-content px-4 sm:px-6 py-12 sm:py-16 flex flex-col gap-10">
             <header className="flex flex-col gap-2">
@@ -113,8 +119,8 @@ export default function TermsPage() {
                             política de cancelación
                         </Link>
                         : si cancela el contratista, se le reembolsa el 100 % de lo pagado (sin incluir el costo de la
-                        pasarela de pagos) cuando faltan 15 días calendario o más para el evento, el 50 % cuando faltan entre 7 y 14 días y 0 % cuando faltan
-                        menos de 7 días; si cancela el músico, se reembolsa el 100 % del importe abonado al contratista. Todo reembolso es revisado y aprobado por{" "}
+                        pasarela de pagos) cuando faltan {policy.full_refund_min_days} días calendario o más para el evento, el {policy.partial_refund_percent} % cuando faltan entre {policy.partial_refund_min_days} y {maxPartialDays} días y 0 % cuando faltan
+                        menos de {policy.no_refund_below_days} días; si cancela el músico, se reembolsa el {policy.musician_fault_refund_percent} % del importe abonado al contratista. Todo reembolso es revisado y aprobado por{" "}
                         {SITE_NAME} antes de enviarse a través de Mercado Pago.
                     </li>
                     <li>

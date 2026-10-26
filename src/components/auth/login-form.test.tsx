@@ -22,6 +22,7 @@ vi.mock("@/lib/auth", () => ({
     loginUser: vi.fn(),
     registerUser: vi.fn(),
     logoutUser: vi.fn(),
+    resendVerificationEmail: vi.fn(),
 }));
 
 const { addToastMock } = vi.hoisted(() => ({ addToastMock: vi.fn() }));
@@ -118,5 +119,42 @@ describe("LoginForm", () => {
                 description: "Credenciales inválidas",
             }),
         );
+    });
+
+    it("renders the unverified email alert and resends verification when login returns 403 (FE5-04)", async () => {
+        const { loginUser, loginStepOne, resendVerificationEmail } = await import("@/lib/auth");
+        vi.mocked(loginStepOne).mockResolvedValue({ status: "requires_password" } as never);
+        vi.mocked(loginUser).mockRejectedValue(
+            new ApiError(
+                "/auth/login",
+                403,
+                "Debes verificar tu correo electrónico antes de iniciar sesión.",
+            ),
+        );
+        vi.mocked(resendVerificationEmail).mockResolvedValue({
+            message: "Correo de verificación reenviado",
+        } as never);
+
+        const user = userEvent.setup();
+        renderLoginForm();
+
+        await user.type(screen.getByLabelText("Correo electrónico"), "pending@example.com");
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await screen.findByLabelText("Contraseña");
+        await user.type(screen.getByLabelText("Contraseña"), "Correcta123!");
+        await user.click(screen.getByRole("button", { name: "Ingresar" }));
+
+        expect(
+            await screen.findByText(
+                /Debes confirmar tu correo electrónico antes de ingresar con contraseña/i,
+            ),
+        ).toBeInTheDocument();
+
+        const resendBtn = screen.getByRole("button", {
+            name: /Reenviar correo de verificación/i,
+        });
+        await user.click(resendBtn);
+
+        expect(resendVerificationEmail).toHaveBeenCalledWith("pending@example.com");
     });
 });

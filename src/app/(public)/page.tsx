@@ -9,26 +9,20 @@ export const metadata: Metadata = buildPageMetadata({
     path: "/",
 });
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 const HOME_MUSICIANS_LIMIT = 5;
 
 export default async function Page() {
-    let musicians: Awaited<ReturnType<typeof getMusicians>> = [];
-    let stats = null;
-    let reviews: Awaited<ReturnType<typeof getLatestReviews>> = [];
+    const [musiciansResult, statsResult, reviewsResult] = await Promise.allSettled([
+        getMusicians({ limit: HOME_MUSICIANS_LIMIT + 1 }),
+        getPlatformStats(),
+        getLatestReviews(5),
+    ]);
 
-    try {
-        [musicians, stats, reviews] = await Promise.all([
-            getMusicians({ limit: HOME_MUSICIANS_LIMIT + 1 }),
-            getPlatformStats(),
-            getLatestReviews(5)
-        ]);
-    } catch {
-        musicians = [];
-        stats = null;
-        reviews = [];
-    }
+    const musicians = musiciansResult.status === "fulfilled" ? musiciansResult.value : [];
+    const stats = statsResult.status === "fulfilled" ? statsResult.value : null;
+    const reviews = reviewsResult.status === "fulfilled" ? reviewsResult.value : [];
 
     const hasMoreMusicians = musicians.length > HOME_MUSICIANS_LIMIT;
 

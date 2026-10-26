@@ -127,8 +127,7 @@ export default function AdminBookingDetailPage({ params }: Props) {
     }, [id]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void load();
+        void Promise.resolve().then(() => load());
     }, [load]);
 
     // Prefill del monto editable con el calculado por la política.
@@ -136,12 +135,13 @@ export default function AdminBookingDetailPage({ params }: Props) {
         booking?.cancellation_refund_status === "pending_approval"
             ? toAmount(booking.cancellation_refund_amount)
             : null;
-    useEffect(() => {
+    const [prevPendingPolicyAmount, setPrevPendingPolicyAmount] = useState(pendingPolicyAmount);
+    if (pendingPolicyAmount !== prevPendingPolicyAmount) {
+        setPrevPendingPolicyAmount(pendingPolicyAmount);
         if (pendingPolicyAmount != null) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setRefundAmountInput(formatAmountInput(pendingPolicyAmount));
         }
-    }, [pendingPolicyAmount]);
+    }
 
     async function submitRefundDecision(amount: number | null) {
         setIsApprovingRefund(true);

@@ -57,11 +57,9 @@ export default function BookingShareCard({ booking }: Props) {
 
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
-        });
-
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        refresh().finally(() => {
-            if (!cancelled) setIsLoading(false);
+            return refresh().finally(() => {
+                if (!cancelled) setIsLoading(false);
+            });
         });
 
         return () => {

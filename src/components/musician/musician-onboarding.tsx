@@ -88,8 +88,7 @@ export default function MusicianOnboarding() {
     }, [isAuthLoading, router, user]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadProfile();
+        void Promise.resolve().then(() => loadProfile());
     }, [loadProfile]);
 
     const handleAddVideoUrl = () => {

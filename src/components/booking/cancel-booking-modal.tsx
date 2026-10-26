@@ -47,11 +47,13 @@ export default function CancelBookingModal({
     useEffect(() => {
         if (!isOpen || !bookingId) return;
         let active = true;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setQuote(null);
-        setQuoteError(null);
-        setReason("");
-        setIsLoadingQuote(true);
+        void Promise.resolve().then(() => {
+            if (!active) return;
+            setQuote(null);
+            setQuoteError(null);
+            setReason("");
+            setIsLoadingQuote(true);
+        });
         getCancellationQuote(bookingId)
             .then((data) => {
                 if (active) setQuote(data);

@@ -6,6 +6,18 @@ import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 
+export function isSafeGoogleOAuthUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return (
+            parsed.protocol === "https:" &&
+            parsed.hostname === "accounts.google.com"
+        );
+    } catch {
+        return false;
+    }
+}
+
 export default function CalendarConnectionCard() {
     const { user, refresh } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -17,10 +29,10 @@ export default function CalendarConnectionCard() {
         setLoading(true);
         try {
             const res = await apiFetch<{auth_url: string}>('/calendar-auth/url');
-            if (res && res.auth_url) {
+            if (res && res.auth_url && isSafeGoogleOAuthUrl(res.auth_url)) {
                 window.location.href = res.auth_url;
             } else {
-                throw new Error("No se recibio URL de Google");
+                throw new Error("No se recibio URL segura de Google");
             }
         } catch {
             addToast({

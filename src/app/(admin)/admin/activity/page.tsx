@@ -38,18 +38,25 @@ function formatSubtitle(item: AdminActivityItem): string | null {
     return item.subtitle;
 }
 
+const ACTIVITY_PAGE_SIZE = 50;
+
 export default function AdminActivityPage() {
     const [activity, setActivity] = useState<AdminActivityItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         setLoadError(null);
         try {
-            setActivity(await getAdminActivity(80));
+            const batch = await getAdminActivity(ACTIVITY_PAGE_SIZE, 0);
+            setActivity(batch);
+            setHasMore(batch.length === ACTIVITY_PAGE_SIZE);
         } catch (err) {
             setActivity([]);
+            setHasMore(false);
             setLoadError(
                 err instanceof Error
                     ? err.message
@@ -59,6 +66,24 @@ export default function AdminActivityPage() {
             setLoading(false);
         }
     }, []);
+
+    async function handleLoadMore() {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+        try {
+            const nextBatch = await getAdminActivity(ACTIVITY_PAGE_SIZE, activity.length);
+            setActivity((prev) => [...prev, ...nextBatch]);
+            setHasMore(nextBatch.length === ACTIVITY_PAGE_SIZE);
+        } catch (err) {
+            setLoadError(
+                err instanceof Error
+                    ? err.message
+                    : "No se pudo cargar más actividad.",
+            );
+        } finally {
+            setLoadingMore(false);
+        }
+    }
 
     useEffect(() => {
         const t = window.setTimeout(() => {
@@ -133,6 +158,18 @@ export default function AdminActivityPage() {
                             </Link>
                         ))
                     )}
+                    {!loading && hasMore ? (
+                        <div className="pt-2 flex justify-center">
+                            <Button
+                                variant="flat"
+                                color="primary"
+                                onPress={handleLoadMore}
+                                isLoading={loadingMore}
+                            >
+                                Cargar más
+                            </Button>
+                        </div>
+                    ) : null}
                 </CardBody>
             </Card>
         </div>

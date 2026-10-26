@@ -38,10 +38,11 @@ export default function EnsembleMemberProfileEditor({
     const [isUpgradeConfirmOpen, setIsUpgradeConfirmOpen] = useState(false);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setFullname(user?.fullname || "");
-        setPhone(user?.phone || "");
-        setInstruments(profile.instruments || []);
+        void Promise.resolve().then(() => {
+            setFullname(user?.fullname || "");
+            setPhone(user?.phone || "");
+            setInstruments(profile.instruments || []);
+        });
     }, [profile, user]);
 
     const handleSave = async () => {

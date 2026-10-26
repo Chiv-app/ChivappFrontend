@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Modal,
     ModalContent,
@@ -169,22 +169,23 @@ export default function BookingMercadoPagoModal({
     // Reset transient form fields on modal open, preserving pendingVerification for the same booking (FE5-01)
     useEffect(() => {
         if (isOpen) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setProcessError(null);
-            if (lastBookingIdRef.current !== booking.id) {
-                lastBookingIdRef.current = booking.id;
-                setPendingVerification(null);
-            }
-            setPhoneError(null);
-            setOtpError(null);
-            setNeedsReload(false);
-            setIsProcessing(false);
-            setPhoneNumber("");
-            setOtp("");
-            setYapeDocNumber("");
-            if (user?.email) {
-                setCardPayerEmail(user.email);
-            }
+            void Promise.resolve().then(() => {
+                setProcessError(null);
+                if (lastBookingIdRef.current !== booking.id) {
+                    lastBookingIdRef.current = booking.id;
+                    setPendingVerification(null);
+                }
+                setPhoneError(null);
+                setOtpError(null);
+                setNeedsReload(false);
+                setIsProcessing(false);
+                setPhoneNumber("");
+                setOtp("");
+                setYapeDocNumber("");
+                if (user?.email) {
+                    setCardPayerEmail(user.email);
+                }
+            });
         }
     }, [isOpen, user?.email, booking.id]);
 
@@ -219,9 +220,9 @@ export default function BookingMercadoPagoModal({
         };
     }, [isOpen, hasPendingVerification, booking.id]);
 
-    // FE4-01: consultar periódicamente el estado cuando el pago quedó pendiente de confirmación
+    // FE4-01 / FE6-04: consultar periódicamente el estado cuando el pago quedó pendiente de confirmación (incluso si se cierra el modal)
     useEffect(() => {
-        if (!isOpen || !pendingVerification) return;
+        if (!pendingVerification) return;
         let cancelled = false;
         const interval = setInterval(async () => {
             try {
@@ -255,7 +256,28 @@ export default function BookingMercadoPagoModal({
             cancelled = true;
             clearInterval(interval);
         };
-    }, [isOpen, pendingVerification, booking.id]);
+    }, [pendingVerification, booking.id]);
+
+    const handleConflict409 = useCallback(async (err: unknown): Promise<boolean> => {
+        if (!(err instanceof ApiError && err.status === 409)) return false;
+        if (/pago en proceso/i.test(err.message)) {
+            try {
+                const statusRes = await checkMercadoPagoPaymentStatus(booking.id);
+                setPendingVerification({
+                    paymentId: statusRes.payment_id ?? null,
+                    message: statusRes.message || err.message,
+                });
+            } catch {
+                setPendingVerification({
+                    paymentId: null,
+                    message: err.message,
+                });
+            }
+            return true;
+        }
+        setNeedsReload(true);
+        return false;
+    }, [booking.id]);
 
     async function handleManualStatusCheck() {
         if (!pendingVerification) return;
@@ -306,9 +328,9 @@ export default function BookingMercadoPagoModal({
         let isMounted = true;
 
         if (isOpen && selectedTab === "card" && isLoaded && !hasPendingVerification) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setBrickLoaded(false);
-            setProcessError(null);
+            void Promise.resolve().then(() => {
+                if (isMounted) setBrickLoaded(false);
+            });
 
             // Clean previous brick if exists
             if (brickControllerRef.current) {
@@ -422,9 +444,11 @@ export default function BookingMercadoPagoModal({
                                     throw new Error(errMsg);
                                 }
                             } catch (err) {
+                                if (await handleConflict409(err)) {
+                                    return;
+                                }
                                 const rawMsg = err instanceof Error ? err.message : "Error al procesar el pago con tarjeta.";
                                 const errMsg = translateMercadoPagoError(rawMsg, "Error al procesar el pago con tarjeta.");
-                                if (err instanceof ApiError && err.status === 409) setNeedsReload(true);
                                 setProcessError(errMsg);
                                 throw err;
                             } finally {
@@ -482,6 +506,7 @@ export default function BookingMercadoPagoModal({
         contractBodySha256,
         renderPaymentBrick,
         getDeviceSessionId,
+        handleConflict409,
         user?.email,
     ]);
 
@@ -556,7 +581,9 @@ export default function BookingMercadoPagoModal({
                 );
             }
         } catch (err) {
-            if (err instanceof ApiError && err.status === 409) setNeedsReload(true);
+            if (await handleConflict409(err)) {
+                return;
+            }
             const rawMsg =
                 err instanceof Error ? err.message : "Error al procesar el pago con Yape. Verifica tus datos.";
             setProcessError(translateMercadoPagoError(rawMsg, "Error al procesar el pago con Yape. Verifica tus datos."));
@@ -568,6 +595,7 @@ export default function BookingMercadoPagoModal({
     // Fallback: Checkout Pro
     async function handleCheckoutProRedirect() {
         setIsProcessing(true);
+        setProcessError(null);
         try {
             const pref = await createMercadoPagoPreference({
                 booking_id: booking.id,
@@ -582,7 +610,10 @@ export default function BookingMercadoPagoModal({
                 throw new Error("No se pudo generar un enlace seguro de Mercado Pago.");
             }
         } catch (err) {
-            if (err instanceof ApiError && err.status === 409) setNeedsReload(true);
+            if (await handleConflict409(err)) {
+                setIsProcessing(false);
+                return;
+            }
             setProcessError(
                 err instanceof Error ? err.message : "Error al redirigir a Mercado Pago."
             );

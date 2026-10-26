@@ -173,21 +173,20 @@ export default function BookingEnsemblePanel({ booking }: Props) {
         let cancelled = false;
         void Promise.resolve().then(() => {
             if (!cancelled) setIsLoading(true);
-        });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        refresh()
-            .catch((error) => {
-                if (cancelled) return;
-                addToast({
-                    title: "No se pudo cargar integrantes del evento",
-                    description:
-                        error instanceof Error ? error.message : "Intenta de nuevo.",
-                    color: "danger",
+            return refresh()
+                .catch((error) => {
+                    if (cancelled) return;
+                    addToast({
+                        title: "No se pudo cargar integrantes del evento",
+                        description:
+                            error instanceof Error ? error.message : "Intenta de nuevo.",
+                        color: "danger",
+                    });
+                })
+                .finally(() => {
+                    if (!cancelled) setIsLoading(false);
                 });
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
-            });
+        });
         return () => {
             cancelled = true;
         };

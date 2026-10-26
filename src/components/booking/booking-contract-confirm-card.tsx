@@ -18,6 +18,8 @@ import BookingGuestUpsellModal from "@/components/booking/booking-guest-upsell-m
 import ContractDocumentView from "@/components/booking/contract-document-view";
 import SignaturePad from "@/components/ui/signature-pad";
 import { formatCurrency } from "@/lib/booking-labels";
+import { formatClientCancellationRules } from "@/lib/cancellation-policy";
+import { useCancellationPolicy } from "@/hooks/use-cancellation-policy";
 import { getBooking } from "@/lib/bookings";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -48,6 +50,7 @@ export default function BookingContractConfirmCard({
     onUpdated,
 }: Props) {
     const { user } = useAuth();
+    const cancellationPolicy = useCancellationPolicy();
     const [isConfirming, setIsConfirming] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -233,10 +236,10 @@ export default function BookingContractConfirmCard({
                     </div>
                     <ul className="text-xs text-default-600 space-y-1 list-disc list-inside leading-relaxed">
                         <li>
-                            <strong>Cancelación del músico:</strong> recibes el 100 % del importe abonado.
+                            <strong>Cancelación del músico:</strong> recibes el {cancellationPolicy.musician_fault_refund_percent} % del importe abonado.
                         </li>
                         <li>
-                            <strong>Cancelación del cliente:</strong> 15 días calendario o más de anticipación: 100 % de lo pagado (sin el costo de la pasarela); entre 7 y 14 días: 50 % (sin el costo de la pasarela); menos de 7 días: sin reembolso (salvo caso fortuito o fuerza mayor acreditado).{" "}
+                            <strong>Cancelación del cliente:</strong> {formatClientCancellationRules(cancellationPolicy)}{" "}
                             <a
                                 href="/legal/reembolsos"
                                 target="_blank"

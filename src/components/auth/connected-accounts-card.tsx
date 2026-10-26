@@ -60,8 +60,7 @@ export default function ConnectedAccountsCard() {
     }, []);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void refresh();
+        void Promise.resolve().then(() => refresh());
     }, [refresh]);
 
     useEffect(() => {
@@ -79,8 +78,7 @@ export default function ConnectedAccountsCard() {
                 description: `${label} se conectó correctamente a tu cuenta.`,
                 color: "success",
             });
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            void refresh();
+            void Promise.resolve().then(() => refresh());
         } else if (oauthError) {
             addToast({
                 title: "No se pudo vincular la cuenta",

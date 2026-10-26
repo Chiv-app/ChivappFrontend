@@ -116,8 +116,7 @@ export default function BookingConfirmedWorkspace({
     }, [booking.id]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        loadMessages();
+        void Promise.resolve().then(() => loadMessages());
     }, [booking.status, isMemberMode, loadMessages]);
 
     async function handleSendMessage(event: FormEvent) {

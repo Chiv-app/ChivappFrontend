@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
+import {
+  fetchCancellationPolicy,
+  getPartialRefundMaxDays,
+} from "@/lib/cancellation-policy";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Política de cancelación y reembolsos",
@@ -27,7 +31,9 @@ function Section({
   );
 }
 
-export default function RefundPolicyPage() {
+export default async function RefundPolicyPage() {
+  const policy = await fetchCancellationPolicy();
+  const maxPartialDays = getPartialRefundMaxDays(policy);
   return (
     <div className="container mx-auto max-w-content px-4 sm:px-6 py-12 sm:py-16 flex flex-col gap-10">
       <header className="flex flex-col gap-2">
@@ -60,7 +66,7 @@ export default function RefundPolicyPage() {
         <ul className="list-disc pl-5 flex flex-col gap-2">
           <li>
             <strong className="text-foreground">
-              15 días calendario o más de anticipación:
+              {policy.full_refund_min_days} días calendario o más de anticipación:
             </strong>{" "}
             reembolso del <strong className="text-foreground">100%</strong> de
             lo pagado (sin incluir el costo no reembolsable de la pasarela de
@@ -68,15 +74,15 @@ export default function RefundPolicyPage() {
           </li>
           <li>
             <strong className="text-foreground">
-              Entre 7 y 14 días calendario de anticipación:
+              Entre {policy.partial_refund_min_days} y {maxPartialDays} días calendario de anticipación:
             </strong>{" "}
-            reembolso del <strong className="text-foreground">50%</strong> de lo
-            pagado (sin incluir el costo de la pasarela), reteniendo el 50%
+            reembolso del <strong className="text-foreground">{policy.partial_refund_percent}%</strong> de lo
+            pagado (sin incluir el costo de la pasarela), reteniendo el {100 - policy.partial_refund_percent}%
             restante como compensación por bloqueo de agenda del artista.
           </li>
           <li>
             <strong className="text-foreground">
-              Menos de 7 días calendario de anticipación:
+              Menos de {policy.no_refund_below_days} días calendario de anticipación:
             </strong>{" "}
             no aplica reembolso (<strong className="text-foreground">0%</strong>
             ), salvo caso fortuito o fuerza mayor debidamente acreditado y
@@ -91,7 +97,7 @@ export default function RefundPolicyPage() {
           fecha, hora y lugar pactados en el contrato electrónico, el
           contratista recibe el reembolso del{" "}
           <strong className="text-foreground">
-            100% del importe abonado
+            {policy.musician_fault_refund_percent}% del importe abonado
           </strong>{" "}
           y puede solicitar asistencia prioritaria para encontrar una agrupación
           de reemplazo.

@@ -7,7 +7,7 @@ vi.mock("@/lib/musicians", () => ({
     getMusicians: (...args: unknown[]) => getMusiciansMock(...args),
 }));
 
-import sitemap from "./sitemap";
+import sitemap, * as sitemapModule from "./sitemap";
 
 function makeMusician(index: number): MusicianCard {
     return {
@@ -30,8 +30,14 @@ function makeMusician(index: number): MusicianCard {
     };
 }
 
-describe("sitemap (FE3-03)", () => {
+describe("sitemap (FE3-03, FE5-03, FE6-06)", () => {
+    it("exports dynamic='force-dynamic' and does not export revalidate", () => {
+        expect(sitemapModule.dynamic).toBe("force-dynamic");
+        expect("revalidate" in sitemapModule).toBe(false);
+    });
+
     it("paginates getMusicians with limit=50 and includes musician + SEO routes", async () => {
+        getMusiciansMock.mockReset();
         const firstPage = Array.from({ length: 50 }, (_, idx) => makeMusician(idx + 1));
         const secondPage = [makeMusician(51)];
 
@@ -50,5 +56,12 @@ describe("sitemap (FE3-03)", () => {
         expect(urls.some((u) => u.endsWith("/musicians/musico-1"))).toBe(true);
         expect(urls.some((u) => u.endsWith("/musicians/musico-51"))).toBe(true);
         expect(urls.some((u) => u.endsWith("/musicos/mariachi/lima"))).toBe(true);
+    });
+
+    it("rejects when getMusicians fails on the first page (FE6-06)", async () => {
+        getMusiciansMock.mockReset();
+        getMusiciansMock.mockRejectedValueOnce(new Error("Backend unavailable"));
+
+        await expect(sitemap()).rejects.toThrow("Backend unavailable");
     });
 });

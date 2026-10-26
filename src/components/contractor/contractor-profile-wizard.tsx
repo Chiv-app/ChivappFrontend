@@ -141,11 +141,10 @@ export default function ContractorProfileWizard() {
 
     useEffect(() => {
         if (!username || username === user?.username) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setUsernameCheck(null);
+            void Promise.resolve().then(() => setUsernameCheck(null));
             return;
         }
-        setIsCheckingUsername(true);
+        void Promise.resolve().then(() => setIsCheckingUsername(true));
         const timer = setTimeout(async () => {
             try {
                 const { checkUsername } = await import("@/lib/profiles");
@@ -161,8 +160,7 @@ export default function ContractorProfileWizard() {
     }, [username, user?.username]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadData();
+        void Promise.resolve().then(() => loadData());
         // Carga inicial única al montar el wizard.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

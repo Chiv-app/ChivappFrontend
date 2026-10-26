@@ -20,6 +20,8 @@ import MasonryItem from "@/components/ui/masonry-item";
 import VerifiedBadge from "@/components/ui/verified-badge";
 import VideoPlaybackModal from "@/components/ui/video-playback-modal";
 import { useVideoPlayback } from "@/hooks/use-video-playback";
+import { useCancellationPolicy } from "@/hooks/use-cancellation-policy";
+import { formatCancellationSummaryShort } from "@/lib/cancellation-policy";
 import { getVisibleMusicianPrices } from "@/lib/musician-pricing";
 import {
     getVideoEmbedUrl,
@@ -110,6 +112,7 @@ export default function MusicianDetailView({
 }: Props) {
     const isOwner = mode === "owner";
     const { user } = useAuth();
+    const cancellationPolicy = useCancellationPolicy();
     const searchParams = useSearchParams();
     const {
         isOpen: isBookingOpen,
@@ -474,7 +477,7 @@ export default function MusicianDetailView({
                                             <span>Reserva protegida con Chivapp</span>
                                         </div>
                                         <p className="text-xs text-default-600 leading-relaxed">
-                                            Tu pago se custodia hasta finalizar el evento. Reembolso del 100 % (sin costo de pasarela) si cancelas con 15 días calendario o más de anticipación y 50 % entre 7 y 14 días.{" "}
+                                            {formatCancellationSummaryShort(cancellationPolicy)}{" "}
                                             <Link
                                                 href="/legal/reembolsos"
                                                 className="font-semibold text-primary-text underline underline-offset-2"

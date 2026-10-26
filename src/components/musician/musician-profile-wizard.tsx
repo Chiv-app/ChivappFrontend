@@ -459,8 +459,7 @@ export default function MusicianProfileWizard() {
     }, [username, user?.username]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadData();
+        void Promise.resolve().then(() => loadData());
         // Carga inicial única al montar el wizard.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

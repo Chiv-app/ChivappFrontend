@@ -197,7 +197,7 @@ export default function CheckoutClient({
     for (const [token, val] of Object.entries(replacements)) {
       html = html.split(token).join(val);
     }
-    return isClient ? sanitizeContractHtml(html) : html;
+    return isClient ? sanitizeContractHtml(html) : "";
   }, [
     linkData.contract_template_body,
     linkData.musician.stage_name,
@@ -1496,7 +1496,13 @@ export default function CheckoutClient({
                           Ver contrato completo en pantalla amplia
                         </Button>
                       </div>
-                      {renderedContractHtml ? (
+                      {!isClient && linkData.contract_template_body?.trim() ? (
+                        <div
+                          aria-busy="true"
+                          aria-label="Cargando contrato"
+                          className="h-32 animate-pulse rounded-xl border border-divider bg-default-100 p-4"
+                        />
+                      ) : renderedContractHtml ? (
                         <div
                           className="contract-doc max-h-64 overflow-y-auto rounded-xl border border-divider bg-content1 p-4 text-xs leading-relaxed text-default-700"
                           dangerouslySetInnerHTML={{

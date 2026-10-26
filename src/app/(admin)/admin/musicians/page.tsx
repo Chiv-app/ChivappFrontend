@@ -132,39 +132,65 @@ export default function AdminMusiciansPage() {
     }, [load]);
 
     async function handleApprove(id: string) {
-        await approveMusicianProfile(id);
-        addToast({ title: "Perfil aprobado", color: "success" });
-        setSelected(null);
-        await load();
+        try {
+            await approveMusicianProfile(id);
+            addToast({ title: "Perfil aprobado", color: "success" });
+            setSelected(null);
+            await load();
+        } catch (err: unknown) {
+            addToast({
+                title: "No se pudo aprobar",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+            throw err;
+        }
     }
 
     async function handleReject() {
         if (!selected) return;
-        await rejectMusicianProfile(selected.id, {
-            rejection_reason: rejectionReason,
-        });
-        addToast({ title: "Perfil rechazado", color: "warning" });
-        rejectModal.onClose();
-        setRejectionReason("");
-        setSelected(null);
-        await load();
+        try {
+            await rejectMusicianProfile(selected.id, {
+                rejection_reason: rejectionReason,
+            });
+            addToast({ title: "Perfil rechazado", color: "warning" });
+            rejectModal.onClose();
+            setRejectionReason("");
+            setSelected(null);
+            await load();
+        } catch (err: unknown) {
+            addToast({
+                title: "No se pudo rechazar",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        }
     }
 
     async function handleModerate(
         id: string,
         action: "unpublish" | "request_resubmit",
     ) {
-        await moderateMusicianProfile(id, {
-            action,
-            reason: rejectionReason || null,
-        });
-        addToast({
-            title: action === "unpublish" ? "Perfil despublicado" : "Reenvío solicitado",
-            color: "warning",
-        });
-        setSelected(null);
-        setRejectionReason("");
-        await load();
+        try {
+            await moderateMusicianProfile(id, {
+                action,
+                reason: rejectionReason || null,
+            });
+            addToast({
+                title: action === "unpublish" ? "Perfil despublicado" : "Reenvío solicitado",
+                color: "warning",
+            });
+            setSelected(null);
+            setRejectionReason("");
+            await load();
+        } catch (err: unknown) {
+            addToast({
+                title: "No se pudo actualizar el perfil",
+                description: err instanceof Error ? err.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+            throw err;
+        }
     }
     async function openDetail(id: string) {
         try {
@@ -535,6 +561,8 @@ export default function AdminMusiciansPage() {
                             await handleModerate(confirmAction.id, "unpublish");
                         }
                         setConfirmAction(null);
+                    } catch {
+                        // El toast ya fue emitido por handleApprove / handleModerate; mantener el diálogo o estado coherente
                     } finally {
                         setConfirmBusy(false);
                     }

@@ -79,8 +79,8 @@ export function getPendingContractors() {
     return apiFetch<ContractorProfileAdminOut[]>("/admin/contractors/pending");
 }
 
-export function getAdminActivity(limit = 30) {
-    return apiFetch<AdminActivityItem[]>(`/admin/activity?limit=${limit}`);
+export function getAdminActivity(limit = 30, skip = 0) {
+    return apiFetch<AdminActivityItem[]>(`/admin/activity?limit=${limit}&skip=${skip}`);
 }
 
 export function approveMusicianProfile(musicianId: string) {

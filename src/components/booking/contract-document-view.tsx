@@ -42,13 +42,14 @@ export default function ContractDocumentView({
     }, [pdfObjectUrl]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setShowPdfPreview(false);
-        setPdfError(null);
-        if (pdfObjectUrl) {
-            URL.revokeObjectURL(pdfObjectUrl);
-            setPdfObjectUrl(null);
-        }
+        void Promise.resolve().then(() => {
+            setShowPdfPreview(false);
+            setPdfError(null);
+            if (pdfObjectUrl) {
+                URL.revokeObjectURL(pdfObjectUrl);
+                setPdfObjectUrl(null);
+            }
+        });
         // Reset when contract identity changes.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [contract?.id, contract?.contractor_signed, contract?.updated_at]);

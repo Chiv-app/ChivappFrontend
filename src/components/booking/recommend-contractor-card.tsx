@@ -37,9 +37,12 @@ export default function RecommendContractorCard({ booking }: Props) {
 
     useEffect(() => {
         let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoading(true);
-        setLoadError(null);
+        void Promise.resolve().then(() => {
+            if (!cancelled) {
+                setIsLoading(true);
+                setLoadError(null);
+            }
+        });
         getContractorRecommendation(booking.id)
             .then((data) => {
                 if (!cancelled) setExisting(data);

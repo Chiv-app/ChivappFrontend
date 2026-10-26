@@ -61,19 +61,21 @@ export default function BookingReopenQuoteModal({
 
     useEffect(() => {
         if (!isOpen) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setEventDate(booking.event_date);
-        setStartTime(booking.start_time.slice(0, 5));
-        setEndTime(booking.end_time ? booking.end_time.slice(0, 5) : "");
-        setEventType(booking.event_type);
-        setLocationAddress(booking.location_address);
-        setLocationCity(booking.location_city ?? "");
-        setLocationReference(booking.location_reference ?? "");
-        setEventDescription(booking.event_description ?? "");
-        setIsSaving(false);
-        setSlotsError(false);
-
         let cancelled = false;
+        void Promise.resolve().then(() => {
+            if (cancelled) return;
+            setEventDate(booking.event_date);
+            setStartTime(booking.start_time.slice(0, 5));
+            setEndTime(booking.end_time ? booking.end_time.slice(0, 5) : "");
+            setEventType(booking.event_type);
+            setLocationAddress(booking.location_address);
+            setLocationCity(booking.location_city ?? "");
+            setLocationReference(booking.location_reference ?? "");
+            setEventDescription(booking.event_description ?? "");
+            setIsSaving(false);
+            setSlotsError(false);
+        });
+
         getMusicianAvailability(booking.musician_id)
             .then((data) => {
                 if (!cancelled) {

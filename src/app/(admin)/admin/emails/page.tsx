@@ -56,6 +56,9 @@ export default function AdminEmailsPage() {
     const [previewFormat, setPreviewFormat] = useState<"html" | "text">("html");
     const [logStatus, setLogStatus] = useState<string>("");
     const [logQuery, setLogQuery] = useState("");
+    const [loadingMoreLogs, setLoadingMoreLogs] = useState(false);
+    const [hasMoreLogs, setHasMoreLogs] = useState(false);
+    const EMAIL_LOGS_PAGE_SIZE = 50;
 
     const loadTemplates = useCallback(async () => {
         setLoadingTemplates(true);
@@ -87,13 +90,16 @@ export default function AdminEmailsPage() {
         setLogsError(null);
         try {
             const data = await getAdminEmailLogs({
-                limit: 200,
+                skip: 0,
+                limit: EMAIL_LOGS_PAGE_SIZE,
                 status: logStatus || undefined,
                 q: logQuery.trim() || undefined,
             });
             setLogs(data);
+            setHasMoreLogs(data.length === EMAIL_LOGS_PAGE_SIZE);
         } catch (err) {
             setLogs([]);
+            setHasMoreLogs(false);
             setLogsError(
                 err instanceof Error && err.message
                     ? err.message
@@ -104,14 +110,35 @@ export default function AdminEmailsPage() {
         }
     }, [logStatus, logQuery]);
 
+    async function handleLoadMoreLogs() {
+        if (loadingMoreLogs || !hasMoreLogs) return;
+        setLoadingMoreLogs(true);
+        try {
+            const nextBatch = await getAdminEmailLogs({
+                skip: logs.length,
+                limit: EMAIL_LOGS_PAGE_SIZE,
+                status: logStatus || undefined,
+                q: logQuery.trim() || undefined,
+            });
+            setLogs((prev) => [...prev, ...nextBatch]);
+            setHasMoreLogs(nextBatch.length === EMAIL_LOGS_PAGE_SIZE);
+        } catch (err) {
+            setLogsError(
+                err instanceof Error && err.message
+                    ? err.message
+                    : "No pudimos cargar más envíos.",
+            );
+        } finally {
+            setLoadingMoreLogs(false);
+        }
+    }
+
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadTemplates();
+        void Promise.resolve().then(() => loadTemplates());
     }, [loadTemplates]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadLogs();
+        void Promise.resolve().then(() => loadLogs());
     }, [loadLogs]);
 
     const handleSelectTemplate = (slug: string) => {
@@ -550,6 +577,18 @@ export default function AdminEmailsPage() {
                                                 </div>
                                             </div>
                                         ))}
+                                        {hasMoreLogs ? (
+                                            <div className="p-4 flex justify-center">
+                                                <Button
+                                                    variant="flat"
+                                                    color="primary"
+                                                    onPress={handleLoadMoreLogs}
+                                                    isLoading={loadingMoreLogs}
+                                                >
+                                                    Cargar más
+                                                </Button>
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )}
                             </CardBody>

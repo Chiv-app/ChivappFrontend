@@ -90,8 +90,9 @@ function ContractDesignerEditor(props: Props) {
         const withTitle = ensureTitleHeading(body, title || config.defaultTitle);
         if (withTitle !== body) {
             onBodyChange(withTitle);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setTemplateVersion((current) => current + 1);
+            void Promise.resolve().then(() => {
+                setTemplateVersion((current) => current + 1);
+            });
         }
         if (!title) {
             onTitleChange(extractTitleFromHtml(withTitle, config.defaultTitle));

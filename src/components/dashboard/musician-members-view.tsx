@@ -172,24 +172,23 @@ export default function MusicianMembersView() {
                 setIsLoading(true);
                 setLoadError(null);
             }
-        });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        refresh()
-            .catch((error) => {
-                if (cancelled) return;
-                setLoadError(
-                    error instanceof Error ? error.message : "Intenta de nuevo.",
-                );
-                addToast({
-                    title: "No se pudieron cargar los integrantes",
-                    description:
+            return refresh()
+                .catch((error) => {
+                    if (cancelled) return;
+                    setLoadError(
                         error instanceof Error ? error.message : "Intenta de nuevo.",
-                    color: "danger",
+                    );
+                    addToast({
+                        title: "No se pudieron cargar los integrantes",
+                        description:
+                            error instanceof Error ? error.message : "Intenta de nuevo.",
+                        color: "danger",
+                    });
+                })
+                .finally(() => {
+                    if (!cancelled) setIsLoading(false);
                 });
-            })
-            .finally(() => {
-                if (!cancelled) setIsLoading(false);
-            });
+        });
         return () => {
             cancelled = true;
         };

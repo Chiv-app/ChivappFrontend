@@ -63,16 +63,17 @@ export default function BookingEditCommitmentModal({
 
     useEffect(() => {
         if (!isOpen) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setAddress(booking.location_address);
-        setCity(booking.location_city ?? "");
-        const coords = parseLocationReference(booking.location_reference);
-        setReference(coords ? "" : (booking.location_reference ?? ""));
-        setLocation(locationFromBooking(booking));
-        setDescription(booking.event_description ?? "");
-        setChangeNotes("");
-        // Remonta el mapa al abrir para evitar tiles grises / área invisible en el modal.
-        setMapMountKey((current) => current + 1);
+        void Promise.resolve().then(() => {
+            setAddress(booking.location_address);
+            setCity(booking.location_city ?? "");
+            const coords = parseLocationReference(booking.location_reference);
+            setReference(coords ? "" : (booking.location_reference ?? ""));
+            setLocation(locationFromBooking(booking));
+            setDescription(booking.event_description ?? "");
+            setChangeNotes("");
+            // Remonta el mapa al abrir para evitar tiles grises / área invisible en el modal.
+            setMapMountKey((current) => current + 1);
+        });
     }, [booking, isOpen]);
 
     function handleLocationChange(next: MapLocation) {

@@ -40,13 +40,14 @@ export default function BookingFinalReviewModal({
 
     useEffect(() => {
         if (!isOpen) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setRating(5);
-        setComment("");
-        setWithComplaint(false);
-        setComplaintReason("");
-        setComplaintEvidence(null);
-        setIsSaving(false);
+        void Promise.resolve().then(() => {
+            setRating(5);
+            setComment("");
+            setWithComplaint(false);
+            setComplaintReason("");
+            setComplaintEvidence(null);
+            setIsSaving(false);
+        });
     }, [isOpen, bookingId]);
 
     async function handleSubmit(event: FormEvent) {

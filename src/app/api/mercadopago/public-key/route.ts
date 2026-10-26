@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 export async function GET() {
     let publicKey =
         process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY ||
-        process.env.NEXT_PUBLIC_MERCADO_PAGO_P ||
         process.env.MERCADO_PAGO_PUBLIC_KEY ||
         "";
 

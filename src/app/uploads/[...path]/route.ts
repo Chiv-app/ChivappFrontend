@@ -55,21 +55,28 @@ function isSafeSegment(segment: string): boolean {
     return true;
 }
 
-function securityHeaders(contentType: string, isError = false, isPrivate = false): Headers {
+function securityHeaders(
+    contentType: string,
+    isError = false,
+    isPrivate = false,
+    isPartial = false,
+): Headers {
     const headers = new Headers();
     headers.set("X-Content-Type-Options", "nosniff");
     headers.set(
         "Content-Security-Policy",
         contentType === "application/pdf" ? BASE_CSP : SANDBOXED_CSP,
     );
-    // Los errores no deben cachearse para no retener 401/404 transitorios en el navegador.
+    // Los errores y las respuestas parciales (206 Range) no deben cachearse como públicas.
     headers.set(
         "Cache-Control",
         isError
             ? "no-store"
-            : isPrivate
-              ? "private, max-age=300"
-              : "public, max-age=3600",
+            : isPartial
+              ? "private, no-store"
+              : isPrivate
+                ? "private, max-age=300"
+                : "public, max-age=3600",
     );
     return headers;
 }
@@ -147,7 +154,8 @@ async function handleUploadRequest(
         const isInline = INLINE_CONTENT_TYPES.has(upstreamType);
         const contentType = isInline ? upstreamType : "application/octet-stream";
 
-        const headers = securityHeaders(contentType, false, isPrivate);
+        const isPartial = upstreamRes.status === 206;
+        const headers = securityHeaders(contentType, false, isPrivate, isPartial);
         headers.set("Content-Type", contentType);
         // "inline" permite visualizar imágenes, videos y PDFs; el resto se descarga.
         headers.set("Content-Disposition", isInline ? "inline" : "attachment");
@@ -156,8 +164,8 @@ async function handleUploadRequest(
             if (value) headers.set(name, value);
         }
 
-        const body = method === "HEAD" ? null : await upstreamRes.arrayBuffer();
-        return new NextResponse(body, {
+        // FE6-08: devolver el ReadableStream directamente sin bufferizar hasta 15 MB en memoria.
+        return new NextResponse(method === "HEAD" ? null : upstreamRes.body, {
             status: upstreamRes.status,
             headers,
         });

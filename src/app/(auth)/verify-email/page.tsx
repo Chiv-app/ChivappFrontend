@@ -46,7 +46,7 @@ function VerifyEmailContent() {
         // Si abre el enlace desde otro dispositivo sin sesión, puede ingresar su contraseña
         // para conservarla o confirmar directamente para recibir un enlace de restablecimiento.
         if (user && status === "idle") {
-            void runVerification();
+            void Promise.resolve().then(() => runVerification());
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, authLoading, user]);

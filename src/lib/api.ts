@@ -40,6 +40,8 @@ export class ApiError extends Error {
 const VALIDATION_FIELD_LABELS: Record<string, string> = {
     price: "Precio",
     price_agreed: "Precio acordado",
+    amount: "Monto",
+    duration_hours: "Duración",
     location_address: "Dirección del evento",
     location_city: "Ciudad",
     location_reference: "Referencia",
@@ -54,9 +56,10 @@ const VALIDATION_FIELD_LABELS: Record<string, string> = {
     client_email: "Correo del cliente",
     password: "Contraseña",
     otp: "Código OTP",
+    code: "Código OTP",
 };
 
-function translateValidationItem(item: {
+function translateValidationMessage(item: {
     type?: string;
     msg?: string;
     message?: string;
@@ -83,6 +86,22 @@ function translateValidationItem(item: {
     if (item.type === "string_too_short" && item.ctx?.min_length !== undefined) {
         return `debe tener al menos ${item.ctx.min_length} caracteres`;
     }
+    if (item.type === "decimal_max_places") {
+        const places = item.ctx?.decimal_places ?? 2;
+        return `debe tener como máximo ${places} decimales`;
+    }
+    if (item.type === "int_parsing") {
+        return "debe ser un número entero";
+    }
+    if (
+        item.type === "decimal_parsing" ||
+        item.type === "float_parsing"
+    ) {
+        return "debe ser un número válido";
+    }
+    if (item.type === "string_pattern_mismatch") {
+        return "tiene un formato no válido";
+    }
     if (item.type === "missing") {
         return "es obligatorio";
     }
@@ -98,6 +117,19 @@ function translateValidationItem(item: {
     }
     if (/valid email/i.test(rawMsg)) {
         return "ingresa un correo electrónico válido";
+    }
+    if (/Decimal input should have no more than (\d+) decimal places/i.test(rawMsg)) {
+        const match = rawMsg.match(/Decimal input should have no more than (\d+) decimal places/i);
+        return `debe tener como máximo ${match?.[1] ?? "2"} decimales`;
+    }
+    if (/Input should be a valid integer/i.test(rawMsg)) {
+        return "debe ser un número entero";
+    }
+    if (/Input should be a valid (decimal|number)/i.test(rawMsg)) {
+        return "debe ser un número válido";
+    }
+    if (/String should match pattern/i.test(rawMsg)) {
+        return "tiene un formato no válido";
     }
     if (/Input should be greater than or equal to (\S+)/i.test(rawMsg)) {
         const match = rawMsg.match(/Input should be greater than or equal to (\S+)/i);
@@ -121,6 +153,24 @@ function translateValidationItem(item: {
     return rawMsg;
 }
 
+export function translateValidationItem(item: {
+    type?: string;
+    msg?: string;
+    message?: string;
+    loc?: Array<string | number>;
+    ctx?: Record<string, unknown>;
+}): string | null {
+    const msg = translateValidationMessage(item);
+    if (!msg) return null;
+    const rawField = item.loc
+        ?.filter((part) => part !== "body" && part !== "query" && part !== "path")
+        .join(".");
+    const field = rawField
+        ? VALIDATION_FIELD_LABELS[rawField] ?? rawField
+        : "";
+    return field ? `${field}: ${msg}` : msg;
+}
+
 async function parseErrorMessage(res: Response): Promise<string> {
     try {
         const body = await res.json();
@@ -128,23 +178,7 @@ async function parseErrorMessage(res: Response): Promise<string> {
         if (typeof body.error === "string") return body.error;
         if (Array.isArray(body.detail)) {
             return body.detail
-                .map((item: {
-                    type?: string;
-                    msg?: string;
-                    message?: string;
-                    loc?: Array<string | number>;
-                    ctx?: Record<string, unknown>;
-                }) => {
-                    const msg = translateValidationItem(item);
-                    if (!msg) return null;
-                    const rawField = item.loc
-                        ?.filter((part) => part !== "body" && part !== "query" && part !== "path")
-                        .join(".");
-                    const field = rawField
-                        ? VALIDATION_FIELD_LABELS[rawField] ?? rawField
-                        : "";
-                    return field ? `${field}: ${msg}` : msg;
-                })
+                .map(translateValidationItem)
                 .filter(Boolean)
                 .join(". ");
         }

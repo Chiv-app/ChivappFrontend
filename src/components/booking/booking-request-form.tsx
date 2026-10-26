@@ -119,8 +119,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   }, [musician.id]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAvailability();
+    void Promise.resolve().then(() => loadAvailability());
   }, [loadAvailability]);
 
   async function submitRequest() {

@@ -41,13 +41,13 @@ export default function BookingCalendarSyncModal({
     const [membersLoading, setMembersLoading] = useState(false);
     useEffect(() => {
         if (!isOpen) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIncludeContractor(true);
-        setSelectedMembers([]);
-        
-        // Fetch booking members
         let cancelled = false;
-        setMembersLoading(true);
+        void Promise.resolve().then(() => {
+            if (cancelled) return;
+            setIncludeContractor(true);
+            setSelectedMembers([]);
+            setMembersLoading(true);
+        });
         apiFetch<{ status: string; ensemble_member_id: string; member_fullname: string }[]>(`/bookings/${booking.id}/member-invites`)
             .then(data => {
                 if (!cancelled) {

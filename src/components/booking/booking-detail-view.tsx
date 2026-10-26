@@ -118,8 +118,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
     }, [bookingId]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        loadBooking();
+        void Promise.resolve().then(() => loadBooking());
     }, [loadBooking]);
 
     useEffect(() => {

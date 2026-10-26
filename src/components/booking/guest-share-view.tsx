@@ -55,16 +55,18 @@ export default function GuestShareView({ token }: { token: string }) {
                 ? window.localStorage.getItem(guestNameStorageKey(token))
                 : null;
         if (saved && saved.trim().length >= 2) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setGuestName(saved);
-            setJoined(true);
+            void Promise.resolve().then(() => {
+                setGuestName(saved);
+                setJoined(true);
+            });
         }
     }, [token]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoading(true);
-        setError(null);
+        void Promise.resolve().then(() => {
+            setIsLoading(true);
+            setError(null);
+        });
         Promise.all([getPublicShare(token), listPublicShareReviews(token)])
             .then(([shareData, reviewData]) => {
                 setShare(shareData);

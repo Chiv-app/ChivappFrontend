@@ -113,8 +113,7 @@ export default function ContractorBookingsView() {
     }
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        loadBookings();
+        void Promise.resolve().then(() => loadBookings());
     }, []);
 
     const stats = useMemo(() => {
