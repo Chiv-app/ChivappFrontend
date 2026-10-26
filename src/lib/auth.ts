@@ -55,25 +55,42 @@ export async function logoutUser(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
 }
 
+export type VerifyEmailResponse = {
+    message: string;
+    email_verified: boolean;
+    password_reset_sent?: boolean;
+};
+
 const verifyEmailPromiseCache = new Map<
     string,
-    Promise<{ message: string; email_verified: boolean }>
+    Promise<VerifyEmailResponse>
 >();
 
-export async function verifyEmail(token: string) {
-    const existing = verifyEmailPromiseCache.get(token);
+export async function verifyEmail(token: string, password?: string): Promise<VerifyEmailResponse> {
+    const cacheKey = `${token}:${password ?? ""}`;
+    const existing = verifyEmailPromiseCache.get(cacheKey);
     if (existing) {
         return existing;
     }
-    const request = apiFetch<{ message: string; email_verified: boolean }>(
+    const request = apiFetch<VerifyEmailResponse>(
         `/auth/verify-email/${encodeURIComponent(token)}`,
-        { method: "POST" },
+        {
+            method: "POST",
+            ...(password ? { body: JSON.stringify({ password }) } : {}),
+        },
     ).catch((err) => {
-        verifyEmailPromiseCache.delete(token);
+        verifyEmailPromiseCache.delete(cacheKey);
         throw err;
     });
-    verifyEmailPromiseCache.set(token, request);
+    verifyEmailPromiseCache.set(cacheKey, request);
     return request;
+}
+
+export async function consumeMagicLink(token: string): Promise<{ redirect_to: string }> {
+    return apiFetch<{ redirect_to: string }>("/auth/magic-link/login", {
+        method: "POST",
+        body: JSON.stringify({ token }),
+    });
 }
 
 export async function resendVerificationEmail(email?: string) {

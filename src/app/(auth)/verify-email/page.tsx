@@ -13,37 +13,43 @@ function VerifyEmailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
-    const { user, refresh } = useAuth();
-    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    const { user, loading: authLoading, refresh } = useAuth();
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
+    const [passwordResetSent, setPasswordResetSent] = useState(false);
+    const [passwordInput, setPasswordInput] = useState("");
     const [resending, setResending] = useState(false);
     const [emailInput, setEmailInput] = useState("");
 
-    useEffect(() => {
+    async function runVerification(optionalPassword?: string) {
         if (!token) return;
+        setStatus("loading");
+        try {
+            const result = await verifyEmail(token, optionalPassword);
+            setStatus("success");
+            setMessage(result.message);
+            setPasswordResetSent(Boolean(result.password_reset_sent));
+            await refresh().catch(() => undefined);
+        } catch (error) {
+            setStatus("error");
+            setMessage(
+                error instanceof ApiError
+                    ? error.message
+                    : "No se pudo verificar tu correo.",
+            );
+        }
+    }
 
-        let cancelled = false;
-        verifyEmail(token)
-            .then(async (result) => {
-                if (cancelled) return;
-                setStatus("success");
-                setMessage(result.message);
-                await refresh().catch(() => undefined);
-            })
-            .catch((error) => {
-                if (cancelled) return;
-                setStatus("error");
-                setMessage(
-                    error instanceof ApiError
-                        ? error.message
-                        : "No se pudo verificar tu correo.",
-                );
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [token, refresh]);
+    useEffect(() => {
+        if (!token || authLoading) return;
+        // Si el usuario ya tiene sesión activa en este navegador, verificamos de inmediato.
+        // Si abre el enlace desde otro dispositivo sin sesión, puede ingresar su contraseña
+        // para conservarla o confirmar directamente para recibir un enlace de restablecimiento.
+        if (user && status === "idle") {
+            void runVerification();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token, authLoading, user]);
 
     const displayStatus = !token ? "error" : status;
     const displayMessage = !token
@@ -94,8 +100,39 @@ function VerifyEmailContent() {
                 </div>
             </CardHeader>
             <CardBody className="px-6 pb-6 pt-4 flex flex-col gap-4">
-                {displayStatus === "loading" ? (
+                {displayStatus === "loading" || authLoading ? (
                     <p className="text-default-500">Verificando tu correo…</p>
+                ) : displayStatus === "idle" && !user ? (
+                    <div className="flex flex-col gap-3">
+                        <p className="text-sm text-default-600">
+                            Estás verificando tu correo desde un dispositivo sin sesión activa. Si ya elegiste una contraseña al registrarte, escríbela para conservarla; si no la tienes a mano, verificaremos tu correo y te enviaremos un enlace para definir una nueva.
+                        </p>
+                        <Input
+                            label="Contraseña de tu cuenta (opcional)"
+                            labelPlacement="outside"
+                            placeholder="Ingresa tu contraseña para conservarla"
+                            type="password"
+                            variant="bordered"
+                            value={passwordInput}
+                            onValueChange={setPasswordInput}
+                        />
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                color="primary"
+                                radius="lg"
+                                onPress={() => runVerification(passwordInput.trim() || undefined)}
+                            >
+                                Confirmar correo
+                            </Button>
+                            <Button
+                                variant="flat"
+                                radius="lg"
+                                onPress={() => runVerification(undefined)}
+                            >
+                                No recuerdo mi contraseña
+                            </Button>
+                        </div>
+                    </div>
                 ) : (
                     <p
                         className={
@@ -105,6 +142,11 @@ function VerifyEmailContent() {
                         {displayMessage}
                     </p>
                 )}
+                {displayStatus === "success" && passwordResetSent ? (
+                    <div className="rounded-xl border border-warning-200 bg-warning-50/70 p-3 text-sm text-warning-800">
+                        Por seguridad, dado que verificaste tu correo sin sesión activa, te enviamos un correo adicional con un enlace para definir tu contraseña antes de iniciar sesión.
+                    </div>
+                ) : null}
                 {displayStatus === "error" && !user ? (
                     <div className="flex flex-col gap-2">
                         <Input
