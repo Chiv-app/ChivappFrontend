@@ -25,6 +25,10 @@ export const UI = {
     primaryButton:
         "font-semibold shadow-glow hover:shadow-glow-lg transition-shadow",
     skeleton: "rounded-4xl bg-content1 border border-default-200/70 animate-pulse",
+    input: {
+        inputWrapper: "border-default-400 data-[hover=true]:border-default-500",
+        input: "placeholder:text-default-500",
+    },
     authInput: {
         input: "placeholder:text-default-600",
     },
