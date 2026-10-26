@@ -336,6 +336,7 @@ export default function ContractorOperationsView() {
                                 </p>
                             </div>
                             <Tabs
+                                aria-label="Filtrar operaciones por categoría"
                                 selectedKey={tab}
                                 onSelectionChange={(key) => setTab(key as ViewTab)}
                                 size="sm"

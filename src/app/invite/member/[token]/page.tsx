@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button, Card, CardBody, Chip, Input, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AppLogo from "@/components/layout/app-logo";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { ApiError } from "@/lib/api";
 import {
     previewBookingMemberInvite,
@@ -29,6 +30,7 @@ export default function MemberInviteRespondPage({ params }: Props) {
     const [isLoading, setIsLoading] = useState(true);
     const [isWorking, setIsWorking] = useState<"accept" | "decline" | null>(null);
     const [password, setPassword] = useState("");
+    const [isDeclineConfirmOpen, setIsDeclineConfirmOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -178,9 +180,9 @@ export default function MemberInviteRespondPage({ params }: Props) {
                         {preview.can_respond ? (
                             <div className="flex flex-col gap-4">
                                 {preview.needs_password && (
-                                    <div className="bg-primary-50 text-primary-800 p-4 rounded-xl text-sm mb-2">
+                                    <div className="bg-primary/10 text-primary-text border border-primary/20 p-4 rounded-xl text-sm mb-2">
                                         <p className="font-semibold mb-2">Crea tu contraseña para aceptar</p>
-                                        <p className="opacity-90 mb-4">Para confirmar tu asistencia y acceder a tu perfil en Chivapp, necesitas crear una contraseña.</p>
+                                        <p className="text-default-700 mb-4">Para confirmar tu asistencia y acceder a tu perfil en Chivapp, necesitas crear una contraseña.</p>
                                         <Input
                                             type="password"
                                             label="Nueva contraseña"
@@ -188,7 +190,6 @@ export default function MemberInviteRespondPage({ params }: Props) {
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="Mínimo 8 caracteres"
                                             variant="bordered"
-                                            color="primary"
                                         />
                                     </div>
                                 )}
@@ -199,7 +200,7 @@ export default function MemberInviteRespondPage({ params }: Props) {
                                     radius="lg"
                                     isLoading={isWorking === "decline"}
                                     isDisabled={isWorking === "accept"}
-                                    onPress={() => respond("decline")}
+                                    onPress={() => setIsDeclineConfirmOpen(true)}
                                 >
                                     Rechazar
                                 </Button>
@@ -214,6 +215,20 @@ export default function MemberInviteRespondPage({ params }: Props) {
                                     Aceptar
                                 </Button>
                             </div>
+                            <ConfirmDialog
+                                isOpen={isDeclineConfirmOpen}
+                                onClose={() => setIsDeclineConfirmOpen(false)}
+                                onConfirm={async () => {
+                                    setIsDeclineConfirmOpen(false);
+                                    await respond("decline");
+                                }}
+                                title="¿Rechazar convocatoria?"
+                                description="El líder de tu agrupación será notificado de que no podrás asistir a este evento."
+                                confirmLabel="Sí, rechazar"
+                                cancelLabel="Volver"
+                                color="danger"
+                                isLoading={isWorking === "decline"}
+                            />
                             </div>
                         ) : (
                             <p className="text-sm text-default-600 text-center">

@@ -277,6 +277,7 @@ export default function ContractorBookingsView() {
 
             <div className="flex flex-col gap-4">
                 <Tabs
+                    aria-label="Filtrar reservas del contratante por estado"
                     selectedKey={filter}
                     onSelectionChange={(key) => {
                         setFilter(key as FilterKey);
@@ -296,6 +297,7 @@ export default function ContractorBookingsView() {
                 </Tabs>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
                     <Input
+                        aria-label="Buscar reservas por evento, músico, ciudad o estado"
                         value={query}
                         onValueChange={(val) => {
                             setQuery(val);

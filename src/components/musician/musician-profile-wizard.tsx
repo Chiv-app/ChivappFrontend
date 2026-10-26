@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
     Button,
     Card,
@@ -25,8 +26,12 @@ import ChangePasswordModal from "@/components/profile/change-password-modal";
 import ProfileWizardStepper, {
     WIZARD_STEPS,
 } from "@/components/musician/profile-wizard/profile-wizard-stepper";
-import ContractDesigner from "@/components/musician/profile-wizard/contract-designer";
 import { getInitialStepIndex } from "@/components/musician/profile-wizard/constants";
+
+const ContractDesigner = dynamic(
+    () => import("@/components/musician/profile-wizard/contract-designer"),
+    { ssr: false },
+);
 import {
     ensureTitleHeading,
     extractTitleFromHtml,
@@ -184,6 +189,7 @@ export default function MusicianProfileWizard() {
     const [payoutBeneficiaryDocument, setPayoutBeneficiaryDocument] = useState("");
     const [payoutMpEmail, setPayoutMpEmail] = useState("");
     const [isRevertConfirmOpen, setIsRevertConfirmOpen] = useState(false);
+    const [savedPayloadSnapshot, setSavedPayloadSnapshot] = useState<string | null>(null);
 
     const [availabilityDay, setAvailabilityDay] = useState("1");
 
@@ -300,10 +306,63 @@ export default function MusicianProfileWizard() {
             profileData.contract_template_title ||
             getContractDesignerConfig("musician").defaultTitle;
         const bodyWithTitle = ensureTitleHeading(normalizedBody, fallbackTitle);
-        setContractTitle(
-            profileData.contract_template_title || extractTitleFromHtml(bodyWithTitle, fallbackTitle),
-        );
+        const resolvedTitle =
+            profileData.contract_template_title || extractTitleFromHtml(bodyWithTitle, fallbackTitle);
+        setContractTitle(resolvedTitle);
         setContractBody(bodyWithTitle);
+        setSavedPayloadSnapshot(
+            JSON.stringify({
+                username: (profileData.username || user?.username || profileData.slug || "").trim() || null,
+                fullname: (profileData.fullname || user?.fullname || "").trim() || null,
+                stage_name: profileData.stage_name ?? "",
+                bio: profileData.bio ?? "",
+                genres: profileData.genres ?? [],
+                instruments: profileData.instruments ?? [],
+                repertoire: repertoireFromProfile(profileData),
+                songs: repertoireFromProfile(profileData).map((item) => item.title),
+                location_city: profileData.location_city ?? "",
+                location_zone: profileData.location_zone ?? "",
+                price_per_hour:
+                    (profileData.availability_type ?? "both") === "per_event"
+                        ? null
+                        : profileData.price_per_hour != null
+                          ? Number(profileData.price_per_hour)
+                          : null,
+                price_per_event:
+                    (profileData.availability_type ?? "both") === "hourly"
+                        ? null
+                        : profileData.price_per_event != null
+                          ? Number(profileData.price_per_event)
+                          : null,
+                availability_type: profileData.availability_type ?? "both",
+                portfolio_description: profileData.portfolio_description ?? "",
+                profile_image_url: profileData.profile_image_url,
+                videos: profileData.videos ?? [],
+                showreel_video_url:
+                    profileData.showreel_video_url &&
+                    (profileData.videos ?? []).includes(profileData.showreel_video_url)
+                        ? profileData.showreel_video_url
+                        : null,
+                instagram_url: (profileData.instagram_url ?? "").trim() || null,
+                facebook_url: (profileData.facebook_url ?? "").trim() || null,
+                tiktok_url: (profileData.tiktok_url ?? "").trim() || null,
+                youtube_channel_url: (profileData.youtube_channel_url ?? "").trim() || null,
+                spotify_url: (profileData.spotify_url ?? "").trim() || null,
+                website_url: (profileData.website_url ?? "").trim() || null,
+                id_document_url: profileData.id_document_url,
+                contract_template_title: resolvedTitle,
+                contract_template_body: bodyWithTitle,
+                signature_image_url: profileData.signature_image_url,
+                payout_method: profileData.payout_method || "bank_transfer",
+                payout_bank_name: (profileData.payout_bank_name || "").trim() || null,
+                payout_account_number: (profileData.payout_account_number || "").trim() || null,
+                payout_cci: (profileData.payout_cci || "").trim() || null,
+                payout_phone: (profileData.payout_phone || "").trim() || null,
+                payout_beneficiary_name: (profileData.payout_beneficiary_name || "").trim() || null,
+                payout_beneficiary_document: (profileData.payout_beneficiary_document || "").trim() || null,
+                payout_mp_email: (profileData.payout_mp_email || "").trim() || null,
+            }),
+        );
     }
 
     function buildPayload(): MusicianProfileUpdate {
@@ -464,17 +523,34 @@ export default function MusicianProfileWizard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const currentPayloadSnapshot = JSON.stringify(buildPayload());
+    const hasUnsavedChanges =
+        Boolean(signatureDataUrl) ||
+        (savedPayloadSnapshot !== null && currentPayloadSnapshot !== savedPayloadSnapshot);
+
+    useEffect(() => {
+        if (!hasUnsavedChanges) return;
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = "";
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [hasUnsavedChanges]);
+
     async function handleSave(showToast = true) {
         const wasPublished = profile?.status === "published";
         setIsSaving(true);
         try {
             const resolvedSignature = await resolveSignatureForSave();
-            const updated = await updateMusicianProfile({
+            const payloadToSave = {
                 ...buildPayload(),
                 signature_image_url: resolvedSignature,
-            });
+            };
+            const updated = await updateMusicianProfile(payloadToSave);
             setProfile(updated);
             setSignatureImageUrl(updated.signature_image_url);
+            setSavedPayloadSnapshot(JSON.stringify(payloadToSave));
             await refresh();
             const statusData = await refreshValidation();
             if (wasPublished && updated.status === "draft") {
@@ -1129,6 +1205,7 @@ export default function MusicianProfileWizard() {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <Input
+                                    aria-label="Enlace de video de YouTube o Vimeo"
                                     placeholder="https://www.youtube.com/watch?v=..."
                                     value={videoDraft}
                                     onValueChange={setVideoDraft}
@@ -1667,95 +1744,88 @@ export default function MusicianProfileWizard() {
                         <CardBody className="p-6"><Form id="wizard-form" onSubmit={(e) => { e.preventDefault(); handleNext(); }} validationBehavior="native" className="w-full">{renderStepContent()}</Form></CardBody>
                     </Card>
 
-                    <div className="sticky bottom-[calc(var(--bottom-nav-h,0px)+1rem)] lg:bottom-4 z-20 rounded-4xl border border-default-200/70 bg-content1/90 backdrop-blur-xl p-4 shadow-elevated flex flex-wrap items-center justify-between gap-3">
-                        <Button
-                            variant="flat"
-                            isDisabled={activeStep === 0 && !canReturnToPreview}
-                            onPress={() => {
-                                if (canReturnToPreview) {
-                                    setIsEditingVerified(false);
-                                    setActiveStep(0);
-                                    return;
-                                }
-                                setActiveStep((current) => Math.max(0, current - 1));
-                            }}
-                            startContent={
-                                <Icon icon="material-symbols:arrow-back" width={20} height={20} />
-                            }
-                        >
-                            {canReturnToPreview ? "Volver" : "Anterior"}
-                        </Button>
-
-                        <div className="flex flex-wrap gap-2">
+                    <div className="sticky bottom-[calc(var(--bottom-nav-h,0px)+var(--cookie-h,0px)+1rem)] lg:bottom-4 z-20 rounded-4xl border border-default-200/70 bg-content1/90 backdrop-blur-xl p-4 shadow-elevated flex flex-col gap-2">
+                        {isCurrentStepRequired && !isCurrentStepComplete && currentValidationStep && currentValidationStep.missing.length > 0 ? (
+                            <p role="status" className="text-xs font-medium text-warning-text">
+                                Para continuar este paso falta:{" "}
+                                {currentValidationStep.missing.map(labelProfileField).join(", ")}.
+                            </p>
+                        ) : null}
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                             <Button
-                                variant="bordered"
-                                isLoading={isSaving}
-                                isDisabled={isSubmitting}
-                                onPress={() => handleSave()}
+                                variant="flat"
+                                isDisabled={activeStep === 0 && !canReturnToPreview}
+                                onPress={() => {
+                                    if (canReturnToPreview) {
+                                        setIsEditingVerified(false);
+                                        setActiveStep(0);
+                                        return;
+                                    }
+                                    setActiveStep((current) => Math.max(0, current - 1));
+                                }}
+                                startContent={
+                                    <Icon icon="material-symbols:arrow-back" width={20} height={20} />
+                                }
                             >
-                                Guardar cambios
+                                {canReturnToPreview ? "Volver" : "Anterior"}
                             </Button>
 
-                            {!isLastStep && !isEditMode ? (
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Button
-                                    color="primary"
-                                    isLoading={isSaving}
-                                    isDisabled={
-                                        isCurrentStepRequired && !isCurrentStepComplete
-                                    }
-                                    type="submit"
-                                    form="wizard-form"
-                                    endContent={
-                                        <Icon
-                                            icon="material-symbols:arrow-forward"
-                                            width={20}
-                                            height={20}
-                                        />
-                                    }
-                                >
-                                    {isCurrentStepRequired
-                                        ? "Guardar y continuar"
-                                        : "Continuar"}
-                                </Button>
-                            ) : null}
-
-                            {!isLastStep && isEditMode ? (
-                                <Button
-                                    variant="flat"
+                                    variant="bordered"
                                     isLoading={isSaving}
                                     isDisabled={isSubmitting}
-                                    type="submit"
-                                    form="wizard-form"
-                                    endContent={
-                                        <Icon
-                                            icon="material-symbols:arrow-forward"
-                                            width={20}
-                                            height={20}
-                                        />
-                                    }
+                                    onPress={() => handleSave()}
                                 >
-                                    Siguiente
+                                    Guardar borrador
                                 </Button>
-                            ) : null}
 
-                            {canShowSubmit ? (
-                                <Button
-                                    color={canSubmitNow ? "primary" : "secondary"}
-                                    isLoading={isSubmitting}
-                                    isDisabled={submitDisabled}
-                                    onPress={handleSubmitProfile}
-                                    startContent={
-                                        canSubmitNow ? (
+                                {!isLastStep ? (
+                                    <Button
+                                        color={canShowSubmit && canSubmitNow && isEditMode ? "default" : "primary"}
+                                        variant={canShowSubmit && canSubmitNow && isEditMode ? "flat" : "solid"}
+                                        isLoading={isSaving}
+                                        isDisabled={
+                                            isSubmitting ||
+                                            (!isEditMode && isCurrentStepRequired && !isCurrentStepComplete)
+                                        }
+                                        type="submit"
+                                        form="wizard-form"
+                                        endContent={
                                             <Icon
-                                                icon="material-symbols:send"
-                                                width={18}
+                                                icon="material-symbols:arrow-forward"
+                                                width={20}
+                                                height={20}
                                             />
-                                        ) : undefined
-                                    }
-                                >
-                                    Enviar a revisión
-                                </Button>
-                            ) : null}
+                                        }
+                                    >
+                                        {isEditMode
+                                            ? "Siguiente"
+                                            : isCurrentStepRequired
+                                              ? "Guardar y continuar"
+                                              : "Continuar"}
+                                    </Button>
+                                ) : null}
+
+                                {canShowSubmit && (isLastStep || isEditMode) ? (
+                                    <Button
+                                        color={canSubmitNow ? "primary" : "secondary"}
+                                        isLoading={isSubmitting}
+                                        isDisabled={submitDisabled}
+                                        onPress={handleSubmitProfile}
+                                        startContent={
+                                            canSubmitNow ? (
+                                                <Icon
+                                                    icon="material-symbols:send"
+                                                    width={18}
+                                                />
+                                            ) : undefined
+                                        }
+                                    >
+                                        Enviar a revisión
+                                    </Button>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
             </div>

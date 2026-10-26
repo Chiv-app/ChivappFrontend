@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { ApiError } from "@/lib/api";
+import { formatPeruDate } from "@/lib/date-utils";
 import {
     listMyEnsembleInvites,
     respondEnsembleInvite,
@@ -18,6 +20,7 @@ export default function MusicianOnboardingOverlay() {
     const [bookingCalls, setBookingCalls] = useState<BookingMemberInviteOut[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [workingAction, setWorkingAction] = useState<"accept" | "decline" | null>(null);
+    const [confirmDeclineCallId, setConfirmDeclineCallId] = useState<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -138,8 +141,10 @@ export default function MusicianOnboardingOverlay() {
                                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary-text mb-2">
                                         <Icon icon="lucide:music" width={32} />
                                     </div>
-                                    <p className="text-lg">
-                                        Has sido invitado a unirte a una agrupación.
+                                    <p className="text-lg font-semibold">
+                                        {currentEns.leader_name
+                                            ? `${currentEns.leader_name} te invitó a unirte a su agrupación.`
+                                            : "Has sido invitado a unirte a una agrupación."}
                                     </p>
                                     <p className="text-sm text-default-500">
                                         Al aceptar, podrás recibir convocatorias a sus eventos y gestionar tus pagos.
@@ -147,12 +152,51 @@ export default function MusicianOnboardingOverlay() {
                                 </div>
                             ) : currentCall ? (
                                 <div className="flex flex-col gap-4 text-center items-center py-4">
-                                    <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center text-success-text mb-2">
+                                    <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center text-success-text mb-1">
                                         <Icon icon="lucide:calendar-check" width={32} />
                                     </div>
-                                    <p className="text-lg">
-                                        Has sido convocado a un evento.
+                                    <p className="text-lg font-bold text-foreground">
+                                        {currentCall.event_type || "Has sido convocado a un evento"}
                                     </p>
+                                    {currentCall.leader_name ? (
+                                        <p className="text-sm text-default-600 -mt-2">
+                                            Convocatoria enviada por{" "}
+                                            <span className="font-semibold text-foreground">
+                                                {currentCall.leader_name}
+                                            </span>
+                                        </p>
+                                    ) : null}
+                                    {(currentCall.event_date ||
+                                        currentCall.location_city ||
+                                        currentCall.location_address) && (
+                                        <div className="w-full rounded-2xl bg-default-100 px-4 py-3 text-sm text-left flex flex-col gap-2">
+                                            {currentCall.event_date ? (
+                                                <div className="flex items-center gap-2 text-default-700">
+                                                    <Icon icon="material-symbols:calendar-month" width={18} />
+                                                    <span>
+                                                        {formatPeruDate(currentCall.event_date)}
+                                                        {currentCall.start_time
+                                                            ? ` · ${String(currentCall.start_time).slice(0, 5)}`
+                                                            : ""}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            {(currentCall.location_address || currentCall.location_city) ? (
+                                                <div className="flex items-start gap-2 text-default-700">
+                                                    <Icon
+                                                        icon="material-symbols:location-on"
+                                                        width={18}
+                                                        className="mt-0.5 shrink-0"
+                                                    />
+                                                    <span>
+                                                        {[currentCall.location_address, currentCall.location_city]
+                                                            .filter(Boolean)
+                                                            .join(" · ")}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )}
                                     <p className="text-sm text-default-500">
                                         Acepta el compromiso para confirmar tu asistencia al evento o recházalo si no tienes disponibilidad.
                                     </p>
@@ -197,7 +241,7 @@ export default function MusicianOnboardingOverlay() {
                                         variant="flat"
                                         isLoading={workingAction === "decline"}
                                         isDisabled={workingAction === "accept"}
-                                        onPress={() => void handleRespondCall(currentCall.booking_id, "decline")}
+                                        onPress={() => setConfirmDeclineCallId(currentCall.booking_id)}
                                         className="w-full sm:w-auto"
                                     >
                                         Rechazar
@@ -217,6 +261,22 @@ export default function MusicianOnboardingOverlay() {
                     </>
                 )}
             </ModalContent>
+            <ConfirmDialog
+                isOpen={confirmDeclineCallId !== null}
+                onClose={() => setConfirmDeclineCallId(null)}
+                onConfirm={async () => {
+                    if (!confirmDeclineCallId) return;
+                    const id = confirmDeclineCallId;
+                    setConfirmDeclineCallId(null);
+                    await handleRespondCall(id, "decline");
+                }}
+                title="¿Rechazar convocatoria?"
+                description="El líder de tu agrupación será notificado de que no podrás asistir a este evento."
+                confirmLabel="Sí, rechazar"
+                cancelLabel="Volver"
+                color="danger"
+                isLoading={workingAction === "decline"}
+            />
         </Modal>
     );
 }

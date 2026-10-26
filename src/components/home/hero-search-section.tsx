@@ -1,33 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 
-const phrases = [
-    "La banda sonora de tus mejores momentos.",
-    "El mejor mariachi para tu serenata.",
-    "Orquestas para celebrar a lo grande.",
-    "Encuentra el DJ ideal para tu fiesta.",
-];
-
 export default function HeroSearchSection() {
-    const [index, setIndex] = useState(0);
-    const [paused, setPaused] = useState(false);
-    const shouldReduceMotion = useReducedMotion();
     const router = useRouter();
 
     const [location, setLocation] = useState("");
     const [style, setStyle] = useState("");
-
-    useEffect(() => {
-        if (shouldReduceMotion || paused) return;
-        const interval = setInterval(() => {
-            setIndex((current) => (current + 1) % phrases.length);
-        }, 4500);
-        return () => clearInterval(interval);
-    }, [shouldReduceMotion, paused]);
 
     function handleSearch(e?: React.FormEvent) {
         e?.preventDefault();
@@ -59,23 +41,10 @@ export default function HeroSearchSection() {
                     Contrata mariachis y músicos verificados para tu evento
                 </h1>
 
-                <div
-                    onMouseEnter={() => setPaused(true)}
-                    onMouseLeave={() => setPaused(false)}
-                    className="min-h-[44px] flex items-center justify-center gap-2 mb-3 px-4"
-                >
-                    <AnimatePresence mode="wait">
-                        <motion.p
-                            key={index}
-                            initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={shouldReduceMotion ? undefined : { opacity: 0, y: -8 }}
-                            transition={{ duration: 0.3 }}
-                            className="text-lg sm:text-xl md:text-2xl font-semibold text-primary-text text-balance"
-                        >
-                            {phrases[index]}
-                        </motion.p>
-                    </AnimatePresence>
+                <div className="min-h-[44px] flex items-center justify-center gap-2 mb-3 px-4">
+                    <p className="text-lg sm:text-xl md:text-2xl font-semibold text-primary-text text-balance">
+                        La banda sonora de tus mejores momentos.
+                    </p>
                 </div>
 
                 <motion.p
@@ -99,7 +68,7 @@ export default function HeroSearchSection() {
                 >
                     <label
                         htmlFor="hero-location"
-                        className="flex-1 flex items-center w-full px-4 sm:px-6 border-b sm:border-b-0 sm:border-r border-default-200 hover:bg-default-100/70 sm:rounded-l-full rounded-t-2xl sm:rounded-tr-none transition-colors py-2.5 cursor-text focus-within:bg-default-100"
+                        className="flex-1 flex items-center w-full px-4 sm:px-6 border-b sm:border-b-0 sm:border-r border-default-200 hover:bg-default-100/70 sm:rounded-l-full rounded-t-2xl sm:rounded-tr-none transition-colors py-2.5 cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
                     >
                         <Icon
                             icon="twemoji:round-pushpin"
@@ -119,14 +88,14 @@ export default function HeroSearchSection() {
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
                                 placeholder="¿Dónde es tu evento? (ej. Lima)"
-                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-400 w-full p-0 m-0 focus-visible:outline-none"
+                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
                             />
                         </span>
                     </label>
 
                     <label
                         htmlFor="hero-style"
-                        className="flex-1 flex items-center w-full px-4 sm:px-6 hover:bg-default-100/70 transition-colors py-2.5 rounded-b-2xl sm:rounded-none cursor-text focus-within:bg-default-100"
+                        className="flex-1 flex items-center w-full px-4 sm:px-6 hover:bg-default-100/70 transition-colors py-2.5 rounded-b-2xl sm:rounded-none cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
                     >
                         <Icon
                             icon="twemoji:guitar"
@@ -145,7 +114,7 @@ export default function HeroSearchSection() {
                                 value={style}
                                 onChange={(e) => setStyle(e.target.value)}
                                 placeholder="Mariachi, salsa, rock, DJ..."
-                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-400 w-full p-0 m-0 focus-visible:outline-none"
+                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
                             />
                         </span>
                     </label>

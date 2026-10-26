@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import type { BookingLinkOut } from "@/lib/booking-links";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 import { formatCurrency } from "@/lib/booking-labels";
+import { todayPeruIso } from "@/lib/date-utils";
 import { getPlatformPaymentInstructions } from "@/lib/payments";
 
 type Props = {
@@ -157,6 +158,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 <Input
                     label="Fecha del evento (opcional)"
                     type="date"
+                    min={todayPeruIso()}
                     value={eventDate}
                     onValueChange={setEventDate}
                     variant="bordered"
@@ -179,7 +181,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 variant="bordered"
             />
             <div className="bg-primary/10 p-3 rounded-lg mt-2">
-                <p className="text-xs text-primary-800 dark:text-primary-300">
+                <p className="text-xs text-primary-text">
                     El cliente abrirá el link, llenará sus datos personales, la direcci&oacute;n del evento y pagar&aacute; de forma segura. Se generará el contrato y la reserva automáticamente.
                 </p>
             </div>

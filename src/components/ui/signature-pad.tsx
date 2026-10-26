@@ -9,6 +9,8 @@ type Props = {
   onChange: (dataUrl: string | null) => void;
   label?: string;
   helperText?: string;
+  isInvalid?: boolean;
+  errorMessage?: string;
 };
 
 export default function SignaturePad({
@@ -16,6 +18,8 @@ export default function SignaturePad({
   onChange,
   label = "Firma del contratista",
   helperText = "Firma con el mouse o el dedo, o escribe tu nombre como firma. Se incorporará al contrato PDF.",
+  isInvalid = false,
+  errorMessage,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
@@ -177,6 +181,7 @@ export default function SignaturePad({
             size="sm"
             variant="flat"
             radius="lg"
+            aria-pressed={mode === "type"}
             onPress={() => {
               const nextMode = mode === "draw" ? "type" : "draw";
               setMode(nextMode);
@@ -219,7 +224,11 @@ export default function SignaturePad({
         />
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-default-300 bg-white touch-none">
+      <div
+        className={`overflow-hidden rounded-2xl border ${
+          isInvalid ? "border-danger" : "border-default-300"
+        } bg-white touch-none`}
+      >
         <canvas
           ref={canvasRef}
           role="img"
@@ -231,8 +240,12 @@ export default function SignaturePad({
           onPointerLeave={handlePointerUp}
         />
       </div>
-      {!hasStroke && !value ? (
-        <p className="text-xs text-warning">
+      {isInvalid && errorMessage ? (
+        <p role="alert" className="text-xs text-danger">
+          {errorMessage}
+        </p>
+      ) : !hasStroke && !value ? (
+        <p role="alert" className="text-xs text-warning-text">
           Firma requerida para aceptar el contrato.
         </p>
       ) : null}

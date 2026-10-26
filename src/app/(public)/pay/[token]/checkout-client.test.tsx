@@ -264,12 +264,13 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
             screen.getByRole("button", { name: /Continuar al paso 3/i }),
         );
 
-        // Step 3: verify all 34 placeholders were substituted (no "{{" remains)
-        const contractDoc = container.querySelector(".contract-doc");
+        // Step 3: verify all 34 placeholders were substituted (no "{{" remains) and contract-doc-page is used (UX6-03)
+        const contractDoc = container.querySelector(".contract-doc.contract-doc-page");
         expect(contractDoc).not.toBeNull();
         expect(contractDoc?.textContent).toContain("Mariachi Imperial");
         expect(contractDoc?.textContent).toContain("Carlos Mendoza");
         expect(contractDoc?.textContent).toContain("Cumpleaños 50");
+        expect(contractDoc?.textContent).toContain("15 de junio de 2027");
         expect(contractDoc?.textContent).not.toContain("{{");
 
         // Sign and accept terms -> First checkout
@@ -320,6 +321,33 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
                     event_type: "Boda Civil",
                 }),
             );
+        });
+    }, 15000);
+
+    it("marks invalid Step 2 fields with aria-invalid, focuses first error, and shows new-email activation notice (UX4-11, UX5-03)", async () => {
+        const user = userEvent.setup();
+        render(<CheckoutClient linkData={makeLinkData()} />);
+
+        await user.type(screen.getByLabelText(/Tipo de evento/i), "Serenata");
+        await user.type(screen.getByLabelText(/Ubicación del evento/i), "Av. Brasil 500");
+        await user.click(screen.getByRole("button", { name: /Continuar al paso 2/i }));
+
+        // Attempt to continue with empty Step 2 fields
+        await user.click(screen.getByRole("button", { name: /Continuar al paso 3/i }));
+
+        const nameInput = screen.getByLabelText(/Nombre y apellidos completos/i);
+        expect(nameInput).toHaveAttribute("aria-invalid", "true");
+        expect(document.activeElement).toBe(nameInput);
+        expect(screen.getByText(/Ingresa tu nombre completo/i)).toBeInTheDocument();
+
+        // Enter a new email and blur to verify the activation notice appears in Step 2 (UX5-03a)
+        const emailInput = screen.getByLabelText(/Correo electrónico/i);
+        await user.type(emailInput, "nuevo@example.com");
+        await user.tab();
+        await waitFor(() => {
+            expect(
+                screen.getByText(/Crearás tu reserva con este correo\. Al confirmar el pago te enviaremos un enlace para activar tu cuenta/i),
+            ).toBeInTheDocument();
         });
     });
 });

@@ -1,6 +1,11 @@
 "use client";
 
-import MusicianReportsView from "@/components/dashboard/musician-reports-view";
+import dynamic from "next/dynamic";
+
+const MusicianReportsView = dynamic(
+    () => import("@/components/dashboard/musician-reports-view"),
+    { ssr: false },
+);
 
 export default function MusicianReportsPage() {
     return <MusicianReportsView />;

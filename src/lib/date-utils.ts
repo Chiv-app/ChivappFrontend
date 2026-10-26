@@ -101,3 +101,16 @@ export function getPeruEventDate(eventDate: string, startTime: string): Date {
 export function formatDateTime(value: string | Date | null | undefined): string {
     return formatPeruDateTime(value);
 }
+
+/**
+ * Retorna la fecha actual en zona horaria de Perú en formato ISO YYYY-MM-DD.
+ */
+export function todayPeruIso(): string {
+    return new Intl.DateTimeFormat("en-CA", {
+        timeZone: PERU_TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(new Date());
+}
+

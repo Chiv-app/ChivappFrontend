@@ -6,6 +6,7 @@ import { Button } from "@heroui/react";
 import MusicianCard from "@/components/layout/musician-card";
 import EmptyMusiciansState from "@/components/musicians/empty-musicians-state";
 import MasonryItem from "@/components/ui/masonry-item";
+import { todayPeruIso } from "@/lib/date-utils";
 import { searchMusicians } from "@/lib/musicians";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
 
@@ -20,6 +21,7 @@ type Filters = {
     instrument: string;
     minPrice: string;
     maxPrice: string;
+    availableDate: string;
 };
 
 const EMPTY_FILTERS: Filters = {
@@ -28,6 +30,7 @@ const EMPTY_FILTERS: Filters = {
     instrument: "",
     minPrice: "",
     maxPrice: "",
+    availableDate: "",
 };
 
 function hasActiveFilters(filters: Filters): boolean {
@@ -45,7 +48,7 @@ type FilterFieldProps = {
     placeholder: string;
     value: string;
     onChange: (value: string) => void;
-    type?: "text" | "number";
+    type?: "text" | "number" | "date";
     listId?: string;
     suggestions?: string[];
 };
@@ -66,7 +69,7 @@ function FilterField({
         <label
             htmlFor={id}
             className={[
-                "flex items-center gap-2 h-11 px-3.5 rounded-2xl border transition-colors bg-content1/95 shadow-soft",
+                "flex items-center gap-2 h-11 px-3.5 rounded-2xl border transition-colors bg-content1/95 shadow-soft focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus",
                 isActive
                     ? "border-primary bg-primary/5"
                     : "border-default-200/80 hover:border-default-400 focus-within:border-primary",
@@ -87,13 +90,13 @@ function FilterField({
                     id={id}
                     type={type}
                     inputMode={type === "number" ? "numeric" : undefined}
-                    min={type === "number" ? 0 : undefined}
+                    min={type === "date" ? todayPeruIso() : type === "number" ? 0 : undefined}
                     list={listId}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
                     aria-label={label}
-                    className="w-full min-w-[6.5rem] bg-transparent outline-none text-base sm:text-sm text-foreground placeholder:text-default-400 mt-0.5"
+                    className="w-full min-w-[6.5rem] bg-transparent outline-none text-base sm:text-sm text-foreground placeholder:text-default-500 mt-0.5"
                 />
                 {listId && suggestions ? (
                     <datalist id={listId}>
@@ -111,7 +114,7 @@ function FilterField({
                         onChange("");
                     }}
                     aria-label={`Borrar filtro de ${label.toLowerCase()}`}
-                    className="inline-flex size-7 min-w-7 min-h-7 items-center justify-center rounded-full text-default-500 hover:bg-default-200/60 hover:text-foreground transition-colors shrink-0"
+                    className="inline-flex size-9 min-w-9 min-h-9 items-center justify-center rounded-full text-default-500 hover:bg-default-200/60 hover:text-foreground transition-colors shrink-0"
                 >
                     <Icon icon="material-symbols:close" width={14} />
                 </button>
@@ -130,7 +133,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
     const [musicians, setMusicians] = useState<MusicianCardModel[]>(initialMusicians || []);
     const [loadError, setLoadError] = useState(false);
 
-    const hasInitialData = initialMusicians && initialMusicians.length > 0;
+    const hasInitialData = initialMusicians !== undefined;
     const [isLoading, setIsLoading] = useState(!hasInitialData);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(
@@ -164,6 +167,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                 max_price_per_event: activeFilters.maxPrice
                     ? Number(activeFilters.maxPrice)
                     : undefined,
+                available_date: activeFilters.availableDate.trim() || undefined,
                 skip,
                 limit: PAGE_SIZE,
             });
@@ -187,6 +191,21 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
     }, []);
 
     useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams();
+            if (filters.city.trim()) params.set("city", filters.city.trim());
+            if (filters.genre.trim()) params.set("genre", filters.genre.trim());
+            if (filters.instrument.trim()) params.set("instrument", filters.instrument.trim());
+            if (filters.minPrice.trim()) params.set("min_price", filters.minPrice.trim());
+            if (filters.maxPrice.trim()) params.set("max_price", filters.maxPrice.trim());
+            if (filters.availableDate.trim()) params.set("available_date", filters.availableDate.trim());
+            const qs = params.toString();
+            const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+            if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+                window.history.replaceState(null, "", nextUrl);
+            }
+        }
+
         if (isFirstRender.current) {
             isFirstRender.current = false;
             if (hasInitialData) return;
@@ -264,7 +283,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                         id="musicians-filters-grid"
                         className={`${
                             showMobileFilters ? "grid" : "hidden sm:grid"
-                        } grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5`}
+                        } grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5`}
                     >
                         <FilterField
                             id="filter-city"
@@ -293,6 +312,15 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                             placeholder="Ej. Violín, Trompeta"
                             value={filters.instrument}
                             onChange={(v) => updateFilter("instrument", v)}
+                        />
+                        <FilterField
+                            id="filter-date"
+                            label="Fecha disponible"
+                            icon="material-symbols:calendar-month-outline-rounded"
+                            placeholder="Seleccionar fecha"
+                            type="date"
+                            value={filters.availableDate}
+                            onChange={(v) => updateFilter("availableDate", v)}
                         />
                         <FilterField
                             id="filter-min-price"

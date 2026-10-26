@@ -626,11 +626,11 @@ export default function BookingReservationItem({
 
                 {/* 3. Guidance only when it helps */}
                 {disputeHint ? (
-                    <p className="text-sm text-danger-700 dark:text-danger-400 bg-danger/10 rounded-xl px-3 py-2">
+                    <p className="text-sm text-danger-text bg-danger/10 rounded-xl px-3 py-2">
                         {disputeHint}
                     </p>
                 ) : urgent ? (
-                    <p className="text-sm text-warning-700 dark:text-warning-500 bg-warning/10 rounded-xl px-3 py-2">
+                    <p className="text-sm text-warning-text bg-warning/10 rounded-xl px-3 py-2">
                         {getBookingStatusHint(booking.status, role)}
                     </p>
                 ) : null}

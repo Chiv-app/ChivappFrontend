@@ -13,6 +13,7 @@ export type EnsembleMemberOut = {
     invite_expires_at?: string | null;
     invite_expired?: boolean;
     member_user_id: string | null;
+    leader_name?: string | null;
     invited_at: string | null;
     joined_at: string | null;
     created_at: string;
@@ -56,6 +57,12 @@ export type BookingMemberInviteOut = {
     respond_url: string | null;
     invited_at: string | null;
     responded_at: string | null;
+    event_type?: string | null;
+    event_date?: string | null;
+    start_time?: string | null;
+    location_city?: string | null;
+    location_address?: string | null;
+    leader_name?: string | null;
 };
 
 export type BookingMemberInvitePreviewOut = {

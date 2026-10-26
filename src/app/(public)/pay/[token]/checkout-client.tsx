@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   addToast,
@@ -26,7 +26,7 @@ import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
 import { formatCurrency } from "@/lib/booking-labels";
-import { formatPeruDate } from "@/lib/date-utils";
+import { formatPeruDate, todayPeruIso } from "@/lib/date-utils";
 import { sanitizeContractHtml } from "@/lib/sanitize-html";
 import { useIsClient } from "@/hooks/use-is-client";
 import { getVideoEmbedUrl, isSupportedVideoUrl } from "@/lib/video-urls";
@@ -66,13 +66,7 @@ export default function CheckoutClient({
       ? Number(linkData.fee_amount)
       : platformFeeAmount(bookingPreview)) || 0;
 
-  const todayIso = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }, []);
+  const todayIso = useMemo(() => todayPeruIso(), []);
 
   // Form state
   const isDateLocked = Boolean(linkData.event_date);
@@ -91,6 +85,7 @@ export default function CheckoutClient({
   const [documentNumber, setDocumentNumber] = useState("");
   const [step1Attempted, setStep1Attempted] = useState(false);
   const [step2Attempted, setStep2Attempted] = useState(false);
+  const [step3Attempted, setStep3Attempted] = useState(false);
   const [isContractPreviewOpen, setIsContractPreviewOpen] = useState(false);
 
   // Identity Flow State
@@ -105,7 +100,23 @@ export default function CheckoutClient({
 
   const [activeStep, setActiveStep] = useState<number>(1);
   const [completedSteps, setCompletedSteps] = useState(new Set<number>());
-  const { refresh: refreshAuth } = useAuth();
+  const { user, refresh: refreshAuth } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    void Promise.resolve().then(() => {
+      setFullname((prev) => (prev.trim() ? prev : user.fullname || ""));
+      if (!isEmailLocked) {
+        setEmail((prev) => (prev.trim() ? prev : user.email || ""));
+      }
+      setPhone((prev) => (prev.trim() ? prev : user.phone || ""));
+    });
+  }, [user, isEmailLocked]);
+
+  const sessionUserMatchesEmail = Boolean(
+    user?.email &&
+      email.trim().toLowerCase() === user.email.trim().toLowerCase(),
+  );
 
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -169,7 +180,9 @@ export default function CheckoutClient({
       ),
       "{{tipo_evento}}": escapeHtml(eventType.trim() || "Por definir"),
       "{{descripcion_evento}}": escapeHtml(eventType.trim() || "Por definir"),
-      "{{fecha_evento}}": escapeHtml(eventDate || "Por definir"),
+      "{{fecha_evento}}": escapeHtml(
+        eventDate ? formatPeruDate(eventDate) : "Por definir",
+      ),
       "{{hora_evento}}": escapeHtml(startTime || "Por definir"),
       "{{hora_inicio}}": escapeHtml(startTime || "Por definir"),
       "{{hora_fin}}": "Según duración acordada",
@@ -190,7 +203,7 @@ export default function CheckoutClient({
       "{{neto_artista}}": escapeHtml(formatCurrency(linkData.price)),
       "{{comision_plataforma}}": escapeHtml(formatCurrency(serviceFee)),
       "{{porcentaje_comision}}": escapeHtml(`${linkData.fee_percent ?? 2}%`),
-      "{{fecha_contrato}}": escapeHtml(todayIso),
+      "{{fecha_contrato}}": escapeHtml(formatPeruDate(todayIso)),
     };
 
     let html = rawTemplate;
@@ -307,6 +320,19 @@ export default function CheckoutClient({
     }
   };
 
+  const focusElementById = (id: string) => {
+    setTimeout(() => {
+      const el = document.getElementById(id) as HTMLElement | null;
+      el?.focus();
+    }, 0);
+  };
+
+  useEffect(() => {
+    if (paymentCompleted) {
+      focusElementById("checkout-confirmed-heading");
+    }
+  }, [paymentCompleted]);
+
   const goToStep = async (step: number) => {
     if ((pendingPayment || paymentCompleted) && step < 3) {
       addToast({
@@ -326,6 +352,9 @@ export default function CheckoutClient({
             "Completa la fecha, hora, tipo de evento y ubicación.",
           color: "danger",
         });
+        if (!eventDate) focusElementById("checkout-event-date");
+        else if (!startTime) focusElementById("checkout-start-time");
+        else if (!eventType.trim()) focusElementById("checkout-event-type");
         return;
       }
       if (eventType.trim().length < 2) {
@@ -334,6 +363,7 @@ export default function CheckoutClient({
           description: "El tipo de evento debe tener al menos 2 caracteres.",
           color: "danger",
         });
+        focusElementById("checkout-event-type");
         return;
       }
       if (location.address.trim().length < 5) {
@@ -357,6 +387,9 @@ export default function CheckoutClient({
           description: "El nombre, correo y celular son obligatorios.",
           color: "danger",
         });
+        if (!fullname.trim()) focusElementById("checkout-fullname");
+        else if (!email.trim()) focusElementById("checkout-email");
+        else if (!phone.trim()) focusElementById("checkout-phone");
         return;
       }
       if (fullname.trim().length < 2) {
@@ -365,6 +398,16 @@ export default function CheckoutClient({
           description: "Ingresa tu nombre completo (mínimo 2 caracteres).",
           color: "danger",
         });
+        focusElementById("checkout-fullname");
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        addToast({
+          title: "Correo inválido",
+          description: "Ingresa un correo electrónico válido.",
+          color: "danger",
+        });
+        focusElementById("checkout-email");
         return;
       }
       if (phone.trim().length < 6) {
@@ -374,14 +417,7 @@ export default function CheckoutClient({
             "Ingresa un teléfono de contacto válido (mínimo 6 caracteres).",
           color: "danger",
         });
-        return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        addToast({
-          title: "Correo inválido",
-          description: "Ingresa un correo electrónico válido.",
-          color: "danger",
-        });
+        focusElementById("checkout-phone");
         return;
       }
       if (isCheckingIdentity) {
@@ -404,14 +440,16 @@ export default function CheckoutClient({
             "No puedes contratarte a ti mismo con tu cuenta de músico.",
           color: "danger",
         });
+        focusElementById("checkout-email");
         return;
       }
-      if (resolvedStatus === "exists_verified" && !otp) {
+      if (resolvedStatus === "exists_verified" && !otp.trim()) {
         addToast({
           title: "Falta código",
           description: "Ingresa el código OTP enviado a tu correo.",
           color: "danger",
         });
+        focusElementById("checkout-otp");
         return;
       }
       if (resolvedStatus === "exists_unverified" && !password) {
@@ -420,6 +458,7 @@ export default function CheckoutClient({
           description: "Ingresa tu contraseña para continuar.",
           color: "danger",
         });
+        focusElementById("checkout-password");
         return;
       }
       const cleanDoc = documentNumber.trim();
@@ -430,11 +469,13 @@ export default function CheckoutClient({
             "El documento de identidad debe tener entre 8 y 20 caracteres, o déjalo vacío si es opcional.",
           color: "danger",
         });
+        focusElementById("checkout-doc");
         return;
       }
       setCompletedSteps((prev) => new Set(prev).add(2));
     }
     setActiveStep(step);
+    focusElementById(`checkout-step-${step}-heading`);
   };
 
   const handlePayAndConfirm = async () => {
@@ -442,12 +483,14 @@ export default function CheckoutClient({
       setIsPaymentModalOpen(true);
       return;
     }
+    setStep3Attempted(true);
     if (!termsAccepted) {
       addToast({
         title: "Términos obligatorios",
         description: "Debes aceptar los términos para continuar.",
         color: "warning",
       });
+      focusElementById("checkout-terms");
       return;
     }
     if (!signature) {
@@ -662,9 +705,11 @@ export default function CheckoutClient({
             <div className="flex items-center justify-between px-2">
               <div className="flex items-center gap-2 sm:gap-4" role="tablist" aria-label="Multimedia del músico">
                 <button
+                  id="checkout-tab-videos"
                   type="button"
                   role="tab"
                   aria-selected={activeMediaTab === "videos"}
+                  aria-controls="checkout-media-tabpanel"
                   onClick={() => handleMediaTab("videos")}
                   className={`text-xs font-bold px-4 py-2 min-h-10 rounded-full flex items-center gap-1.5 transition-all ${
                     activeMediaTab === "videos"
@@ -675,9 +720,11 @@ export default function CheckoutClient({
                   <Icon icon="lucide:play" className="w-4 h-4" /> Videos
                 </button>
                 <button
+                  id="checkout-tab-fotos"
                   type="button"
                   role="tab"
                   aria-selected={activeMediaTab === "fotos"}
+                  aria-controls="checkout-media-tabpanel"
                   onClick={() => handleMediaTab("fotos")}
                   className={`text-xs font-bold px-4 py-2 min-h-10 rounded-full flex items-center gap-1.5 transition-all ${
                     activeMediaTab === "fotos"
@@ -688,9 +735,11 @@ export default function CheckoutClient({
                   <Icon icon="lucide:image" className="w-4 h-4" /> Fotos
                 </button>
                 <button
+                  id="checkout-tab-comentarios"
                   type="button"
                   role="tab"
                   aria-selected={activeMediaTab === "comentarios"}
+                  aria-controls="checkout-media-tabpanel"
                   onClick={() => handleMediaTab("comentarios")}
                   className={`text-xs font-bold px-4 py-2 min-h-10 rounded-full flex items-center gap-1.5 transition-all ${
                     activeMediaTab === "comentarios"
@@ -712,7 +761,12 @@ export default function CheckoutClient({
             </div>
 
             {/* Contenedor Multimedia Principal */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-default-100 shadow-inner group flex items-center justify-center">
+            <div
+              id="checkout-media-tabpanel"
+              role="tabpanel"
+              aria-labelledby={`checkout-tab-${activeMediaTab}`}
+              className="relative rounded-2xl overflow-hidden aspect-[21/9] bg-default-100 shadow-inner group flex items-center justify-center"
+            >
               {activeMediaTab === "videos" && videoList.length > 0 ? (
                 <>
                   {isSupportedVideoUrl(videoList[activeMediaIndex]) ? (
@@ -914,7 +968,11 @@ export default function CheckoutClient({
                     <Icon icon="lucide:calendar" className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                    <h2
+                      id="checkout-step-1-heading"
+                      tabIndex={-1}
+                      className="text-base font-extrabold text-foreground flex items-center gap-2 outline-none"
+                    >
                       1. Datos del evento
                     </h2>
                     <p className="text-xs text-default-500">
@@ -949,6 +1007,12 @@ export default function CheckoutClient({
                         min={todayIso}
                         readOnly={isDateLocked}
                         disabled={isDateLocked}
+                        aria-invalid={step1Attempted && !eventDate}
+                        aria-describedby={
+                          step1Attempted && !eventDate
+                            ? "checkout-event-date-error"
+                            : undefined
+                        }
                         className={`bg-content1 border ${
                           step1Attempted && !eventDate
                             ? "border-danger"
@@ -968,7 +1032,11 @@ export default function CheckoutClient({
                         </p>
                       )}
                       {step1Attempted && !eventDate && (
-                        <p role="alert" className="text-xs text-danger mt-1">
+                        <p
+                          id="checkout-event-date-error"
+                          role="alert"
+                          className="text-xs text-danger mt-1"
+                        >
                           Selecciona la fecha del evento.
                         </p>
                       )}
@@ -988,6 +1056,12 @@ export default function CheckoutClient({
                         id="checkout-start-time"
                         readOnly={isTimeLocked}
                         disabled={isTimeLocked}
+                        aria-invalid={step1Attempted && !startTime}
+                        aria-describedby={
+                          step1Attempted && !startTime
+                            ? "checkout-start-time-error"
+                            : undefined
+                        }
                         className={`bg-content1 border ${
                           step1Attempted && !startTime
                             ? "border-danger"
@@ -1007,7 +1081,11 @@ export default function CheckoutClient({
                         </p>
                       )}
                       {step1Attempted && !startTime && (
-                        <p role="alert" className="text-xs text-danger mt-1">
+                        <p
+                          id="checkout-start-time-error"
+                          role="alert"
+                          className="text-xs text-danger mt-1"
+                        >
                           Indica la hora de inicio.
                         </p>
                       )}
@@ -1029,8 +1107,19 @@ export default function CheckoutClient({
                     <input
                       id="checkout-event-type"
                       type="text"
+                      aria-invalid={
+                        step1Attempted &&
+                        (!eventType.trim() || eventType.trim().length < 2)
+                      }
+                      aria-describedby={
+                        step1Attempted &&
+                        (!eventType.trim() || eventType.trim().length < 2)
+                          ? "checkout-event-type-error"
+                          : undefined
+                      }
                       className={`bg-content1 border ${
-                        step1Attempted && !eventType
+                        step1Attempted &&
+                        (!eventType.trim() || eventType.trim().length < 2)
                           ? "border-danger"
                           : "border-default-300"
                       } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
@@ -1038,11 +1127,18 @@ export default function CheckoutClient({
                       onChange={(e) => setEventType(e.target.value)}
                       placeholder="Ej. Cumpleaños, Boda"
                     />
-                    {step1Attempted && !eventType && (
-                      <p role="alert" className="text-xs text-danger mt-1">
-                        Indica el tipo de evento.
-                      </p>
-                    )}
+                    {step1Attempted &&
+                      (!eventType.trim() || eventType.trim().length < 2) && (
+                        <p
+                          id="checkout-event-type-error"
+                          role="alert"
+                          className="text-xs text-danger mt-1"
+                        >
+                          {!eventType.trim()
+                            ? "Indica el tipo de evento."
+                            : "El tipo de evento debe tener al menos 2 caracteres."}
+                        </p>
+                      )}
                   </div>
 
                   <div>
@@ -1054,17 +1150,32 @@ export default function CheckoutClient({
                       Ubicación del evento{" "}
                       <span className="text-primary">*</span>
                     </p>
-                    <div className="bg-content1 border border-default-300 rounded-xl overflow-hidden">
+                    <div
+                      className={`bg-content1 border ${
+                        step1Attempted &&
+                        (!location?.address || location.address.trim().length < 5)
+                          ? "border-danger"
+                          : "border-default-300"
+                      } rounded-xl overflow-hidden`}
+                    >
                       <LocationMapPickerField
                         value={location}
                         onChange={setLocation}
                       />
                     </div>
-                    {step1Attempted && !location?.address && (
-                      <p role="alert" className="text-xs text-danger mt-1">
-                        Busca la dirección o selecciona el punto en el mapa.
-                      </p>
-                    )}
+                    {step1Attempted &&
+                      (!location?.address ||
+                        location.address.trim().length < 5) && (
+                        <p
+                          id="checkout-location-error"
+                          role="alert"
+                          className="text-xs text-danger mt-1"
+                        >
+                          {!location?.address
+                            ? "Busca la dirección o selecciona el punto en el mapa."
+                            : "La dirección del evento debe tener al menos 5 caracteres."}
+                        </p>
+                      )}
                   </div>
 
                   <div className="pt-2 flex justify-end">
@@ -1112,7 +1223,11 @@ export default function CheckoutClient({
                     <Icon icon="lucide:user" className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <h2
+                      id="checkout-step-2-heading"
+                      tabIndex={-1}
+                      className="text-base font-bold text-foreground flex items-center gap-2 outline-none"
+                    >
                       2. Tus datos personales
                     </h2>
                     <p className="text-xs text-default-500">
@@ -1136,8 +1251,19 @@ export default function CheckoutClient({
                       <input
                         id="checkout-fullname"
                         autoComplete="name"
+                        aria-invalid={
+                          step2Attempted &&
+                          (!fullname.trim() || fullname.trim().length < 2)
+                        }
+                        aria-describedby={
+                          step2Attempted &&
+                          (!fullname.trim() || fullname.trim().length < 2)
+                            ? "checkout-fullname-error"
+                            : undefined
+                        }
                         className={`bg-content1 border ${
-                          step2Attempted && !fullname
+                          step2Attempted &&
+                          (!fullname.trim() || fullname.trim().length < 2)
                             ? "border-danger"
                             : "border-default-300"
                         } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
@@ -1146,11 +1272,18 @@ export default function CheckoutClient({
                         value={fullname}
                         onChange={(e) => setFullname(e.target.value)}
                       />
-                      {step2Attempted && !fullname && (
-                        <p role="alert" className="text-xs text-danger mt-1">
-                          Ingresa tu nombre completo.
-                        </p>
-                      )}
+                      {step2Attempted &&
+                        (!fullname.trim() || fullname.trim().length < 2) && (
+                          <p
+                            id="checkout-fullname-error"
+                            role="alert"
+                            className="text-xs text-danger mt-1"
+                          >
+                            {!fullname.trim()
+                              ? "Ingresa tu nombre completo."
+                              : "Ingresa tu nombre completo (mínimo 2 caracteres)."}
+                          </p>
+                        )}
                     </div>
                     <div>
                       <label
@@ -1166,9 +1299,25 @@ export default function CheckoutClient({
                         inputMode="email"
                         readOnly={isEmailLocked}
                         disabled={isEmailLocked}
+                        aria-invalid={
+                          identityStatus === "self" ||
+                          (step2Attempted &&
+                            (!email.trim() ||
+                              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))
+                        }
+                        aria-describedby={
+                          identityStatus === "self" ||
+                          (step2Attempted &&
+                            (!email.trim() ||
+                              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))
+                            ? "checkout-email-error"
+                            : undefined
+                        }
                         className={`bg-content1 border ${
                           identityStatus === "self" ||
-                          (step2Attempted && !email)
+                          (step2Attempted &&
+                            (!email.trim() ||
+                              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))
                             ? "border-danger text-danger"
                             : "border-default-300"
                         } ${
@@ -1196,13 +1345,24 @@ export default function CheckoutClient({
                           Verificando...
                         </span>
                       )}
-                      {identityStatus === "self" && (
-                        <span
+                      {(identityStatus === "self" ||
+                        (step2Attempted &&
+                          (!email.trim() ||
+                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                              email.trim(),
+                            )))) && (
+                        <p
+                          id="checkout-email-error"
                           role="alert"
-                          className="text-xs text-danger mt-1 block"
+                          className="text-xs text-danger mt-1"
                         >
-                          {identityMessage}
-                        </span>
+                          {identityStatus === "self"
+                            ? identityMessage ||
+                              "No puedes contratarte a ti mismo con tu cuenta de músico."
+                            : !email.trim()
+                              ? "Ingresa tu correo electrónico."
+                              : "Ingresa un correo electrónico válido."}
+                        </p>
                       )}
                     </div>
 
@@ -1218,8 +1378,19 @@ export default function CheckoutClient({
                         id="checkout-phone"
                         autoComplete="tel"
                         inputMode="tel"
+                        aria-invalid={
+                          step2Attempted &&
+                          (!phone.trim() || phone.trim().length < 6)
+                        }
+                        aria-describedby={
+                          step2Attempted &&
+                          (!phone.trim() || phone.trim().length < 6)
+                            ? "checkout-phone-error"
+                            : undefined
+                        }
                         className={`bg-content1 border ${
-                          step2Attempted && !phone
+                          step2Attempted &&
+                          (!phone.trim() || phone.trim().length < 6)
                             ? "border-danger"
                             : "border-default-300"
                         } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
@@ -1228,11 +1399,18 @@ export default function CheckoutClient({
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                       />
-                      {step2Attempted && !phone && (
-                        <p role="alert" className="text-xs text-danger mt-1">
-                          Ingresa tu teléfono de contacto.
-                        </p>
-                      )}
+                      {step2Attempted &&
+                        (!phone.trim() || phone.trim().length < 6) && (
+                          <p
+                            id="checkout-phone-error"
+                            role="alert"
+                            className="text-xs text-danger mt-1"
+                          >
+                            {!phone.trim()
+                              ? "Ingresa tu teléfono de contacto."
+                              : "Ingresa un teléfono de contacto válido (mínimo 6 caracteres)."}
+                          </p>
+                        )}
                     </div>
                     <div>
                       <label
@@ -1244,15 +1422,60 @@ export default function CheckoutClient({
                       <input
                         id="checkout-doc"
                         inputMode="numeric"
-                        className="bg-content1 border border-default-300 w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                        maxLength={12}
+                        aria-invalid={
+                          (step2Attempted || step3Attempted) &&
+                          Boolean(documentNumber.trim()) &&
+                          (documentNumber.trim().length < 8 ||
+                            documentNumber.trim().length > 20)
+                        }
+                        aria-describedby={
+                          (step2Attempted || step3Attempted) &&
+                          Boolean(documentNumber.trim()) &&
+                          (documentNumber.trim().length < 8 ||
+                            documentNumber.trim().length > 20)
+                            ? "checkout-doc-error"
+                            : undefined
+                        }
+                        className={`bg-content1 border ${
+                          (step2Attempted || step3Attempted) &&
+                          Boolean(documentNumber.trim()) &&
+                          (documentNumber.trim().length < 8 ||
+                            documentNumber.trim().length > 20)
+                            ? "border-danger"
+                            : "border-default-300"
+                        } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
+                        maxLength={20}
                         placeholder="8 dígitos"
                         type="text"
                         value={documentNumber}
                         onChange={(e) => setDocumentNumber(e.target.value)}
                       />
+                      {(step2Attempted || step3Attempted) &&
+                        Boolean(documentNumber.trim()) &&
+                        (documentNumber.trim().length < 8 ||
+                          documentNumber.trim().length > 20) && (
+                          <p
+                            id="checkout-doc-error"
+                            role="alert"
+                            className="text-xs text-danger mt-1"
+                          >
+                            El documento de identidad debe tener entre 8 y 20
+                            caracteres, o déjalo vacío si es opcional.
+                          </p>
+                        )}
                     </div>
                   </div>
+
+                  {identityStatus === "new" && !sessionUserMatchesEmail && (
+                    <div
+                      role="status"
+                      className="bg-primary/10 p-3.5 rounded-xl border border-primary/20 text-xs text-primary-text font-medium"
+                    >
+                      Crearás tu reserva con este correo. Al confirmar el pago
+                      te enviaremos un enlace para activar tu cuenta y consultar
+                      el estado de tu reserva.
+                    </div>
+                  )}
 
                   {(identityStatus === "exists_verified" ||
                     identityStatus === "check_error") && (
@@ -1268,12 +1491,41 @@ export default function CheckoutClient({
                         id="checkout-otp"
                         inputMode="numeric"
                         autoComplete="one-time-code"
-                        className="bg-content1 border border-primary/30 w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                        aria-invalid={
+                          step2Attempted &&
+                          identityStatus === "exists_verified" &&
+                          !otp.trim()
+                        }
+                        aria-describedby={
+                          step2Attempted &&
+                          identityStatus === "exists_verified" &&
+                          !otp.trim()
+                            ? "checkout-otp-error"
+                            : undefined
+                        }
+                        className={`bg-content1 border ${
+                          step2Attempted &&
+                          identityStatus === "exists_verified" &&
+                          !otp.trim()
+                            ? "border-danger"
+                            : "border-primary/30"
+                        } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
                         placeholder="Código OTP (000000)"
                         maxLength={6}
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                       />
+                      {step2Attempted &&
+                        identityStatus === "exists_verified" &&
+                        !otp.trim() && (
+                          <p
+                            id="checkout-otp-error"
+                            role="alert"
+                            className="text-xs text-danger"
+                          >
+                            Ingresa el código OTP enviado a tu correo.
+                          </p>
+                        )}
                       <button
                         type="button"
                         onClick={() => void handleSendOtp()}
@@ -1301,12 +1553,41 @@ export default function CheckoutClient({
                       <input
                         id="checkout-password"
                         autoComplete="current-password"
-                        className="bg-content1 border border-warning/30 w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                        aria-invalid={
+                          step2Attempted &&
+                          identityStatus === "exists_unverified" &&
+                          !password
+                        }
+                        aria-describedby={
+                          step2Attempted &&
+                          identityStatus === "exists_unverified" &&
+                          !password
+                            ? "checkout-password-error"
+                            : undefined
+                        }
+                        className={`bg-content1 border ${
+                          step2Attempted &&
+                          identityStatus === "exists_unverified" &&
+                          !password
+                            ? "border-danger"
+                            : "border-warning/30"
+                        } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground placeholder-default-400 focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
                         type="password"
                         placeholder="Tu contraseña de Chivapp"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
+                      {step2Attempted &&
+                        identityStatus === "exists_unverified" &&
+                        !password && (
+                          <p
+                            id="checkout-password-error"
+                            role="alert"
+                            className="text-xs text-danger"
+                          >
+                            Ingresa tu contraseña para continuar.
+                          </p>
+                        )}
                     </div>
                   )}
 
@@ -1362,7 +1643,11 @@ export default function CheckoutClient({
                     <Icon icon="lucide:credit-card" className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <h2
+                      id="checkout-step-3-heading"
+                      tabIndex={-1}
+                      className="text-base font-bold text-foreground flex items-center gap-2 outline-none"
+                    >
                       3. Confirmación y pago
                     </h2>
                     <p className="text-xs text-default-500">
@@ -1385,7 +1670,11 @@ export default function CheckoutClient({
                           <Icon icon="lucide:check-circle-2" className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-lg font-extrabold text-foreground">
+                          <h3
+                            id="checkout-confirmed-heading"
+                            tabIndex={-1}
+                            className="text-lg font-extrabold text-foreground outline-none"
+                          >
                             ¡Reserva confirmada y pago protegido!
                           </h3>
                           <p className="text-xs sm:text-sm text-default-600">
@@ -1504,7 +1793,9 @@ export default function CheckoutClient({
                         />
                       ) : renderedContractHtml ? (
                         <div
-                          className="contract-doc max-h-64 overflow-y-auto rounded-xl border border-divider bg-content1 p-4 text-xs leading-relaxed text-default-700"
+                          tabIndex={0}
+                          aria-label="Contrato de prestación de servicios musicales"
+                          className="contract-doc contract-doc-page max-h-64 overflow-y-auto rounded-xl border border-divider bg-white p-4 text-xs leading-relaxed text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                           dangerouslySetInnerHTML={{
                             __html: renderedContractHtml,
                           }}
@@ -1560,46 +1851,69 @@ export default function CheckoutClient({
                         onChange={setSignature}
                         label="Firma del cliente"
                         helperText="Dibuja tu firma o escribe tu nombre para aceptar el contrato."
+                        isInvalid={step3Attempted && !signature}
+                        errorMessage="Firma o escribe tu nombre para aceptar el contrato de actuación."
                       />
                     </div>
 
-                    <label className="flex items-start sm:items-center gap-2.5 pt-2 text-foreground cursor-pointer select-none">
-                      <input
-                        checked={termsAccepted}
-                        onChange={(e) => setTermsAccepted(e.target.checked)}
-                        className="w-4 h-4 rounded text-primary border-default-400 mt-0.5 sm:mt-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                        type="checkbox"
-                      />
-                      <span className="text-xs">
-                        He leído y acepto el{" "}
-                        <button
-                          type="button"
-                          onClick={() => setIsContractPreviewOpen(true)}
-                          className="text-primary hover:underline font-semibold"
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="checkout-terms"
+                        className="flex items-start sm:items-center gap-2.5 pt-2 text-foreground cursor-pointer select-none"
+                      >
+                        <input
+                          id="checkout-terms"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          aria-invalid={step3Attempted && !termsAccepted}
+                          aria-describedby={
+                            step3Attempted && !termsAccepted
+                              ? "checkout-terms-error"
+                              : undefined
+                          }
+                          className="w-4 h-4 rounded text-primary border-default-400 mt-0.5 sm:mt-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                          type="checkbox"
+                        />
+                        <span className="text-xs">
+                          He leído y acepto el{" "}
+                          <button
+                            type="button"
+                            onClick={() => setIsContractPreviewOpen(true)}
+                            className="text-primary hover:underline font-semibold"
+                          >
+                            contrato de prestación de servicios musicales
+                          </button>
+                          , las{" "}
+                          <a
+                            href="/legal/reembolsos"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-semibold"
+                          >
+                            políticas de cancelación y reembolso
+                          </a>{" "}
+                          y los{" "}
+                          <a
+                            href="/legal/terminos"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-semibold"
+                          >
+                            términos y condiciones
+                          </a>
+                          .
+                        </span>
+                      </label>
+                      {step3Attempted && !termsAccepted && (
+                        <p
+                          id="checkout-terms-error"
+                          role="alert"
+                          className="text-xs text-danger"
                         >
-                          contrato de prestación de servicios musicales
-                        </button>
-                        , las{" "}
-                        <a
-                          href="/legal/reembolsos"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline font-semibold"
-                        >
-                          políticas de cancelación y reembolso
-                        </a>{" "}
-                        y los{" "}
-                        <a
-                          href="/legal/terminos"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline font-semibold"
-                        >
-                          términos y condiciones
-                        </a>
-                        .
-                      </span>
-                    </label>
+                          Debes aceptar los términos para continuar.
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {pendingPayment ? (
@@ -1760,7 +2074,7 @@ export default function CheckoutClient({
               <ModalBody className="text-sm text-default-700 space-y-3">
                 {renderedContractHtml ? (
                   <div
-                    className="contract-doc rounded-xl border border-divider bg-content1 p-4 text-xs sm:text-sm leading-relaxed text-default-700"
+                    className="contract-doc contract-doc-page rounded-xl border border-divider bg-white p-4 text-xs sm:text-sm leading-relaxed text-zinc-900"
                     dangerouslySetInnerHTML={{
                       __html: renderedContractHtml,
                     }}

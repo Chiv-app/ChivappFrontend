@@ -96,7 +96,7 @@ export default function PrivacyPage() {
                     <strong className="text-foreground">Mercado Pago Perú S.R.L.</strong> (o sus afiliadas de MercadoLibre).
                 </p>
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col gap-2 text-sm">
-                    <p className="font-semibold text-primary-700 dark:text-primary-400">
+                    <p className="font-semibold text-primary-text">
                         Compromiso de No Almacenamiento de Datos de Tarjetas (PCI-DSS)
                     </p>
                     <p>

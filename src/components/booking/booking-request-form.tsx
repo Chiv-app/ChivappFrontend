@@ -388,7 +388,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         <div
           role="alert"
           aria-live="polite"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-2.5 text-xs font-medium text-warning-700 dark:text-warning-400"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3.5 py-2.5 text-xs font-medium text-warning-text"
         >
           <span>
             {slotsError

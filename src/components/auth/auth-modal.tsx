@@ -6,8 +6,6 @@ import {
     ModalContent,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { useState, useEffect } from "react";
 import AppLogo from "@/components/layout/app-logo";
 import LoginForm from "@/components/auth/login-form";
 import RegisterForm from "@/components/auth/register-form";
@@ -26,42 +24,8 @@ type Props = {
     onAuthenticated: (destination: string) => void;
 };
 
-const ROTATING_WORDS = ["perfecta", "ideal", "en vivo", "soñada"];
-
 function RotatingText() {
-    const [index, setIndex] = useState(0);
-    const prefersReducedMotion = useReducedMotion();
-
-    useEffect(() => {
-        if (prefersReducedMotion) return;
-        const interval = setInterval(() => {
-            setIndex((current) => (current + 1) % ROTATING_WORDS.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [prefersReducedMotion]);
-
-    if (prefersReducedMotion) {
-        return <span className="inline-block text-cyan-400">perfecta</span>;
-    }
-
-    return (
-        <span className="inline-block relative text-cyan-400 w-[200px] text-left">
-            <AnimatePresence mode="wait">
-                <motion.span
-                    key={index}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-0 left-0"
-                >
-                    {ROTATING_WORDS[index]}
-                </motion.span>
-            </AnimatePresence>
-            {/* Invisible spacer to maintain height/width */}
-            <span className="invisible">perfecta</span>
-        </span>
-    );
+    return <span className="inline-block text-cyan-400">perfecta</span>;
 }
 
 export default function AuthModal({

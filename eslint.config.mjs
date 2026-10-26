@@ -8,6 +8,15 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "react-hooks/set-state-in-effect": "error",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Literal[value=/dark:text-(default|danger|warning|success|primary)-[0-9]+/]",
+          message:
+            "Usa los tokens semánticos verificados (text-primary-text, text-success-text, text-warning-text, text-danger-text, text-default-N) en lugar de dark:text-*-N manuales.",
+        },
+      ],
     },
   },
   // Override default ignores of eslint-config-next.

@@ -465,10 +465,9 @@ div:has(> [data-slot="wrapper"]) > div:first-child,
 }
 
 /* Hide specific fixed UI elements when the virtual keyboard is open.
-   We assume the keyboard is open if the screen height is severely squished (e.g. < 450px)
-   and the device is a mobile device (max-width 768px). */
+   Only hides when an editable field actually has focus (UX6-04). */
 @media (max-width: 768px) and (max-height: 450px) {
-  .hide-on-keyboard {
+  body:has(input:focus, textarea:focus, select:focus, [contenteditable="true"]:focus) .hide-on-keyboard {
     display: none !important;
   }
 }

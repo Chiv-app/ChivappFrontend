@@ -112,7 +112,7 @@ export default function BookingPaymentStatusCard({ booking }: Props) {
                                     {payment ? paymentTypeLabel(payment.payment_type) : "—"}
                                 </p>
                                 {payment?.gateway_provider === "mercadopago" && (
-                                    <span className="inline-flex items-center gap-1 mt-1 text-xs text-sky-600 dark:text-sky-400 font-medium">
+                                    <span className="inline-flex items-center gap-1 mt-1 text-xs text-primary-text font-medium">
                                         <Icon icon="material-symbols:verified" width={14} />
                                         Mercado Pago {payment.gateway_payment_id ? `#${payment.gateway_payment_id}` : ""}
                                     </span>

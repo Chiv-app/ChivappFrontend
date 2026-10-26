@@ -301,6 +301,7 @@ export default function MusicianBookingsView() {
 
             <div className="flex flex-col gap-4">
                 <Tabs
+                    aria-label="Filtrar reservas de la agrupación por estado"
                     selectedKey={filter}
                     onSelectionChange={(key) => {
                         setFilter(key as FilterKey);
@@ -320,6 +321,7 @@ export default function MusicianBookingsView() {
                 </Tabs>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
                     <Input
+                        aria-label="Buscar reservas por evento, cliente, ciudad o estado"
                         value={query}
                         onValueChange={(val) => {
                             setQuery(val);

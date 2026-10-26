@@ -42,6 +42,7 @@ export default function ChipListInput({
             <p className="text-sm font-medium text-foreground">{label}</p>
             <div className="flex gap-2">
                 <Input
+                    aria-label={label}
                     value={draft}
                     onValueChange={setDraft}
                     placeholder={placeholder}

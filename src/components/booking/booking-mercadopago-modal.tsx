@@ -758,6 +758,7 @@ export default function BookingMercadoPagoModal({
                             ) : (
                             /* Pestañas de Métodos de Pago */
                             <Tabs
+                                aria-label="Métodos de pago de Mercado Pago"
                                 selectedKey={selectedTab}
                                 onSelectionChange={(k) => {
                                     setSelectedTab(k as string);

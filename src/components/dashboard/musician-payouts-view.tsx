@@ -356,6 +356,7 @@ export default function MusicianPayoutsView() {
             </div>
 
             <Tabs
+                aria-label="Filtrar repartos a integrantes por estado"
                 selectedKey={filter}
                 onSelectionChange={(key) => setFilter(key as FilterKey)}
                 variant="underlined"

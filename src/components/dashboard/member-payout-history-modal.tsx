@@ -159,6 +159,7 @@ export default function MemberPayoutHistoryModal({
                                     </div>
 
                                     <Tabs
+                                        aria-label="Filtrar pagos del integrante por estado"
                                         selectedKey={filter}
                                         onSelectionChange={(key) =>
                                             setFilter(key as StatusFilter)

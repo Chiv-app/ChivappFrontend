@@ -752,6 +752,7 @@ export default function MusicianReportsView() {
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <h2 className="text-lg font-bold">Tablas de detalle</h2>
                                 <Tabs
+                                    aria-label="Alternar tabla de detalle entre reservas e integrantes"
                                     selectedKey={tableTab}
                                     onSelectionChange={(key) =>
                                         setTableTab(key as "bookings" | "members")

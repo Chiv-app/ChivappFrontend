@@ -41,13 +41,21 @@ function CompletedBookingCard() {
                 <div className="p-4 bg-default-100 rounded-2xl text-xs text-default-600 mb-6 font-medium">
                     Revisa tu correo electrónico para ver los detalles de tu reserva o inicia sesión en tu cuenta de Chivapp.
                 </div>
-                <Link
-                    href="/login"
-                    className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
-                >
-                    Ir a mis reservas
-                    <Icon icon="solar:arrow-right-linear" width={18} />
-                </Link>
+                <div className="flex flex-col gap-3">
+                    <Link
+                        href="/login"
+                        className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    >
+                        Ir a mis reservas
+                        <Icon icon="solar:arrow-right-linear" width={18} />
+                    </Link>
+                    <Link
+                        href="/forgot-password"
+                        className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-default-200 bg-content2 text-foreground font-semibold text-sm hover:bg-default-100 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    >
+                        Crear o recuperar contraseña
+                    </Link>
+                </div>
             </div>
         </div>
     );
@@ -75,7 +83,7 @@ export default async function PublicCheckoutPage({ params }: Props) {
     const { token } = resolvedParams;
 
     let linkData = null;
-    let errorReason: "not_found" | "expired" | "completed" | "error" | null = null;
+    let errorReason: "not_found" | "expired" | "completed" | "error" | "server_error" | null = null;
     let errorDetail = "";
 
     try {
@@ -93,13 +101,16 @@ export default async function PublicCheckoutPage({ params }: Props) {
                     errorReason = "error";
                     errorDetail = translateCheckoutLinkError(err.message);
                 }
+            } else if (err.status >= 500) {
+                errorReason = "server_error";
+                errorDetail = "El servicio de reservas presenta una interrupción temporal. Tu enlace sigue siendo válido.";
             } else {
                 errorReason = "error";
                 errorDetail = "No pudimos cargar los detalles del enlace en este momento.";
             }
         } else {
-            errorReason = "error";
-            errorDetail = "Error de conexión con el servidor.";
+            errorReason = "server_error";
+            errorDetail = "No pudimos conectarnos con el servidor en este momento. Tu enlace sigue siendo válido.";
         }
     }
 
@@ -109,6 +120,38 @@ export default async function PublicCheckoutPage({ params }: Props) {
 
     if (errorReason === "completed") {
         return <CompletedBookingCard />;
+    }
+
+    if (errorReason === "server_error") {
+        return (
+            <div className="min-h-[70dvh] bg-default-50 flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-content1 rounded-3xl p-8 text-center shadow-lg border border-default-100">
+                    <div className="w-16 h-16 bg-warning/10 text-warning-text rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Icon icon="solar:refresh-circle-bold" width={36} />
+                    </div>
+                    <h1 className="text-2xl font-bold mb-2">
+                        Servicio temporalmente no disponible
+                    </h1>
+                    <p className="text-default-600 mb-6">
+                        {errorDetail}
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <a
+                            href={`/pay/${encodeURIComponent(token)}`}
+                            className="inline-flex items-center justify-center gap-2 flex-1 h-11 px-4 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                        >
+                            Reintentar
+                        </a>
+                        <Link
+                            href="/musicians"
+                            className="inline-flex items-center justify-center gap-2 flex-1 h-11 px-4 rounded-xl border border-default-200 bg-content2 text-foreground font-semibold text-sm hover:bg-default-100 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                        >
+                            Explorar músicos
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (errorReason === "expired" || errorReason === "error") {

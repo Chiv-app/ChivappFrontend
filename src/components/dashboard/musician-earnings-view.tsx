@@ -321,6 +321,7 @@ export default function MusicianEarningsView() {
 
             {showPlatform || showMember ? (
                 <Tabs
+                    aria-label="Secciones de ingresos del músico"
                     selectedKey={mainTab}
                     onSelectionChange={(key) => setMainTab(key as MainTab)}
                     variant="underlined"
@@ -498,6 +499,7 @@ function PlatformDebtsSection({
                     </p>
                 </div>
                 <Tabs
+                    aria-label="Filtrar deuda por show según estado"
                     selectedKey={filter}
                     onSelectionChange={(key) => onFilterChange(key as DebtFilter)}
                     size="sm"
@@ -550,6 +552,7 @@ function PlatformPaymentsSection({
                     </p>
                 </div>
                 <Tabs
+                    aria-label="Filtrar historial de pagos por estado"
                     selectedKey={filter}
                     onSelectionChange={(key) => onFilterChange(key as PaymentFilter)}
                     size="sm"

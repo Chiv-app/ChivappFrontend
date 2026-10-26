@@ -373,7 +373,7 @@ export default function BookingQuoteForm({
                         type="button"
                         onClick={handleReject}
                         disabled={isRejecting || isSubmitting}
-                        className="min-h-11 inline-flex items-center text-sm font-medium text-danger hover:text-danger-500 transition-colors self-start sm:self-auto px-2"
+                        className="min-h-11 inline-flex items-center text-sm font-medium text-danger hover:text-danger-text transition-colors self-start sm:self-auto px-2"
                     >
                         {isEditMode ? "Cancelar reserva" : "Rechazar solicitud"}
                     </button>

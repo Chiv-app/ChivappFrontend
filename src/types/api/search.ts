@@ -4,6 +4,7 @@ export type MusicianSearchFilters = {
     instruments?: string[] | null;
     min_price_per_event?: number | null;
     max_price_per_event?: number | null;
+    available_date?: string | null;
     skip?: number;
     limit?: number;
 };

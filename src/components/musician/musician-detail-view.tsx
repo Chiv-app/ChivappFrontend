@@ -235,7 +235,7 @@ export default function MusicianDetailView({
 
     // La barra de precio y CTA se mantiene siempre visible desde el primer viewport (UX-01).
     const ctaBarClassName = [
-        "inset-x-3 sm:inset-x-6 z-40 rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-elevated hide-on-keyboard",
+        "inset-x-3 sm:inset-x-6 z-40 rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-elevated",
         isCtaDocked
             ? "absolute bottom-3 sm:bottom-4"
             : "fixed bottom-[calc(var(--bottom-nav-h,0px)+var(--cookie-h,0px)+0.75rem)] lg:bottom-[calc(var(--cookie-h,0px)+1rem)]",
