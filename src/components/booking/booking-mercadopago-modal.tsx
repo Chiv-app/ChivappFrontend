@@ -199,8 +199,9 @@ export default function BookingMercadoPagoModal({
                     onSuccessRef.current();
                     onCloseRef.current();
                 } else if (
-                    (statusRes.status && PENDING_MP_STATUSES.has(statusRes.status)) ||
-                    (statusRes.status_detail && PENDING_MP_STATUSES.has(statusRes.status_detail))
+                    Boolean(statusRes.payment_id) &&
+                    ((statusRes.status && PENDING_MP_STATUSES.has(statusRes.status)) ||
+                        (statusRes.status_detail && PENDING_MP_STATUSES.has(statusRes.status_detail)))
                 ) {
                     setPendingVerification({
                         paymentId: statusRes.payment_id || null,
@@ -237,6 +238,8 @@ export default function BookingMercadoPagoModal({
                     });
                     onSuccessRef.current();
                     onCloseRef.current();
+                } else if (statusRes.status === "not_started") {
+                    setPendingVerification(null);
                 } else if (statusRes.status === "rejected" || statusRes.status === "cancelled") {
                     setPendingVerification(null);
                     setProcessError(
@@ -270,6 +273,8 @@ export default function BookingMercadoPagoModal({
                 });
                 onSuccessRef.current();
                 onCloseRef.current();
+            } else if (statusRes.status === "not_started") {
+                setPendingVerification(null);
             } else if (statusRes.status === "rejected" || statusRes.status === "cancelled") {
                 setPendingVerification(null);
                 setProcessError(
