@@ -20,6 +20,11 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm run test
+      - name: Next.js Build
+        env:
+          NEXT_PUBLIC_API_URL: /api/v1
+          NEXT_PUBLIC_SITE_URL: https://chiv.app
+        run: npm run build
 
   deploy:
     name: Deploy to Cloud Run
