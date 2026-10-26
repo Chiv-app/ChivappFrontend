@@ -13,7 +13,7 @@ function VerifyEmailContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
-    const { user, loading: authLoading, refresh } = useAuth();
+    const { user, isLoading: authLoading, refresh } = useAuth();
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
     const [message, setMessage] = useState("");
     const [passwordResetSent, setPasswordResetSent] = useState(false);

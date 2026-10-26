@@ -54,7 +54,11 @@ export default function BookingContractorActions({
     async function handleAcceptQuote() {
         setIsAcceptingQuote(true);
         try {
-            const updated = await acceptQuote(booking.id);
+            const currentContract = contract ?? (await getBookingContract(booking.id));
+            setContract(currentContract);
+            const updated = await acceptQuote(booking.id, {
+                contract_body_sha256: currentContract.body_sha256 ?? null,
+            });
             onUpdated(updated);
             addToast({
                 title: "Cotización aceptada",
