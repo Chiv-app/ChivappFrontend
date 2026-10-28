@@ -34,9 +34,14 @@ export default function PasswordSetupGate({
         (prefix) => pathname === prefix || pathname.startsWith(prefix),
     );
 
+    const requiresPasswordSetup =
+        Boolean(user) &&
+        user?.role !== "contractor" &&
+        user?.has_password === false &&
+        user?.is_email_verified !== false;
+
     useEffect(() => {
-        if (!isClient || isLoading || !user) return;
-        if (user.has_password !== false) return;
+        if (!isClient || isLoading || !requiresPasswordSetup) return;
         if (isAllowed) return;
         const pendingRedirect =
             typeof window !== "undefined"
@@ -53,14 +58,13 @@ export default function PasswordSetupGate({
         router.replace(
             "/set-password?callbackUrl=" + encodeURIComponent(currentUrl),
         );
-    }, [isClient, isLoading, user, isAllowed, pathname, router]);
+    }, [isClient, isLoading, requiresPasswordSetup, isAllowed, pathname, router]);
 
     // Keep children during SSR/hydration so auth cannot swap the tree early.
     if (
         isClient &&
         !isLoading &&
-        user &&
-        user.has_password === false &&
+        requiresPasswordSetup &&
         !isAllowed
     ) {
         return (

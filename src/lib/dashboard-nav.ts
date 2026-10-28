@@ -171,7 +171,6 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
         href: "/contractor/bookings",
         label: "Mis reservas",
         icon: "material-symbols:event-available",
-        requiresEmailVerification: true,
     },
     {
         href: "/contractor/operations",

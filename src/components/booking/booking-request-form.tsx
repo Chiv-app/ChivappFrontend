@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { useAuthModal } from "@/contexts/auth-modal-context";
 import { Icon } from "@iconify/react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -16,6 +15,7 @@ import {
   Card,
   CardBody,
 } from "@heroui/react";
+import { PasswordInput } from "@/components/auth/password-input";
 import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
@@ -25,6 +25,7 @@ import {
   getSlotsForDate,
   validateBookingAgainstAvailability,
 } from "@/lib/availability-calendar";
+import { loginStepOne } from "@/lib/auth";
 import { createBooking } from "@/lib/bookings";
 import { apiFetch, ApiError } from "@/lib/api";
 import { isEmailTakenError } from "@/lib/auth-errors";
@@ -56,12 +57,17 @@ type Props = {
 };
 
 export default function BookingRequestForm({ musician, onSuccess }: Props) {
-  const { user, refresh } = useAuth();
-  const { openLogin } = useAuthModal();
+  const { user, login, loginWithOtp, logout, refresh } = useAuth();
   const [showAuthSection, setShowAuthSection] = useState(false);
+  const [authStep, setAuthStep] = useState<"contact" | "otp" | "password">(
+    "contact",
+  );
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [attemptedGuestSubmit, setAttemptedGuestSubmit] = useState(false);
 
@@ -75,6 +81,76 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const [eventType, setEventType] = useState("");
   const [eventDescription, setEventDescription] = useState("");
   const [location, setLocation] = useState<MapLocation | null>(null);
+
+  const draftStorageKey = `chivapp:pending_booking_request:${musician.id}`;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem(draftStorageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        eventDate?: string;
+        startTime?: string;
+        eventType?: string;
+        eventDescription?: string;
+        location?: MapLocation | null;
+        contactName?: string;
+        contactPhone?: string;
+        contactEmail?: string;
+      };
+      if (parsed.eventDate) setEventDate(parsed.eventDate);
+      if (parsed.startTime) setStartTime(parsed.startTime);
+      if (parsed.eventType) setEventType(parsed.eventType);
+      if (parsed.eventDescription) setEventDescription(parsed.eventDescription);
+      if (parsed.location) setLocation(parsed.location);
+      if (parsed.contactName) setContactName(parsed.contactName);
+      if (parsed.contactPhone) setContactPhone(parsed.contactPhone);
+      if (parsed.contactEmail) setContactEmail(parsed.contactEmail);
+    } catch {
+      // Ignore malformed sessionStorage draft
+    }
+  }, [draftStorageKey]);
+
+  const persistDraft = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        draftStorageKey,
+        JSON.stringify({
+          eventDate,
+          startTime,
+          eventType,
+          eventDescription,
+          location,
+          contactName,
+          contactPhone,
+          contactEmail,
+        }),
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [
+    draftStorageKey,
+    eventDate,
+    startTime,
+    eventType,
+    eventDescription,
+    location,
+    contactName,
+    contactPhone,
+    contactEmail,
+  ]);
+
+  const clearDraft = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.removeItem(draftStorageKey);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [draftStorageKey]);
 
   const todayIso = useMemo(() => {
     const now = new Date();
@@ -122,6 +198,30 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     void Promise.resolve().then(() => loadAvailability());
   }, [loadAvailability]);
 
+  async function handleResendOtp() {
+    if (!contactEmail.trim()) return;
+    setIsResendingOtp(true);
+    try {
+      const res = await loginStepOne(contactEmail.trim());
+      if (res.status === "otp_sent") {
+        addToast({
+          title: "Código reenviado",
+          description: `Enviamos un nuevo código de 6 dígitos a ${contactEmail.trim()}.`,
+          color: "success",
+        });
+      }
+    } catch (error) {
+      addToast({
+        title: "No se pudo reenviar el código",
+        description:
+          error instanceof Error ? error.message : "Intenta nuevamente en unos segundos.",
+        color: "danger",
+      });
+    } finally {
+      setIsResendingOtp(false);
+    }
+  }
+
   async function submitRequest() {
     setAttemptedSubmit(true);
 
@@ -158,62 +258,189 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     }
 
     if (!user && !showAuthSection) {
+      persistDraft();
       setShowAuthSection(true);
+      return;
+    }
+
+    if (user && user.role !== "contractor") {
+      addToast({
+        title: "Cuenta no habilitada para reservar",
+        description:
+          "Solo las cuentas de cliente/contratista pueden enviar solicitudes de reserva. Usa la opción para continuar como cliente.",
+        color: "warning",
+      });
       return;
     }
 
     let registeredAsGuest = false;
     if (!user) {
       setAttemptedGuestSubmit(true);
-      if (!contactName.trim() || !contactPhone.trim() || !contactEmail.trim()) {
+      if (!contactEmail.trim()) {
         addToast({
-          title: "Faltan datos de contacto",
-          description: "Completa tus datos para enviar la solicitud.",
+          title: "Falta tu correo",
+          description: "Ingresa tu correo electrónico para continuar.",
           color: "warning",
         });
         return;
       }
 
-      setIsSubmitting(true);
-      try {
-        await apiFetch("/auth/guest-register", {
-          method: "POST",
-          body: JSON.stringify({
-            fullname: contactName.trim(),
-            email: contactEmail.trim(),
-            phone: contactPhone.trim(),
-          }),
-          headers: { "Content-Type": "application/json" },
-        });
-        registeredAsGuest = true;
-      } catch (error: unknown) {
-        setIsSubmitting(false);
-        const status =
-          error instanceof ApiError
-            ? error.status
-            : error && typeof error === "object" && "status" in error
-              ? (error as { status?: number }).status
-              : undefined;
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Ocurrió un error al registrar tus datos.";
-        if ((status === 400 || status === 409) && isEmailTakenError(message)) {
+      if (authStep === "otp") {
+        if (otpCode.trim().length !== 6) {
           addToast({
-            title: "Cuenta existente",
-            description:
-              "Este correo ya tiene una cuenta. Inicia sesión con código por correo o contraseña para continuar.",
+            title: "Código incompleto",
+            description: "Ingresa el código de 6 dígitos enviado a tu correo.",
             color: "warning",
           });
-          openLogin({ redirect: `${window.location.pathname}?reservar=1` });
-        } else {
+          return;
+        }
+        setIsSubmitting(true);
+        try {
+          const loggedIn = await loginWithOtp(contactEmail.trim(), otpCode.trim());
+          if (loggedIn.role !== "contractor") {
+            setIsSubmitting(false);
+            addToast({
+              title: "Cuenta de músico o administrador",
+              description:
+                "Este correo está registrado como músico o administrador. Para reservar como cliente, ingresa otro correo.",
+              color: "warning",
+            });
+            await logout();
+            setAuthStep("contact");
+            setOtpCode("");
+            return;
+          }
+        } catch (error) {
+          setIsSubmitting(false);
+          addToast({
+            title: "Código inválido o expirado",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Verifica el código enviado a tu correo.",
+            color: "danger",
+          });
+          return;
+        }
+      } else if (authStep === "password") {
+        if (!password) {
+          addToast({
+            title: "Ingresa tu contraseña",
+            description: "Escribe la contraseña de tu cuenta para enviar la solicitud.",
+            color: "warning",
+          });
+          return;
+        }
+        setIsSubmitting(true);
+        try {
+          const loggedIn = await login({
+            email: contactEmail.trim(),
+            password,
+          });
+          if (loggedIn.role !== "contractor") {
+            setIsSubmitting(false);
+            addToast({
+              title: "Cuenta de músico o administrador",
+              description:
+                "Este correo está registrado como músico o administrador. Para reservar como cliente, ingresa otro correo.",
+              color: "warning",
+            });
+            await logout();
+            setAuthStep("contact");
+            setPassword("");
+            return;
+          }
+        } catch (error) {
+          setIsSubmitting(false);
+          addToast({
+            title: "No se pudo iniciar sesión",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Verifica tu contraseña e intenta nuevamente.",
+            color: "danger",
+          });
+          return;
+        }
+      } else {
+        if (!contactName.trim() || !contactPhone.trim() || !contactEmail.trim()) {
+          addToast({
+            title: "Faltan datos de contacto",
+            description: "Completa tus datos para enviar la solicitud.",
+            color: "warning",
+          });
+          return;
+        }
+
+        setIsSubmitting(true);
+        try {
+          await apiFetch("/auth/guest-register", {
+            method: "POST",
+            body: JSON.stringify({
+              fullname: contactName.trim(),
+              email: contactEmail.trim(),
+              phone: contactPhone.trim(),
+            }),
+            headers: { "Content-Type": "application/json" },
+          });
+          registeredAsGuest = true;
+        } catch (error: unknown) {
+          const status =
+            error instanceof ApiError
+              ? error.status
+              : error && typeof error === "object" && "status" in error
+                ? (error as { status?: number }).status
+                : undefined;
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Ocurrió un error al registrar tus datos.";
+          if ((status === 400 || status === 409) && isEmailTakenError(message)) {
+            try {
+              const stepOne = await loginStepOne(contactEmail.trim());
+              setIsSubmitting(false);
+              if (stepOne.status === "otp_sent") {
+                setAuthStep("otp");
+                setOtpCode("");
+                addToast({
+                  title: "Te enviamos un código de verificación",
+                  description: `Tu correo ${contactEmail.trim()} ya tiene cuenta. Ingresa el código de 6 dígitos que enviamos a tu correo para enviar tu reserva.`,
+                  color: "primary",
+                });
+                return;
+              }
+              if (stepOne.status === "requires_password") {
+                setAuthStep("password");
+                setPassword("");
+                addToast({
+                  title: "Cuenta existente",
+                  description:
+                    "Ingresa tu contraseña para confirmar y enviar tu solicitud de reserva.",
+                  color: "primary",
+                });
+                return;
+              }
+            } catch (stepError) {
+              setIsSubmitting(false);
+              addToast({
+                title: "Cuenta existente",
+                description:
+                  stepError instanceof Error
+                    ? stepError.message
+                    : "Este correo ya tiene una cuenta registrada.",
+                color: "warning",
+              });
+              return;
+            }
+          }
+          setIsSubmitting(false);
           addToast({
             title: "No se pudo registrar",
             description: message,
             color: "danger",
           });
+          return;
         }
-        return;
       }
     } else {
       setIsSubmitting(true);
@@ -235,13 +462,8 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         event_description: eventDescription.trim() || null,
       });
       const targetUrl = `/contractor/bookings/${booking.id}`;
+      clearDraft();
       if (registeredAsGuest) {
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(
-            "post_password_setup_redirect",
-            targetUrl,
-          );
-        }
         await refresh();
       }
       addToast({
@@ -251,11 +473,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         color: "success",
       });
       onSuccess?.();
-      router.push(
-        registeredAsGuest
-          ? `/set-password?callbackUrl=${encodeURIComponent(targetUrl)}`
-          : targetUrl,
-      );
+      router.push(targetUrl);
     } catch (error) {
       addToast({
         title: "No se pudo enviar",
@@ -467,6 +685,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   return;
                 }
                 if (!canSubmit) return;
+                persistDraft();
                 setShowAuthSection(true);
               }}
               isDisabled={!canSubmit}
@@ -499,6 +718,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                 (process.env.NEXT_PUBLIC_API_URL || "/api/v1") +
                 "/auth/oauth/google/start?intent=login"
               }
+              onClick={persistDraft}
               variant="flat"
               radius="md"
               size="sm"
@@ -519,12 +739,18 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   placeholder="Ej. Juan Pérez"
                   autoComplete="name"
                   variant="bordered"
-                  isRequired
+                  isRequired={authStep === "contact"}
                   value={contactName}
                   onValueChange={setContactName}
-                  isInvalid={attemptedGuestSubmit && !contactName.trim()}
+                  isInvalid={
+                    authStep === "contact" &&
+                    attemptedGuestSubmit &&
+                    !contactName.trim()
+                  }
                   errorMessage={
-                    attemptedGuestSubmit && !contactName.trim()
+                    authStep === "contact" &&
+                    attemptedGuestSubmit &&
+                    !contactName.trim()
                       ? "Ingresa tu nombre"
                       : undefined
                   }
@@ -540,12 +766,18 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   inputMode="tel"
                   autoComplete="tel"
                   variant="bordered"
-                  isRequired
+                  isRequired={authStep === "contact"}
                   value={contactPhone}
                   onValueChange={setContactPhone}
-                  isInvalid={attemptedGuestSubmit && !contactPhone.trim()}
+                  isInvalid={
+                    authStep === "contact" &&
+                    attemptedGuestSubmit &&
+                    !contactPhone.trim()
+                  }
                   errorMessage={
-                    attemptedGuestSubmit && !contactPhone.trim()
+                    authStep === "contact" &&
+                    attemptedGuestSubmit &&
+                    !contactPhone.trim()
                       ? "Ingresa tu celular"
                       : undefined
                   }
@@ -563,7 +795,14 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   variant="bordered"
                   isRequired
                   value={contactEmail}
-                  onValueChange={setContactEmail}
+                  onValueChange={(val) => {
+                    setContactEmail(val);
+                    if (authStep !== "contact") {
+                      setAuthStep("contact");
+                      setOtpCode("");
+                      setPassword("");
+                    }
+                  }}
                   isInvalid={attemptedGuestSubmit && !contactEmail.trim()}
                   errorMessage={
                     attemptedGuestSubmit && !contactEmail.trim()
@@ -577,9 +816,69 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                 />
               </div>
 
+              {authStep === "otp" && (
+                <div className="flex flex-col gap-2.5 rounded-2xl border border-primary/40 bg-primary/10 p-3.5 animate-appearance-in">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-foreground m-0">
+                      Este correo ya tiene una cuenta. Ingresa el código de 6 dígitos que enviamos a{" "}
+                      <span className="font-bold">{contactEmail.trim()}</span> para enviar tu solicitud de reserva:
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      isLoading={isResendingOtp}
+                      onPress={handleResendOtp}
+                      className="font-bold h-7 px-2 text-xs"
+                    >
+                      Reenviar código
+                    </Button>
+                  </div>
+                  <Input
+                    label="Código de verificación (6 dígitos)"
+                    placeholder="000000"
+                    variant="bordered"
+                    maxLength={6}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={otpCode}
+                    onValueChange={(val) =>
+                      setOtpCode(val.replace(/\D/g, "").slice(0, 6))
+                    }
+                    classNames={{
+                      label: "font-semibold text-xs",
+                      input: "font-bold tracking-widest text-base",
+                    }}
+                  />
+                </div>
+              )}
+
+              {authStep === "password" && (
+                <div className="flex flex-col gap-2.5 rounded-2xl border border-primary/40 bg-primary/10 p-3.5 animate-appearance-in">
+                  <p className="text-xs font-semibold text-foreground m-0">
+                    Este correo ya tiene una cuenta con contraseña. Ingrésala para confirmar y enviar tu solicitud de reserva:
+                  </p>
+                  <PasswordInput
+                    label="Contraseña de tu cuenta"
+                    placeholder="Ingresa tu contraseña"
+                    variant="bordered"
+                    value={password}
+                    onValueChange={setPassword}
+                    autoComplete="current-password"
+                    classNames={{
+                      label: "font-semibold text-xs",
+                      input: "font-semibold text-base sm:text-sm",
+                    }}
+                  />
+                </div>
+              )}
+
               <div className="pt-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <p className="text-xs text-default-500 leading-snug m-0">
-                  Crearemos tu cuenta automáticamente sin contraseñas. Al continuar aceptas los{" "}
+                  {authStep === "contact"
+                    ? "Crearemos tu cuenta automáticamente sin contraseñas. "
+                    : "Al confirmar se enviará tu solicitud de reserva inmediatamente. "}
+                  Al continuar aceptas los{" "}
                   <Link
                     href="/legal/terminos"
                     target="_blank"
@@ -606,7 +905,11 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   className="w-full sm:w-auto font-bold shadow-md shrink-0 min-h-11"
                   endContent={<Icon icon="lucide:send" className="w-4 h-4" />}
                 >
-                  Pedir cotización
+                  {authStep === "otp"
+                    ? "Verificar y pedir cotización"
+                    : authStep === "password"
+                      ? "Ingresar y pedir cotización"
+                      : "Pedir cotización"}
                 </Button>
               </div>
             </CardBody>
@@ -614,7 +917,36 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         </div>
       )}
 
-      {user && (
+      {user && user.role !== "contractor" && (
+        <div
+          role="alert"
+          className="mt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-warning/40 bg-warning/10 p-3.5 text-xs"
+        >
+          <div className="flex flex-col gap-0.5">
+            <p className="font-bold text-foreground m-0">
+              Sesión activa como {user.role === "musician" ? "músico" : "administrador"} ({user.email})
+            </p>
+            <p className="text-default-600 m-0">
+              Para enviar una solicitud de reserva necesitas usar una cuenta de cliente/contratista.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            color="warning"
+            variant="flat"
+            onPress={async () => {
+              persistDraft();
+              await logout();
+              setShowAuthSection(true);
+            }}
+            className="font-bold shrink-0"
+          >
+            Usar datos de cliente
+          </Button>
+        </div>
+      )}
+
+      {user && user.role === "contractor" && (
         <div className="pt-2 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
