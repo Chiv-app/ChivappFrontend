@@ -79,7 +79,9 @@ export default function BookingEditCommitmentModal({
     function handleLocationChange(next: MapLocation) {
         setLocation(next);
         setAddress(next.address);
-        setCity(next.city ?? "");
+        if (next.city) {
+            setCity(next.city);
+        }
     }
 
     async function handleSubmit(event: FormEvent) {

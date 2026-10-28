@@ -54,6 +54,7 @@ export type BookingLinkCheckout = {
     event_type: string;
     location_address: string;
     location_city?: string | null;
+    location_reference?: string | null;
     fullname: string;
     email: string;
     phone: string;

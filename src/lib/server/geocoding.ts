@@ -13,23 +13,40 @@ type NominatimResult = {
         city?: string;
         town?: string;
         village?: string;
-        state?: string;
+        municipality?: string;
+        city_district?: string;
         suburb?: string;
+        county?: string;
+        state_district?: string;
+        state?: string;
+        region?: string;
     };
 };
 
 function extractCity(result: NominatimResult): string | null {
     const address = result.address;
     if (!address) return null;
-    return address.city ?? address.town ?? address.village ?? address.suburb ?? address.state ?? null;
+    return (
+        address.city ??
+        address.town ??
+        address.municipality ??
+        address.city_district ??
+        address.village ??
+        address.suburb ??
+        address.county ??
+        address.state_district ??
+        address.state ??
+        address.region ??
+        null
+    );
 }
 
 function toMapLocation(result: NominatimResult): MapLocation {
     return {
         address: result.display_name,
         city: extractCity(result),
-        lat: Number(result.lat),
-        lng: Number(result.lon),
+        lat: Number(Number(result.lat).toFixed(6)),
+        lng: Number(Number(result.lon).toFixed(6)),
     };
 }
 
@@ -83,8 +100,8 @@ export async function reverseGeocode(lat: number, lng: number): Promise<MapLocat
     
     const loc = toMapLocation(result);
     // Force the exact coordinates requested to avoid "snapping" to nearby buildings
-    loc.lat = lat;
-    loc.lng = lng;
-    
+    loc.lat = Number(lat.toFixed(6));
+    loc.lng = Number(lng.toFixed(6));
+
     return loc;
 }

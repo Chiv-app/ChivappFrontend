@@ -15,12 +15,32 @@ const markerIcon = L.icon({
     shadowSize: [41, 41],
 });
 
-function InvalidateSize() {
+function InvalidateSize({ lat, lng }: { lat: number; lng: number }) {
     const map = useMap();
     useEffect(() => {
-        const id = window.setTimeout(() => map.invalidateSize(), 80);
-        return () => window.clearTimeout(id);
+        const timers = [80, 250, 500].map((ms) =>
+            window.setTimeout(() => map.invalidateSize(), ms),
+        );
+        const container = map.getContainer();
+        let observer: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== "undefined" && container) {
+            observer = new ResizeObserver(() => {
+                map.invalidateSize();
+            });
+            observer.observe(container);
+        }
+        return () => {
+            timers.forEach((id) => window.clearTimeout(id));
+            observer?.disconnect();
+        };
     }, [map]);
+
+    useEffect(() => {
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            map.setView([lat, lng], map.getZoom());
+        }
+    }, [lat, lng, map]);
+
     return null;
 }
 
@@ -44,7 +64,7 @@ export default function LocationMapPreviewInner({ lat, lng }: Props) {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <Marker position={[lat, lng]} icon={markerIcon} />
-                <InvalidateSize />
+                <InvalidateSize lat={lat} lng={lng} />
             </MapContainer>
         </div>
     );

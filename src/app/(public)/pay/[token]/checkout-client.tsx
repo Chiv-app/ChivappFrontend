@@ -25,6 +25,7 @@ import {
 import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
+import { formatLocationReference } from "@/lib/geocoding";
 import { formatCurrency } from "@/lib/booking-labels";
 import { formatPeruDate, todayPeruIso } from "@/lib/date-utils";
 import { sanitizeContractHtml } from "@/lib/sanitize-html";
@@ -513,12 +514,20 @@ export default function CheckoutClient({
       return;
     }
 
+    const locationReference =
+      location &&
+      Number.isFinite(location.lat) &&
+      Number.isFinite(location.lng)
+        ? formatLocationReference(location.lat, location.lng)
+        : undefined;
+
     const currentSnapshot = JSON.stringify({
       eventDate,
       startTime,
       eventType: eventType.trim(),
       address: location?.address || "",
       city: location?.city || "",
+      locationReference: locationReference || "",
       fullname: fullname.trim(),
       email: email.trim().toLowerCase(),
       phone: phone.trim(),
@@ -535,6 +544,7 @@ export default function CheckoutClient({
           event_type: eventType.trim(),
           location_address: location?.address || "",
           location_city: location?.city || "",
+          location_reference: locationReference,
           fullname: fullname.trim(),
           email: email.trim(),
           phone: phone.trim(),
@@ -568,6 +578,7 @@ export default function CheckoutClient({
           start_time: startTime,
           location_address: location?.address || "",
           location_city: location?.city || "",
+          location_reference: locationReference ?? null,
           price_agreed: linkData.price,
           platform_fee_percent: linkData.fee_percent ?? 2,
           platform_fee_amount: serviceFee,
@@ -1156,7 +1167,7 @@ export default function CheckoutClient({
                         (!location?.address || location.address.trim().length < 5)
                           ? "border-danger"
                           : "border-default-300"
-                      } rounded-xl overflow-hidden`}
+                      } rounded-2xl p-3`}
                     >
                       <LocationMapPickerField
                         value={location}

@@ -96,28 +96,49 @@ export function readDevicePosition(
             reject(new Error("Tu dispositivo no soporta geolocalización."));
             return;
         }
+        const handleSuccess = (position: GeolocationPosition) => {
+            resolve({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+            });
+        };
+        const handleFinalError = (error: GeolocationPositionError) => {
+            if (error.code === error.PERMISSION_DENIED) {
+                reject(
+                    new Error(
+                        "Permiso de ubicación denegado. Actívalo en el navegador.",
+                    ),
+                );
+                return;
+            }
+            reject(new Error("No se pudo obtener tu ubicación. Intenta de nuevo."));
+        };
+
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve({
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                    accuracy: position.coords.accuracy,
-                });
-            },
+            handleSuccess,
             (error) => {
-                if (error.code === error.PERMISSION_DENIED) {
-                    reject(
-                        new Error(
-                            "Permiso de ubicación denegado. Actívalo en el navegador.",
-                        ),
-                    );
+                if (
+                    error.code === error.PERMISSION_DENIED ||
+                    options?.enableHighAccuracy === false
+                ) {
+                    handleFinalError(error);
                     return;
                 }
-                reject(new Error("No se pudo obtener tu ubicación. Intenta de nuevo."));
+                navigator.geolocation.getCurrentPosition(
+                    handleSuccess,
+                    handleFinalError,
+                    {
+                        enableHighAccuracy: false,
+                        timeout: 10000,
+                        maximumAge: 30000,
+                        ...options,
+                    },
+                );
             },
             {
                 enableHighAccuracy: true,
-                timeout: 15000,
+                timeout: 8000,
                 maximumAge: 5000,
                 ...options,
             },
@@ -133,14 +154,48 @@ export function watchDevicePosition(
         onError?.(new Error("Tu dispositivo no soporta geolocalización."));
         return () => undefined;
     }
-    const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-            onPosition({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-            });
-        },
+    let activeWatchId: number | null = null;
+    let fallbackStarted = false;
+
+    const handleSuccess = (position: GeolocationPosition) => {
+        onPosition({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+        });
+    };
+
+    const startLowAccuracyWatch = () => {
+        if (fallbackStarted) return;
+        fallbackStarted = true;
+        if (activeWatchId !== null) {
+            navigator.geolocation.clearWatch(activeWatchId);
+        }
+        activeWatchId = navigator.geolocation.watchPosition(
+            handleSuccess,
+            (error) => {
+                if (error.code === error.PERMISSION_DENIED) {
+                    onError?.(
+                        new Error(
+                            "Permiso de ubicación denegado. Actívalo en el navegador.",
+                        ),
+                    );
+                    return;
+                }
+                onError?.(
+                    new Error("No se pudo obtener tu ubicación. Intenta de nuevo."),
+                );
+            },
+            {
+                enableHighAccuracy: false,
+                timeout: 20000,
+                maximumAge: 15000,
+            },
+        );
+    };
+
+    activeWatchId = navigator.geolocation.watchPosition(
+        handleSuccess,
         (error) => {
             if (error.code === error.PERMISSION_DENIED) {
                 onError?.(
@@ -150,15 +205,17 @@ export function watchDevicePosition(
                 );
                 return;
             }
-            onError?.(
-                new Error("No se pudo obtener tu ubicación. Intenta de nuevo."),
-            );
+            startLowAccuracyWatch();
         },
         {
             enableHighAccuracy: true,
-            timeout: 20000,
+            timeout: 12000,
             maximumAge: 5000,
         },
     );
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () => {
+        if (activeWatchId !== null) {
+            navigator.geolocation.clearWatch(activeWatchId);
+        }
+    };
 }

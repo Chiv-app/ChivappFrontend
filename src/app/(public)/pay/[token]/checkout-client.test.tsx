@@ -44,14 +44,24 @@ vi.mock("@/components/ui/location-map-picker-field", () => ({
         value,
         onChange,
     }: {
-        value: { address: string; city: string } | null;
-        onChange: (v: { address: string; city: string }) => void;
+        value: { address: string; city: string; lat?: number; lng?: number } | null;
+        onChange: (v: {
+            address: string;
+            city: string;
+            lat: number;
+            lng: number;
+        }) => void;
     }) => (
         <input
             aria-label="Ubicación del evento"
             value={value?.address || ""}
             onChange={(e) =>
-                onChange({ address: e.target.value, city: "Lima" })
+                onChange({
+                    address: e.target.value,
+                    city: "Lima",
+                    lat: -12.119123,
+                    lng: -77.028987,
+                })
             }
         />
     ),
@@ -319,6 +329,7 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
                 "tok-public-123",
                 expect.objectContaining({
                     event_type: "Boda Civil",
+                    location_reference: "-12.119123,-77.028987",
                 }),
             );
         });
