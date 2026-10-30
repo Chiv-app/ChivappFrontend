@@ -56,15 +56,47 @@ type Props = {
   onSuccess?: () => void;
 };
 
+type BookingDraft = {
+  eventDate?: string;
+  startTime?: string;
+  eventType?: string;
+  eventDescription?: string;
+  location?: MapLocation | null;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+};
+
+function readBookingDraft(storageKey: string): BookingDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(storageKey);
+    if (!raw) return null;
+    return JSON.parse(raw) as BookingDraft;
+  } catch {
+    return null;
+  }
+}
+
 export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const { user, login, loginWithOtp, logout, refresh } = useAuth();
+  const draftStorageKey = `chivapp:pending_booking_request:${musician.id}`;
+  const [initialDraft] = useState<BookingDraft | null>(() =>
+    readBookingDraft(draftStorageKey),
+  );
   const [showAuthSection, setShowAuthSection] = useState(false);
   const [authStep, setAuthStep] = useState<"contact" | "otp" | "password">(
     "contact",
   );
-  const [contactName, setContactName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
+  const [contactName, setContactName] = useState(
+    () => initialDraft?.contactName ?? "",
+  );
+  const [contactPhone, setContactPhone] = useState(
+    () => initialDraft?.contactPhone ?? "",
+  );
+  const [contactEmail, setContactEmail] = useState(
+    () => initialDraft?.contactEmail ?? "",
+  );
   const [otpCode, setOtpCode] = useState("");
   const [password, setPassword] = useState("");
   const [isResendingOtp, setIsResendingOtp] = useState(false);
@@ -76,41 +108,21 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const [slots, setSlots] = useState<AvailabilityOut[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [slotsError, setSlotsError] = useState<string | null>(null);
-  const [eventDate, setEventDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [eventType, setEventType] = useState("");
-  const [eventDescription, setEventDescription] = useState("");
-  const [location, setLocation] = useState<MapLocation | null>(null);
-
-  const draftStorageKey = `chivapp:pending_booking_request:${musician.id}`;
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.sessionStorage.getItem(draftStorageKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        eventDate?: string;
-        startTime?: string;
-        eventType?: string;
-        eventDescription?: string;
-        location?: MapLocation | null;
-        contactName?: string;
-        contactPhone?: string;
-        contactEmail?: string;
-      };
-      if (parsed.eventDate) setEventDate(parsed.eventDate);
-      if (parsed.startTime) setStartTime(parsed.startTime);
-      if (parsed.eventType) setEventType(parsed.eventType);
-      if (parsed.eventDescription) setEventDescription(parsed.eventDescription);
-      if (parsed.location) setLocation(parsed.location);
-      if (parsed.contactName) setContactName(parsed.contactName);
-      if (parsed.contactPhone) setContactPhone(parsed.contactPhone);
-      if (parsed.contactEmail) setContactEmail(parsed.contactEmail);
-    } catch {
-      // Ignore malformed sessionStorage draft
-    }
-  }, [draftStorageKey]);
+  const [eventDate, setEventDate] = useState(
+    () => initialDraft?.eventDate ?? "",
+  );
+  const [startTime, setStartTime] = useState(
+    () => initialDraft?.startTime ?? "",
+  );
+  const [eventType, setEventType] = useState(
+    () => initialDraft?.eventType ?? "",
+  );
+  const [eventDescription, setEventDescription] = useState(
+    () => initialDraft?.eventDescription ?? "",
+  );
+  const [location, setLocation] = useState<MapLocation | null>(
+    () => initialDraft?.location ?? null,
+  );
 
   const persistDraft = useCallback(() => {
     if (typeof window === "undefined") return;

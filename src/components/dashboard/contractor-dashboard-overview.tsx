@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Card, CardBody, Chip } from "@heroui/react";
+import { Button, Card, CardBody } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import DashboardModuleCard from "@/components/dashboard/dashboard-module-card";
 import { formatCurrency } from "@/lib/booking-labels";
@@ -27,9 +27,6 @@ export default function ContractorDashboardOverview({
     return (
         <div className="max-w-6xl mx-auto flex flex-col gap-8">
             <div>
-                <Chip color="primary" variant="flat" className="mb-3">
-                    Panel de contratista
-                </Chip>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                     Tu espacio de gestión
                 </h1>

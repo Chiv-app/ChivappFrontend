@@ -119,12 +119,20 @@ export default function LocationMapPicker({ value, onChange }: Props) {
     value && Number.isFinite(value.lat) && Number.isFinite(value.lng),
   );
 
+  const valLat = value?.lat;
+  const valLng = value?.lng;
+
   const center = useMemo<[number, number]>(() => {
-    if (value && Number.isFinite(value.lat) && Number.isFinite(value.lng)) {
-      return [value.lat, value.lng];
+    if (
+      typeof valLat === "number" &&
+      Number.isFinite(valLat) &&
+      typeof valLng === "number" &&
+      Number.isFinite(valLng)
+    ) {
+      return [valLat, valLng];
     }
     return DEFAULT_CENTER;
-  }, [value?.lat, value?.lng]);
+  }, [valLat, valLng]);
 
   async function resolvePoint(lat: number, lng: number) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -258,7 +266,6 @@ export default function LocationMapPicker({ value, onChange }: Props) {
 
     const trimmed = searchQuery.trim();
     if (!trimmed || trimmed.length < 3) {
-      setSuggestions([]);
       return;
     }
 

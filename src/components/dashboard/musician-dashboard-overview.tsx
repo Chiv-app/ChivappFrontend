@@ -39,9 +39,6 @@ export default function MusicianDashboardOverview({
             <section className="rounded-3xl border border-default-200/70 bg-gradient-to-br from-primary/20 via-primary/5 to-content1 px-6 py-7 overflow-hidden relative shadow-soft">
                 <div className="pointer-events-none absolute -top-16 -right-16 size-64 rounded-full bg-primary/20 blur-3xl" />
                 <div className="relative z-10 max-w-2xl">
-                    <Chip color="primary" variant="flat" className="mb-3">
-                        Panel de músico
-                    </Chip>
                     <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                         {isVerified ? "Tu agenda y tus ingresos" : "Completa tu verificación"}
                     </h1>
