@@ -20,7 +20,8 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm run test
-      - name: Next.js Build
+      - name: Next.js Build (PR / branch check)
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
         env:
           NEXT_PUBLIC_API_URL: /api/v1
           NEXT_PUBLIC_SITE_URL: https://chiv.app
@@ -72,3 +73,19 @@ jobs:
             NEXT_PUBLIC_SITE_URL=https://chiv.app
             NEXT_PUBLIC_API_URL=/api/v1
             NEXT_PUBLIC_GCS_BUCKET_URL=https://storage.googleapis.com/chivapp-uploads
+
+      - name: Prune old Docker images in Artifact Registry (keep latest 3)
+        run: |
+          for REPO in cloud-run-source-deploy chivapp-repo; do
+            IMAGE_PATH="us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${REPO}/frontend"
+            if gcloud artifacts docker images list "$IMAGE_PATH" --limit=1 >/dev/null 2>&1; then
+              gcloud artifacts docker images list "$IMAGE_PATH" \
+                --sort-by=~UPDATE_TIME \
+                --format="value(version)" | tail -n +4 | while read -r digest; do
+                if [ -n "$digest" ]; then
+                  echo "Deleting old frontend image digest: ${IMAGE_PATH}@${digest}"
+                  gcloud artifacts docker images delete "${IMAGE_PATH}@${digest}" --delete-tags --quiet || true
+                fi
+              done
+            fi
+          done
