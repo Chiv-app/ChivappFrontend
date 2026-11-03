@@ -34,11 +34,11 @@ export default function HeroSearchSection() {
                 className="relative z-20 max-w-4xl mx-auto flex flex-col items-center w-full"
             >
                 <p className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3.5 py-1 text-xs font-semibold text-primary-text mb-4">
-                    Mariachis, orquestas y DJs verificados en Perú
+                    Músicos, agrupaciones y DJs verificados en Perú
                 </p>
 
                 <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-3 text-balance text-foreground">
-                    Contrata mariachis y músicos verificados para tu evento
+                    Contrata músicos y agrupaciones verificadas para tu evento
                 </h1>
 
                 <div className="min-h-[44px] flex items-center justify-center gap-2 mb-3 px-4">
@@ -53,7 +53,7 @@ export default function HeroSearchSection() {
                     transition={{ delay: 0.2 }}
                     className="text-base sm:text-lg md:text-xl text-default-600 max-w-2xl mb-10 text-pretty px-4"
                 >
-                    Explora orquestas, DJs, bandas de rock, mariachis y más. Pide tu cotización al instante y reserva con pagos protegidos.
+                    Explora solistas, bandas, orquestas, DJs y agrupaciones musicales. Pide tu cotización al instante y reserva con pagos protegidos.
                 </motion.p>
 
                 {/* Search Form Pill */}
@@ -113,7 +113,7 @@ export default function HeroSearchSection() {
                                 enterKeyHint="search"
                                 value={style}
                                 onChange={(e) => setStyle(e.target.value)}
-                                placeholder="Mariachi, salsa, rock, DJ..."
+                                placeholder="Rock, salsa, jazz, orquesta, DJ..."
                                 className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
                             />
                         </span>

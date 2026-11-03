@@ -15,10 +15,10 @@ type Props = {
 
 const QUICK_CATEGORIES = [
     { label: "Todos", href: "/musicians", active: true },
-    { label: "Mariachis", href: "/musicians?genre=Mariachi", active: false },
     { label: "Orquestas", href: "/musicians?genre=Orquesta", active: false },
     { label: "DJs", href: "/musicians?genre=DJ", active: false },
     { label: "Bandas de rock", href: "/musicians?genre=Rock", active: false },
+    { label: "Jazz y acústico", href: "/musicians?genre=Jazz", active: false },
 ];
 
 export default function HomeIntroSection({

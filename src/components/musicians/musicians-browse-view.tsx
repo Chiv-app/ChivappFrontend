@@ -12,7 +12,7 @@ import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
 
 const PAGE_SIZE = 20;
 
-const POPULAR_GENRES = ["Mariachi", "Música criolla", "Orquesta", "DJ", "Cumbia", "Jazz"];
+const POPULAR_GENRES = ["Rock", "Salsa", "Cumbia", "Orquesta", "DJ", "Jazz", "Música criolla"];
 const POPULAR_CITIES = ["Lima", "Arequipa", "Cusco", "Trujillo", "Piura"];
 
 type Filters = {
@@ -299,7 +299,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                             id="filter-genre"
                             label="Género musical"
                             icon="material-symbols:library-music-outline"
-                            placeholder="Ej. Mariachi, Criolla"
+                            placeholder="Ej. Rock, Salsa, Jazz"
                             value={filters.genre}
                             onChange={(v) => updateFilter("genre", v)}
                             listId="musicians-genre-suggestions"
@@ -309,7 +309,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                             id="filter-instrument"
                             label="Instrumento"
                             icon="material-symbols:piano"
-                            placeholder="Ej. Violín, Trompeta"
+                            placeholder="Ej. Guitarra, Piano, Voz"
                             value={filters.instrument}
                             onChange={(v) => updateFilter("instrument", v)}
                         />

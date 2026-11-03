@@ -60,7 +60,7 @@ export default function BookingContractorRequestedCard({
                     )}
                 </div>
                 <h2 className="text-2xl font-bold text-foreground">
-                    Solicitud enviada al mariachi
+                    Solicitud enviada al músico
                 </h2>
                 <p className="text-sm text-default-600 mt-1 max-w-2xl">
                     Tu solicitud está en manos del músico. Está revisando la disponibilidad
@@ -74,7 +74,7 @@ export default function BookingContractorRequestedCard({
                     <div className="flex items-center justify-between p-4 rounded-2xl border border-default-200 bg-content1">
                         <User
                             name={booking.musician_name}
-                            description="Mariachi / Agrupación seleccionada"
+                            description="Músico / Agrupación seleccionada"
                             avatarProps={{
                                 src: resolveUploadUrl(booking.musician_image_url) ?? undefined,
                                 size: "md",

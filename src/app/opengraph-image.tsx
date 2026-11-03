@@ -100,7 +100,7 @@ export default function OpenGraphImage() {
                     }}
                 >
                     <span style={{ color: "#46C0D9", fontWeight: 600 }}>Chivapp</span>
-                    <span>Música en vivo para bodas, serenatas y celebraciones</span>
+                    <span>Música en vivo para bodas, eventos y celebraciones</span>
                 </div>
             </div>
         ),

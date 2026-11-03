@@ -281,7 +281,7 @@ export default function MusicianOnboarding() {
 
                                 <Input
                                     label="Nombre artístico"
-                                    placeholder="Ej. Mariachi Sol de México"
+                                    placeholder="Ej. Grupo Musical Aurora o Carlos Rivera"
                                     value={stageName}
                                     onValueChange={(val) => {
                                         setStageName(val);
@@ -313,7 +313,7 @@ export default function MusicianOnboarding() {
                                             setGenres(next);
                                             if (genresError && next.length > 0) setGenresError(null);
                                         }}
-                                        placeholder="Ej. Cumbia, Rancheras, Pop"
+                                        placeholder="Ej. Rock, Salsa, Jazz, Pop"
                                     />
                                     {genresError && (
                                         <p className="text-xs text-danger-text" role="alert">

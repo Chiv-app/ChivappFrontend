@@ -34,7 +34,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     metadataBase: new URL(getSiteUrl()),
     title: {
-        default: "Chivapp – Contrata mariachis y músicos para tu evento en Perú",
+        default: "Chivapp – Contrata músicos y agrupaciones para tu evento en Perú",
         template: `${SITE_NAME} - %s`,
     },
     description: SITE_DESCRIPTION,
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
         "músicos",
         "contratar músicos",
         "música para eventos",
-        "mariachi",
+        "agrupaciones musicales",
         "banda para fiesta",
         "músico para boda",
         "Chivapp",
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
         type: "website",
         locale: "es_PE",
         siteName: SITE_NAME,
-        title: "Chivapp – Contrata mariachis y músicos para tu evento en Perú",
+        title: "Chivapp – Contrata músicos y agrupaciones para tu evento en Perú",
         description: SITE_TAGLINE,
         url: "/",
         images: [

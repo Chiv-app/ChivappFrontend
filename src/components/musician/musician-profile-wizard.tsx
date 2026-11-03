@@ -802,7 +802,7 @@ export default function MusicianProfileWizard() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
                                 label="Nombre de usuario"
-                                placeholder="Ej. mariachi-sol-de-oro"
+                                placeholder="Ej. grupo-aurora-oficial"
                                 description={usernameCheck ? usernameCheck.message : "Identificador único para tu URL pública."}
                                 color={usernameCheck ? (usernameCheck.available ? "success" : "danger") : "default"}
                                 errorMessage={usernameCheck && !usernameCheck.available ? usernameCheck.message : undefined}
@@ -830,7 +830,7 @@ export default function MusicianProfileWizard() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
                                 label="Nombre artístico"
-                                placeholder="Ej. Mariachi Sol de Oro"
+                                placeholder="Ej. Grupo Musical Aurora"
                                 description="Es el nombre que verán los contratistas en tu perfil público."
                                 value={stageName}
                                 onValueChange={setStageName}

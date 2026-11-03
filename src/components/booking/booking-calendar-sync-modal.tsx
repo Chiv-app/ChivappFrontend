@@ -116,7 +116,7 @@ export default function BookingCalendarSyncModal({
                                     <div className="text-sm text-default-400">Cargando integrantes...</div>
                                 ) : members.length > 0 ? (
                                     <CheckboxGroup 
-                                        label="Incluir integrantes de tu mariachi:"
+                                        label="Incluir integrantes de tu agrupación:"
                                         value={selectedMembers}
                                         onValueChange={setSelectedMembers}
                                     >
