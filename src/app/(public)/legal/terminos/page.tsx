@@ -118,9 +118,8 @@ export default async function TermsPage() {
                         <Link href="/legal/reembolsos" className="text-primary underline underline-offset-2">
                             política de cancelación
                         </Link>
-                        : si cancela el contratista, se le reembolsa el 100 % de lo pagado (sin incluir el costo de la
-                        pasarela de pagos) cuando faltan {policy.full_refund_min_days} días calendario o más para el evento, el {policy.partial_refund_percent} % cuando faltan entre {policy.partial_refund_min_days} y {maxPartialDays} días y 0 % cuando faltan
-                        menos de {policy.no_refund_below_days} días; si cancela el músico, se reembolsa el {policy.musician_fault_refund_percent} % del importe abonado al contratista. Todo reembolso es revisado y aprobado por{" "}
+                        : si cancela el contratista, se le reembolsa el 100 % de la tarifa del artista cuando faltan {policy.full_refund_min_days} días calendario o más para el evento, el {policy.partial_refund_percent} % cuando faltan entre {policy.partial_refund_min_days} y {maxPartialDays} días y 0 % cuando faltan
+                        menos de {policy.no_refund_below_days} días; si cancela el músico, se reembolsa el {policy.musician_fault_refund_percent} % de la tarifa del artista al contratista. La comisión de servicio y el costo de la pasarela de pagos no son reembolsables en ningún caso. Todo reembolso es revisado y aprobado por{" "}
                         {SITE_NAME} antes de enviarse a través de Mercado Pago.
                     </li>
                     <li>

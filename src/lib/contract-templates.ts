@@ -276,7 +276,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    `${formatContractCancellationClause(DEFAULT_CANCELLATION_POLICY)}\nSi EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del ${DEFAULT_CANCELLATION_POLICY.musician_fault_refund_percent} % de lo pagado o, de común acuerdo, se podrá proponer una fecha alternativa o un reemplazo de igual o mejor calidad artística. Toda reprogramación deberá constar por escrito.`,
+                    `${formatContractCancellationClause(DEFAULT_CANCELLATION_POLICY)}\nSi EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del ${DEFAULT_CANCELLATION_POLICY.musician_fault_refund_percent} % de la tarifa del artista o, de común acuerdo, se podrá proponer una fecha alternativa o un reemplazo de igual o mejor calidad artística. Toda reprogramación deberá constar por escrito.`,
             },
             {
                 title: "Fuerza mayor y derechos de imagen",
@@ -329,7 +329,7 @@ export const CONTRACT_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    `${formatContractCancellationClause(DEFAULT_CANCELLATION_POLICY)} Si EL ARTISTA cancela por causas propias, EL CLIENTE recibirá el reembolso del ${DEFAULT_CANCELLATION_POLICY.musician_fault_refund_percent} % de lo pagado o se coordinará una alternativa de mutuo acuerdo.`,
+                    `${formatContractCancellationClause(DEFAULT_CANCELLATION_POLICY)} Si EL ARTISTA cancela por causas propias, EL CLIENTE recibirá el reembolso del ${DEFAULT_CANCELLATION_POLICY.musician_fault_refund_percent} % de la tarifa del artista o se coordinará una alternativa de mutuo acuerdo.`,
             },
             {
                 title: "Disposiciones finales",
@@ -592,7 +592,7 @@ export const CONTRACTOR_TEMPLATES: ContractTemplate[] = [
             {
                 title: "Cancelaciones y reprogramación",
                 content:
-                    `${formatContractCancellationClause(DEFAULT_CANCELLATION_POLICY)} Si EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del ${DEFAULT_CANCELLATION_POLICY.musician_fault_refund_percent} % de lo pagado o se reprogramará de común acuerdo.`,
+                    `${formatContractCancellationClause(DEFAULT_CANCELLATION_POLICY)} Si EL ARTISTA no pudiera asistir por causas propias, EL CLIENTE recibirá el reembolso del ${DEFAULT_CANCELLATION_POLICY.musician_fault_refund_percent} % de la tarifa del artista o se reprogramará de común acuerdo.`,
             },
             {
                 title: "Fuerza mayor y derechos de imagen",

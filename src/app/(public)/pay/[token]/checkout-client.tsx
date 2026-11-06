@@ -1842,17 +1842,18 @@ export default function CheckoutClient({
                         evento. Si cancelas con{" "}
                         {linkData.cancellation_policy?.full_refund_min_days ?? 15}{" "}
                         días calendario o más de anticipación recibes el 100% de
-                        lo pagado (sin el costo de la pasarela); entre{" "}
+                        la tarifa del artista; entre{" "}
                         {linkData.cancellation_policy?.partial_refund_min_days ?? 7}{" "}
                         y{" "}
                         {(linkData.cancellation_policy?.full_refund_min_days ?? 15) - 1}{" "}
                         días antes, el{" "}
                         {linkData.cancellation_policy?.partial_refund_percent ?? 50}
-                        %; con menos de{" "}
+                        % de la tarifa; con menos de{" "}
                         {linkData.cancellation_policy?.partial_refund_min_days ?? 7}{" "}
                         días no aplica reembolso salvo cancelación o
-                        inasistencia del músico (reembolso del 100% del importe
-                        abonado).
+                        inasistencia del músico (reembolso del 100% de la
+                        tarifa). La comisión de servicio y el costo de la
+                        pasarela no son reembolsables.
                       </p>
                     </div>
 

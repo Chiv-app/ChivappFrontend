@@ -41,7 +41,7 @@ export default async function RefundPolicyPage() {
           Política de cancelación y reembolsos
         </h1>
         <p className="text-default-500 text-sm">
-          Última actualización: 23 de octubre de 2026 · Legislación de la
+          Última actualización: 5 de noviembre de 2026 · Legislación de la
           República del Perú
         </p>
       </header>
@@ -53,6 +53,15 @@ export default async function RefundPolicyPage() {
           importe permanece retenido en custodia de {SITE_NAME} y se libera al
           músico únicamente después de que la presentación se ha realizado sin
           incidencias reportadas dentro de la ventana de protección.
+        </p>
+        <p>
+          Lo que abona el contratista se compone de la{" "}
+          <strong className="text-foreground">tarifa del artista</strong>, la{" "}
+          <strong className="text-foreground">comisión de servicio</strong> de{" "}
+          {SITE_NAME} y el costo de la pasarela de pagos. En cualquier
+          cancelación el reembolso se calcula únicamente sobre la tarifa del
+          artista: la comisión de servicio y el costo de la pasarela{" "}
+          <strong className="text-foreground">no son reembolsables</strong>.
         </p>
       </Section>
 
@@ -69,16 +78,15 @@ export default async function RefundPolicyPage() {
               {policy.full_refund_min_days} días calendario o más de anticipación:
             </strong>{" "}
             reembolso del <strong className="text-foreground">100%</strong> de
-            lo pagado (sin incluir el costo no reembolsable de la pasarela de
-            pagos).
+            la tarifa del artista.
           </li>
           <li>
             <strong className="text-foreground">
               Entre {policy.partial_refund_min_days} y {maxPartialDays} días calendario de anticipación:
             </strong>{" "}
-            reembolso del <strong className="text-foreground">{policy.partial_refund_percent}%</strong> de lo
-            pagado (sin incluir el costo de la pasarela), reteniendo el {100 - policy.partial_refund_percent}%
-            restante como compensación por bloqueo de agenda del artista.
+            reembolso del <strong className="text-foreground">{policy.partial_refund_percent}%</strong> de
+            la tarifa del artista; el {100 - policy.partial_refund_percent}% restante de la tarifa se
+            destina al artista como compensación por el bloqueo de su agenda.
           </li>
           <li>
             <strong className="text-foreground">
@@ -97,9 +105,9 @@ export default async function RefundPolicyPage() {
           fecha, hora y lugar pactados en el contrato electrónico, el
           contratista recibe el reembolso del{" "}
           <strong className="text-foreground">
-            {policy.musician_fault_refund_percent}% del importe abonado
+            {policy.musician_fault_refund_percent}% de la tarifa del artista
           </strong>{" "}
-          y puede solicitar asistencia prioritaria para encontrar una agrupación
+          (la comisión de servicio y el costo de la pasarela no se reembolsan) y puede solicitar asistencia prioritaria para encontrar una agrupación
           de reemplazo.
         </p>
       </Section>

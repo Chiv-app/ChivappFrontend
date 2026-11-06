@@ -104,6 +104,8 @@ export default function CancelBookingModal({
 
     const paidTotal = toAmount(quote?.paid_total);
     const refundAmount = toAmount(quote?.refund_amount);
+    // Comisión de servicio + pasarela: parte de lo pagado que nunca se reembolsa.
+    const nonRefundable = Math.max(paidTotal - toAmount(quote?.refundable_base), 0);
 
     return (
         <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
@@ -181,6 +183,15 @@ export default function CancelBookingModal({
                                             </dd>
                                         </div>
                                     </dl>
+
+                                    {nonRefundable > 0 ? (
+                                        <p className="text-xs text-default-500">
+                                            El reembolso se calcula sobre la tarifa del
+                                            artista. La comisión de servicio y el costo de
+                                            la pasarela ({formatCurrency(nonRefundable)})
+                                            no son reembolsables.
+                                        </p>
+                                    ) : null}
 
                                     {refundAmount > 0 ? (
                                         <p className="text-xs text-default-500">

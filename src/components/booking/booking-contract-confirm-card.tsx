@@ -236,7 +236,7 @@ export default function BookingContractConfirmCard({
                     </div>
                     <ul className="text-xs text-default-600 space-y-1 list-disc list-inside leading-relaxed">
                         <li>
-                            <strong>Cancelación del músico:</strong> recibes el {cancellationPolicy.musician_fault_refund_percent} % del importe abonado.
+                            <strong>Cancelación del músico:</strong> recibes el {cancellationPolicy.musician_fault_refund_percent} % de la tarifa del artista (la comisión de servicio y la pasarela no se reembolsan).
                         </li>
                         <li>
                             <strong>Cancelación del cliente:</strong> {formatClientCancellationRules(cancellationPolicy)}{" "}
