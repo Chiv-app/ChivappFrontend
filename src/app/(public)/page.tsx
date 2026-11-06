@@ -10,7 +10,7 @@ export const metadata: Metadata = buildPageMetadata({
     path: "/",
 });
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const HOME_MUSICIANS_LIMIT = 5;
 

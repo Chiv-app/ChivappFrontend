@@ -113,18 +113,18 @@ export default function ProfileCompletionBanner() {
                     <div className="min-w-0">
                         <p className="font-semibold text-foreground text-sm sm:text-base">
                             {user.role === "musician"
-                                ? "Completa tu perfil de músico"
+                                ? "Completa tu perfil de músico (0 % comisión — cobras el 100 % de tu tarifa)"
                                 : "Completa tu verificación de contratista"}
                         </p>
                         <p className="text-sm text-default-600 mt-1 text-pretty">
                             Llevas {completed} de {total} pasos listos.
                             {validation.status === "pending_review"
-                                ? " Tu perfil está en revisión."
+                                ? " Tu perfil está en revisión (plazo estimado: 24–48 h hábiles). Recibirás un correo en cuanto sea aprobado."
                                 : validation.status === "rejected"
                                   ? " Tu perfil fue rechazado; revisa los comentarios y reenvíalo."
                                   : validation.is_public
                                     ? " Tu perfil está publicado, pero faltan requisitos nuevos por completar."
-                                    : " Termina los pasos pendientes y envíalo a revisión."}
+                                    : " Termina los pasos pendientes y envíalo a revisión (24–48 h hábiles)."}
                         </p>
                     </div>
                     <Button

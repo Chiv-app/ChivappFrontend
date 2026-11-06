@@ -3,26 +3,20 @@ import { notFound } from "next/navigation";
 import MusiciansBrowseView from "@/components/musicians/musicians-browse-view";
 import SeoLandingContent from "@/components/musicians/seo-landing-content";
 import { searchMusicians } from "@/lib/musicians";
-import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
+import { SITE_NAME, buildPageMetadata, formatGenreName } from "@/lib/seo";
 import type { MusicianCard } from "@/types/ui/musician";
 
 type Props = {
     params: Promise<{ genero: string }>;
 };
 
-// Formatea el slug a un texto legible (ej: "musica-criolla" -> "Música criolla")
-function formatTitle(slug: string) {
-    const dec = decodeURIComponent(slug).replace(/-/g, " ");
-    return dec.charAt(0).toUpperCase() + dec.slice(1);
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { genero } = await params;
-    const genreName = formatTitle(genero);
+    const genreInSentence = formatGenreName(genero, { inSentence: true });
 
     return buildPageMetadata({
-        title: `Contratar ${genreName.toLowerCase()} en Perú`,
-        description: `Contrata ${genreName.toLowerCase()} en Perú para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
+        title: `Contratar ${genreInSentence} en Perú`,
+        description: `Contrata ${genreInSentence} en Perú para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
         path: `/musicos/${genero}`,
     });
 }
@@ -33,7 +27,8 @@ const SEARCH_LIMIT = 20;
 
 export default async function GenrePage({ params }: Props) {
     const { genero } = await params;
-    const genreName = formatTitle(genero);
+    const genreName = formatGenreName(genero);
+    const genreInSentence = formatGenreName(genero, { inSentence: true });
 
     let initialMusicians: MusicianCard[] | undefined;
     try {
@@ -54,7 +49,7 @@ export default async function GenrePage({ params }: Props) {
         <div className="pt-4 sm:pt-6 pb-16 sm:pb-24">
             <header className="max-w-[1800px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 mb-5">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                    Contratar {genreName.toLowerCase()}
+                    Contratar {genreInSentence}
                 </h1>
                 <p className="text-sm sm:text-base text-default-600 mt-1">
                     Compara videos, repertorio, valoraciones y tarifas antes de reservar.

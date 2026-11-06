@@ -241,3 +241,49 @@ export function itemListJsonLd(
         })),
     };
 }
+
+
+/** WP-19 (D12): Diccionario de géneros conocidos con capitalización especial o tildes. */
+export const KNOWN_GENRE_LABELS: Record<string, { label: string; keepCaseInSentence?: boolean }> = {
+    dj: { label: "DJ", keepCaseInSentence: true },
+    djs: { label: "DJs", keepCaseInSentence: true },
+    "r&b": { label: "R&B", keepCaseInSentence: true },
+    "r-b": { label: "R&B", keepCaseInSentence: true },
+    rnb: { label: "R&B", keepCaseInSentence: true },
+    "k-pop": { label: "K-Pop", keepCaseInSentence: true },
+    kpop: { label: "K-Pop", keepCaseInSentence: true },
+    edm: { label: "EDM", keepCaseInSentence: true },
+    mpb: { label: "MPB", keepCaseInSentence: true },
+    "musica criolla": { label: "Música criolla" },
+    "música criolla": { label: "Música criolla" },
+    "musica andina": { label: "Música andina" },
+    "música andina": { label: "Música andina" },
+    "musica clasica": { label: "Música clásica" },
+    "música clásica": { label: "Música clásica" },
+    "bossa nova": { label: "Bossa Nova", keepCaseInSentence: true },
+    "hip hop": { label: "Hip-Hop", keepCaseInSentence: true },
+    "hip-hop": { label: "Hip-Hop", keepCaseInSentence: true },
+    "rock and roll": { label: "Rock & Roll", keepCaseInSentence: true },
+};
+
+export function formatGenreName(
+    slugOrText: string,
+    options?: { inSentence?: boolean },
+): string {
+    const raw = decodeURIComponent(slugOrText || "").trim();
+    if (!raw) return "";
+    const spaced = raw.replace(/-/g, " ").replace(/\s+/g, " ").trim();
+    const keyLower = spaced.toLowerCase();
+    const rawKeyLower = raw.toLowerCase();
+    const match = KNOWN_GENRE_LABELS[rawKeyLower] ?? KNOWN_GENRE_LABELS[keyLower];
+    if (match) {
+        if (options?.inSentence && !match.keepCaseInSentence) {
+            return match.label.toLowerCase();
+        }
+        return match.label;
+    }
+    if (options?.inSentence) {
+        return spaced.toLowerCase();
+    }
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}

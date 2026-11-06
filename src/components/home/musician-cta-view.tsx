@@ -9,7 +9,7 @@ export default function MusicianCtaSection() {
 
     return (
         <section className="px-4 sm:px-6 lg:px-8 pb-10 pt-16">
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
@@ -18,10 +18,14 @@ export default function MusicianCtaSection() {
             >
                 {/* Efecto visual oscuro de fondo */}
                 <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-                
+
                 <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
-                    <motion.span 
-                        initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", delay: 0.3 }}
+                    <motion.span
+                        aria-hidden="true"
+                        initial={{ scale: 0 }}
+                        whileInView={{ scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ type: "spring", delay: 0.3 }}
                         className="text-5xl md:text-6xl mb-8 block"
                     >
                         🚀
@@ -30,11 +34,11 @@ export default function MusicianCtaSection() {
                         Es momento de celebrar
                     </h2>
                     <p className="text-lg md:text-2xl text-background/80 mb-12 text-pretty">
-                        Cientos de agrupaciones están listas para hacer de tu evento algo inolvidable.
+                        Músicos, bandas, orquestas y DJs verificados listos para hacer de tu evento algo inolvidable.
                     </p>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-6 mb-16 sm:mb-24 w-full sm:w-auto">
-                        <Link 
+                        <Link
                             href="/musicians"
                             className="inline-flex justify-center items-center px-10 py-5 rounded-full bg-background text-foreground font-bold text-lg hover:scale-105 transition-transform shadow-xl w-full sm:w-auto"
                         >
@@ -49,10 +53,13 @@ export default function MusicianCtaSection() {
                                 ¿Eres músico o tienes una banda?
                             </h3>
                             <p className="text-background/80 text-pretty">
-                                Únete a Chivapp y consigue más eventos cada mes.
+                                Únete a Chivapp y consigue más eventos cada mes.{" "}
+                                <strong className="text-background font-semibold">
+                                    0 % de comisión para el músico — recibes el 100 % de tu tarifa acordada.
+                                </strong>
                             </p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => openRegister({ defaultRole: "musician", redirect: "/musician/profile" })}
                             className="px-8 py-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md font-semibold text-sm transition-colors border border-white/20 shrink-0 w-full md:w-auto"
                         >

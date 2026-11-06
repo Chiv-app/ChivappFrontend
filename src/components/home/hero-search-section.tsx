@@ -4,21 +4,32 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
+import type { PlatformStatsOut } from "@/types/api";
 
-export default function HeroSearchSection() {
+type Props = {
+    stats?: PlatformStatsOut | null;
+};
+
+export default function HeroSearchSection({ stats = null }: Props) {
     const router = useRouter();
 
     const [location, setLocation] = useState("");
     const [style, setStyle] = useState("");
+    const [eventDate, setEventDate] = useState("");
 
     function handleSearch(e?: React.FormEvent) {
         e?.preventDefault();
         const params = new URLSearchParams();
         if (location.trim()) params.append("location", location.trim());
         if (style.trim()) params.append("q", style.trim());
+        if (eventDate.trim()) params.append("available_date", eventDate.trim());
         const qs = params.toString();
         router.push(qs ? `/musicians?${qs}` : "/musicians");
     }
+
+    const showStats =
+        stats !== null &&
+        (stats.musicians_count > 0 || stats.completed_bookings_count > 0 || (stats.average_rating ?? 0) > 0);
 
     return (
         <section className="relative w-full pt-28 sm:pt-36 pb-14 flex flex-col justify-center items-center px-4 text-center overflow-hidden">
@@ -60,19 +71,19 @@ export default function HeroSearchSection() {
                 <motion.form
                     onSubmit={handleSearch}
                     role="search"
-                    aria-label="Buscar músicos por ubicación y estilo"
+                    aria-label="Buscar músicos por ubicación, estilo y fecha"
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
-                    className="flex flex-col sm:flex-row items-stretch sm:items-center w-full max-w-3xl bg-content1 border border-default-200/80 sm:rounded-full rounded-3xl p-2.5 shadow-elevated backdrop-blur-xl"
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center w-full max-w-4xl bg-content1 border border-default-200/80 sm:rounded-full rounded-3xl p-2.5 shadow-elevated backdrop-blur-xl"
                 >
                     <label
                         htmlFor="hero-location"
-                        className="flex-1 flex items-center w-full px-4 sm:px-6 border-b sm:border-b-0 sm:border-r border-default-200 hover:bg-default-100/70 sm:rounded-l-full rounded-t-2xl sm:rounded-tr-none transition-colors py-2.5 cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
+                        className="flex-1 flex items-center w-full px-4 sm:px-5 border-b sm:border-b-0 sm:border-r border-default-200 hover:bg-default-100/70 sm:rounded-l-full rounded-t-2xl sm:rounded-tr-none transition-colors py-2.5 cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
                     >
                         <Icon
                             icon="twemoji:round-pushpin"
-                            className="text-2xl mr-3 sm:mr-4 opacity-80 shrink-0"
+                            className="text-2xl mr-3 opacity-80 shrink-0"
                             aria-hidden="true"
                         />
                         <span className="text-left w-full overflow-hidden flex flex-col">
@@ -95,11 +106,11 @@ export default function HeroSearchSection() {
 
                     <label
                         htmlFor="hero-style"
-                        className="flex-1 flex items-center w-full px-4 sm:px-6 hover:bg-default-100/70 transition-colors py-2.5 rounded-b-2xl sm:rounded-none cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
+                        className="flex-1 flex items-center w-full px-4 sm:px-5 border-b sm:border-b-0 sm:border-r border-default-200 hover:bg-default-100/70 transition-colors py-2.5 cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
                     >
                         <Icon
                             icon="twemoji:guitar"
-                            className="text-2xl mr-3 sm:mr-4 opacity-80 shrink-0"
+                            className="text-2xl mr-3 opacity-80 shrink-0"
                             aria-hidden="true"
                         />
                         <span className="text-left w-full overflow-hidden flex flex-col">
@@ -119,6 +130,30 @@ export default function HeroSearchSection() {
                         </span>
                     </label>
 
+                    <label
+                        htmlFor="hero-date"
+                        className="flex-1 flex items-center w-full px-4 sm:px-5 hover:bg-default-100/70 transition-colors py-2.5 rounded-b-2xl sm:rounded-none cursor-text focus-within:bg-default-100 focus-within:outline-2 focus-within:outline-focus"
+                    >
+                        <Icon
+                            icon="twemoji:spiral-calendar"
+                            className="text-2xl mr-3 opacity-80 shrink-0"
+                            aria-hidden="true"
+                        />
+                        <span className="text-left w-full overflow-hidden flex flex-col">
+                            <span className="text-xs font-semibold text-foreground">
+                                Fecha (opcional)
+                            </span>
+                            <input
+                                id="hero-date"
+                                name="available_date"
+                                type="date"
+                                value={eventDate}
+                                onChange={(e) => setEventDate(e.target.value)}
+                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
+                            />
+                        </span>
+                    </label>
+
                     <button
                         type="submit"
                         className="w-full sm:w-auto sm:min-w-14 h-12 sm:h-14 mt-2 sm:mt-0 px-6 sm:px-5 rounded-2xl sm:rounded-full bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shrink-0 shadow-lg cursor-pointer"
@@ -133,6 +168,31 @@ export default function HeroSearchSection() {
                         <span className="sm:hidden">Buscar músicos</span>
                     </button>
                 </motion.form>
+
+                {showStats && stats && (
+                    <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-default-600">
+                        {stats.musicians_count > 0 && (
+                            <span className="inline-flex items-center gap-1.5 font-medium">
+                                <strong className="font-bold text-foreground">{stats.musicians_count}</strong>{" "}
+                                {stats.musicians_count === 1 ? "artista verificado" : "artistas verificados"}
+                            </span>
+                        )}
+                        {stats.completed_bookings_count > 0 && (
+                            <span className="inline-flex items-center gap-1.5 font-medium">
+                                <strong className="font-bold text-foreground">{stats.completed_bookings_count}</strong>{" "}
+                                {stats.completed_bookings_count === 1 ? "evento completado" : "eventos completados"}
+                            </span>
+                        )}
+                        {stats.average_rating !== null && stats.average_rating > 0 && (
+                            <span className="inline-flex items-center gap-1.5 font-medium">
+                                <strong className="font-bold text-foreground">
+                                    ★ {stats.average_rating.toFixed(1)}
+                                </strong>{" "}
+                                calificación promedio
+                            </span>
+                        )}
+                    </div>
+                )}
             </motion.div>
         </section>
     );

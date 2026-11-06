@@ -15,6 +15,15 @@ export default function Footer() {
                             Conectamos personas con músicos excepcionales para
                             eventos inolvidables.
                         </p>
+                        <p className="text-white/65 text-xs sm:text-sm mt-3">
+                            Soporte y consultas:{" "}
+                            <a
+                                href="mailto:soporte@chiv.app"
+                                className="underline hover:text-primary-300 transition"
+                            >
+                                soporte@chiv.app
+                            </a>
+                        </p>
                     </div>
 
                     <ul className="space-y-2.5 sm:space-y-3 text-sm text-white/65">
@@ -56,6 +65,14 @@ export default function Footer() {
                                 className="hover:text-primary-300 transition"
                             >
                                 Privacidad y cookies
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
+                                href="/legal/privacidad#cookies"
+                                className="hover:text-primary-300 transition"
+                            >
+                                Preferencias de cookies
                             </Link>
                         </li>
                     </ul>

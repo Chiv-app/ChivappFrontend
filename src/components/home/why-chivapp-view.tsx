@@ -30,6 +30,11 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
         return () => clearInterval(interval);
     }, [reviews, isPaused, shouldReduceMotion]);
 
+    const averageReviewRating =
+        reviews.length > 0
+            ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+            : null;
+
     return (
         <section
             id="why-chivapp"
@@ -161,8 +166,12 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                         className="md:col-span-7 bg-content1 border border-default-200/70 rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between overflow-hidden group hover:shadow-xl hover:border-default-300 transition-all shadow-soft"
                     >
                         <div
-                            role="img"
-                            aria-label="Calificación promedio de 5 estrellas"
+                            {...(averageReviewRating
+                                ? {
+                                      role: "img",
+                                      "aria-label": `Calificación promedio de ${averageReviewRating} estrellas en reseñas recientes`,
+                                  }
+                                : { "aria-hidden": "true" })}
                             className="flex items-center gap-1 mb-6"
                         >
                             {[1, 2, 3, 4, 5].map((i) => (
@@ -212,7 +221,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                                                 <p className="text-sm font-semibold text-foreground line-clamp-2">
                                                     &ldquo;{reviews[reviewIndex].comment}&rdquo;
                                                 </p>
-                                                <p className="text-xs text-default-500 mt-1">
+                                                <p className="text-xs sm:text-sm text-default-500 mt-1">
                                                     {reviews[reviewIndex].author_label} •{" "}
                                                     {reviews[reviewIndex].event_type ||
                                                         "Evento privado"}
@@ -283,7 +292,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                                         <p className="text-sm font-semibold text-foreground">
                                             Calificaciones 100% verificadas tras cada presentación
                                         </p>
-                                        <p className="text-xs text-default-500 mt-0.5">
+                                        <p className="text-xs sm:text-sm text-default-500 mt-0.5">
                                             Revisa las opiniones reales en el perfil de cada agrupación.
                                         </p>
                                     </div>

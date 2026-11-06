@@ -18,7 +18,7 @@ type Props = {
     reviews?: PublicLatestReview[];
 };
 
-export default function HomeView({ musicians, hasMoreMusicians = false, reviews = [] }: Props) {
+export default function HomeView({ musicians, hasMoreMusicians = false, stats = null, reviews = [] }: Props) {
     return (
         <div className="relative w-full overflow-x-clip">
             <div className="absolute top-[var(--app-navbar-height)] left-0 right-0 z-40 px-4 sm:px-6">
@@ -27,7 +27,7 @@ export default function HomeView({ musicians, hasMoreMusicians = false, reviews 
                 </div>
             </div>
 
-            <HeroSearchSection />
+            <HeroSearchSection stats={stats} />
             <HomeIntroSection musicians={musicians} hasMoreMusicians={hasMoreMusicians} />
             <ProcessSection />
             <WhyChivappSection reviews={reviews} />

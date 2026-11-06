@@ -5,11 +5,29 @@ export type BookingCreate = {
     event_date: string;
     start_time: string;
     end_time?: string | null;
-    location_address: string;
+    location_address?: string;
     location_city?: string | null;
     location_reference?: string | null;
     event_type: string;
     event_description?: string | null;
+    guests_count?: number | null;
+    duration_hours?: number | null;
+    estimated_budget?: number | string | null;
+};
+
+export type BookingBatchCreate = {
+    musician_ids: string[];
+    event_date: string;
+    start_time: string;
+    end_time?: string | null;
+    location_address?: string;
+    location_city?: string | null;
+    location_reference?: string | null;
+    event_type: string;
+    event_description?: string | null;
+    guests_count?: number | null;
+    duration_hours?: number | null;
+    estimated_budget?: number | string | null;
 };
 
 export type MusicianBookingCreate = {
@@ -236,5 +254,7 @@ export type BookingOut = {
     member_invite_status?: "pending" | "accepted" | "declined" | string | null;
     complaint_status?: string | null;
     complaint_reason?: string | null;
+    visible_stage?: string;
+    allowed_actions?: string[];
 };
 

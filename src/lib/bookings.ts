@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import type {
+    BookingBatchCreate,
     BookingChangeDecision,
     BookingCreate,
     BookingEventChangeRequest,
@@ -28,6 +29,13 @@ export function getBooking(id: string) {
 
 export function createBooking(payload: BookingCreate) {
     return apiFetch<BookingOut>("/bookings", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export function createBookingsBatch(payload: BookingBatchCreate) {
+    return apiFetch<BookingOut[]>("/bookings/batch", {
         method: "POST",
         body: JSON.stringify(payload),
     });

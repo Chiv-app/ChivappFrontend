@@ -32,7 +32,7 @@ export default function ProcessSection() {
             className="scroll-mt-24 border-t border-default-200/60 bg-content1/40 py-24 md:py-32 overflow-hidden"
         >
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -59,7 +59,10 @@ export default function ProcessSection() {
                             transition={{ duration: 0.5, delay: index * 0.15 }}
                             className="relative z-10 flex flex-col items-center text-center group"
                         >
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-background border-4 border-content1 shadow-soft flex items-center justify-center text-3xl sm:text-4xl mb-6 group-hover:scale-110 group-hover:border-primary transition-all duration-300">
+                            <div
+                                aria-hidden="true"
+                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-background border-4 border-content1 shadow-soft flex items-center justify-center text-3xl sm:text-4xl mb-6 group-hover:scale-110 group-hover:border-primary transition-all duration-300"
+                            >
                                 {step.icon}
                             </div>
                             <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary-text text-xs font-bold mb-3">

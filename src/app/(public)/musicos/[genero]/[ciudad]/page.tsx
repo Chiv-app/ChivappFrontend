@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import MusiciansBrowseView from "@/components/musicians/musicians-browse-view";
 import SeoLandingContent from "@/components/musicians/seo-landing-content";
 import { searchMusicians } from "@/lib/musicians";
-import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
+import { SITE_NAME, buildPageMetadata, formatGenreName } from "@/lib/seo";
 import type { MusicianCard } from "@/types/ui/musician";
 
 type Props = {
@@ -17,12 +17,12 @@ function formatTitle(slug: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { genero, ciudad } = await params;
-    const genreName = formatTitle(genero);
+    const genreInSentence = formatGenreName(genero, { inSentence: true });
     const cityName = formatTitle(ciudad);
 
     return buildPageMetadata({
-        title: `Contratar ${genreName.toLowerCase()} en ${cityName}, Perú`,
-        description: `Contrata ${genreName.toLowerCase()} en ${cityName} para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
+        title: `Contratar ${genreInSentence} en ${cityName}, Perú`,
+        description: `Contrata ${genreInSentence} en ${cityName} para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
         path: `/musicos/${genero}/${ciudad}`,
     });
 }
@@ -33,7 +33,8 @@ const SEARCH_LIMIT = 20;
 
 export default async function GenreCityPage({ params }: Props) {
     const { genero, ciudad } = await params;
-    const genreName = formatTitle(genero);
+    const genreName = formatGenreName(genero);
+    const genreInSentence = formatGenreName(genero, { inSentence: true });
     const cityName = formatTitle(ciudad);
 
     let initialMusicians: MusicianCard[] | undefined;
@@ -56,7 +57,7 @@ export default async function GenreCityPage({ params }: Props) {
         <div className="pt-4 sm:pt-6 pb-16 sm:pb-24">
             <header className="max-w-[1800px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 mb-5">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                    Contratar {genreName.toLowerCase()} en {cityName}
+                    Contratar {genreInSentence} en {cityName}
                 </h1>
                 <p className="text-sm sm:text-base text-default-600 mt-1">
                     Artistas verificados en {cityName} con tarifas transparentes y pago protegido.
