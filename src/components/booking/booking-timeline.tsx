@@ -143,11 +143,9 @@ function CancelledBanner({ message }: { message: string }) {
 const SHORT_PHASE_LABEL: Record<string, string> = {
     request: "Solicitud",
     quote: "Cotización",
-    contract: "Contrato",
     payment: "Pago",
-    confirmed: "Confirmada",
-    event: "Evento",
-    done: "Listo",
+    confirmed: "Confirmación",
+    event: "Evento y cierre",
 };
 
 function phaseLabel(step: BookingTimelineStep, compact: boolean): string {

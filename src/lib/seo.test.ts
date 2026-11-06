@@ -15,6 +15,8 @@ import {
     getRoleAwareStatusLabel,
     mapStatusToUnifiedStage,
 } from "@/lib/booking-stages";
+import { buildBookingTimeline } from "@/lib/booking-timeline";
+import { getBookingStatusLabel } from "@/lib/booking-labels";
 import {
     buildEnsembleInviteWhatsAppUrl,
     buildMusicianProfileWhatsAppUrl,
@@ -98,6 +100,20 @@ describe("WP-20 a WP-23 Utilidades de producto", () => {
             "Tienes una cotización para revisar",
         );
         expect(getRoleAwareStatusLabel("accepted", "musician")).toContain("Cotización enviada");
+
+        const timeline = buildBookingTimeline("accepted", "contractor");
+        expect(timeline.steps.map((s) => s.title)).toEqual([
+            "Solicitud",
+            "Cotización y acuerdo",
+            "Pago",
+            "Confirmación",
+            "Evento y cierre",
+        ]);
+        expect(timeline.currentIndex).toBe(1);
+        expect(getBookingStatusLabel("accepted", "contractor")).toBe(
+            "Tienes una cotización para revisar",
+        );
+        expect(getBookingStatusLabel("accepted", "musician")).toBe("Cotización enviada");
     });
 
     it("genera enlaces directos wa.me con mensaje prellenado y prefijo 51 para móviles de Perú (D8)", () => {

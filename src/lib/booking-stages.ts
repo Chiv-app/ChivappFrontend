@@ -37,7 +37,7 @@ export const UNIFIED_BOOKING_STAGES: readonly UnifiedBookingStage[] = [
     {
         key: "confirmada",
         step: 4,
-        label: "Reserva confirmada",
+        label: "Confirmación",
         description: "Fecha bloqueada y preparativos del evento",
     },
     {
