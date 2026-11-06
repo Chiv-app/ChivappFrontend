@@ -75,6 +75,8 @@ const STATUS_COLOR: Record<
 
 const SETTLEMENT_LABEL: Record<string, string> = {
     payable: "Por desembolsar",
+    awaiting_reviews: "Sin reseñas (evento culminado)",
+    needs_attention: "Requiere atención (reintentar)",
     disputed: "En disputa (espera músico)",
     awaiting_admin: "Disputa por liquidar",
     refund_pending_transfer: "Devolver al contratista",
@@ -1031,7 +1033,12 @@ export default function AdminPaymentsPage() {
                                         </div>
                                     ) : null}
 
-                                    {["payable", "awaiting_admin"].includes(
+                                    {[
+                                        "payable",
+                                        "awaiting_admin",
+                                        "awaiting_reviews",
+                                        "needs_attention",
+                                    ].includes(
                                         item.settlement_state,
                                     ) ? (
                                         <Button

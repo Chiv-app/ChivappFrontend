@@ -13,7 +13,9 @@ import {
 } from "@/lib/booking-labels";
 import {
     contractorPayableTotal,
+    platformAppFeeAmount,
     platformFeeAmount,
+    platformGatewayFeeAmount,
 } from "@/lib/platform-fee";
 import type { BookingOut } from "@/types/api";
 
@@ -35,6 +37,8 @@ export default function BookingQuoteReviewCard({
     const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
     const total = booking.price_agreed != null ? Number(booking.price_agreed) : null;
     const fee = platformFeeAmount(booking);
+    const appFee = platformAppFeeAmount(booking);
+    const gatewayFee = platformGatewayFeeAmount(booking);
     const contractorTotal = contractorPayableTotal(booking);
     const quotedAt = formatQuotedAt(booking.quoted_at);
 
@@ -70,10 +74,27 @@ export default function BookingQuoteReviewCard({
                     <p className="font-semibold text-foreground mb-4">Desglose del pago único</p>
                     <div className="flex flex-col gap-3 text-sm">
                         <div className="flex justify-between items-center">
-                            <span className="text-default-600">Tarifa del músico</span>
+                            <span className="text-default-600">Tarifa del artista</span>
                             <span className="font-medium text-foreground">{total != null ? formatCurrency(total) : "—"}</span>
                         </div>
-                        {fee > 0 && (
+                        {appFee > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-default-600">
+                                    Comisión de servicio
+                                    {booking.platform_fee_percent != null && Number(booking.platform_fee_percent) > 0
+                                        ? ` (${Number(booking.platform_fee_percent)} %)`
+                                        : ""}
+                                </span>
+                                <span className="font-medium text-foreground">{formatCurrency(appFee)}</span>
+                            </div>
+                        )}
+                        {gatewayFee > 0 && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-default-600">Costo de pasarela</span>
+                                <span className="font-medium text-foreground">{formatCurrency(gatewayFee)}</span>
+                            </div>
+                        )}
+                        {fee > 0 && appFee === 0 && gatewayFee === 0 && (
                             <div className="flex justify-between items-center">
                                 <span className="text-default-600">Tarifa de servicio</span>
                                 <span className="font-medium text-foreground">{formatCurrency(fee)}</span>

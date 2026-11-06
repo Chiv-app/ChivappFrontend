@@ -4,6 +4,30 @@ function roundCurrency(value: number): number {
     return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+let cachedGatewayFeeRate = 0.0412;
+let cachedGatewayFixedFeePen = 1.18;
+
+export function setPlatformGatewayConfig(config: {
+    gateway_fee_rate?: number;
+    gateway_fixed_fee_pen?: number;
+}): void {
+    if (
+        typeof config.gateway_fee_rate === "number" &&
+        Number.isFinite(config.gateway_fee_rate) &&
+        config.gateway_fee_rate >= 0 &&
+        config.gateway_fee_rate < 1
+    ) {
+        cachedGatewayFeeRate = config.gateway_fee_rate;
+    }
+    if (
+        typeof config.gateway_fixed_fee_pen === "number" &&
+        Number.isFinite(config.gateway_fixed_fee_pen) &&
+        config.gateway_fixed_fee_pen >= 0
+    ) {
+        cachedGatewayFixedFeePen = config.gateway_fixed_fee_pen;
+    }
+}
+
 /** Comisión de plataforma sobre el precio del músico (solo la paga el contratista). */
 
 export function contractorPayableTotal(booking: Pick<
@@ -22,9 +46,9 @@ export function contractorPayableTotal(booking: Pick<
     const g_percent = booking.platform_fee_percent != null ? Number(booking.platform_fee_percent) : 0;
     const g = g_percent / 100;
 
-    // Mercado Pago variables (Peru)
-    const F = 1.18;
-    const p = 0.0412;
+    // Mercado Pago variables (Peru) servidas desde el backend (con fallback)
+    const F = cachedGatewayFixedFeePen;
+    const p = cachedGatewayFeeRate;
 
     const c_unico = (M * (1 + g) + F) / (1 - p);
     return roundCurrency(c_unico);

@@ -24,7 +24,9 @@ import { getBooking } from "@/lib/bookings";
 import { useAuth } from "@/contexts/auth-context";
 import {
     contractorPayableTotal,
+    platformAppFeeAmount,
     platformFeeAmount,
+    platformGatewayFeeAmount,
 } from "@/lib/platform-fee";
 import { uploadSignatureDataUrl } from "@/lib/uploads";
 import type { BookingOut, ContractOut } from "@/types/api";
@@ -64,6 +66,8 @@ export default function BookingContractConfirmCard({
     const [isUpsellModalOpen, setIsUpsellModalOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const fee = platformFeeAmount(booking);
+    const appFee = platformAppFeeAmount(booking);
+    const gatewayFee = platformGatewayFeeAmount(booking);
     const contractorTotal = contractorPayableTotal(booking);
     const payLabel = contractorTotal != null ? formatCurrency(contractorTotal) : "";
     const isAlreadySigned =
@@ -180,9 +184,9 @@ export default function BookingContractConfirmCard({
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="rounded-2xl border border-default-200 p-4">
-                        <p className="text-xs text-default-500">Precio del servicio</p>
+                        <p className="text-xs text-default-500">Tarifa del artista</p>
                         <p className="text-xl font-bold text-foreground mt-1">
                             {booking.price_agreed != null
                                 ? formatCurrency(Number(booking.price_agreed))
@@ -191,14 +195,20 @@ export default function BookingContractConfirmCard({
                     </div>
                     <div className="rounded-2xl border border-default-200 p-4">
                         <p className="text-xs text-default-500">
-                            Comisión plataforma
+                            Comisión de servicio
                             {booking.platform_fee_percent != null &&
                             Number(booking.platform_fee_percent) > 0
-                                ? ` (${Number(booking.platform_fee_percent)}%)`
+                                ? ` (${Number(booking.platform_fee_percent)} %)`
                                 : ""}
                         </p>
                         <p className="text-xl font-bold text-foreground mt-1">
-                            {fee > 0 ? formatCurrency(fee) : "S/ 0.00"}
+                            {appFee > 0 ? formatCurrency(appFee) : "S/ 0.00"}
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-default-200 p-4">
+                        <p className="text-xs text-default-500">Costo de pasarela</p>
+                        <p className="text-xl font-bold text-foreground mt-1">
+                            {gatewayFee > 0 ? formatCurrency(gatewayFee) : (fee > 0 && appFee === 0 ? formatCurrency(fee) : "S/ 0.00")}
                         </p>
                     </div>
                     <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">

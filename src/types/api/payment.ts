@@ -130,6 +130,8 @@ export type MusicianDebtItem = {
     complaint_reason: string | null;
     admin_musician_amount: number | null;
     admin_contractor_refund: number | null;
+    released_at?: string | null;
+    payout_reference?: string | null;
 };
 
 export type MusicianEarningsSummary = {
@@ -141,6 +143,7 @@ export type MusicianEarningsSummary = {
     total_app_debt?: number;
     total_disputed?: number;
     total_retained_active?: number;
+    total_chargeback_debt?: number;
     bookings_active: number;
     bookings_completed: number;
     bookings_cancelled: number;
@@ -156,6 +159,8 @@ export type PlatformPaymentInstructions = {
     qr_image_url: string | null;
     instructions: string | null;
     platform_fee_percent?: number;
+    gateway_fee_rate?: number;
+    gateway_fixed_fee_pen?: number;
     updated_at?: string | null;
 };
 

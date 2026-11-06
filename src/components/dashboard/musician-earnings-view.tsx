@@ -440,6 +440,19 @@ function PlatformDebtsSection({
 
     return (
         <div className="flex flex-col gap-6">
+            {(summary.total_chargeback_debt ?? 0) > 0 ? (
+                <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
+                    <Icon icon="material-symbols:warning" width={20} className="text-warning-text shrink-0 mt-0.5" />
+                    <div className="text-sm text-default-700">
+                        <p className="font-semibold text-warning-text">
+                            Saldo por descontar de contracargo: {formatCurrency(summary.total_chargeback_debt ?? 0)}
+                        </p>
+                        <p className="text-xs text-default-600 mt-0.5">
+                            Este monto corresponde a un contracargo recibido en la pasarela después de haberse desembolsado la reserva y se descontará automáticamente de tu próximo retiro.
+                        </p>
+                    </div>
+                </div>
+            ) : null}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-foreground">Resumen de deuda</h2>
                 {(summary.total_app_debt ?? 0) > 0 && (
@@ -805,6 +818,12 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                         {item.complaint_reason ? (
                             <p className="text-sm text-danger mt-2 line-clamp-2">
                                 Queja: {item.complaint_reason}
+                            </p>
+                        ) : null}
+                        {item.debt_state === "settled" && item.released_at ? (
+                            <p className="text-xs text-success-text font-medium mt-1.5">
+                                Te pagamos el {formatDateTime(item.released_at)}
+                                {item.payout_reference ? ` · Ref: ${item.payout_reference}` : ""}
                             </p>
                         ) : null}
                         {item.debt_state === "awaiting_reviews" ? (
