@@ -145,7 +145,24 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
     }
 
     const hasBody = !["GET", "HEAD"].includes(request.method);
+    const MAX_PROXY_BODY_BYTES = 16 * 1024 * 1024;
+    const contentLengthHeader = request.headers.get("content-length");
+    if (hasBody && contentLengthHeader) {
+        const declaredBytes = Number(contentLengthHeader);
+        if (Number.isFinite(declaredBytes) && declaredBytes > MAX_PROXY_BODY_BYTES) {
+            return NextResponse.json(
+                { detail: "El tamaño de la petición supera el máximo permitido (16 MB)." },
+                { status: 413 },
+            );
+        }
+    }
     const body = hasBody ? await request.arrayBuffer() : undefined;
+    if (body && body.byteLength > MAX_PROXY_BODY_BYTES) {
+        return NextResponse.json(
+            { detail: "El tamaño de la petición supera el máximo permitido (16 MB)." },
+            { status: 413 },
+        );
+    }
 
     let upstream: Response;
     try {

@@ -1,6 +1,28 @@
 import { NextRequest } from "next/server";
 
 const MAX_CSP_REPORT_BYTES = 16_384;
+const CSP_RATE_WINDOW_MS = 60_000;
+const CSP_MAX_REPORTS_PER_WINDOW = 30;
+const cspRateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+export function resetCspRateLimitForTests(): void {
+    cspRateBuckets.clear();
+}
+
+function isRateLimited(ip: string): boolean {
+    const now = Date.now();
+    const bucket = cspRateBuckets.get(ip);
+    if (!bucket || bucket.resetAt <= now) {
+        if (cspRateBuckets.size > 2048) {
+            const firstKey = cspRateBuckets.keys().next().value;
+            if (firstKey) cspRateBuckets.delete(firstKey);
+        }
+        cspRateBuckets.set(ip, { count: 1, resetAt: now + CSP_RATE_WINDOW_MS });
+        return false;
+    }
+    bucket.count += 1;
+    return bucket.count > CSP_MAX_REPORTS_PER_WINDOW;
+}
 
 function sanitizeField(value: unknown, maxLen = 240): string | undefined {
     if (typeof value !== "string") return undefined;
@@ -9,6 +31,11 @@ function sanitizeField(value: unknown, maxLen = 240): string | undefined {
 }
 
 export async function POST(request: NextRequest) {
+    const forwarded = request.headers.get("x-forwarded-for") || "";
+    const clientIp = forwarded.split(",")[0]?.trim() || "127.0.0.1";
+    if (isRateLimited(clientIp)) {
+        return new Response(null, { status: 429, headers: { "Retry-After": "60" } });
+    }
     const contentLengthHeader = request.headers.get("content-length");
     if (contentLengthHeader) {
         const declaredBytes = Number(contentLengthHeader);
