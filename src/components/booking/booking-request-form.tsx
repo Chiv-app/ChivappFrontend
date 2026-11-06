@@ -62,6 +62,10 @@ type BookingDraft = {
   eventType?: string;
   eventDescription?: string;
   location?: MapLocation | null;
+  locationCity?: string;
+  guestsCount?: string;
+  durationHours?: string;
+  estimatedBudget?: string;
   contactName?: string;
   contactPhone?: string;
   contactEmail?: string;
@@ -123,6 +127,18 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
   const [location, setLocation] = useState<MapLocation | null>(
     () => initialDraft?.location ?? null,
   );
+  const [locationCity, setLocationCity] = useState(
+    () => initialDraft?.locationCity ?? initialDraft?.location?.city ?? "",
+  );
+  const [guestsCount, setGuestsCount] = useState(
+    () => initialDraft?.guestsCount ?? "",
+  );
+  const [durationHours, setDurationHours] = useState(
+    () => initialDraft?.durationHours ?? "",
+  );
+  const [estimatedBudget, setEstimatedBudget] = useState(
+    () => initialDraft?.estimatedBudget ?? "",
+  );
 
   const persistDraft = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -135,6 +151,10 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           eventType,
           eventDescription,
           location,
+          locationCity,
+          guestsCount,
+          durationHours,
+          estimatedBudget,
           contactName,
           contactPhone,
           contactEmail,
@@ -150,6 +170,10 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     eventType,
     eventDescription,
     location,
+    locationCity,
+    guestsCount,
+    durationHours,
+    estimatedBudget,
     contactName,
     contactPhone,
     contactEmail,
@@ -242,6 +266,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       startTime,
       eventType,
       location,
+      locationCity,
     });
 
     if (validationError) {
@@ -459,19 +484,33 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     }
 
     try {
+      const parsedGuests = guestsCount.trim() ? Number(guestsCount.trim()) : null;
+      const parsedDuration = durationHours.trim() ? Number(durationHours.trim()) : null;
+      const parsedBudget = estimatedBudget.trim() ? Number(estimatedBudget.trim()) : null;
       const booking = await createBooking({
         musician_id: musician.id,
         event_date: eventDate,
         start_time: normalizeStartTime(startTime),
         end_time: null,
-        location_address: location!.address,
-        location_city: location!.city,
-        location_reference: formatLocationReference(
-          location!.lat,
-          location!.lng,
-        ),
+        location_address: location?.address || "",
+        location_city: location?.city || locationCity.trim() || null,
+        location_reference: location
+          ? formatLocationReference(location.lat, location.lng)
+          : null,
         event_type: eventType,
         event_description: eventDescription.trim() || null,
+        guests_count:
+          parsedGuests && Number.isFinite(parsedGuests) && parsedGuests > 0
+            ? parsedGuests
+            : null,
+        duration_hours:
+          parsedDuration && Number.isFinite(parsedDuration) && parsedDuration > 0
+            ? parsedDuration
+            : null,
+        estimated_budget:
+          parsedBudget && Number.isFinite(parsedBudget) && parsedBudget > 0
+            ? parsedBudget
+            : null,
       });
       const targetUrl = `/contractor/bookings/${booking.id}`;
       clearDraft();
@@ -512,12 +551,12 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
     if (!eventDate) missing.push("fecha");
     if (!startTime) missing.push("hora");
     if (!eventType) missing.push("motivo");
-    if (!location?.address) missing.push("ubicación en el mapa");
+    if (!location?.address && !locationCity.trim()) missing.push("distrito/ciudad o ubicación");
     if (missing.length > 0) {
       return `Completa: ${missing.join(", ")}.`;
     }
     return null;
-  }, [isLoadingSlots, availabilityMismatch, eventDate, startTime, eventType, location]);
+  }, [isLoadingSlots, availabilityMismatch, eventDate, startTime, eventType, location, locationCity]);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
@@ -639,10 +678,81 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         </div>
       )}
 
-      <LocationMapPickerField value={location} onChange={setLocation} />
-      {attemptedSubmit && !location?.address && (
+      {/* Row 2: Distrito/ciudad + Campos opcionales (invitados, duración, presupuesto) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+        <Input
+          label="Distrito o ciudad"
+          placeholder="Ej. Miraflores, Lima"
+          variant="bordered"
+          value={locationCity}
+          onValueChange={setLocationCity}
+          isInvalid={attemptedSubmit && !location?.address && !locationCity.trim()}
+          errorMessage={
+            attemptedSubmit && !location?.address && !locationCity.trim()
+              ? "Indica el distrito o ciudad"
+              : undefined
+          }
+          classNames={{
+            label: "font-semibold text-xs",
+            input: "font-medium text-base sm:text-sm",
+          }}
+        />
+        <Input
+          type="number"
+          min={1}
+          max={10000}
+          label="Invitados (opc.)"
+          placeholder="Ej. 80"
+          variant="bordered"
+          value={guestsCount}
+          onValueChange={setGuestsCount}
+          classNames={{
+            label: "font-semibold text-xs",
+            input: "font-medium text-base sm:text-sm",
+          }}
+        />
+        <Input
+          type="number"
+          min={1}
+          max={24}
+          label="Duración h (opc.)"
+          placeholder="Ej. 2"
+          variant="bordered"
+          value={durationHours}
+          onValueChange={setDurationHours}
+          classNames={{
+            label: "font-semibold text-xs",
+            input: "font-medium text-base sm:text-sm",
+          }}
+        />
+        <Input
+          type="number"
+          min={50}
+          step="50"
+          label="Presupuesto S/ (opc.)"
+          placeholder="Ej. 1200"
+          variant="bordered"
+          value={estimatedBudget}
+          onValueChange={setEstimatedBudget}
+          classNames={{
+            label: "font-semibold text-xs",
+            input: "font-medium text-base sm:text-sm",
+          }}
+        />
+      </div>
+
+      <LocationMapPickerField
+        value={location}
+        onChange={(loc) => {
+          setLocation(loc);
+          if (loc?.city && !locationCity.trim()) {
+            setLocationCity(loc.city);
+          }
+        }}
+      />
+      {attemptedSubmit && !location?.address && !locationCity.trim() && (
         <p role="alert" className="text-xs text-danger -mt-2">
-          Busca la dirección o mueve el pin en el mapa para confirmar la ubicación.
+          Indica el distrito/ciudad arriba o marca el punto exacto en el mapa (opcional si ya pusiste el distrito).
         </p>
       )}
 
@@ -687,6 +797,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   startTime,
                   eventType,
                   location,
+                  locationCity,
                 });
                 if (validationError) {
                   addToast({
@@ -888,7 +999,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
               <div className="pt-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <p className="text-xs text-default-500 leading-snug m-0">
                   {authStep === "contact"
-                    ? "Crearemos tu cuenta automáticamente sin contraseñas. "
+                    ? "Sin contraseña: te enviaremos un código a tu correo para gestionar tu solicitud. "
                     : "Al confirmar se enviará tu solicitud de reserva inmediatamente. "}
                   Al continuar aceptas los{" "}
                   <Link

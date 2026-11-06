@@ -97,11 +97,14 @@ export function validateBookingRequest(input: {
     startTime: string;
     eventType: string;
     location: MapLocation | null;
+    locationCity?: string;
 }): string | null {
     if (!input.eventDate) return "Selecciona la fecha del evento.";
     if (!input.startTime) return "Selecciona la hora del evento.";
     if (!input.eventType) return "Selecciona el tipo de evento.";
-    if (!input.location) return "Marca el lugar del evento en el mapa.";
+    if (!input.location && !input.locationCity?.trim()) {
+        return "Indica el distrito o ciudad del evento (o márcalo en el mapa).";
+    }
 
     if (input.eventDate < getMinEventDate()) {
         return "La fecha del evento no puede ser anterior a hoy.";
