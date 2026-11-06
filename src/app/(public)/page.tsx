@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getMusicians, getPlatformStats, getLatestReviews } from "@/lib/musicians";
+import HomeSeoSection from "@/components/home/home-seo-section";
 import HomeView from "@/components/home/home-view";
 import { SITE_DESCRIPTION, SITE_NAME, buildPageMetadata } from "@/lib/seo";
 
@@ -27,11 +28,14 @@ export default async function Page() {
     const hasMoreMusicians = musicians.length > HOME_MUSICIANS_LIMIT;
 
     return (
-        <HomeView
-            musicians={musicians.slice(0, HOME_MUSICIANS_LIMIT)}
-            hasMoreMusicians={hasMoreMusicians}
-            stats={stats}
-            reviews={reviews}
-        />
+        <>
+            <HomeView
+                musicians={musicians.slice(0, HOME_MUSICIANS_LIMIT)}
+                hasMoreMusicians={hasMoreMusicians}
+                stats={stats}
+                reviews={reviews}
+            />
+            <HomeSeoSection />
+        </>
     );
 }

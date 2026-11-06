@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import MusiciansBrowseView from "@/components/musicians/musicians-browse-view";
+import SeoLandingContent from "@/components/musicians/seo-landing-content";
 import { searchMusicians } from "@/lib/musicians";
 import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
 import type { MusicianCard } from "@/types/ui/musician";
@@ -20,13 +21,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const cityName = formatTitle(ciudad);
 
     return buildPageMetadata({
-        title: `Contratar ${genreName} en ${cityName}`,
-        description: `Encuentra y contrata a los mejores ${genreName.toLowerCase()} en ${cityName}. Revisa sus precios, fotos y valoraciones reales en ${SITE_NAME}.`,
+        title: `Contratar ${genreName.toLowerCase()} en ${cityName}, Perú`,
+        description: `Contrata ${genreName.toLowerCase()} en ${cityName} para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
         path: `/musicos/${genero}/${ciudad}`,
     });
 }
 
 export const revalidate = 60;
+
+const SEARCH_LIMIT = 20;
 
 export default async function GenreCityPage({ params }: Props) {
     const { genero, ciudad } = await params;
@@ -38,7 +41,7 @@ export default async function GenreCityPage({ params }: Props) {
         initialMusicians = await searchMusicians({
             genres: [genreName],
             city: cityName,
-            limit: 20,
+            limit: SEARCH_LIMIT,
         });
     } catch {
         // Fallback a cliente si el servidor falla transitoriamente (no cachear 404)
@@ -53,7 +56,7 @@ export default async function GenreCityPage({ params }: Props) {
         <div className="pt-4 sm:pt-6 pb-16 sm:pb-24">
             <header className="max-w-[1800px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 mb-5">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                    Contratar {genreName} en {cityName}
+                    Contratar {genreName.toLowerCase()} en {cityName}
                 </h1>
                 <p className="text-sm sm:text-base text-default-600 mt-1">
                     Artistas verificados en {cityName} con tarifas transparentes y pago protegido.
@@ -62,6 +65,13 @@ export default async function GenreCityPage({ params }: Props) {
             <MusiciansBrowseView
                 initialFilters={{ genre: genreName, city: cityName }}
                 initialMusicians={initialMusicians}
+            />
+            <SeoLandingContent
+                genreName={genreName}
+                genreSlug={genero}
+                cityName={cityName}
+                musicians={initialMusicians}
+                searchLimit={SEARCH_LIMIT}
             />
         </div>
     );

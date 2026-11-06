@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { absoluteUrl } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
     return {
@@ -25,6 +26,6 @@ export default function robots(): MetadataRoute.Robots {
                 "/verify-email",
             ],
         },
-        sitemap: "https://chiv.app/sitemap.xml",
+        sitemap: absoluteUrl("/sitemap.xml"),
     };
 }

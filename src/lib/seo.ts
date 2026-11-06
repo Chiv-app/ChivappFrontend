@@ -3,8 +3,11 @@ import { resolveUploadUrl } from "@/lib/uploads";
 
 export const SITE_NAME = "Chivapp";
 export const SITE_TAGLINE = "Encuentra y contrata músicos para tu evento.";
+/** Título de la home: palabras clave primero y la marca al final (~55 caracteres). */
+export const SITE_TITLE = "Contrata músicos para bodas y eventos en Perú | Chivapp";
+/** Descripción de la home: las primeras ~155 letras son lo que suele mostrar Google. */
 export const SITE_DESCRIPTION =
-    "Chivapp conecta personas con músicos verificados para bodas, fiestas y eventos. Descubre perfiles, escucha su estilo y reserva en minutos.";
+    "Contrata músicos y agrupaciones verificadas en Perú para bodas, fiestas y eventos. Compara perfiles y repertorio, pide tu cotización y paga protegido en Chivapp.";
 
 /**
  * Serializa JSON-LD para un <script>. JSON.stringify no escapa "<", así que
@@ -71,10 +74,11 @@ export function buildPageMetadata({
     const url = absoluteUrl(path);
     const ogImage = image ? absoluteImageUrl(image) : undefined;
     const isRoot = title === SITE_NAME;
-    const fullTitle = isRoot ? SITE_NAME : `${SITE_NAME} - ${title}`;
+    // Palabras clave primero y marca al final: "Contratar Rock en Lima | Chivapp".
+    const fullTitle = isRoot ? SITE_TITLE : `${title} | ${SITE_NAME}`;
 
     return {
-        title: isRoot ? { absolute: SITE_NAME } : { absolute: fullTitle },
+        title: { absolute: fullTitle },
         description,
         alternates: { canonical: url },
         robots: noIndex
@@ -202,5 +206,38 @@ export function musicianJsonLd(input: {
               }
             : {}),
         ...(sameAs.length > 0 ? { sameAs } : {}),
+    };
+}
+
+/** Migas de pan (BreadcrumbList) para páginas de categoría. `path` es relativo al sitio. */
+export function breadcrumbJsonLd(items: Array<{ name: string; path: string }>) {
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: items.map((item, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: item.name,
+            item: absoluteUrl(item.path),
+        })),
+    };
+}
+
+/** Lista de perfiles (ItemList) que aparecen en una página de categoría. */
+export function itemListJsonLd(
+    name: string,
+    entries: Array<{ name: string; path: string }>,
+) {
+    return {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name,
+        numberOfItems: entries.length,
+        itemListElement: entries.map((entry, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: entry.name,
+            url: absoluteUrl(entry.path),
+        })),
     };
 }

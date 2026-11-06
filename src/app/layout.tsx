@@ -7,6 +7,7 @@ import {
     SITE_DESCRIPTION,
     SITE_NAME,
     SITE_TAGLINE,
+    SITE_TITLE,
     getSiteUrl,
     websiteJsonLd,
     organizationJsonLd,
@@ -34,15 +35,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     metadataBase: new URL(getSiteUrl()),
     title: {
-        default: "Chivapp – Contrata músicos y agrupaciones para tu evento en Perú",
-        template: `${SITE_NAME} - %s`,
+        default: SITE_TITLE,
+        template: `%s | ${SITE_NAME}`,
     },
     description: SITE_DESCRIPTION,
     applicationName: SITE_NAME,
     keywords: [
         "músicos",
         "contratar músicos",
+        "contratar músicos en Perú",
         "música para eventos",
+        "música para bodas",
         "agrupaciones musicales",
         "banda para fiesta",
         "músico para boda",
@@ -76,8 +79,8 @@ export const metadata: Metadata = {
         type: "website",
         locale: "es_PE",
         siteName: SITE_NAME,
-        title: "Chivapp – Contrata músicos y agrupaciones para tu evento en Perú",
-        description: SITE_TAGLINE,
+        title: SITE_TITLE,
+        description: SITE_DESCRIPTION,
         url: "/",
         images: [
             {
@@ -96,8 +99,8 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        title: SITE_NAME,
-        description: SITE_TAGLINE,
+        title: SITE_TITLE,
+        description: SITE_DESCRIPTION,
         images: ["/logo-chivappv2.png"],
     },
     robots: {
