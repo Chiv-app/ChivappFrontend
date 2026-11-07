@@ -38,7 +38,6 @@ export default function LoginForm({
     const [password, setPassword] = useState("");
     const [otp, setOtp] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [notFoundError, setNotFoundError] = useState(false);
     const [unverifiedEmailError, setUnverifiedEmailError] = useState(false);
     const [isResendingVerification, setIsResendingVerification] = useState(false);
 
@@ -134,15 +133,13 @@ export default function LoginForm({
 
     async function handleEmailSubmit(e: FormEvent) {
         e.preventDefault();
-        setNotFoundError(false);
         setIsSubmitting(true);
         try {
+            // La respuesta es la misma exista o no la cuenta (no se revela qué correos están registrados).
             const res = await loginStepOne(email);
-            if (res.status === "not_found") {
-                setNotFoundError(true);
-            } else if (res.status === "requires_password") {
+            if (res.status === "requires_password") {
                 setStep("password");
-            } else if (res.status === "otp_sent") {
+            } else {
                 setStep("otp");
             }
         } catch (error) {
@@ -218,35 +215,8 @@ export default function LoginForm({
                             radius="md"
                             size="lg"
                             value={email}
-                            onValueChange={(val) => {
-                                setEmail(val);
-                                setNotFoundError(false);
-                            }}
+                            onValueChange={setEmail}
                             isRequired
-                            isInvalid={notFoundError}
-                            errorMessage={
-                                notFoundError ? (
-                                    <span className="inline-flex flex-wrap items-center gap-1">
-                                        <span>No encontramos una cuenta con ese correo.</span>
-                                        {onSwitchToRegister ? (
-                                            <button
-                                                type="button"
-                                                onClick={onSwitchToRegister}
-                                                className="font-semibold text-primary-text underline underline-offset-2"
-                                            >
-                                                Crear cuenta ahora
-                                            </button>
-                                        ) : (
-                                            <Link
-                                                href="/register"
-                                                className="font-semibold text-primary-text underline underline-offset-2"
-                                            >
-                                                Crear cuenta ahora
-                                            </Link>
-                                        )}
-                                    </span>
-                                ) : undefined
-                            }
                             autoComplete="email"
                             startContent={<Icon icon="lucide:mail" className="text-default-400" width={18} />}
                             classNames={{
@@ -351,7 +321,26 @@ export default function LoginForm({
             {step === "otp" && (
                 <Form onSubmit={handleOtpSubmit} className="flex flex-col gap-4 w-full" validationBehavior="native">
                     <p className="text-sm text-default-500 mb-2">
-                        Hemos enviado un código a <b>{email}</b>. Ingrésalo para continuar.
+                        Si <b>{email}</b> tiene una cuenta, te enviamos un código. Ingrésalo para continuar.
+                    </p>
+                    <p className="text-xs text-default-500 -mt-2">
+                        ¿Aún no tienes cuenta?{" "}
+                        {onSwitchToRegister ? (
+                            <button
+                                type="button"
+                                onClick={onSwitchToRegister}
+                                className="font-semibold text-primary-text underline underline-offset-2"
+                            >
+                                Crear cuenta
+                            </button>
+                        ) : (
+                            <Link
+                                href="/register"
+                                className="font-semibold text-primary-text underline underline-offset-2"
+                            >
+                                Crear cuenta
+                            </Link>
+                        )}
                     </p>
                     <Input
                         label="Código de verificación"

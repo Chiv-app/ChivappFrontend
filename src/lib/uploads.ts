@@ -176,7 +176,8 @@ export async function uploadFile(file: File, options: UploadOptions = {}): Promi
     const formData = new FormData();
     formData.append("file", prepared);
 
-    const query = options.private ? "?private=true" : "";
+    // El servidor es privado por defecto: se indica siempre de forma explícita.
+    const query = options.private ? "?private=true" : "?private=false";
     const res = await fetch(`${getApiUrl()}/uploads/${query}`, {
         method: "POST",
         credentials: "include",

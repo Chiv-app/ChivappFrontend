@@ -167,7 +167,8 @@ export async function changePassword(payload: {
 
 
 export type LoginStepOneResponse = {
-    status: "not_found" | "requires_password" | "otp_sent";
+    // El servidor responde siempre "otp_sent" (no revela si el correo tiene cuenta); "requires_password" se conserva por compatibilidad.
+    status: "requires_password" | "otp_sent";
     message?: string;
 };
 
@@ -189,4 +190,18 @@ export async function loginOtp(email: string, otp: string): Promise<UserOut> {
         throw new Error("No se pudo obtener el usuario autenticado");
     }
     return user;
+}
+
+export async function sendEmailVerificationCode() {
+    return apiFetch<{ message: string; email_verified: boolean }>(
+        "/auth/email-verification/send-code",
+        { method: "POST" },
+    );
+}
+
+export async function confirmEmailVerificationCode(otp: string) {
+    return apiFetch<{ message: string; email_verified: boolean }>(
+        "/auth/email-verification/confirm",
+        { method: "POST", body: JSON.stringify({ otp }) },
+    );
 }
