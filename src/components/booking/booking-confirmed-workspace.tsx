@@ -318,7 +318,7 @@ export default function BookingConfirmedWorkspace({
                             </Chip>
                             <h3 className="text-lg font-bold">Cambio enviado</h3>
                             <p className="text-sm text-default-600">
-                                Esperando que el músico acepte o rechace tu propuesta.
+                                Esperando que el músico acepte o rechace tu solicitud de cambio.
                                 No se requiere una nueva firma.
                             </p>
                             <div>

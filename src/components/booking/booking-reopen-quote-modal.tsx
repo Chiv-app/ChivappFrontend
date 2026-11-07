@@ -144,7 +144,7 @@ export default function BookingReopenQuoteModal({
             addToast({
                 title: "Solicitud actualizada",
                 description:
-                    "La reserva volvió a cotización. El músico debe enviar una nueva propuesta.",
+                    "La reserva volvió a cotización. El músico debe enviar una nueva cotización.",
                 color: "success",
             });
         } catch (error) {

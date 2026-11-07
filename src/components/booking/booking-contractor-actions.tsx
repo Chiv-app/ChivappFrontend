@@ -29,8 +29,7 @@ export default function BookingContractorActions({
     useEffect(() => {
         if (
             booking.status !== "contract_pending" &&
-            booking.status !== "contract_signed" &&
-            booking.status !== "payment_pending"
+            booking.status !== "contract_signed"
         ) {
             void Promise.resolve().then(() => setContract(null));
             return;
@@ -128,41 +127,6 @@ export default function BookingContractorActions({
                 isLoadingContract={isLoadingContract}
                 onUpdated={onUpdated}
             />
-        );
-    }
-
-    if (booking.status === "payment_pending") {
-        return (
-            <div className="flex flex-col gap-6">
-                <Card className="border border-warning/30 bg-warning/5 shadow-soft">
-                    <CardBody className="gap-3 p-6">
-                        <div className="flex items-center gap-2">
-                            <Icon
-                                icon="material-symbols:hourglass-top"
-                                width={24}
-                                className="text-warning shrink-0"
-                            />
-                            <p className="font-semibold text-foreground text-base">
-                                Pago en procesamiento con Mercado Pago
-                            </p>
-                        </div>
-                        <p className="text-sm text-default-600">
-                            Estamos esperando la confirmación de acreditación de Mercado
-                            Pago. Si no completaste la operación anterior, puedes reintentar el pago abajo.
-                        </p>
-                        <p className="text-xs text-default-500">
-                            Verificamos el estado cada pocos segundos mientras tengas esta
-                            página abierta. También puedes pulsar «Actualizar».
-                        </p>
-                    </CardBody>
-                </Card>
-                <BookingContractConfirmCard
-                    booking={booking}
-                    contract={contract}
-                    isLoadingContract={isLoadingContract}
-                    onUpdated={onUpdated}
-                />
-            </div>
         );
     }
 

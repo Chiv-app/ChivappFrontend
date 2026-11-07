@@ -111,7 +111,7 @@ export default function MusicianDashboardOverview({
                     >
                         <CardBody className="gap-2 p-5">
                             <div className="flex items-center justify-between">
-                                <p className="text-sm text-default-500">Liberado</p>
+                                <p className="text-sm text-default-500">Cobrado</p>
                                 <Icon
                                     icon="material-symbols:account-balance-wallet"
                                     className="text-success"
@@ -121,7 +121,7 @@ export default function MusicianDashboardOverview({
                             <p className="text-2xl font-bold text-foreground">
                                 {formatCurrency(releasedEarnings)}
                             </p>
-                            <p className="text-xs text-default-500">Pagos ya liberados</p>
+                            <p className="text-xs text-default-500">Pagos ya recibidos</p>
                         </CardBody>
                     </Card>
                     <Card
@@ -132,7 +132,7 @@ export default function MusicianDashboardOverview({
                     >
                         <CardBody className="gap-2 p-5">
                             <div className="flex items-center justify-between">
-                                <p className="text-sm text-default-500">Retenido</p>
+                                <p className="text-sm text-default-500">Por cobrar</p>
                                 <Icon
                                     icon="material-symbols:lock"
                                     className="text-secondary"

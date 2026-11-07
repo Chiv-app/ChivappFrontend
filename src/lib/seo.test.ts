@@ -10,12 +10,7 @@ import {
     formatGenreName,
     itemListJsonLd,
 } from "@/lib/seo";
-import {
-    UNIFIED_BOOKING_STAGES,
-    getRoleAwareStatusLabel,
-    mapStatusToUnifiedStage,
-} from "@/lib/booking-stages";
-import { buildBookingTimeline } from "@/lib/booking-timeline";
+import { buildBookingTimeline, getBookingStage } from "@/lib/booking-timeline";
 import { getBookingStatusLabel } from "@/lib/booking-labels";
 import {
     buildEnsembleInviteWhatsAppUrl,
@@ -89,17 +84,23 @@ describe("SEO", () => {
 });
 
 describe("WP-20 a WP-23 Utilidades de producto", () => {
-    it("unifica las etapas de reserva en 5 pasos y distingue el estado accepted por rol", () => {
-        expect(UNIFIED_BOOKING_STAGES).toHaveLength(5);
-        expect(mapStatusToUnifiedStage("pending")).toBe("solicitud");
-        expect(mapStatusToUnifiedStage("accepted")).toBe("cotizacion");
-        expect(mapStatusToUnifiedStage("quote_accepted")).toBe("pago");
-        expect(mapStatusToUnifiedStage("confirmed")).toBe("confirmada");
-        expect(mapStatusToUnifiedStage("completed")).toBe("cierre");
-        expect(getRoleAwareStatusLabel("accepted", "contractor")).toBe(
-            "Tienes una cotización para revisar",
-        );
-        expect(getRoleAwareStatusLabel("accepted", "musician")).toContain("Cotización enviada");
+    it("las listas y el detalle comparten las mismas 5 etapas, y las canceladas no tienen etapa", () => {
+        const cases: Array<[Parameters<typeof getBookingStage>[0], number, string]> = [
+            ["requested", 1, "Solicitud"],
+            ["accepted", 2, "Cotización y acuerdo"],
+            ["contract_pending", 2, "Cotización y acuerdo"],
+            ["contract_signed", 3, "Pago"],
+            ["payment_retained", 4, "Confirmación"],
+            ["change_pending", 4, "Confirmación"],
+            ["in_progress", 5, "Evento y cierre"],
+            ["payment_released", 5, "Evento y cierre"],
+            ["completed", 5, "Evento y cierre"],
+        ];
+        for (const [status, index, title] of cases) {
+            const stage = getBookingStage(status);
+            expect(stage).toMatchObject({ index, title, total: 5, cancelled: false });
+        }
+        expect(getBookingStage("cancelled")).toMatchObject({ cancelled: true, title: "Cancelada" });
 
         const timeline = buildBookingTimeline("accepted", "contractor");
         expect(timeline.steps.map((s) => s.title)).toEqual([

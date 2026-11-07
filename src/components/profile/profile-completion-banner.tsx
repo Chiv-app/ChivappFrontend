@@ -16,6 +16,15 @@ function shouldShowBanner(validation: ProfileValidationOut): boolean {
         return true;
     }
 
+    // Publicado pero fuera de las búsquedas por falta de ciudad o tarifa: avisar al músico.
+    if (
+        validation.status === "published" &&
+        validation.is_public &&
+        validation.is_listed === false
+    ) {
+        return true;
+    }
+
     // Ya verificado: no bloquear con el banner de verificación.
     if (validation.status === "published" && validation.is_public) {
         return false;
@@ -122,6 +131,8 @@ export default function ProfileCompletionBanner() {
                                 ? " Tu perfil está en revisión (plazo estimado: 24–48 h hábiles). Recibirás un correo en cuanto sea aprobado."
                                 : validation.status === "rejected"
                                   ? " Tu perfil fue rechazado; revisa los comentarios y reenvíalo."
+                                  : validation.is_public && validation.is_listed === false
+                                  ? " Tu perfil no aparece en las búsquedas porque falta tu ciudad o tu tarifa. Complétalas para volver a aparecer."
                                   : validation.is_public
                                     ? " Tu perfil está publicado, pero faltan requisitos nuevos por completar."
                                     : " Termina los pasos pendientes y envíalo a revisión (24–48 h hábiles)."}

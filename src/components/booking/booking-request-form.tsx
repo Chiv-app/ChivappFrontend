@@ -452,7 +452,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                 addToast({
                   title: "Cuenta existente",
                   description:
-                    "Ingresa tu contraseña para confirmar y enviar tu solicitud de reserva.",
+                    "Ingresa tu contraseña para confirmar y enviar tu solicitud de cotización.",
                   color: "primary",
                 });
                 return;
@@ -944,7 +944,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-semibold text-foreground m-0">
                       Este correo ya tiene una cuenta. Ingresa el código de 6 dígitos que enviamos a{" "}
-                      <span className="font-bold">{contactEmail.trim()}</span> para enviar tu solicitud de reserva:
+                      <span className="font-bold">{contactEmail.trim()}</span> para enviar tu solicitud de cotización:
                     </p>
                     <Button
                       size="sm"
@@ -979,7 +979,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
               {authStep === "password" && (
                 <div className="flex flex-col gap-2.5 rounded-2xl border border-primary/40 bg-primary/10 p-3.5 animate-appearance-in">
                   <p className="text-xs font-semibold text-foreground m-0">
-                    Este correo ya tiene una cuenta con contraseña. Ingrésala para confirmar y enviar tu solicitud de reserva:
+                    Este correo ya tiene una cuenta con contraseña. Ingrésala para confirmar y enviar tu solicitud de cotización:
                   </p>
                   <PasswordInput
                     label="Contraseña de tu cuenta"
@@ -1000,7 +1000,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
                 <p className="text-xs text-default-500 leading-snug m-0">
                   {authStep === "contact"
                     ? "Sin contraseña: te enviaremos un código a tu correo para gestionar tu solicitud. "
-                    : "Al confirmar se enviará tu solicitud de reserva inmediatamente. "}
+                    : "Al confirmar se enviará tu solicitud de cotización inmediatamente. "}
                   Al continuar aceptas los{" "}
                   <Link
                     href="/legal/terminos"
@@ -1050,7 +1050,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
               Sesión activa como {user.role === "musician" ? "músico" : "administrador"} ({user.email})
             </p>
             <p className="text-default-600 m-0">
-              Para enviar una solicitud de reserva necesitas usar una cuenta de cliente/contratista.
+              Para enviar una solicitud de cotización necesitas usar una cuenta de cliente/contratista.
             </p>
           </div>
           <Button

@@ -31,7 +31,8 @@ import {
     parseLocationReference,
 } from "@/lib/geocoding";
 import { resolveUploadUrl } from "@/lib/uploads";
-import type { BookingOut, UserRole } from "@/types/api";
+import type { BookingOut, BookingStatus, UserRole } from "@/types/api";
+import { getBookingStage } from "@/lib/booking-timeline";
 import {
     contractorPayableTotal,
     platformFeeAmount,
@@ -152,6 +153,17 @@ function StatusChip({
     );
 }
 
+/** "Etapa 3 de 5 · Pago": las mismas 5 etapas de la línea de tiempo del detalle. */
+function StageHint({ status }: { status: BookingStatus }) {
+    const stage = getBookingStage(status);
+    if (stage.cancelled) return null;
+    return (
+        <span className="text-xs text-default-500 whitespace-nowrap">
+            Etapa {stage.index} de {stage.total} · {stage.title}
+        </span>
+    );
+}
+
 function roleAgnosticComplaintLabel(booking: BookingOut) {
     return COMPLAINT_STATUS_LABEL[booking.complaint_status || ""] || "Queja";
 }
@@ -218,10 +230,6 @@ function PriceDetailButton({ booking }: { booking: BookingOut }) {
         booking.price_agreed != null ? Number(booking.price_agreed) : null;
     const fee = platformFeeAmount(booking);
     const contractorTotal = contractorPayableTotal(booking);
-    const feePercent =
-        booking.platform_fee_percent != null
-            ? Number(booking.platform_fee_percent)
-            : null;
 
     return (
         <Popover
@@ -258,8 +266,7 @@ function PriceDetailButton({ booking }: { booking: BookingOut }) {
                         {fee > 0 ? (
                             <div className="flex items-center justify-between gap-3">
                                 <dt className="text-default-500">
-                                    Comisión
-                                    {feePercent != null ? ` (${feePercent}%)` : ""}
+                                    Servicio y pasarela
                                 </dt>
                                 <dd className="font-medium tabular-nums text-foreground">
                                     {formatCurrency(fee)}
@@ -445,6 +452,7 @@ export default function BookingReservationItem({
                 </Chip>
             ) : null}
             <StatusChip booking={booking} role={role} urgent={urgent} />
+            <StageHint status={booking.status} />
         </div>
     );
 

@@ -19,7 +19,11 @@ import {
 import AdminCancelBookingModal from "@/components/admin/admin-cancel-booking-modal";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
-import { disableAdminBookingShare, getAdminBookings } from "@/lib/admin";
+import {
+    disableAdminBookingShare,
+    getAdminBookings,
+    verifyAdminBookingPayment,
+} from "@/lib/admin";
 import { formatPeruDate, formatPeruTime } from "@/lib/date-utils";
 import {
     BOOKING_STATUS_COLORS,
@@ -34,14 +38,28 @@ const STATUS_FILTERS: Array<{ key: string; label: string }> = [
     { key: "all", label: "Todos" },
     { key: "payment_retained", label: "Confirmadas" },
     { key: "change_pending", label: "Cambio pendiente" },
-    { key: "payment_pending", label: "Pago en proceso" },
     { key: "in_progress", label: "En evento" },
     { key: "completed", label: "Completadas" },
     { key: "cancelled", label: "Canceladas" },
     { key: "refund_pending_approval", label: "Reembolso por aprobar" },
+    { key: "stale_requested_no_response", label: "Sin respuesta del músico (más de 72 h)" },
+    { key: "stale_unpaid_expired", label: "Sin pago (más de 7 días)" },
+    { key: "stale_unconfirmed_payment", label: "Pago sin confirmar" },
 ];
 
 const REFUND_PENDING_FILTER = "refund_pending_approval";
+const STALE_PREFIX = "stale_";
+
+/** Traduce el filtro elegido en la lista a los parámetros del API. */
+function filterToParams(status: string) {
+    if (status === REFUND_PENDING_FILTER) {
+        return { refund_status: "pending_approval" };
+    }
+    if (status.startsWith(STALE_PREFIX)) {
+        return { stale: status.slice(STALE_PREFIX.length) };
+    }
+    return { status: status === "all" ? undefined : status };
+}
 const PAGE_SIZE = 100;
 
 export default function AdminBookingsPage() {
@@ -56,6 +74,7 @@ export default function AdminBookingsPage() {
     const [disableShareTarget, setDisableShareTarget] = useState<AdminBookingOut | null>(null);
     const [disablingShare, setDisablingShare] = useState(false);
     const [pendingRefundCount, setPendingRefundCount] = useState<number | null>(0);
+    const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
     const loadPendingRefundCount = useCallback(async () => {
         try {
@@ -72,12 +91,10 @@ export default function AdminBookingsPage() {
     const load = useCallback(async () => {
         setLoading(true);
         setLoadError(null);
-        const refundPending = status === REFUND_PENDING_FILTER;
         try {
             const data = await getAdminBookings({
                 q: q.trim() || undefined,
-                status: status === "all" || refundPending ? undefined : status,
-                refund_status: refundPending ? "pending_approval" : undefined,
+                ...filterToParams(status),
                 skip: 0,
                 limit: PAGE_SIZE,
             });
@@ -99,12 +116,10 @@ export default function AdminBookingsPage() {
 
     async function loadMore() {
         setLoadingMore(true);
-        const refundPending = status === REFUND_PENDING_FILTER;
         try {
             const data = await getAdminBookings({
                 q: q.trim() || undefined,
-                status: status === "all" || refundPending ? undefined : status,
-                refund_status: refundPending ? "pending_approval" : undefined,
+                ...filterToParams(status),
                 skip: bookings.length,
                 limit: PAGE_SIZE,
             });
@@ -141,6 +156,37 @@ export default function AdminBookingsPage() {
                 description: error instanceof Error ? error.message : "Intenta de nuevo.",
                 color: "danger",
             });
+        }
+    }
+
+    async function handleVerifyPayment(booking: AdminBookingOut) {
+        setVerifyingId(booking.id);
+        try {
+            const result = await verifyAdminBookingPayment(booking.id);
+            setBookings((current) =>
+                current.map((item) => (item.id === result.booking.id ? result.booking : item)),
+            );
+            addToast({
+                title:
+                    result.result === "confirmed"
+                        ? "Pago confirmado"
+                        : result.result === "already_confirmed"
+                          ? "El pago ya estaba confirmado"
+                          : "Sin pago aprobado",
+                description: result.message,
+                color:
+                    result.result === "confirmed" || result.result === "already_confirmed"
+                        ? "success"
+                        : "warning",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo verificar el pago",
+                description: error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setVerifyingId(null);
         }
     }
 
@@ -330,6 +376,19 @@ export default function AdminBookingsPage() {
                                             >
                                                 Ver detalle
                                             </Button>
+                                            {["accepted", "contract_pending", "contract_signed"].includes(
+                                                booking.status,
+                                            ) ? (
+                                                <Button
+                                                    size="sm"
+                                                    color="secondary"
+                                                    variant="flat"
+                                                    isLoading={verifyingId === booking.id}
+                                                    onPress={() => void handleVerifyPayment(booking)}
+                                                >
+                                                    Verificar pago
+                                                </Button>
+                                            ) : null}
                                             {booking.share_enabled ? (
                                                 <Button
                                                     size="sm"

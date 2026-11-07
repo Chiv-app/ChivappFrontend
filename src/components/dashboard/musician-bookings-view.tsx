@@ -41,11 +41,7 @@ const UPCOMING_STATUSES: BookingStatus[] = [
     "accepted",
     "contract_pending",
     "contract_signed",
-    "payment_pending",
     "payment_retained",
-    // Legacy (inalcanzables): equivalen a una reserva confirmada.
-    "balance_pending",
-    "balance_review",
     "in_progress",
     "payment_released",
 ];
@@ -64,7 +60,6 @@ function actionLabel(booking: BookingOut) {
     if (booking.complaint_status === "open") return "Responder queja";
     const status = booking.status;
     if (status === "requested") return "Cotizar";
-    if (status === "payment_pending") return "Esperando pago";
     if (status === "change_pending") return "Revisar cambio";
     return "Gestionar";
 }

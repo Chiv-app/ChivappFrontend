@@ -38,12 +38,8 @@ const ACTION_STATUSES: BookingStatus[] = [
 const UPCOMING_STATUSES: BookingStatus[] = [
     "requested",
     "contract_signed",
-    "payment_pending",
     "payment_retained",
     "change_pending",
-    // Legacy (inalcanzables): equivalen a una reserva confirmada.
-    "balance_pending",
-    "balance_review",
     "payment_released",
 ];
 

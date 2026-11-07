@@ -211,7 +211,7 @@ export default function MusicianEarningsView() {
             }));
             addToast({
                 title: "Solicitud enviada",
-                description: `Se registró tu solicitud de retiro por ${formatCurrency(created.amount)}. El equipo administrativo procesará el desembolso.`,
+                description: `Se registró tu solicitud de retiro por ${formatCurrency(created.amount)}. El equipo administrativo procesará el pago.`,
                 color: "success",
             });
             try {
@@ -407,7 +407,7 @@ function PlatformDebtsSection({
         {
             label: "Deuda de la app",
             value: summary.total_app_debt ?? 0,
-            hint: "Shows finalizados listos para desembolso",
+            hint: "Shows finalizados listos para pago",
             icon: "material-symbols:account-balance",
             tone: "text-primary",
             bg: "bg-primary/10",
@@ -423,13 +423,13 @@ function PlatformDebtsSection({
         {
             label: "Cobrado",
             value: summary.total_released,
-            hint: "Desembolsos autorizados por admin",
+            hint: "Pagos autorizados por admin",
             icon: "material-symbols:account-balance-wallet",
             tone: "text-success",
             bg: "bg-success/10",
         },
         {
-            label: "Retenido en curso",
+            label: "Por cobrar (en curso)",
             value: summary.total_retained_active ?? 0,
             hint: "Shows aún no finalizados",
             icon: "material-symbols:lock",
@@ -448,7 +448,7 @@ function PlatformDebtsSection({
                             Saldo por descontar de contracargo: {formatCurrency(summary.total_chargeback_debt ?? 0)}
                         </p>
                         <p className="text-xs text-default-600 mt-0.5">
-                            Este monto corresponde a un contracargo recibido en la pasarela después de haberse desembolsado la reserva y se descontará automáticamente de tu próximo retiro.
+                            Este monto corresponde a un contracargo recibido en la pasarela después de haberse pagado la reserva y se descontará automáticamente de tu próximo retiro.
                         </p>
                     </div>
                 </div>
@@ -508,7 +508,7 @@ function PlatformDebtsSection({
                     <h2 className="text-xl font-bold text-foreground">Deuda por show</h2>
                     <p className="text-sm text-default-500 mt-1">
                         Shows finalizados y liquidaciones. El admin autoriza cada
-                        desembolso.
+                        pago.
                     </p>
                 </div>
                 <Tabs
@@ -529,7 +529,7 @@ function PlatformDebtsSection({
             {filteredDebts.length === 0 ? (
                 <EmptyState
                     title="Aún no hay deuda registrada"
-                    description="Cuando finalicen shows con pagos retenidos verás aquí el detalle."
+                    description="Cuando finalicen shows con pagos por cobrar verás aquí el detalle."
                 />
             ) : (
                 <div className="flex flex-col gap-3">
@@ -573,8 +573,8 @@ function PlatformPaymentsSection({
                     color="secondary"
                 >
                     <Tab key="all" title="Todos" />
-                    <Tab key="retained" title="Retenidos" />
-                    <Tab key="released" title="Liberados" />
+                    <Tab key="retained" title="Por cobrar" />
+                    <Tab key="released" title="Cobrados" />
                     <Tab key="initiated" title="Iniciados" />
                 </Tabs>
             </div>
@@ -829,12 +829,12 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                         {item.debt_state === "awaiting_reviews" ? (
                             <p className="text-xs text-warning-text mt-1.5">
                                 {!item.has_contractor_review && !item.has_musician_review
-                                    ? "Para habilitar el desembolso, tanto el contratista como tú deben dejar su reseña tras culminar el evento."
+                                    ? "Para habilitar el pago, tanto el contratista como tú deben dejar su reseña tras culminar el evento."
                                     : !item.has_contractor_review
-                                      ? "Falta la reseña final del contratista tras culminar el evento para habilitar el desembolso."
+                                      ? "Falta la reseña final del contratista tras culminar el evento para habilitar el pago."
                                       : !item.has_musician_review
-                                        ? "Falta que dejes tu reseña al contratista en el detalle de la reserva para habilitar el desembolso."
-                                        : "El evento debe estar marcado como finalizado con ambas reseñas para habilitar el desembolso."}
+                                        ? "Falta que dejes tu reseña al contratista en el detalle de la reserva para habilitar el pago."
+                                        : "El evento debe estar marcado como finalizado con ambas reseñas para habilitar el pago."}
                             </p>
                         ) : null}
                     </div>
@@ -924,11 +924,11 @@ function PaymentDetailModal({
                                         value={formatDateTime(item.created_at)}
                                     />
                                     <DetailField
-                                        label="Retenido"
+                                        label="Por cobrar"
                                         value={formatDateTime(item.retained_at)}
                                     />
                                     <DetailField
-                                        label="Liberado"
+                                        label="Cobrado"
                                         value={formatDateTime(item.released_at)}
                                     />
                                     <DetailField

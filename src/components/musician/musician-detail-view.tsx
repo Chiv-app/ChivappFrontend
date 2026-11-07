@@ -821,7 +821,7 @@ export default function MusicianDetailView({
                                         width={16}
                                         aria-hidden="true"
                                     />
-                                    Pago retenido hasta el evento · Reembolso 100 % (≥15 días)
+                                    Pago protegido hasta el evento · Consulta la política de cancelación
                                 </span>
                             ) : null}
                         </div>

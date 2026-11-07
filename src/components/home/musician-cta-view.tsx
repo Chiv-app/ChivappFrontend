@@ -53,7 +53,7 @@ export default function MusicianCtaSection() {
                                 ¿Eres músico o tienes una banda?
                             </h3>
                             <p className="text-background/80 text-pretty">
-                                Únete a Chivapp y consigue más eventos cada mes.{" "}
+                                Únete a Chivapp y recibe solicitudes de clientes que buscan música para su evento.{" "}
                                 <strong className="text-background font-semibold">
                                     0 % de comisión para el músico — recibes el 100 % de tu tarifa acordada.
                                 </strong>

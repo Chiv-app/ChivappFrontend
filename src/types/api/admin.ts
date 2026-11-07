@@ -94,6 +94,14 @@ export type AdminBookingOut = {
     updated_at: string;
 };
 
+/** Resultado de consultar a Mercado Pago el pago de una reserva (acción manual del admin). */
+export type AdminVerifyPaymentOut = {
+    result: "confirmed" | "already_confirmed" | "no_payment_found" | "pending";
+    message: string;
+    payments_found: number;
+    booking: AdminBookingOut;
+};
+
 export type AdminApproveRefund = {
     /** Monto a reembolsar. Omitido/null = monto de la política; 0 = rechazar. */
     amount?: string | number | null;
@@ -147,6 +155,8 @@ export type AdminListParams = {
     state?: string;
     /** Solo reservas: filtra por estado del reembolso (p. ej. "pending_approval"). */
     refund_status?: string;
+    /** Solo reservas: requested_no_response | unpaid_expired | unconfirmed_payment. */
+    stale?: string;
     role?: string;
     is_verified?: boolean;
     is_active?: boolean;

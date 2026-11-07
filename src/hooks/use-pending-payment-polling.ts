@@ -9,7 +9,7 @@ export const PENDING_PAYMENT_POLL_MAX_MS = 5 * 60_000;
 
 type Options = {
     bookingId: string | null | undefined;
-    /** Activa el sondeo (p. ej. reserva en payment_pending o retorno con mp_status=pending). */
+    /** Activa el sondeo (p. ej. retorno de Mercado Pago con mp_status=pending). */
     enabled: boolean;
     /** El pago quedó aprobado/retenido: refresca la reserva. */
     onApproved: (result: MercadoPagoPaymentCheckResponse) => void;

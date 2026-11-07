@@ -74,7 +74,7 @@ export default function SeoLandingContent({
         },
         {
             question: "¿Mi pago está protegido?",
-            answer: `Sí. El pago se realiza por Mercado Pago y queda en custodia de ${SITE_NAME} hasta que finaliza el evento. Las condiciones de cancelación y reembolso están en la política publicada.`,
+            answer: `Sí. El pago se realiza por Mercado Pago y queda protegido por ${SITE_NAME} hasta que finaliza el evento. Las condiciones de cancelación y reembolso están en la política publicada.`,
         },
     ];
 

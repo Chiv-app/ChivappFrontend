@@ -58,7 +58,7 @@ export function formatCancellationSummaryShort(
     policy: CancellationPolicy = DEFAULT_CANCELLATION_POLICY
 ): string {
     const maxPartial = getPartialRefundMaxDays(policy);
-    return `Tu pago se custodia hasta finalizar el evento. Si cancelas con ${policy.full_refund_min_days} días calendario o más de anticipación se reembolsa el 100 % de la tarifa del artista, y el ${policy.partial_refund_percent} % entre ${policy.partial_refund_min_days} y ${maxPartial} días. ${NON_REFUNDABLE_NOTE}`;
+    return `Tu pago queda protegido hasta finalizar el evento. Si cancelas con ${policy.full_refund_min_days} días calendario o más de anticipación se reembolsa el 100 % de la tarifa del artista, y el ${policy.partial_refund_percent} % entre ${policy.partial_refund_min_days} y ${maxPartial} días. ${NON_REFUNDABLE_NOTE}`;
 }
 
 export function formatClientCancellationRules(

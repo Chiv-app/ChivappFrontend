@@ -12,6 +12,7 @@ import type {
     AdminSupportTicketOut,
     AdminUserOut,
     AdminUserUpdate,
+    AdminVerifyPaymentOut,
     ContractorProfileAdminOut,
     MusicianProfileAdminOut,
     ProfileReviewAction,
@@ -37,6 +38,7 @@ function toQuery(params: AdminListParams = {}) {
     if (params.status) search.set("status", String(params.status));
     if (params.state) search.set("state", String(params.state));
     if (params.refund_status) search.set("refund_status", params.refund_status);
+    if (params.stale) search.set("stale", params.stale);
     if (params.role) search.set("role", params.role);
     if (params.is_verified != null) search.set("is_verified", String(params.is_verified));
     if (params.is_active != null) search.set("is_active", String(params.is_active));
@@ -211,6 +213,16 @@ export function approveAdminCancellationRefund(
     return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/approve-refund`, {
         method: "POST",
         body: JSON.stringify(payload),
+    });
+}
+
+/**
+ * Consulta a Mercado Pago el pago de una reserva y lo registra si está aprobado.
+ * Es la herramienta manual cuando un aviso (webhook) no llegó.
+ */
+export function verifyAdminBookingPayment(bookingId: string) {
+    return apiFetch<AdminVerifyPaymentOut>(`/admin/bookings/${bookingId}/verify-payment`, {
+        method: "POST",
     });
 }
 

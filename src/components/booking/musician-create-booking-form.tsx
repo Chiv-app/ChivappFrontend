@@ -129,9 +129,9 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             });
 
             addToast({
-                title: "Propuesta creada",
+                title: "Cotización creada",
                 description:
-                    "El cliente recibirá la propuesta para aceptarla, firmar el contrato y pagar a través de Chivapp.",
+                    "El cliente recibirá la cotización para aceptarla, firmar el contrato y pagar a través de Chivapp.",
                 color: "success",
             });
             onSuccess?.();
@@ -315,7 +315,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                     className="text-primary shrink-0 mt-0.5"
                 />
                 <p className="text-sm text-default-600 leading-relaxed">
-                    Se creará como propuesta. El cliente la recibirá para aceptarla, firmar
+                    Se creará como cotización. El cliente la recibirá para aceptarla, firmar
                     el contrato y pagar el 100 % de forma segura a través de Chivapp con
                     Mercado Pago. La reserva se confirma automáticamente al acreditarse el
                     pago.
@@ -335,7 +335,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                         )
                     }
                 >
-                    Enviar propuesta
+                    Enviar cotización
                 </Button>
             </div>
         </form>

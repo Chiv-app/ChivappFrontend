@@ -51,7 +51,7 @@ export default function BookingQuoteReviewCard({
                             Cotización recibida
                         </Chip>
                         <h2 className="text-2xl font-bold text-foreground">
-                            Propuesta del músico
+                            Cotización del músico
                         </h2>
                         <p className="text-sm text-default-600 mt-2 max-w-xl">
                             Revisa el precio, las condiciones y la ubicación antes de decidir.
@@ -207,7 +207,7 @@ export default function BookingQuoteReviewCard({
                                 width={18}
                                 className="text-primary shrink-0 mt-0.5"
                             />
-                            Tu dinero queda protegido en custodia hasta que el evento se realice. Si el músico cancela, recibes el 100% de reembolso; si tú cancelas después de pagar, la devolución se calcula según la anticipación al evento estipulada en el contrato.
+                            Tu dinero queda protegido hasta que el evento se realice. Si el músico cancela, recibes el 100% de reembolso; si tú cancelas después de pagar, la devolución se calcula según la anticipación al evento estipulada en el contrato.
                         </li>
                         <li className="flex items-start gap-2">
                             <Icon
@@ -215,7 +215,7 @@ export default function BookingQuoteReviewCard({
                                 width={18}
                                 className="text-danger shrink-0 mt-0.5"
                             />
-                            Si rechazas esta propuesta, la solicitud se cerrará sin costo y el músico será notificado.
+                            Si rechazas esta cotización, la solicitud se cerrará sin costo y el músico será notificado.
                         </li>
                     </ol>
                 </div>
@@ -236,7 +236,7 @@ export default function BookingQuoteReviewCard({
                         isOpen={isRejectConfirmOpen}
                         onOpenChange={setIsRejectConfirmOpen}
                         title="¿Rechazar esta cotización?"
-                        description="Si rechazas esta propuesta, la solicitud se cerrará sin costo y el músico será notificado."
+                        description="Si rechazas esta cotización, la solicitud se cerrará sin costo y el músico será notificado."
                         confirmLabel="Rechazar cotización"
                         cancelLabel="Volver"
                         color="danger"

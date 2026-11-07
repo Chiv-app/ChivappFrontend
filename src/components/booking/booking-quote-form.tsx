@@ -176,7 +176,7 @@ export default function BookingQuoteForm({
                     window.localStorage.removeItem(`${DRAFT_STORAGE_PREFIX}${booking.id}`);
                 }
                 onUpdated?.(res);
-                addToast({ title: "Propuesta enviada", color: "success" });
+                addToast({ title: "Cotización enviada", color: "success" });
             } catch (err: unknown) {
                 const msg = err instanceof Error ? err.message : "Error al enviar";
                 addToast({ title: msg || "Error al enviar", color: "danger" });
@@ -227,7 +227,7 @@ export default function BookingQuoteForm({
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">
-                                Rechazar solicitud de reserva
+                                Rechazar solicitud
                             </ModalHeader>
                             <ModalBody>
                                 <p className="text-sm text-default-600">
@@ -265,7 +265,7 @@ export default function BookingQuoteForm({
             <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
                     <h2 className="text-2xl font-bold text-foreground">
-                        {isEditMode ? "Editar propuesta" : "Enviar propuesta"}
+                        {isEditMode ? "Editar cotización" : "Enviar cotización"}
                     </h2>
                     <p className="text-sm text-default-500 mt-1">
                         Ingresa el monto neto que deseas recibir por el evento.

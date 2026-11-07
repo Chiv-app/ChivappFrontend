@@ -77,7 +77,7 @@ const SETTLEMENT_LABEL: Record<string, string> = {
     payable: "Por desembolsar",
     awaiting_reviews: "Sin reseñas (evento culminado)",
     needs_attention: "Requiere atención (reintentar)",
-    disputed: "En disputa (espera músico)",
+    disputed: "Queja abierta (el músico aún no responde)",
     awaiting_admin: "Disputa por liquidar",
     refund_pending_transfer: "Devolver al contratista",
     refund_pending_validation: "Espera validación contratista",
@@ -1038,6 +1038,7 @@ export default function AdminPaymentsPage() {
                                         "awaiting_admin",
                                         "awaiting_reviews",
                                         "needs_attention",
+                                        "disputed",
                                     ].includes(
                                         item.settlement_state,
                                     ) ? (
@@ -1325,6 +1326,28 @@ export default function AdminPaymentsPage() {
                                         contratista = 0).
                                     </p>
                                 )}
+                                {(settleTarget?.musician_chargeback_debt ?? 0) > 0 ? (
+                                    <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
+                                        <p className="font-semibold">
+                                            El músico tiene una deuda por contracargo:{" "}
+                                            {formatCurrency(settleTarget?.musician_chargeback_debt ?? 0)}
+                                        </p>
+                                        <p className="mt-1">
+                                            Se descuenta automáticamente de lo que le asignes. Transfiere
+                                            solo el neto:{" "}
+                                            <strong>
+                                                {formatCurrency(
+                                                    Math.max(
+                                                        Number(musicianAmount || 0) -
+                                                            (settleTarget?.musician_chargeback_debt ?? 0),
+                                                        0,
+                                                    ),
+                                                )}
+                                            </strong>
+                                            .
+                                        </p>
+                                    </div>
+                                ) : null}
                                 <Input
                                     label="Monto al músico (S/)"
                                     type="number"

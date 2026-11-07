@@ -27,6 +27,8 @@ export type ProfileValidationOut = {
     steps: ValidationStepOut[];
     can_submit: boolean;
     is_public: boolean;
+    /** Aparece en búsquedas y listados (requiere ciudad y tarifa). */
+    is_listed?: boolean;
     is_ensemble_only?: boolean;
 };
 

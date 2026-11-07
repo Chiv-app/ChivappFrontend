@@ -114,7 +114,7 @@ export default function BookingFinalReviewModal({
             addToast({
                 title: "Reseña publicada",
                 description:
-                    "Cerrando la contratación. Los fondos quedan como deuda de la app hasta el desembolso.",
+                    "Cerrando la contratación. Chivapp pagará al artista una vez validado el cierre.",
                 color: "success",
             });
             await onSubmitted({ mode: "review", completed: false });

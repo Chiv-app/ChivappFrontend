@@ -7,13 +7,8 @@ export type BookingStatus =
     | "accepted"
     | "contract_pending"
     | "contract_signed"
-    | "payment_pending"
     | "payment_retained"
     | "change_pending"
-    /** Legacy (flujo anticipo/saldo): ya no se alcanza; se trata como confirmada. */
-    | "balance_pending"
-    /** Legacy (flujo anticipo/saldo): ya no se alcanza; se trata como confirmada. */
-    | "balance_review"
     | "in_progress"
     | "payment_released"
     | "completed"

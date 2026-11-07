@@ -124,7 +124,7 @@ export default function ContractorDashboardOverview({
                     >
                         <CardBody className="gap-2 p-5">
                             <div className="flex items-center justify-between">
-                                <p className="text-sm text-default-500">Neto / retenido</p>
+                                <p className="text-sm text-default-500">Neto / protegido</p>
                                 <Icon
                                     icon="material-symbols:account-balance"
                                     className="text-secondary"
@@ -135,7 +135,7 @@ export default function ContractorDashboardOverview({
                                 {formatCurrency(netOut)}
                             </p>
                             <p className="text-xs text-default-500">
-                                Retenido {formatCurrency(retainedExpenses)}
+                                Protegido {formatCurrency(retainedExpenses)}
                             </p>
                         </CardBody>
                     </Card>

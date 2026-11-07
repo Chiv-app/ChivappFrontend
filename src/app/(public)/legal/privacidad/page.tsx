@@ -36,7 +36,7 @@ export default function PrivacyPage() {
                     Política de Privacidad y Protección de Datos
                 </h1>
                 <p className="text-default-500 text-sm">
-                    Última actualización: 8 de septiembre de 2026 · Conforme a la Ley N° 29733 (Perú) y estándares internacionales
+                    Última actualización: 6 de noviembre de 2026 · Conforme a la Ley N° 29733 (Perú) y estándares internacionales
                 </p>
             </header>
 
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
                     El tratamiento de datos personales en {SITE_NAME} se realiza en estricto cumplimiento de la{" "}
                     <strong className="text-foreground">Ley N° 29733 (Ley de Protección de Datos Personales de la República del Perú)</strong>,
                     su Reglamento aprobado por <strong className="text-foreground">Decreto Supremo N° 003-2013-JUS</strong>, y las directivas
-                    emitidas por la Autoridad Nacional de Protección de Datos Personales (ANPDP).
+                    emitidas por la Autoridad Nacional de Protección de Datos Personales (ANPD).
                 </p>
             </Section>
 
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
                     <li>Permitir la publicación de perfiles artísticos, cotización y contratación de servicios musicales.</li>
                     <li>Procesar las reservas, formalizar contratos de prestación de servicios con firma electrónica y gestionar pagos y desembolsos.</li>
                     <li>Garantizar la seguridad de la plataforma, prevenir fraudes, usurpación de identidad y actividades ilícitas.</li>
-                    <li>Remitir notificaciones transaccionales y operativas (confirmación de reserva, recordatorios de show, avisos de pago) mediante correo electrónico o mensajería.</li>
+                    <li>Remitir notificaciones transaccionales y operativas (confirmación de reserva, avisos de pago y de cambios en tu reserva) mediante correo electrónico o mensajería.</li>
                     <li>Atender solicitudes, reclamos, quejas o disputas mediante nuestro centro de soporte y mediación.</li>
                     <li>Cumplir con mandatos judiciales, normativas tributarias (SUNAT) y demás obligaciones legales aplicables en el Perú.</li>
                 </ul>
@@ -149,13 +149,12 @@ export default function PrivacyPage() {
 
             <Section id="cookies" title="6. Cookies y Almacenamiento de Sesión">
                 <p>
-                    {SITE_NAME} utiliza únicamente cookies técnicas y de seguridad indispensables para el funcionamiento y la integridad del servicio:
+                    {SITE_NAME} utiliza cookies técnicas y de seguridad indispensables para el funcionamiento y la integridad del servicio:
                 </p>
                 <ul className="list-disc pl-5 flex flex-col gap-1.5">
                     <li>
-                        <code className="px-1.5 py-0.5 rounded bg-default-100 text-foreground text-xs">access_token</code> y{" "}
-                        <code className="px-1.5 py-0.5 rounded bg-default-100 text-foreground text-xs">refresh_token</code>:
-                        cookies protegidas con atributos HTTP-Only, Secure y SameSite para mantener tu sesión autenticada sin exposición a ataques XSS.
+                        <code className="px-1.5 py-0.5 rounded bg-default-100 text-foreground text-xs">access_token</code>:
+                        cookie protegida con atributos HTTP-Only, Secure y SameSite para mantener tu sesión autenticada sin exposición a ataques XSS.
                     </li>
                     <li>
                         <code className="px-1.5 py-0.5 rounded bg-default-100 text-foreground text-xs">oauth_pending</code>:
@@ -163,7 +162,13 @@ export default function PrivacyPage() {
                     </li>
                 </ul>
                 <p>
-                    No empleamos cookies de rastreo publicitario de terceros ni vendemos hábitos de navegación a anunciantes.
+                    <strong className="text-foreground">Analítica (opcional):</strong> solo si aceptas el aviso de cookies, cargamos{" "}
+                    <strong className="text-foreground">Google Analytics</strong> para medir cómo se usa el sitio (páginas visitadas, tipo de dispositivo
+                    y origen de la visita). Si eliges &quot;Solo esenciales&quot;, no se carga. Tu decisión se guarda en el almacenamiento local de tu
+                    navegador y puedes cambiarla borrando los datos del sitio para que el aviso vuelva a aparecer.
+                </p>
+                <p>
+                    No usamos cookies publicitarias ni vendemos hábitos de navegación a anunciantes.
                 </p>
             </Section>
 
@@ -207,7 +212,7 @@ export default function PrivacyPage() {
                 <p>
                     Para ejercer tus derechos ARCO, puedes presentar una solicitud a través del módulo de{" "}
                     <strong className="text-foreground">Ayuda y Soporte</strong> dentro de la plataforma o escribiendo al correo electrónico{" "}
-                    <strong className="text-foreground">privacidad@chiv.app</strong>, adjuntando una copia o escaneo de tu documento de identidad (DNI o Pasaporte) para validar tu titularidad.
+                    <strong className="text-foreground">soporte@chiv.app</strong>, adjuntando una copia o escaneo de tu documento de identidad (DNI o Pasaporte) para validar tu titularidad.
                     Tus solicitudes serán atendidas dentro de los plazos fijados por ley (hasta 20 días hábiles para el derecho de acceso y hasta 10 días hábiles para rectificación, cancelación u oposición).
                 </p>
             </Section>
@@ -228,7 +233,7 @@ export default function PrivacyPage() {
                 <p>
                     Para cualquier consulta sobre el tratamiento de tus datos personales, puedes contactarnos a través del botón de{" "}
                     <span className="text-foreground font-semibold">ayuda y comentarios</span> en la app o enviando un mensaje a{" "}
-                    <span className="text-foreground font-semibold">privacidad@chiv.app</span>.
+                    <span className="text-foreground font-semibold">soporte@chiv.app</span>.
                 </p>
             </Section>
         </div>

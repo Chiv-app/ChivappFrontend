@@ -5,14 +5,10 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
     accepted: "Tienes una cotización para revisar",
     contract_pending: "Acuerdo listo para firmar",
     contract_signed: "Listo para pagar",
-    payment_pending: "Verificando pago",
     payment_retained: "Reserva confirmada",
     change_pending: "Cambio por confirmar",
-    // Legacy (flujo anticipo/saldo, ya inalcanzable): se muestran como confirmadas.
-    balance_pending: "Reserva confirmada",
-    balance_review: "Reserva confirmada",
     in_progress: "Evento en curso",
-    payment_released: "Pago liberado",
+    payment_released: "Pagado al artista",
     completed: "Evento finalizado",
     cancelled: "Cancelada",
 };
@@ -22,13 +18,10 @@ export const MUSICIAN_BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
     accepted: "Cotización enviada",
     contract_pending: "Esperando firma del cliente",
     contract_signed: "Contrato firmado (esperando pago)",
-    payment_pending: "Pago en verificación",
     payment_retained: "Reserva confirmada",
     change_pending: "Cambio por confirmar",
-    balance_pending: "Reserva confirmada",
-    balance_review: "Reserva confirmada",
     in_progress: "Show en curso",
-    payment_released: "Cobro liberado",
+    payment_released: "Cobro pagado",
     completed: "Evento finalizado",
     cancelled: "Cancelada",
 };
@@ -44,43 +37,33 @@ export function getBookingStatusLabel(
 }
 
 export const BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
-    requested: "Si no responde en 24 h te sugeriremos artistas alternativos disponibles.",
-    accepted: "El artista envió su propuesta: revisa el precio acordado y acéptala o recházala.",
+    requested: "Espera la cotización del artista. Si tarda, puedes pedir cotización a otros artistas.",
+    accepted: "El artista envió su cotización: revisa el precio y acéptala o recházala.",
     contract_pending: "Elige repertorio, firma digitalmente el contrato y pasa al pago protegido.",
     contract_signed: "Contrato firmado — realiza el pago protegido con Mercado Pago para confirmar tu fecha.",
-    payment_pending: "Mercado Pago está procesando tu pago. Te avisaremos en cuanto quede acreditado.",
     payment_retained:
         "¡Fecha bloqueada! Tu pago está protegido. Chatea con el músico y sigue el GPS el día del evento.",
     change_pending:
         "Hay una solicitud de cambio de datos del evento pendiente de respuesta.",
-    balance_pending:
-        "¡Fecha bloqueada! Tu pago está protegido. Chatea con el músico y sigue el GPS el día del evento.",
-    balance_review:
-        "¡Fecha bloqueada! Tu pago está protegido. Chatea con el músico y sigue el GPS el día del evento.",
     in_progress:
         "Presentación en marcha — al terminar deja tu reseña final del show.",
-    payment_released: "Los pagos fueron liberados al músico.",
+    payment_released: "El pago ya fue entregado al artista.",
     completed: "Contratación completada con éxito.",
     cancelled: "Esta reserva fue cancelada.",
 };
 
 export const MUSICIAN_BOOKING_STATUS_HINTS: Record<BookingStatus, string> = {
-    requested: "Envía tu cotización o descarta la solicitud (tienes hasta 72 h para responder).",
-    accepted: "Esperando respuesta del cliente a tu propuesta.",
+    requested: "Envía tu cotización o descarta la solicitud.",
+    accepted: "Esperando respuesta del cliente a tu cotización.",
     contract_pending: "El cliente aceptó tu cotización y está revisando el contrato para firmarlo.",
     contract_signed: "El cliente ya firmó el acuerdo; falta acreditar el pago en Mercado Pago.",
-    payment_pending: "Mercado Pago está validando el pago del cliente.",
     payment_retained:
         "Pago asegurado por Chivapp (recibes el 100 % de tu tarifa). Coordina detalles y prepárate para el show.",
     change_pending:
         "Revisa y acepta o rechaza el cambio propuesto en el evento.",
-    balance_pending:
-        "Pago asegurado por Chivapp (recibes el 100 % de tu tarifa). Coordina detalles y prepárate para el show.",
-    balance_review:
-        "Pago asegurado por Chivapp (recibes el 100 % de tu tarifa). Coordina detalles y prepárate para el show.",
     in_progress:
         "Presentación activa — al terminar califica al contratista para habilitar tu retiro.",
-    payment_released: "El pago del evento fue liberado a tu cuenta configurada.",
+    payment_released: "El pago del evento fue enviado a tu cuenta configurada.",
     completed: "Evento cerrado — recibes el 100 % de tu tarifa acordada.",
     cancelled: "Esta reserva fue cancelada.",
 };
@@ -103,11 +86,8 @@ export const BOOKING_STATUS_COLORS: Record<
     accepted: "primary",
     contract_pending: "secondary",
     contract_signed: "secondary",
-    payment_pending: "warning",
     payment_retained: "success",
     change_pending: "warning",
-    balance_pending: "success",
-    balance_review: "success",
     in_progress: "primary",
     payment_released: "success",
     completed: "success",
@@ -130,11 +110,7 @@ export function getBookingStatusTone(status: BookingStatus): BookingStatusTone {
         case "payment_released":
             return "done";
         case "payment_retained":
-        // Legacy (inalcanzables): equivalen a una reserva confirmada.
-        case "balance_pending":
-        case "balance_review":
             return "confirmed";
-        case "payment_pending":
         case "change_pending":
             return "action";
         default:
@@ -184,9 +160,6 @@ export function getBookingStatusChipVariant(
 export const CONFIRMED_BOOKING_STATUSES: BookingStatus[] = [
     "payment_retained",
     "change_pending",
-    // Legacy (inalcanzables): equivalen a una reserva confirmada.
-    "balance_pending",
-    "balance_review",
     "in_progress",
     "payment_released",
     "completed",
@@ -202,12 +175,8 @@ export const CANCELLABLE_BOOKING_STATUSES: BookingStatus[] = [
     "accepted",
     "contract_pending",
     "contract_signed",
-    "payment_pending",
     "payment_retained",
     "change_pending",
-    // Legacy (inalcanzables): equivalen a una reserva confirmada.
-    "balance_pending",
-    "balance_review",
 ];
 
 export function isCancellableBookingStatus(status: BookingStatus): boolean {
@@ -273,8 +242,8 @@ export function isEventUpcoming(eventDate: string, startTime: string): boolean {
 
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
     initiated: "Iniciado",
-    retained: "Retenido",
-    released: "Liberado",
+    retained: "Pago protegido",
+    released: "Pagado al artista",
     failed: "Fallido",
     refunded: "Reembolsado",
     rejected: "Rechazado",

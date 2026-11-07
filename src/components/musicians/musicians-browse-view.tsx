@@ -8,6 +8,8 @@ import EmptyMusiciansState from "@/components/musicians/empty-musicians-state";
 import MasonryItem from "@/components/ui/masonry-item";
 import { todayPeruIso } from "@/lib/date-utils";
 import { searchMusicians } from "@/lib/musicians";
+import { MULTI_QUOTE_MAX, MULTI_QUOTE_MIN, MULTI_QUOTE_NAME } from "@/lib/multi-quote";
+import { MultiQuoteBar, SelectableCard } from "@/components/musicians/multi-quote-selection";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
 
 const PAGE_SIZE = 20;
@@ -141,6 +143,25 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
     );
 
     const sentinelRef = useRef<HTMLDivElement | null>(null);
+    const [multiMode, setMultiMode] = useState(false);
+    const [selected, setSelected] = useState<Array<{ id: string; name: string }>>([]);
+
+    const toggleSelected = useCallback((musician: MusicianCardModel) => {
+        setSelected((current) => {
+            if (current.some((item) => item.id === musician.id)) {
+                return current.filter((item) => item.id !== musician.id);
+            }
+            if (current.length >= MULTI_QUOTE_MAX) return current;
+            return [...current, { id: musician.id, name: musician.name }];
+        });
+    }, []);
+
+    const toggleMultiMode = useCallback(() => {
+        setMultiMode((current) => {
+            if (current) setSelected([]);
+            return !current;
+        });
+    }, []);
     const requestIdRef = useRef(0);
     const isFirstRender = useRef(true);
 
@@ -421,12 +442,42 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                     </div>
                 ) : (
                     <>
+                        <div className="flex flex-col gap-3 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-default-600 text-pretty">
+                                {multiMode
+                                    ? `${MULTI_QUOTE_NAME}: elige entre ${MULTI_QUOTE_MIN} y ${MULTI_QUOTE_MAX} artistas, completa los datos de tu evento una sola vez y compara sus cotizaciones.`
+                                    : "¿Quieres comparar precios? Pide cotización a varios artistas a la vez."}
+                            </p>
+                            <Button
+                                variant={multiMode ? "solid" : "bordered"}
+                                color="primary"
+                                radius="full"
+                                className="shrink-0 font-semibold"
+                                aria-pressed={multiMode}
+                                startContent={<Icon icon="material-symbols:checklist" width={20} />}
+                                onPress={toggleMultiMode}
+                            >
+                                {multiMode ? "Salir de cotización múltiple" : MULTI_QUOTE_NAME}
+                            </Button>
+                        </div>
+
                         <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7 lg:gap-8 grid-flow-dense auto-rows-[10px]">
-                            {musicians.map((m, i) => (
-                                <MasonryItem key={m.id} index={i}>
-                                    <MusicianCard musician={m} index={i} priority={i < 3} />
-                                </MasonryItem>
-                            ))}
+                            {musicians.map((m, i) => {
+                                const isSelected = selected.some((item) => item.id === m.id);
+                                return (
+                                    <MasonryItem key={m.id} index={i}>
+                                        <SelectableCard
+                                            enabled={multiMode}
+                                            selected={isSelected}
+                                            blocked={!isSelected && selected.length >= MULTI_QUOTE_MAX}
+                                            name={m.name}
+                                            onToggle={() => toggleSelected(m)}
+                                        >
+                                            <MusicianCard musician={m} index={i} priority={i < 3} />
+                                        </SelectableCard>
+                                    </MasonryItem>
+                                );
+                            })}
                         </div>
 
                         <div ref={sentinelRef} className="h-px w-full" aria-hidden />
@@ -456,6 +507,13 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                     </>
                 )}
             </div>
+
+            {multiMode ? (
+                <>
+                    <div aria-hidden className="h-28" />
+                    <MultiQuoteBar selected={selected} onClear={() => setSelected([])} />
+                </>
+            ) : null}
         </div>
     );
 }

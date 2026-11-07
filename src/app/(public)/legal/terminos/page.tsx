@@ -41,7 +41,7 @@ export default async function TermsPage() {
                     Términos y condiciones de uso
                 </h1>
                 <p className="text-default-500 text-sm">
-                    Última actualización: 8 de septiembre de 2026 · Legislación de la República del Perú
+                    Última actualización: 6 de noviembre de 2026 · Legislación de la República del Perú
                 </p>
             </header>
 
@@ -111,7 +111,7 @@ export default async function TermsPage() {
                         términos y condiciones de la pasarela de pagos. {SITE_NAME} no almacena datos confidenciales de tarjetas (PCI-DSS).
                     </li>
                     <li>
-                        <strong className="text-foreground">Fondos retenidos en custodia (Escrow):</strong>{" "}
+                        <strong className="text-foreground">Pago protegido (fondos en custodia):</strong>{" "}
                         Para protección del contratista y garantía del músico, el contratista paga el 100 % del show en un único pago a través
                         de Mercado Pago al confirmar la reserva; no existen pagos posteriores. Dicho pago es retenido en custodia
                         por {SITE_NAME} hasta la fecha y hora de culminación del evento. Si la reserva se cancela, el reembolso se rige por la{" "}
@@ -186,11 +186,12 @@ export default async function TermsPage() {
                 </p>
             </Section>
 
-            <Section title="10. Protección al consumidor y Libro de Reclamaciones (Ley N° 29571)">
+            <Section title="10. Protección al consumidor (Ley N° 29571)">
                 <p>
                     En cumplimiento de la <strong className="text-foreground">Ley N° 29571 (Código de Protección y Defensa del Consumidor de la República del Perú)</strong>,
-                    {SITE_NAME} garantiza los derechos de los usuarios y pone a disposición su sistema de atención de consultas, solicitudes y Libro de Reclamaciones Virtual
-                    para asentar cualquier queja o reclamo formal sobre el servicio de intermediación provisto.
+                    {SITE_NAME} garantiza los derechos de los usuarios y atiende consultas, solicitudes, quejas y reclamos sobre el servicio de
+                    intermediación a través del módulo de ayuda y comentarios de la aplicación o escribiendo a{" "}
+                    <span className="text-foreground font-semibold">soporte@chiv.app</span>.
                 </p>
             </Section>
 
@@ -208,7 +209,7 @@ export default async function TermsPage() {
                 <p>
                     Para consultas, dudas sobre estos términos o requerimientos de asistencia, puedes comunicarte a través del módulo de{" "}
                     <span className="text-foreground font-semibold">ayuda y comentarios</span> en la aplicación o escribiéndonos directamente a{" "}
-                    <span className="text-foreground font-semibold">contacto@chiv.app</span>.
+                    <span className="text-foreground font-semibold">soporte@chiv.app</span>.
                 </p>
             </Section>
         </div>

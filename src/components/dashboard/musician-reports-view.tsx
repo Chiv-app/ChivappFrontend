@@ -354,9 +354,9 @@ export default function MusicianReportsView() {
                                 hint: "Precio acordado del periodo",
                             },
                             {
-                                label: "Liberado",
+                                label: "Cobrado",
                                 value: formatCurrency(data.revenue_released),
-                                hint: "Tu porción liberada",
+                                hint: "Tu parte ya cobrada",
                             },
                             {
                                 label: "Pagado a integrantes",
@@ -428,7 +428,7 @@ export default function MusicianReportsView() {
                                 <div
                                     className="h-72"
                                     role="img"
-                                    aria-label="Gráfico de barras de reservas, monto cotizado y monto liberado por periodo"
+                                    aria-label="Gráfico de barras de reservas, monto cotizado y monto cobrado por periodo"
                                 >
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={data.series}>
@@ -454,7 +454,7 @@ export default function MusicianReportsView() {
                                             />
                                             <Bar
                                                 dataKey="released"
-                                                name="Liberado (S/)"
+                                                name="Cobrado (S/)"
                                                 fill="#059669"
                                                 radius={[6, 6, 0, 0]}
                                             />
@@ -472,7 +472,7 @@ export default function MusicianReportsView() {
                                 <div
                                     className="h-72"
                                     role="img"
-                                    aria-label="Gráfico de barras de pagos a integrantes y monto retenido por periodo"
+                                    aria-label="Gráfico de barras de pagos a integrantes y monto por cobrar por periodo"
                                 >
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={data.series}>
@@ -492,7 +492,7 @@ export default function MusicianReportsView() {
                                             />
                                             <Bar
                                                 dataKey="retained"
-                                                name="Retenido (S/)"
+                                                name="Por cobrar (S/)"
                                                 fill="#0891b2"
                                                 radius={[6, 6, 0, 0]}
                                             />
@@ -778,7 +778,7 @@ export default function MusicianReportsView() {
                                                 <th scope="col" className="py-2 pr-3 font-medium">Fecha</th>
                                                 <th scope="col" className="py-2 pr-3 font-medium">Estado</th>
                                                 <th scope="col" className="py-2 pr-3 font-medium">Precio</th>
-                                                <th scope="col" className="py-2 pr-3 font-medium">Liberado</th>
+                                                <th scope="col" className="py-2 pr-3 font-medium">Cobrado</th>
                                                 <th scope="col" className="py-2 font-medium">Acción</th>
                                             </tr>
                                         </thead>

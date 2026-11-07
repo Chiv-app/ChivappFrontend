@@ -12,7 +12,6 @@ import BookingContractorActions from "@/components/booking/booking-contractor-ac
 import BookingDocumentsCard from "@/components/booking/booking-documents-card";
 import BookingEditCommitmentModal from "@/components/booking/booking-edit-commitment-modal";
 import BookingMemberInviteCard from "@/components/booking/booking-member-invite-card";
-import BookingPaymentStatusCard from "@/components/booking/booking-payment-status-card";
 import BookingPendingChangesModal from "@/components/booking/booking-pending-changes-modal";
 import BookingCalendarSyncModal from "@/components/booking/booking-calendar-sync-modal";
 import BookingQuoteForm from "@/components/booking/booking-quote-form";
@@ -51,8 +50,8 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     const searchParams = useSearchParams();
     const router = useRouter();
-    // Retorno desde Mercado Pago con pago pendiente: activa el sondeo aunque la
-    // reserva aún no figure en payment_pending.
+    // Retorno desde Mercado Pago con pago pendiente: activa el sondeo mientras la reserva
+    // aún no figura como pagada.
     const [mpPendingReturn, setMpPendingReturn] = useState(() => {
         const status =
             searchParams.get("mp_status") ||
@@ -151,7 +150,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
                             addToast({
                                 title: "¡Pago completado con éxito!",
                                 description:
-                                    "Tu pago con Mercado Pago fue confirmado y retenido de forma segura.",
+                                    "Tu pago con Mercado Pago fue confirmado y protegido hasta tu evento.",
                                 color: "success",
                             });
                         } else {
@@ -229,7 +228,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
         addToast({
             title: "¡Pago completado con éxito!",
             description:
-                "Tu pago con Mercado Pago fue confirmado y retenido de forma segura.",
+                "Tu pago con Mercado Pago fue confirmado y protegido hasta tu evento.",
             color: "success",
         });
     }, [reloadBookingSilently]);
@@ -265,10 +264,9 @@ export default function BookingDetailView({ bookingId, role }: Props) {
             role === "contractor" &&
             booking != null &&
             booking.viewer_role !== "member" &&
-            (booking.status === "payment_pending" ||
-                (mpPendingReturn &&
-                    (booking.status === "contract_pending" ||
-                        booking.status === "contract_signed"))),
+            mpPendingReturn &&
+            (booking.status === "contract_pending" ||
+                booking.status === "contract_signed"),
         onApproved: handlePollApproved,
         onRejected: handlePollRejected,
         onTimeout: handlePollTimeout,
@@ -478,22 +476,6 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
                     {!isMemberView ? (
                         <CancellationRefundNotice booking={booking} />
-                    ) : null}
-
-                    {!isMemberView &&
-                    role === "musician" &&
-                    booking.status === "payment_pending" ? (
-                        <div className="flex flex-col gap-4">
-                            <BookingPaymentStatusCard booking={booking} />
-                            <Button 
-                                color="primary" 
-                                variant="flat" 
-                                startContent={<Icon icon="lucide:link" width={18} />}
-                                onPress={handleCopyPaymentLink}
-                            >
-                                Copiar link de pago para el cliente
-                            </Button>
-                        </div>
                     ) : null}
 
                     {!isMemberView && role === "contractor" && !confirmed ? (

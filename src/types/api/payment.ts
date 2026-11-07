@@ -227,6 +227,10 @@ export type AdminSettlementOut = {
     payout_reference?: string | null;
     payout_evidence_url?: string | null;
     payout_notes?: string | null;
+    /** Deuda del músico por contracargos posteriores a una liberación (se descuenta sola). */
+    musician_chargeback_debt?: number;
+    /** Lo que realmente debe transferirse al músico tras descontar la deuda. */
+    musician_net_payable?: number;
 };
 
 

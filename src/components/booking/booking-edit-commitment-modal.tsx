@@ -235,7 +235,7 @@ export default function BookingEditCommitmentModal({
                                     description={
                                         isMusician
                                             ? "Información adicional para el contratista."
-                                            : "Mensaje que verá el músico al revisar tu propuesta."
+                                            : "Mensaje que verá el músico al revisar tu solicitud de cambio."
                                     }
                                 />
                             </form>

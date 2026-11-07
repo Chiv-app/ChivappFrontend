@@ -987,7 +987,7 @@ export default function MusicianProfileWizard() {
                                         icon="material-symbols:account-balance-wallet"
                                         className="text-primary text-xl"
                                     />
-                                    Datos para recibir tus pagos (Desembolsos)
+                                    Datos para recibir tus pagos
                                 </h3>
                                 <p className="text-sm text-default-500">
                                     Configura la cuenta donde Chivapp te transferirá el dinero de tus presentaciones una vez finalizado el evento. Esta información es confidencial.

@@ -37,8 +37,8 @@ const STEP_COPY: Record<
     },
     quote: {
         title: "Cotización y acuerdo",
-        description: "Revisión de propuesta económica, repertorio y firma del contrato.",
-        musician: "Propuesta enviada; esperando aceptación y firma del cliente.",
+        description: "Revisión de la cotización, repertorio y firma del contrato.",
+        musician: "Cotización enviada; esperando aceptación y firma del cliente.",
         contractor: "Revisa el monto propuesto, elige repertorio y firma el contrato.",
     },
     payment: {
@@ -69,13 +69,9 @@ function statusToStepIndex(status: BookingStatus): number {
         case "contract_pending":
             return 1;
         case "contract_signed":
-        case "payment_pending":
             return 2;
         case "payment_retained":
         case "change_pending":
-        // Legacy (inalcanzables): equivalen a una reserva confirmada.
-        case "balance_pending":
-        case "balance_review":
             return 3;
         case "in_progress":
         case "payment_released":
@@ -86,6 +82,28 @@ function statusToStepIndex(status: BookingStatus): number {
         default:
             return 0;
     }
+}
+
+/**
+ * Etapa visible (1 a 5) de una reserva, para listas y paneles. Las mismas 5 etapas de la línea
+ * de tiempo del detalle; las canceladas no tienen etapa.
+ */
+export function getBookingStage(status: BookingStatus): {
+    index: number;
+    total: number;
+    title: string;
+    cancelled: boolean;
+} {
+    const stepIndex = statusToStepIndex(status);
+    if (stepIndex < 0) {
+        return { index: 0, total: MAIN_FLOW.length, title: "Cancelada", cancelled: true };
+    }
+    return {
+        index: stepIndex + 1,
+        total: MAIN_FLOW.length,
+        title: STEP_COPY[MAIN_FLOW[stepIndex]].title,
+        cancelled: false,
+    };
 }
 
 export function buildBookingTimeline(
@@ -142,8 +160,8 @@ export function buildBookingTimeline(
     if (status === "accepted" && steps[1]) {
         steps[1].actorHint =
             role === "musician"
-                ? "Esperando respuesta del cliente a tu propuesta."
-                : "El artista envió su propuesta: acéptala o recházala.";
+                ? "Esperando respuesta del cliente a tu cotización."
+                : "El artista envió su cotización: acéptala o recházala.";
     }
     if (status === "contract_pending" && steps[1]) {
         steps[1].actorHint =
@@ -157,13 +175,6 @@ export function buildBookingTimeline(
             role === "musician"
                 ? "El cliente ya firmó el acuerdo; falta acreditar el pago."
                 : "Contrato firmado — realiza el pago protegido con Mercado Pago.";
-    }
-    if (status === "payment_pending" && steps[2]) {
-        steps[2].actorHint =
-            role === "musician"
-                ? "Mercado Pago está validando el pago del cliente."
-                : "Mercado Pago está procesando tu pago.";
-        steps[2].description = "Verificación de pago en curso con Mercado Pago.";
     }
     if (status === "change_pending" && steps[3]) {
         steps[3].actorHint =
@@ -191,7 +202,7 @@ export function buildBookingTimeline(
         steps[4].description = "Contratación cerrada. Esta reserva quedó finalizada.";
         steps[4].actorHint =
             role === "musician"
-                ? "Evento cerrado — cobro listo para desembolso."
+                ? "Evento cerrado — cobro listo para pagarse."
                 : "Contratación completada con éxito.";
     }
 

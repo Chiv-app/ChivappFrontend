@@ -1693,7 +1693,7 @@ export default function CheckoutClient({
                             <strong className="text-foreground">
                               {formatCurrency(totalPayable)}
                             </strong>{" "}
-                            fue procesado y permanece en custodia segura de
+                            fue procesado y permanece protegido por
                             Chivapp hasta que finalice tu presentación con{" "}
                             <strong className="text-foreground">
                               {linkData.musician.stage_name}
@@ -1838,7 +1838,7 @@ export default function CheckoutClient({
                         Política de cancelación y protección del pago
                       </p>
                       <p>
-                        Tu pago queda en custodia de Chivapp hasta finalizar el
+                        Tu pago queda protegido por Chivapp hasta finalizar el
                         evento. Si cancelas con{" "}
                         {linkData.cancellation_policy?.full_refund_min_days ?? 15}{" "}
                         días calendario o más de anticipación recibes el 100% de

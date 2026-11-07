@@ -29,7 +29,7 @@ function paymentStatusLabel(status: PaymentOut["status"]): string {
         case "retained":
             return "Validado";
         case "released":
-            return "Liberado";
+            return "Pagado";
         case "refunded":
             return "Reembolsado";
         case "failed":

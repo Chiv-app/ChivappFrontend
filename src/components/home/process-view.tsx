@@ -10,7 +10,7 @@ const steps = [
     },
     {
         title: "Cotiza",
-        description: "Pide cotizaciones a múltiples artistas al mismo tiempo, sin compromisos.",
+        description: "Pide cotización a un artista, o a hasta 5 a la vez con la Cotización múltiple, sin compromisos.",
         icon: "📝",
     },
     {

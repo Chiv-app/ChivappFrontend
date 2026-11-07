@@ -219,7 +219,7 @@ export default function BookingContractConfirmCard({
                                 : "—"}
                         </p>
                         <p className="text-xs text-default-500 mt-1">
-                            Custodiado por Chivapp hasta finalizar tu evento
+                            Protegido por Chivapp hasta finalizar tu evento
                         </p>
                     </div>
                 </div>

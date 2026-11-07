@@ -41,9 +41,9 @@ export const WIZARD_STEPS: WizardStepDef[] = [
         key: "location_pricing",
         title: "Ubicación y tarifas",
         shortTitle: "Tarifas",
-        description: "Define dónde trabajas y cuánto cobras para que te encuentren fácilmente.",
+        description: "Indica tu ciudad y cuánto cobras (obligatorio para aparecer en las búsquedas). El distrito es opcional.",
         icon: "material-symbols:payments",
-        required: false,
+        required: true,
     },
     {
         key: "repertoire",

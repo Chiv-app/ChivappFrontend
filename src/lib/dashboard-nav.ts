@@ -217,7 +217,7 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/earnings",
         title: "Mis cobros",
-        description: "Controla lo cotizado, retenido y liberado de tus eventos.",
+        description: "Controla lo cotizado, por cobrar y cobrado de tus eventos.",
         icon: "material-symbols:payments",
         requiresVerification: true,
     },

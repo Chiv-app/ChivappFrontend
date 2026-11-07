@@ -54,7 +54,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                         Construido para tu tranquilidad
                     </h2>
                     <p className="text-default-500 text-lg md:text-xl text-pretty">
-                        La única plataforma que te protege y te acompaña desde la primera cotización hasta el aplauso final.
+                        Te acompañamos desde la primera cotización hasta el aplauso final, con contrato digital y pago protegido.
                     </p>
                 </motion.div>
 
@@ -134,7 +134,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                             Cotizaciones al instante
                         </h3>
                         <p className="text-default-500 mb-8 text-pretty">
-                            Compara propuestas de múltiples agrupaciones sin llamadas incómodas.
+                            Compara cotizaciones de múltiples agrupaciones sin llamadas incómodas.
                         </p>
 
                         <div
@@ -142,13 +142,13 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                             className="flex flex-wrap gap-2 sm:gap-3 mt-auto relative z-10"
                         >
                             <div className="px-4 py-2 bg-background border border-default-200 rounded-full text-sm font-semibold shadow-sm text-default-500">
-                                Propuesta A
+                                Cotización A
                             </div>
                             <div className="px-4 py-2 bg-foreground text-background border border-foreground rounded-full text-sm font-bold shadow-md sm:scale-105 origin-left">
-                                Propuesta elegida
+                                Cotización elegida
                             </div>
                             <div className="px-4 py-2 bg-background border border-default-200 rounded-full text-sm font-semibold shadow-sm text-default-500">
-                                Propuesta B
+                                Cotización B
                             </div>
                         </div>
                     </motion.div>
@@ -165,25 +165,27 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                         onBlurCapture={() => setIsPaused(false)}
                         className="md:col-span-7 bg-content1 border border-default-200/70 rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between overflow-hidden group hover:shadow-xl hover:border-default-300 transition-all shadow-soft"
                     >
-                        <div
-                            {...(averageReviewRating
-                                ? {
-                                      role: "img",
-                                      "aria-label": `Calificación promedio de ${averageReviewRating} estrellas en reseñas recientes`,
-                                  }
-                                : { "aria-hidden": "true" })}
-                            className="flex items-center gap-1 mb-6"
-                        >
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <span
-                                    key={i}
-                                    aria-hidden="true"
-                                    className="text-xl sm:text-2xl text-warning"
-                                >
-                                    ⭐
-                                </span>
-                            ))}
-                        </div>
+                        {averageReviewRating ? (
+                            <div
+                                role="img"
+                                aria-label={`Calificación promedio de ${averageReviewRating} estrellas en reseñas recientes`}
+                                className="flex items-center gap-1 mb-6"
+                            >
+                                {[1, 2, 3, 4, 5].map((i) => (
+                                    <span
+                                        key={i}
+                                        aria-hidden="true"
+                                        className={`text-xl sm:text-2xl ${
+                                            i <= Math.round(Number(averageReviewRating))
+                                                ? "text-warning"
+                                                : "text-default-300"
+                                        }`}
+                                    >
+                                        ★
+                                    </span>
+                                ))}
+                            </div>
+                        ) : null}
                         <h3 className="text-2xl md:text-3xl font-bold mb-3 tracking-tight text-foreground">
                             Reseñas verificadas
                         </h3>
@@ -290,7 +292,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-sm font-semibold text-foreground">
-                                            Calificaciones 100% verificadas tras cada presentación
+                                            Calificaciones de contratistas que completaron un evento en Chivapp
                                         </p>
                                         <p className="text-xs sm:text-sm text-default-500 mt-0.5">
                                             Revisa las opiniones reales en el perfil de cada agrupación.

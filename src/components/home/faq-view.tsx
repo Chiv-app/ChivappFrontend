@@ -16,7 +16,7 @@ function buildFaqs(cancelAnswer: string) {
         {
             key: "respuesta",
             question: "¿Qué pasa si el músico no responde a mi solicitud?",
-            answer: "Si un artista no responde dentro de las primeras 24 horas, te avisamos automáticamente y te sugerimos hasta 3 agrupaciones verificadas disponibles en tu ciudad. También puedes cotizar con varios artistas a la vez sin compromiso.",
+            answer: "Si un artista tarda en responder, no pierdes nada: puedes pedir cotización a otros artistas desde el listado. Con la opción de cotización múltiple puedes pedir cotización a varios artistas a la vez y comparar sus respuestas sin compromiso.",
         },
         {
             key: "comision",
@@ -36,7 +36,7 @@ function buildFaqs(cancelAnswer: string) {
         {
             key: "cotizar",
             question: "¿Cómo cotizo sin compromiso?",
-            answer: "Simplemente navega por la lista de artistas, selecciona los que te gusten y presiona 'Pedir cotización'. Ingresa los detalles de tu evento una sola vez, y los artistas te enviarán sus propuestas de precio. Es totalmente gratis.",
+            answer: "Navega por la lista de artistas y presiona 'Pedir cotización' en el que te guste. Si quieres comparar precios, usa 'Cotización múltiple' en el listado: eliges hasta 5 artistas, ingresas los detalles de tu evento una sola vez y cada uno te envía su cotización. Es totalmente gratis.",
         },
         {
             key: "verificado",

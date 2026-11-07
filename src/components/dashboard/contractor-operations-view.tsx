@@ -205,7 +205,7 @@ export default function ContractorOperationsView() {
             bg: "bg-primary/10",
         },
         {
-            label: "Retenido",
+            label: "Protegido",
             value: summary.total_retained,
             hint: "En garantía (bruto)",
             icon: "material-symbols:lock",
