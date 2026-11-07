@@ -17,6 +17,22 @@ vi.mock("next/image", () => ({
   },
 }));
 
+// @iconify/react carga los iconos con temporizadores asíncronos; si uno vence cuando jsdom ya se
+// cerró lanza "window is not defined" y hace fallar toda la corrida (visto en CI). En pruebas el
+// icono se reemplaza por un <span> inerte.
+vi.mock("@iconify/react", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@iconify/react")>();
+  return {
+    ...original,
+    Icon: (props: Record<string, unknown>) =>
+      React.createElement("span", {
+        "data-icon": typeof props.icon === "string" ? props.icon : undefined,
+        "aria-hidden": "true",
+        className: typeof props.className === "string" ? props.className : undefined,
+      }),
+  };
+});
+
 // jsdom no implementa matchMedia; lo necesitan next-themes y otros hooks de UI.
 if (!window.matchMedia) {
   window.matchMedia = (query: string) =>
