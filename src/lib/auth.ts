@@ -191,17 +191,3 @@ export async function loginOtp(email: string, otp: string): Promise<UserOut> {
     }
     return user;
 }
-
-export async function sendEmailVerificationCode() {
-    return apiFetch<{ message: string; email_verified: boolean }>(
-        "/auth/email-verification/send-code",
-        { method: "POST" },
-    );
-}
-
-export async function confirmEmailVerificationCode(otp: string) {
-    return apiFetch<{ message: string; email_verified: boolean }>(
-        "/auth/email-verification/confirm",
-        { method: "POST", body: JSON.stringify({ otp }) },
-    );
-}

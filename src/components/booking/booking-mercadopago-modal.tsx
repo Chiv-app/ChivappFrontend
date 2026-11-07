@@ -17,7 +17,6 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import EmailVerificationModal from "@/components/auth/email-verification-modal";
 import { useAuth } from "@/contexts/auth-context";
 import { useMercadoPago } from "@/hooks/use-mercadopago";
 import { ApiError } from "@/lib/api";
@@ -124,8 +123,7 @@ export default function BookingMercadoPagoModal({
     onSuccess,
     onPendingChange,
 }: Props) {
-    const { user, refresh: refreshAuth } = useAuth();
-    const [isVerifyEmailOpen, setIsVerifyEmailOpen] = useState(false);
+    const { user } = useAuth();
     const { isLoaded, loadError, createYapeToken, renderPaymentBrick, getDeviceSessionId } = useMercadoPago();
 
     const [selectedTab, setSelectedTab] = useState<string>("yape");
@@ -626,7 +624,6 @@ export default function BookingMercadoPagoModal({
     const paymentLabel = "Pago único";
 
     return (
-        <>
         <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onClose={() => {
@@ -693,17 +690,6 @@ export default function BookingMercadoPagoModal({
                                     <div>
                                         <p className="font-semibold">No pudimos procesar el pago</p>
                                         <p className="text-xs mt-0.5">{processError}</p>
-                                        {/verificar tu correo/i.test(processError) && user?.email ? (
-                                            <Button
-                                                size="sm"
-                                                color="danger"
-                                                variant="flat"
-                                                className="mt-2"
-                                                onPress={() => setIsVerifyEmailOpen(true)}
-                                            >
-                                                Verificar mi correo
-                                            </Button>
-                                        ) : null}
                                         {needsReload ? (
                                             <Button
                                                 size="sm"
@@ -974,16 +960,5 @@ export default function BookingMercadoPagoModal({
                 )}
             </ModalContent>
         </Modal>
-        <EmailVerificationModal
-            isOpen={isVerifyEmailOpen}
-            email={user?.email ?? ""}
-            onClose={() => setIsVerifyEmailOpen(false)}
-            onVerified={async () => {
-                setIsVerifyEmailOpen(false);
-                setProcessError(null);
-                await refreshAuth?.();
-            }}
-        />
-        </>
     );
 }
