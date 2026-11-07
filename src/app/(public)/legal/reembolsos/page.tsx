@@ -168,10 +168,12 @@ export default async function RefundPolicyPage() {
 
       <Section title="4. Plazos de procesamiento y disputas">
         <p>
-          Todo reembolso aprobado se procesa hacia el mismo medio de pago
-          utilizado en Mercado Pago dentro de los 5 a 10 días hábiles siguientes
-          a la resolución, sujeto a los tiempos de acreditación de cada entidad
-          financiera. Consulta también nuestros{" "}
+          Todo reembolso aprobado lo transfiere {SITE_NAME} directamente al
+          contratista (por Yape, Plin o transferencia bancaria, según los datos
+          que nos indique) dentro de los 5 a 10 días hábiles siguientes a la
+          resolución, sujeto a los tiempos de acreditación de cada entidad
+          financiera. Cuando la transferencia sale, te avisamos por la app y por
+          correo con la referencia de la operación. Consulta también nuestros{" "}
           <Link
             href="/legal/terminos"
             className="text-primary underline underline-offset-2"

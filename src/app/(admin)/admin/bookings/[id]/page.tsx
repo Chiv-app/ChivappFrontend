@@ -29,7 +29,7 @@ import {
     disableAdminBookingShare,
     getAdminBookingContractPdfBlob,
     getAdminBookingDetail,
-    retryAdminCancellationRefund,
+    markAdminCancellationRefundSent,
 } from "@/lib/admin";
 import { ApiError } from "@/lib/api";
 import {
@@ -72,9 +72,9 @@ const REFUND_STATUS_META: Record<
 > = {
     none: { label: "Sin reembolso", color: "default" },
     pending_approval: { label: "Por aprobar", color: "warning" },
-    processing: { label: "En proceso", color: "primary" },
+    processing: { label: "Por transferir", color: "primary" },
     completed: { label: "Reembolsado", color: "success" },
-    failed: { label: "Fallido", color: "danger" },
+    failed: { label: "Con error (anterior)", color: "danger" },
     rejected: { label: "Rechazado", color: "default" },
 };
 
@@ -95,7 +95,9 @@ export default function AdminBookingDetailPage({ params }: Props) {
     const [notFound, setNotFound] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
-    const [isRetryingRefund, setIsRetryingRefund] = useState(false);
+    const [isRegisteringRefund, setIsRegisteringRefund] = useState(false);
+    const [refundReference, setRefundReference] = useState("");
+    const [refundNotes, setRefundNotes] = useState("");
     const [refundAmountInput, setRefundAmountInput] = useState("");
     const [isApprovingRefund, setIsApprovingRefund] = useState(false);
     const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false);
@@ -152,21 +154,12 @@ export default function AdminBookingDetailPage({ params }: Props) {
                 title:
                     status === "rejected"
                         ? "Reembolso rechazado"
-                        : status === "completed"
-                          ? "Reembolso aprobado y completado"
-                          : status === "failed"
-                            ? "Reembolso aprobado, pero falló en Mercado Pago"
-                            : "Reembolso aprobado",
+                        : "Reembolso aprobado: falta transferirlo",
                 description:
-                    status === "failed"
-                        ? (updated.cancellation_refund_error ?? "Puedes reintentarlo.")
-                        : undefined,
-                color:
-                    status === "failed"
-                        ? "danger"
-                        : status === "rejected"
-                          ? "warning"
-                          : "success",
+                    status === "rejected"
+                        ? undefined
+                        : "Transfiere el monto al contratante y registra la transferencia aquí. Le avisamos al registrarla.",
+                color: status === "rejected" ? "warning" : "success",
             });
             setIsRejectRefundOpen(false);
             await load();
@@ -210,29 +203,38 @@ export default function AdminBookingDetailPage({ params }: Props) {
         void submitRefundDecision(amount);
     }
 
-    async function handleRetryRefund() {
-        setIsRetryingRefund(true);
-        try {
-            const updated = await retryAdminCancellationRefund(id);
+    async function handleRegisterRefundSent() {
+        const reference = refundReference.trim();
+        if (reference.length < 3) {
             addToast({
-                title:
-                    updated.cancellation_refund_status === "completed"
-                        ? "Reembolso completado"
-                        : updated.cancellation_refund_status === "failed"
-                          ? "El reembolso volvió a fallar"
-                          : "Reembolso reintentado",
-                description: updated.cancellation_refund_error ?? undefined,
-                color: updated.cancellation_refund_status === "failed" ? "danger" : "success",
+                title: "Falta la referencia",
+                description: "Escribe la referencia o número de operación de la transferencia.",
+                color: "warning",
             });
+            return;
+        }
+        setIsRegisteringRefund(true);
+        try {
+            await markAdminCancellationRefundSent(id, {
+                reference,
+                notes: refundNotes.trim() || null,
+            });
+            addToast({
+                title: "Reembolso registrado",
+                description: "Le avisamos al contratante por la app y por correo.",
+                color: "success",
+            });
+            setRefundReference("");
+            setRefundNotes("");
             await load();
         } catch (error) {
             addToast({
-                title: "No se pudo reintentar el reembolso",
+                title: "No se pudo registrar el reembolso",
                 description: error instanceof Error ? error.message : "Intenta de nuevo.",
                 color: "danger",
             });
         } finally {
-            setIsRetryingRefund(false);
+            setIsRegisteringRefund(false);
         }
     }
 
@@ -389,7 +391,8 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                 className={`rounded-xl border p-3 flex flex-col gap-2 text-sm ${
                                     refundStatus === "failed"
                                         ? "border-danger/30 bg-danger/5"
-                                        : refundStatus === "pending_approval"
+                                        : refundStatus === "pending_approval" ||
+                                            refundStatus === "processing"
                                           ? "border-warning/40 bg-warning/5"
                                           : "border-default-200"
                                 }`}
@@ -433,10 +436,11 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                 {refundStatus === "pending_approval" ? (
                                     <div className="flex flex-col gap-3 pt-1">
                                         <p className="text-xs text-default-600">
-                                            Revisa el monto antes de aprobar. Se reembolsará
-                                            por Mercado Pago al medio de pago del contratista.
-                                            Lo que no se reembolse queda retenido para liquidar
-                                            al músico.
+                                            Revisa el monto antes de aprobar. Al aprobar, el
+                                            reembolso queda pendiente de que lo transfieras tú
+                                            al contratante; después registras la transferencia
+                                            aquí. Lo que no se reembolse queda retenido para
+                                            liquidar al músico.
                                             {toAmount(booking.amount_paid) > 0
                                                 ? ` Retenido: ${formatCurrency(toAmount(booking.amount_paid))}.`
                                                 : ""}
@@ -483,30 +487,63 @@ export default function AdminBookingDetailPage({ params }: Props) {
                                         </div>
                                     </div>
                                 ) : null}
-                                {refundStatus === "failed" ? (
-                                    <>
-                                        {booking.cancellation_refund_error ? (
+                                {refundStatus === "processing" || refundStatus === "failed" ? (
+                                    <div className="flex flex-col gap-3 pt-1">
+                                        {refundStatus === "failed" && booking.cancellation_refund_error ? (
                                             <p className="text-xs text-danger break-words">
-                                                Error de Mercado Pago:{" "}
-                                                {booking.cancellation_refund_error}
+                                                Error anterior: {booking.cancellation_refund_error}
                                             </p>
                                         ) : null}
+                                        <p className="text-xs text-default-600">
+                                            Transfiere{" "}
+                                            <b>
+                                                {formatCurrency(
+                                                    toAmount(booking.cancellation_refund_amount),
+                                                )}
+                                            </b>{" "}
+                                            al contratista por tu cuenta (Yape, transferencia u
+                                            otro). Luego registra la referencia de la operación:
+                                            le avisamos por la app y por correo.
+                                        </p>
+                                        <Input
+                                            id="refund-reference"
+                                            label="Referencia de la operación"
+                                            placeholder="Ej. número de operación de Yape"
+                                            value={refundReference}
+                                            onValueChange={setRefundReference}
+                                            variant="bordered"
+                                            size="sm"
+                                            className="max-w-sm"
+                                            maxLength={200}
+                                            isDisabled={isRegisteringRefund}
+                                        />
+                                        <Input
+                                            id="refund-notes"
+                                            label="Notas (opcional)"
+                                            value={refundNotes}
+                                            onValueChange={setRefundNotes}
+                                            variant="bordered"
+                                            size="sm"
+                                            className="max-w-sm"
+                                            maxLength={1000}
+                                            isDisabled={isRegisteringRefund}
+                                        />
                                         <div>
                                             <Button
                                                 size="sm"
-                                                color="danger"
-                                                isLoading={isRetryingRefund}
-                                                onPress={handleRetryRefund}
+                                                color="success"
+                                                isLoading={isRegisteringRefund}
+                                                onPress={handleRegisterRefundSent}
                                                 startContent={
-                                                    isRetryingRefund ? null : (
-                                                        <Icon icon="material-symbols:refresh" width={16} />
+                                                    isRegisteringRefund ? null : (
+                                                        <Icon icon="material-symbols:check-circle" width={16} />
                                                     )
                                                 }
                                             >
-                                                Reintentar reembolso
+                                                Registrar transferencia enviada
                                             </Button>
                                         </div>
-                                    </>
+                                    </div>
                                 ) : null}
                             </div>
                         ) : null}

@@ -119,6 +119,9 @@ export default function AdminPaymentsPage() {
     const [payoutEvidenceUrl, setPayoutEvidenceUrl] = useState<string | null>(null);
     const [settling, setSettling] = useState(false);
     const [refundTarget, setRefundTarget] = useState<AdminSettlementOut | null>(null);
+    const [flaggedRefundTarget, setFlaggedRefundTarget] = useState<AdminPaymentOut | null>(null);
+    const [flaggedRefundReference, setFlaggedRefundReference] = useState("");
+    const [isRefundingFlagged, setIsRefundingFlagged] = useState(false);
     const [refundEvidence, setRefundEvidence] = useState<string | null>(null);
     const [refundNotes, setRefundNotes] = useState("");
     const [sendingRefund, setSendingRefund] = useState(false);
@@ -1210,32 +1213,12 @@ export default function AdminPaymentsPage() {
                                                 size="sm"
                                                 color="danger"
                                                 variant="flat"
-                                                onPress={async () => {
-                                                    try {
-                                                        const updated = await refundAdminPayment(payment.id);
-                                                        setPayments((prev) =>
-                                                            prev.map((item) =>
-                                                                item.id === updated.id ? updated : item,
-                                                            ),
-                                                        );
-                                                        addToast({
-                                                            title: "Reembolso ejecutado",
-                                                            description: "Mercado Pago procesó la devolución del cobro huérfano.",
-                                                            color: "success",
-                                                        });
-                                                    } catch (err) {
-                                                        addToast({
-                                                            title: "Error al reembolsar",
-                                                            description:
-                                                                err instanceof Error
-                                                                    ? err.message
-                                                                    : "No se pudo ejecutar el reembolso en Mercado Pago.",
-                                                            color: "danger",
-                                                        });
-                                                    }
+                                                onPress={() => {
+                                                    setFlaggedRefundReference("");
+                                                    setFlaggedRefundTarget(payment);
                                                 }}
                                             >
-                                                Reembolsar en MP
+                                                Registrar devolución manual
                                             </Button>
                                         ) : null}
                                     </div>
@@ -1405,6 +1388,88 @@ export default function AdminPaymentsPage() {
                                     onPress={handleSettle}
                                 >
                                     Confirmar liquidación
+                                </Button>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
+
+            <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
+                isOpen={!!flaggedRefundTarget}
+                onOpenChange={(open) => {
+                    if (!open) setFlaggedRefundTarget(null);
+                }}
+                size="md"
+                placement="center"
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-1">
+                                Registrar devolución manual
+                                <span className="text-sm font-normal text-default-500">
+                                    Devuelve{" "}
+                                    {formatCurrency(Number(flaggedRefundTarget?.amount ?? 0))} al
+                                    cliente por tu cuenta (Yape, transferencia u otro) y deja aquí
+                                    la referencia de la operación.
+                                </span>
+                            </ModalHeader>
+                            <ModalBody className="gap-3">
+                                <Input
+                                    id="flagged-refund-reference"
+                                    label="Referencia de la operación"
+                                    placeholder="Ej. número de operación de Yape"
+                                    value={flaggedRefundReference}
+                                    onValueChange={setFlaggedRefundReference}
+                                    variant="bordered"
+                                    maxLength={1000}
+                                    isDisabled={isRefundingFlagged}
+                                />
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button variant="light" onPress={onClose} isDisabled={isRefundingFlagged}>
+                                    Cancelar
+                                </Button>
+                                <Button
+                                    color="danger"
+                                    className="font-semibold"
+                                    isLoading={isRefundingFlagged}
+                                    isDisabled={flaggedRefundReference.trim().length < 3}
+                                    onPress={async () => {
+                                        if (!flaggedRefundTarget) return;
+                                        setIsRefundingFlagged(true);
+                                        try {
+                                            const updated = await refundAdminPayment(
+                                                flaggedRefundTarget.id,
+                                                flaggedRefundReference.trim(),
+                                            );
+                                            setPayments((prev) =>
+                                                prev.map((item) =>
+                                                    item.id === updated.id ? updated : item,
+                                                ),
+                                            );
+                                            addToast({
+                                                title: "Devolución registrada",
+                                                description: "El pago quedó marcado como reembolsado.",
+                                                color: "success",
+                                            });
+                                            setFlaggedRefundTarget(null);
+                                        } catch (err) {
+                                            addToast({
+                                                title: "No se pudo registrar la devolución",
+                                                description:
+                                                    err instanceof Error
+                                                        ? err.message
+                                                        : "Intenta de nuevo.",
+                                                color: "danger",
+                                            });
+                                        } finally {
+                                            setIsRefundingFlagged(false);
+                                        }
+                                    }}
+                                >
+                                    Registrar devolución
                                 </Button>
                             </ModalFooter>
                         </>

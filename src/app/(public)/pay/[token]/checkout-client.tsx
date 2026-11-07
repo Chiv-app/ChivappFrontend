@@ -36,7 +36,6 @@ import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-mo
 import type { BookingOut } from "@/types/api";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 import SignaturePad from "@/components/ui/signature-pad";
-import EmailVerificationModal from "@/components/auth/email-verification-modal";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -134,7 +133,6 @@ export default function CheckoutClient({
     message: string;
   } | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [isVerifyEmailOpen, setIsVerifyEmailOpen] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [signature, setSignature] = useState<string | null>(null);
   const [uploadedSignatureUrl, setUploadedSignatureUrl] = useState<
@@ -584,16 +582,11 @@ export default function CheckoutClient({
           price_agreed: linkData.price,
           platform_fee_percent: linkData.fee_percent ?? 2,
           platform_fee_amount: serviceFee,
-          status: res.email_verification_required
-            ? "contract_pending"
-            : "contract_signed",
+          status: "contract_signed",
         } as BookingOut);
-        if (res.email_verification_required) {
-          // El correo debe verificarse antes de firmar y pagar; al verificarlo se abre el pago.
-          setIsVerifyEmailOpen(true);
-        } else {
-          setIsPaymentModalOpen(true);
-        }
+        // Se firma y se paga primero: el correo se verifica después, con el enlace del
+        // correo de confirmación del pago.
+        setIsPaymentModalOpen(true);
       } catch (error: unknown) {
         let errorMsg =
           (error as Error).message || "Ocurrió un problema inesperado.";
@@ -2138,17 +2131,6 @@ export default function CheckoutClient({
           )}
         </ModalContent>
       </Modal>
-
-      <EmailVerificationModal
-        isOpen={isVerifyEmailOpen}
-        email={email.trim()}
-        onClose={() => setIsVerifyEmailOpen(false)}
-        onVerified={async () => {
-          setIsVerifyEmailOpen(false);
-          await refreshAuth();
-          setIsPaymentModalOpen(true);
-        }}
-      />
 
       {booking && (
         <BookingMercadoPagoModal

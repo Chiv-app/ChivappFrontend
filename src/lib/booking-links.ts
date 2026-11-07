@@ -75,14 +75,12 @@ export async function checkoutBookingLink(
 ): Promise<{
     message: string;
     booking_id: string;
-    email_verification_required?: boolean;
     signature_image_url?: string | null;
     contract_body_sha256?: string | null;
 }> {
     return apiFetch<{
         message: string;
         booking_id: string;
-        email_verification_required?: boolean;
         signature_image_url?: string | null;
         contract_body_sha256?: string | null;
     }>(

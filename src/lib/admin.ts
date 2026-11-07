@@ -226,10 +226,17 @@ export function verifyAdminBookingPayment(bookingId: string) {
     });
 }
 
-/** Reintenta en Mercado Pago un reembolso de cancelación fallido o pendiente. */
-export function retryAdminCancellationRefund(bookingId: string) {
-    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/retry-refund`, {
+/**
+ * Registra que el admin ya transfirió el reembolso aprobado de una cancelación.
+ * Mercado Pago solo cobra: aquí se deja la referencia de la operación y se avisa al contratante.
+ */
+export function markAdminCancellationRefundSent(
+    bookingId: string,
+    payload: { reference: string; notes?: string | null },
+) {
+    return apiFetch<AdminBookingOut>(`/admin/bookings/${bookingId}/refund-sent`, {
         method: "POST",
+        body: JSON.stringify(payload),
     });
 }
 
@@ -245,10 +252,14 @@ export function getAdminPayments(params: AdminListParams = {}) {
     );
 }
 
-/** Ejecuta en Mercado Pago el reembolso de un pago marcado con needs_refund (SEC4-06). */
-export function refundAdminPayment(paymentId: string) {
+/**
+ * Registra el reembolso manual de un pago marcado con needs_refund (SEC4-06).
+ * `reference` es la referencia de la transferencia con la que se devolvió el dinero.
+ */
+export function refundAdminPayment(paymentId: string, reference: string) {
     return apiFetch<AdminPaymentOut>(`/admin/payments/${paymentId}/refund`, {
         method: "POST",
+        body: JSON.stringify({ manual_reason: reference }),
     });
 }
 
