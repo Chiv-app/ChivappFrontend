@@ -68,22 +68,28 @@ function formatJoinedDate(value: string | null | undefined) {
     });
 }
 
-/** Aceptó = creó su contraseña. El status solo no basta. */
+/** Aceptó = la persona respondió que sí. Nadie queda activo hasta que acepta. */
 function hasAcceptedInvite(member: EnsembleMemberOut) {
-    return Boolean(member.has_password);
+    return member.status === "active";
 }
 
 function isInvitePending(member: EnsembleMemberOut) {
-    return member.status !== "inactive" && !hasAcceptedInvite(member);
+    return member.status === "invited";
 }
 
 function getDisplayState(member: EnsembleMemberOut): DisplayState {
     if (member.status === "inactive") {
+        const endedByMember = member.ended_by === "member";
+        const ended = formatJoinedDate(member.ended_at);
         return {
             key: "inactive",
-            label: "Inactivo",
+            label: endedByMember ? "Rechazó o salió" : "Inactivo",
             color: "default",
-            detail: null,
+            detail: endedByMember
+                ? ended
+                    ? `Decidió no seguir · ${ended}`
+                    : "Decidió no seguir"
+                : null,
         };
     }
     if (hasAcceptedInvite(member)) {
@@ -92,9 +98,7 @@ function getDisplayState(member: EnsembleMemberOut): DisplayState {
             key: "accepted",
             label: "Aceptó",
             color: "success",
-            detail: joined
-                ? `Contraseña creada · ${joined}`
-                : "Ya creó su contraseña",
+            detail: joined ? `Se unió el ${joined}` : "Aceptó la invitación",
         };
     }
     if (member.invite_expired) {
@@ -112,8 +116,8 @@ function getDisplayState(member: EnsembleMemberOut): DisplayState {
         label: "Pendiente",
         color: "warning",
         detail: invited
-            ? `Invitado el ${invited}`
-            : "Esperando que cree su contraseña",
+            ? `Invitado el ${invited} · esperando que acepte`
+            : "Esperando que acepte",
     };
 }
 
@@ -296,15 +300,13 @@ export default function MusicianMembersView() {
                 setInviteLink(created.invite_url);
                 setCreatedMember(created);
                 addToast({
-                    title: created.has_password
-                        ? "Integrante agregado"
-                        : "Invitación lista",
-                    description: created.has_password
-                        ? "Ya tenía contraseña. Se considera que aceptó la invitación."
-                        : "Copia el enlace para que cree su contraseña y acepte.",
+                    title: "Invitación enviada",
+                    description:
+                        "No pasa nada hasta que la persona acepte. Te avisamos cuando responda.",
                     color: "success",
                 });
-                if (created.has_password) {
+                if (!created.invite_url) {
+                    // Sin enlace que copiar: la persona responde desde su panel y no hay más que hacer aquí.
                     setIsFormOpen(false);
                     setCreatedMember(null);
                 }
@@ -432,7 +434,7 @@ export default function MusicianMembersView() {
     ];
 
     const editingState = editing ? getDisplayState(editing) : null;
-    const showCreateSuccess = Boolean(createdMember && !createdMember.has_password);
+    const showCreateSuccess = Boolean(createdMember);
     const modalInviteLink =
         inviteLink ||
         createdMember?.invite_url ||
@@ -827,7 +829,7 @@ export default function MusicianMembersView() {
                                           ? hasAcceptedInvite(editing)
                                               ? "Ya aceptó creando su contraseña. Puedes actualizar sus datos."
                                               : "Aún no creó su contraseña. Puedes copiar o regenerar el enlace."
-                                          : "Completa sus datos. La contraseña la crea el integrante con el enlace."}
+                                          : "Completa sus datos. La persona recibe la invitación y decide si se une."}
                                 </span>
                             </ModalHeader>
                             <ModalBody className="gap-5">
