@@ -207,3 +207,13 @@ export function respondEnsembleInvite(
         body: JSON.stringify({ action }),
     });
 }
+
+/** Agrupaciones a las que el músico ya pertenece (aceptó la invitación). */
+export function listMyEnsembles(): Promise<EnsembleMemberOut[]> {
+    return apiFetch("/musician/my-ensembles");
+}
+
+/** El integrante decide salirse de una agrupación. */
+export function leaveEnsemble(id: string): Promise<EnsembleMemberOut> {
+    return apiFetch(`/musician/my-ensembles/${id}/leave`, { method: "POST" });
+}

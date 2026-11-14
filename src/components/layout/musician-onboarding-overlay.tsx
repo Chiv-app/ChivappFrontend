@@ -149,6 +149,9 @@ export default function MusicianOnboardingOverlay() {
                                     <p className="text-sm text-default-500">
                                         Al aceptar, podrás recibir convocatorias a sus eventos y gestionar tus pagos.
                                     </p>
+                                    <p className="text-sm text-default-500">
+                                        No pasa nada hasta que aceptes. Si no conoces a esta persona, recházala.
+                                    </p>
                                 </div>
                             ) : currentCall ? (
                                 <div className="flex flex-col gap-4 text-center items-center py-4">

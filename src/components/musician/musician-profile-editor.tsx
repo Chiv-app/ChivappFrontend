@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import MusicianProfileWizard from "@/components/musician/musician-profile-wizard";
 import EnsembleMemberProfileEditor from "@/components/musician/ensemble-member-profile-editor";
+import MyEnsemblesCard from "@/components/musician/my-ensembles-card";
 import { getMusicianProfile } from "@/lib/profiles";
 import type { MusicianProfileOut } from "@/types/api";
 
@@ -41,15 +42,23 @@ export default function MusicianProfileEditor() {
     // Si es un integrante que aún no convierte su perfil a pro
     if (profile.is_ensemble_only) {
         return (
-            <EnsembleMemberProfileEditor 
-                profile={profile} 
-                onUpgradeToPro={() => {
-                    // Recargar perfil para mostrar el wizard
-                    void loadProfile();
-                }} 
-            />
+            <>
+                <MyEnsemblesCard />
+                <EnsembleMemberProfileEditor
+                    profile={profile}
+                    onUpgradeToPro={() => {
+                        // Recargar perfil para mostrar el wizard
+                        void loadProfile();
+                    }}
+                />
+            </>
         );
     }
 
-    return <MusicianProfileWizard />;
+    return (
+        <>
+            <MyEnsemblesCard />
+            <MusicianProfileWizard />
+        </>
+    );
 }
