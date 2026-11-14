@@ -64,7 +64,12 @@ export default function CompleteRolePage() {
                 description: "Completa tu perfil para empezar a usar Chivapp.",
                 color: "success",
             });
-            router.replace(getPostLoginPath(user.role, user.is_verified));
+            // El músico recién creado va directo a la guía de perfil; el contratante, al inicio.
+            router.replace(
+                user.role === "musician"
+                    ? "/musician/onboarding"
+                    : getPostLoginPath(user.role, user.is_verified),
+            );
             router.refresh();
         } catch (error) {
             addToast({

@@ -1,9 +1,9 @@
-import MusicianOnboarding from "@/components/musician/musician-onboarding";
+import MusicianGuidedOnboarding from "@/components/musician/musician-guided-onboarding";
 
 export const metadata = {
-    title: "Completar perfil | Chivapp",
+    title: "Crea tu perfil | Chivapp",
 };
 
 export default function MusicianOnboardingPage() {
-    return <MusicianOnboarding />;
+    return <MusicianGuidedOnboarding />;
 }
