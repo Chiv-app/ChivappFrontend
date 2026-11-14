@@ -99,6 +99,7 @@ export default function HelpWidget() {
 
     const hasBottomStickyBar =
         /^\/musicians\/[^/]+/.test(pathname) ||
+        pathname.startsWith("/musician/onboarding/preview") ||
         pathname.startsWith("/musician/profile") ||
         pathname.startsWith("/contractor/profile") ||
         pathname.startsWith("/pay/");

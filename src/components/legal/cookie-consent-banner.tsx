@@ -23,7 +23,9 @@ export default function CookieConsentBanner() {
     const isClient = useIsClient();
     const [dismissed, setDismissed] = useState(false);
     const bannerRef = useRef<HTMLDivElement | null>(null);
-    const isVisible = isClient && !dismissed && !hasConsented();
+    // Dentro de la vista previa (iframe de la guía) el aviso se muestra solo en la página principal.
+    const isEmbedded = isClient && window.self !== window.top;
+    const isVisible = isClient && !dismissed && !isEmbedded && !hasConsented();
 
     useEffect(() => {
         if (!isVisible) {

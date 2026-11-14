@@ -19,6 +19,7 @@ import ImageLightboxModal from "@/components/ui/image-lightbox-modal";
 import MasonryItem from "@/components/ui/masonry-item";
 import VerifiedBadge from "@/components/ui/verified-badge";
 import VideoPlaybackModal from "@/components/ui/video-playback-modal";
+import { useScrolledPast } from "@/hooks/use-scrolled-past";
 import { useVideoPlayback } from "@/hooks/use-video-playback";
 import { useCancellationPolicy } from "@/hooks/use-cancellation-policy";
 import { formatCancellationSummaryShort } from "@/lib/cancellation-policy";
@@ -121,6 +122,8 @@ export default function MusicianDetailView({
     } = useDisclosure();
     const videoPlayback = useVideoPlayback();
     const [isCtaDocked, setIsCtaDocked] = useState(false);
+    // En el perfil público la barra de precio aparece al hacer scroll; en el panel del músico siempre se ve.
+    const hasScrolled = useScrolledPast(80, !isOwner);
     const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
     const [lightboxAlt, setLightboxAlt] = useState("Imagen ampliada");
     const [portfolioVisibleCount, setPortfolioVisibleCount] = useState(PORTFOLIO_PAGE_SIZE);
@@ -233,9 +236,12 @@ export default function MusicianDetailView({
     const visiblePortfolioTiles = portfolioTiles.slice(0, portfolioVisibleCount);
     const hasMorePortfolio = portfolioTiles.length > portfolioVisibleCount;
 
-    // La barra de precio y CTA se mantiene siempre visible desde el primer viewport (UX-01).
+    // La barra de precio y CTA aparece al hacer scroll: arriba, el visitante ve primero la portada completa.
+    const isCtaRevealed = hasScrolled || isCtaDocked;
     const ctaBarClassName = [
         "inset-x-3 sm:inset-x-6 z-40 rounded-full border border-default-200/60 bg-content1/85 backdrop-blur-md shadow-elevated",
+        "transition-[opacity,transform,visibility] duration-300 motion-reduce:transition-none",
+        isCtaRevealed ? "" : "pointer-events-none invisible translate-y-6 opacity-0",
         isCtaDocked
             ? "absolute bottom-3 sm:bottom-4"
             : "fixed bottom-[calc(var(--bottom-nav-h,0px)+var(--cookie-h,0px)+0.75rem)] lg:bottom-[calc(var(--cookie-h,0px)+1rem)]",
@@ -306,6 +312,7 @@ export default function MusicianDetailView({
                     ) : null}
 
                     <section
+                        data-preview="photo"
                         className={`grid w-full border-b border-default-200/70 ${
                             isOwner
                                 ? showreelUrl
@@ -333,11 +340,13 @@ export default function MusicianDetailView({
                             )}
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/20" />
 
-                            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20">
+                            {/* Fijo, apilado justo encima del botón de ayuda (que está a 6/7/10 rem del borde). */}
+                            <div className="fixed right-4 sm:right-6 z-40 bottom-[calc(var(--cookie-h,0px)+13.75rem)] sm:bottom-[calc(var(--cookie-h,0px)+10.75rem)] lg:bottom-[calc(var(--cookie-h,0px)+9.75rem)]">
                                 <ShareProfileButton
                                     musicianId={musician.id}
                                     slug={musician.slug}
                                     name={musician.name}
+                                    variant="floating"
                                 />
                             </div>
 
@@ -352,11 +361,11 @@ export default function MusicianDetailView({
                                         </span>
                                     ) : null}
                                 </div>
-                                <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-[0.95] tracking-tight mb-4 max-w-3xl text-balance drop-shadow-[0_2px_24px_rgba(0,0,0,0.85)]">
+                                <h1 data-preview="name" className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-[0.95] tracking-tight mb-4 max-w-3xl text-balance drop-shadow-[0_2px_24px_rgba(0,0,0,0.85)]">
                                     {musician.name}
                                 </h1>
                                 {tagline ? (
-                                    <p className="text-white max-w-md font-medium text-base sm:text-lg leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+                                    <p data-preview="tagline" className="text-white max-w-md font-medium text-base sm:text-lg leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
                                         {tagline}
                                     </p>
                                 ) : null}
@@ -426,7 +435,7 @@ export default function MusicianDetailView({
                                 {(location || socialLinks.length > 0) && (
                                     <div className="rounded-2xl border border-default-200/70 bg-content1 p-5 space-y-4 shadow-soft">
                                         {location ? (
-                                            <div className="flex items-start gap-3">
+                                            <div data-preview="location" className="flex items-start gap-3">
                                                 <Icon
                                                     icon="material-symbols:location-on"
                                                     width={22}
@@ -489,7 +498,7 @@ export default function MusicianDetailView({
                                 ) : null}
 
                                 {musician.instruments.length > 0 ? (
-                                    <div>
+                                    <div data-preview="instruments">
                                         <h3 className="text-xs font-bold text-default-500 mb-3">
                                             Instrumentos
                                         </h3>
@@ -507,7 +516,7 @@ export default function MusicianDetailView({
                                 ) : null}
 
                                 {musician.genres.length > 0 ? (
-                                    <div>
+                                    <div data-preview="genres">
                                         <h3 className="text-xs font-bold text-default-500 mb-3">
                                             Géneros
                                         </h3>
@@ -550,7 +559,7 @@ export default function MusicianDetailView({
 
                             <div className="lg:col-span-9 space-y-14">
                                 {(musician.bio || musician.portfolioDescription) && (
-                                    <section>
+                                    <section data-preview="about">
                                         <h2 className="text-3xl font-bold text-foreground mb-6 tracking-tight">
                                             Sobre el artista
                                         </h2>
@@ -768,6 +777,7 @@ export default function MusicianDetailView({
 
                 <div
                     className={ctaBarClassName}
+                    data-preview="price"
                     role="region"
                     aria-label={
                         isOwner ? "Acciones del perfil" : "Precio y contratación"

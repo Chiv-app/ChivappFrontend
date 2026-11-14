@@ -7,7 +7,7 @@ type Props = {
     musicianId: string;
     slug: string | null;
     name: string;
-    variant?: "overlay" | "flat";
+    variant?: "overlay" | "flat" | "floating";
 };
 
 function absoluteProfileUrl(idOrSlug: string): string {
@@ -64,6 +64,21 @@ export default function ShareProfileButton({
                 startContent={<Icon icon="material-symbols:share" width={16} />}
             >
                 Compartir perfil
+            </Button>
+        );
+    }
+
+    if (variant === "floating") {
+        // Mismo aspecto y tamaño que el botón de ayuda, para que se apilen sin chocar.
+        return (
+            <Button
+                isIconOnly
+                radius="full"
+                aria-label="Compartir perfil"
+                className="size-12 min-w-12 border border-default-200/70 bg-content1/90 text-default-600 shadow-elevated backdrop-blur-md transition-colors hover:border-primary/40 hover:text-primary-text"
+                onPress={handleShare}
+            >
+                <Icon icon="material-symbols:share" width={22} />
             </Button>
         );
     }

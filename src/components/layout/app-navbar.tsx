@@ -19,6 +19,7 @@ import NotificationsDropdown from "@/components/layout/notifications-dropdown";
 import ThemeToggle from "@/components/layout/theme-toggle";
 import UserAvatar from "@/components/layout/user-avatar";
 import { useIsClient } from "@/hooks/use-is-client";
+import { useScrolledPast } from "@/hooks/use-scrolled-past";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
 import {
     getNavItemsForRole,
@@ -26,6 +27,7 @@ import {
     isEnsembleMemberNavItem,
     isNavItemActive,
 } from "@/lib/dashboard-nav";
+import { isScrollRevealRoute } from "@/lib/scroll-reveal-routes";
 
 const roleLabels = {
     contractor: "Contratista",
@@ -125,12 +127,20 @@ export default function AppNavbar() {
     }
 
     const homePath = authReady && user ? getRoleHomePath(user.role) : "/";
+    // En el perfil público la barra aparece al hacer scroll; en el resto del sitio está siempre visible.
+    const revealOnScroll = isScrollRevealRoute(pathname);
+    const isRevealed = useScrolledPast(80, revealOnScroll);
+    const revealClassName = revealOnScroll
+        ? `transition-[opacity,transform,visibility] duration-300 motion-reduce:transition-none ${
+              isRevealed ? "" : "pointer-events-none invisible -translate-y-6 opacity-0"
+          }`
+        : "";
 
     return (
         <>
             <nav
                 aria-label="Navegación principal"
-                className="fixed z-50 inset-x-3 sm:inset-x-6 top-3 sm:top-4 h-16 rounded-full bg-content1/85 backdrop-blur-xl shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-default-200/50"
+                className={`fixed z-50 inset-x-3 sm:inset-x-6 top-3 sm:top-4 h-16 rounded-full bg-content1/85 backdrop-blur-xl shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-default-200/50 ${revealClassName}`}
             >
                 <div className="h-full max-w-full mx-auto flex items-center justify-between gap-1.5 sm:gap-4 px-2.5 sm:px-6">
                     <div className="flex items-center gap-4 min-w-0">
