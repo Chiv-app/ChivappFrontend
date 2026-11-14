@@ -74,7 +74,7 @@ export default function RoleDashboardShell({
             return;
         }
         if (user.role !== role) {
-            router.replace(getPostLoginPath(user.role, user.is_verified));
+            router.replace(getPostLoginPath(user.role, user.is_verified, user.is_ensemble_member));
         }
     }, [user, isLoading, authError, router, pathname, role]);
 
@@ -84,12 +84,13 @@ export default function RoleDashboardShell({
 
         const isEnsembleOnlyUser =
             status?.is_ensemble_only || user?.is_ensemble_member;
+        // Mientras el perfil esté en borrador, todo el panel (también «Perfil») lleva a la guía de alta:
+        // el perfil completo se ve cuando se terminó la guía o el perfil está aprobado.
         if (
             role === "musician" &&
             status?.status === "draft" &&
             !isEnsembleOnlyUser &&
-            pathname !== "/musician/onboarding" &&
-            !pathname.startsWith("/musician/profile")
+            pathname !== "/musician/onboarding"
         ) {
             router.replace("/musician/onboarding");
             return;

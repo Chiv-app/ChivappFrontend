@@ -84,7 +84,7 @@ function ResetPasswordForm() {
             const user = await resetPassword(token, password);
             await refresh();
             addToast({ title: "Contraseña actualizada", color: "success" });
-            router.replace(getPostLoginPath(user.role, user.is_verified));
+            router.replace(getPostLoginPath(user.role, user.is_verified, user.is_ensemble_member));
         } catch (error) {
             addToast({
                 title: "No se pudo restablecer",

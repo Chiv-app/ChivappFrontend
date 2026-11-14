@@ -65,11 +65,7 @@ export default function CompleteRolePage() {
                 color: "success",
             });
             // El músico recién creado va directo a la guía de perfil; el contratante, al inicio.
-            router.replace(
-                user.role === "musician"
-                    ? "/musician/onboarding"
-                    : getPostLoginPath(user.role, user.is_verified),
-            );
+            router.replace(getPostLoginPath(user.role, user.is_verified, user.is_ensemble_member));
             router.refresh();
         } catch (error) {
             addToast({

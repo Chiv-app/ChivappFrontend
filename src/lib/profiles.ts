@@ -117,12 +117,20 @@ function matchesPathPrefix(path: string, prefix: string): boolean {
     return path === prefix || path.startsWith(`${prefix}/`);
 }
 
-/** Destino por defecto tras login/registro según rol. */
-export function getPostLoginPath(role: string, isVerified = true): string {
-    void isVerified;
+/**
+ * Destino por defecto tras login/registro según rol.
+ *
+ * Un músico que aún no está aprobado va a la guía de alta: si no la terminó, la retoma; si ya la envió,
+ * la propia guía lo lleva a su panel. Quien es solo integrante de una agrupación no tiene perfil propio
+ * que armar y va a sus reservas.
+ */
+export function getPostLoginPath(role: string, isVerified = true, isEnsembleMember = false): string {
     if (role === "admin") return "/admin";
-    // Músico y contratista vuelven al landing (home público).
-    if (role === "musician" || role === "contractor") return "/";
+    if (role === "musician") {
+        if (isEnsembleMember) return "/musician/bookings";
+        return isVerified ? "/" : "/musician/onboarding";
+    }
+    // El contratista vuelve al landing (home público).
     return "/";
 }
 
@@ -134,8 +142,9 @@ export function resolveAuthRedirect(
     role: string,
     requestedRedirect: string | null | undefined,
     isVerified = true,
+    isEnsembleMember = false,
 ): string {
-    const fallback = getPostLoginPath(role, isVerified);
+    const fallback = getPostLoginPath(role, isVerified, isEnsembleMember);
     if (!requestedRedirect) return fallback;
     if (!isSafeInternalPath(requestedRedirect)) return fallback;
 

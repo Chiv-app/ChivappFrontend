@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, Card, CardBody } from "@heroui/react";
 import { useAuth } from "@/contexts/auth-context";
 import { useIsClient } from "@/hooks/use-is-client";
@@ -39,6 +40,7 @@ function shouldShowBanner(validation: ProfileValidationOut): boolean {
 
 export default function ProfileCompletionBanner() {
     const isClient = useIsClient();
+    const router = useRouter();
     const { user, isLoading } = useAuth();
     const [validation, setValidation] = useState<ProfileValidationOut | null>(null);
     const [statusError, setStatusError] = useState(false);
@@ -72,13 +74,29 @@ export default function ProfileCompletionBanner() {
         }
     }, [user, isLoading, isClient]);
 
+    // Un músico que dejó el perfil a medias entra directo a la guía para terminarlo.
+    const needsOnboarding =
+        user?.role === "musician" &&
+        !user.is_ensemble_member &&
+        validation?.status === "draft" &&
+        !validation.is_ensemble_only;
+
+    useEffect(() => {
+        if (needsOnboarding) router.replace("/musician/onboarding");
+    }, [needsOnboarding, router]);
+
     // SSR + hydration: always empty so late auth resolution cannot mismatch HTML.
     if (!isClient || isLoading || !user || user.role === "admin") {
         return null;
     }
 
+    // En borrador, «Continuar perfil» retoma la guía de alta; el perfil completo se ve al terminarla.
     const profileHref =
-        user.role === "musician" ? "/musician/profile" : "/contractor/profile";
+        user.role === "musician"
+            ? needsOnboarding
+                ? "/musician/onboarding"
+                : "/musician/profile"
+            : "/contractor/profile";
 
     if (statusError) {
         return (

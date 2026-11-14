@@ -94,7 +94,9 @@ function SetPasswordForm() {
             return;
         }
         if (user.has_password) {
-            router.replace(resolveAuthRedirect(user.role, callbackUrl, user.is_verified));
+            router.replace(
+                resolveAuthRedirect(user.role, callbackUrl, user.is_verified, user.is_ensemble_member),
+            );
         }
     }, [authLoading, user, token, router, callbackUrl]);
 
@@ -131,11 +133,11 @@ function SetPasswordForm() {
                 color: "success",
             });
             if (callbackUrl) {
-                router.replace(resolveAuthRedirect(updated.role, callbackUrl, updated.is_verified));
-            } else if (updated.is_ensemble_member) {
-                router.replace("/musician/bookings");
+                router.replace(
+                    resolveAuthRedirect(updated.role, callbackUrl, updated.is_verified, updated.is_ensemble_member),
+                );
             } else {
-                router.replace(getPostLoginPath(updated.role, updated.is_verified));
+                router.replace(getPostLoginPath(updated.role, updated.is_verified, updated.is_ensemble_member));
             }
         } catch (error) {
             addToast({
