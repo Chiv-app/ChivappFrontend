@@ -75,7 +75,7 @@ function securityHeaders(
             : isPartial
               ? "private, no-store"
               : isPrivate
-                ? "private, max-age=300"
+                ? "private, no-store"
                 : "public, max-age=3600",
     );
     return headers;
