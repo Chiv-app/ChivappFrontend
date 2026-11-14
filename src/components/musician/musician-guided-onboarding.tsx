@@ -1,11 +1,15 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Input, Modal, ModalBody, ModalContent, ModalHeader, Textarea, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import AppLogo from "@/components/layout/app-logo";
+import ProfilePreview from "@/components/musician/onboarding-preview/profile-preview";
+import { isSafePhotoSrc, type PreviewDraft, type PreviewFocus } from "@/components/musician/onboarding-preview/types";
 import SignaturePad from "@/components/ui/signature-pad";
 import { useAuth } from "@/contexts/auth-context";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { ApiError } from "@/lib/api";
 import {
     BIO_MIN_LENGTH,
@@ -25,12 +29,19 @@ import {
     type GuideField,
     type GuideStepId,
 } from "@/lib/onboarding-guide";
+import {
+    OTHER_GENRE_ICON,
+    OTHER_INSTRUMENT_ICON,
+    getCityIcon,
+    getGenreIcon,
+    getGuideInstrumentIcon,
+} from "@/lib/onboarding-icons";
 import { getMusicianProfile, submitMusicianProfile, updateMusicianProfile } from "@/lib/profiles";
 import { resolveUploadUrl, uploadFile, uploadSignatureDataUrl } from "@/lib/uploads";
 
 const FOCUS_SELECTORS: Record<GuideField, string> = {
     name: "#guide-name",
-    genres: "#guide-genres button",
+    genres: "#guide-genres button:not([disabled])",
     instruments: "#guide-instruments button",
     city: "#guide-city button",
     price: "#guide-price",
@@ -41,6 +52,26 @@ const FOCUS_SELECTORS: Record<GuideField, string> = {
     signature: "#guide-signature canvas",
     review: "[data-guide-change]",
 };
+
+/** Parte del perfil público que alimenta cada paso (se resalta en la vista previa). */
+const STEP_FOCUS: Partial<Record<GuideStepId, PreviewFocus>> = {
+    nombre: "name",
+    toca: "specialty",
+    donde: "location",
+    foto: "photo",
+    bio: "bio",
+};
+
+/** Texto que explica qué parte del perfil alimenta el paso. */
+const STEP_FEEDS: Partial<Record<GuideStepId, string>> = {
+    nombre: "Alimenta el título de tu perfil",
+    toca: "Alimenta Instrumentos y Géneros",
+    donde: "Alimenta tu ubicación y la barra de precio",
+    foto: "Alimenta la portada de tu perfil",
+    bio: "Alimenta «Sobre el artista»",
+};
+
+const FOCUS_RING = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 function errorMessage(error: unknown, fallback: string): string {
     if (error instanceof ApiError && error.message) return error.message;
@@ -54,7 +85,7 @@ function FieldError({ id, error, field }: { id: string; error: GuideError | null
         <p id={id} role="alert" className={active ? "flex items-start gap-2 text-sm font-medium text-danger-text" : "hidden"}>
             {active ? (
                 <>
-                    <Icon icon="lucide:alert-circle" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <Icon icon="material-symbols:error-outline" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
                     <span>{error?.message}</span>
                 </>
             ) : null}
@@ -62,20 +93,39 @@ function FieldError({ id, error, field }: { id: string; error: GuideError | null
     );
 }
 
-function ChoiceChip({ label, selected, onToggle }: { label: string; selected: boolean; onToggle: () => void }) {
+/** Ficha de opción: el ícono va siempre a la izquierda y lo elegido se marca con borde y una insignia. */
+function ChoiceChip({
+    label,
+    icon,
+    selected,
+    disabled,
+    onToggle,
+}: {
+    label: string;
+    icon: string;
+    selected: boolean;
+    disabled?: boolean;
+    onToggle: () => void;
+}) {
     return (
         <button
             type="button"
             aria-pressed={selected}
+            disabled={disabled}
             onClick={onToggle}
-            className={`inline-flex min-h-12 items-center gap-2 rounded-xl border-2 px-4 text-base transition active:scale-[0.97] motion-reduce:transition-none ${
+            className={`${FOCUS_RING} relative inline-flex min-h-12 items-center gap-2.5 rounded-xl border-2 px-4 text-base transition active:scale-[0.97] motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-45 ${
                 selected
                     ? "border-primary-text bg-primary/10 font-semibold text-primary-text"
-                    : "border-default-200 bg-content1 hover:border-primary-text"
+                    : "border-default-200 bg-content1 enabled:hover:border-primary-text"
             }`}
         >
-            {selected ? <Icon icon="lucide:check" width={16} aria-hidden="true" /> : null}
+            <Icon icon={icon} width={20} aria-hidden="true" />
             {label}
+            {selected ? (
+                <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary-text text-background">
+                    <Icon icon="material-symbols:check" width={14} aria-hidden="true" />
+                </span>
+            ) : null}
         </button>
     );
 }
@@ -83,59 +133,16 @@ function ChoiceChip({ label, selected, onToggle }: { label: string; selected: bo
 function Note({ children }: { children: React.ReactNode }) {
     return (
         <p className="flex items-start gap-2 text-sm text-default-500">
-            <Icon icon="lucide:lock" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <Icon icon="material-symbols:lock-outline" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
             <span>{children}</span>
         </p>
-    );
-}
-
-function ProfilePreview({ data, photoSrc }: { data: GuideData; photoSrc: string | null }) {
-    const initial = data.name.trim().charAt(0).toUpperCase() || "·";
-    const price = Number(data.price) > 0 ? `S/ ${data.price}` : "S/ —";
-    return (
-        <div className="grid gap-4 rounded-2xl border border-default-200 bg-content1 p-5">
-            <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-default-200 bg-default-100 text-2xl font-bold text-default-500">
-                    {photoSrc ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={photoSrc} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                        initial
-                    )}
-                </div>
-                <div className="min-w-0">
-                    <p className={`break-words text-lg font-bold ${data.name.trim() ? "" : "text-default-400"}`}>
-                        {data.name.trim() || "Tu nombre artístico"}
-                    </p>
-                    <p className="text-sm text-default-500">
-                        {data.city || "Tu ciudad"}
-                        {data.instruments.length ? ` · ${data.instruments.slice(0, 3).join(", ")}` : ""}
-                    </p>
-                </div>
-            </div>
-            {data.genres.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                    {data.genres.slice(0, 3).map((genre) => (
-                        <span key={genre} className="rounded-full bg-primary/10 px-3 py-0.5 text-[13px] text-primary-text">
-                            {genre}
-                        </span>
-                    ))}
-                </div>
-            ) : null}
-            <p className={`line-clamp-3 text-sm ${data.bio.trim() ? "text-default-500" : "text-default-400"}`}>
-                {data.bio.trim() || "Aquí irá tu biografía."}
-            </p>
-            <div className="flex items-baseline justify-between gap-3 border-t border-default-200 pt-3 text-sm text-default-500">
-                <span>Tarifa por evento</span>
-                <b className={`text-xl tabular-nums ${Number(data.price) > 0 ? "text-foreground" : "text-default-400"}`}>{price}</b>
-            </div>
-        </div>
     );
 }
 
 export default function MusicianGuidedOnboarding() {
     const router = useRouter();
     const { user, isLoading: isAuthLoading, refresh } = useAuth();
+    const isDesktop = useMediaQuery("(min-width: 1024px)");
 
     const [phase, setPhase] = useState<"loading" | "error" | "ready">("loading");
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -153,6 +160,9 @@ export default function MusicianGuidedOnboarding() {
     const [otherGenre, setOtherGenre] = useState("");
     const [otherInstrument, setOtherInstrument] = useState("");
     const [showHour, setShowHour] = useState(false);
+    const [announce, setAnnounce] = useState("");
+    // El campo que se está editando manda sobre el paso: la vista previa resalta lo que tocas.
+    const [fieldFocus, setFieldFocus] = useState<PreviewFocus>(null);
 
     const headingRef = useRef<HTMLHeadingElement>(null);
     const photoInput = useRef<HTMLInputElement>(null);
@@ -243,6 +253,7 @@ export default function MusicianGuidedOnboarding() {
     function goTo(next: GuideStepId) {
         setError(null);
         setFormError(null);
+        setFieldFocus(null);
         setStep(next);
     }
 
@@ -370,38 +381,51 @@ export default function MusicianGuidedOnboarding() {
         }
     }
 
+    // Actualizador funcional: dos toques seguidos no pisan el estado del anterior.
     function toggle(list: "genres" | "instruments", value: string) {
-        const current = data[list];
-        if (current.includes(value)) {
-            patch({ [list]: current.filter((item) => item !== value) } as Partial<GuideData>, list);
-            return;
-        }
-        if (list === "genres" && current.length >= MAX_GENRES) {
-            showError({ field: "genres", message: `Máximo ${MAX_GENRES} géneros. Quita uno para elegir otro.` });
-            return;
-        }
-        patch({ [list]: [...current, value] } as Partial<GuideData>, list);
+        setData((current) => {
+            const items = current[list];
+            if (items.includes(value)) return { ...current, [list]: items.filter((item) => item !== value) };
+            if (list === "genres" && items.length >= MAX_GENRES) return current;
+            return { ...current, [list]: [...items, value] };
+        });
+        setFormError(null);
+        if (error?.field === list) setError(null);
     }
 
     function addOther(list: "genres" | "instruments") {
         const raw = (list === "genres" ? otherGenre : otherInstrument).trim();
         if (!raw) return;
         const value = raw.charAt(0).toUpperCase() + raw.slice(1);
-        if (!data[list].includes(value)) {
-            if (list === "genres" && data.genres.length >= MAX_GENRES) {
-                showError({ field: "genres", message: `Máximo ${MAX_GENRES} géneros. Quita uno para elegir otro.` });
-                return;
-            }
-            patch({ [list]: [...data[list], value] } as Partial<GuideData>, list);
-        }
+        if (list === "genres" && data.genres.length >= MAX_GENRES && !data.genres.includes(value)) return;
+        setData((current) => {
+            const items = current[list];
+            return items.includes(value) ? current : { ...current, [list]: [...items, value] };
+        });
         if (list === "genres") setOtherGenre("");
         else setOtherInstrument("");
+        setAnnounce(`${value} agregado`);
+        if (error?.field === list) setError(null);
     }
 
     const flowIndex = FLOW_STEPS.indexOf(step) + 1; // 0 si no es un paso numerado
     const inFlow = flowIndex > 0;
     const progress = inFlow ? (flowIndex / FLOW_STEPS.length) * 100 : step === "enviado" ? 100 : 0;
     const photoSrc = photoPreview || resolveUploadUrl(data.photoUrl);
+    const genresFull = data.genres.length >= MAX_GENRES;
+    const previewFocus = fieldFocus ?? STEP_FOCUS[step] ?? null;
+    const previewDraft = useMemo<PreviewDraft>(
+        () => ({
+            name: data.name,
+            city: data.city,
+            price: data.price,
+            genres: data.genres,
+            instruments: data.instruments,
+            bio: data.bio,
+            photo: photoSrc && isSafePhotoSrc(photoSrc) ? photoSrc : null,
+        }),
+        [data.name, data.city, data.price, data.genres, data.instruments, data.bio, photoSrc],
+    );
     const ctaLabel =
         step === "welcome"
             ? "Empezar"
@@ -412,6 +436,7 @@ export default function MusicianGuidedOnboarding() {
                 : returnTo
                   ? "Guardar y volver"
                   : "Continuar";
+    const ctaIcon = step === "revision" ? "material-symbols:send-outline" : "material-symbols:arrow-forward";
 
     if (isAuthLoading || phase === "loading") {
         return (
@@ -442,9 +467,18 @@ export default function MusicianGuidedOnboarding() {
                     {text}
                 </h1>
                 {lead ? <p className="mt-2.5 max-w-[42ch] text-default-500">{lead}</p> : null}
+                {/* Texto informativo: sin fondo ni borde para que no parezca un botón. */}
+                {STEP_FEEDS[step] ? (
+                    <p className="mt-3 flex items-center gap-1.5 text-sm text-primary-text">
+                        <Icon icon="material-symbols:visibility-outline" width={16} aria-hidden="true" />
+                        {STEP_FEEDS[step]}
+                    </p>
+                ) : null}
             </div>
         );
         const inputClasses = { inputWrapper: "min-h-14", input: "text-[17px]" };
+        const genreOptions = [...GENRE_OPTIONS, ...data.genres.filter((g) => !GENRE_OPTIONS.includes(g))];
+        const instrumentOptions = [...INSTRUMENT_OPTIONS, ...data.instruments.filter((i) => !INSTRUMENT_OPTIONS.includes(i))];
 
         switch (step) {
             case "welcome":
@@ -468,6 +502,7 @@ export default function MusicianGuidedOnboarding() {
                                 radius="lg"
                                 size="lg"
                                 classNames={inputClasses}
+                                startContent={<Icon icon="mdi:account-music-outline" width={22} className="text-default-500" aria-hidden="true" />}
                                 value={data.name}
                                 onValueChange={(value) => patch({ name: value }, "name")}
                                 autoComplete="nickname"
@@ -490,18 +525,33 @@ export default function MusicianGuidedOnboarding() {
                                 Géneros <span className="font-normal text-default-500">({data.genres.length} de {MAX_GENRES})</span>
                             </span>
                             <div id="guide-genres" className="flex flex-wrap gap-2.5">
-                                {[...GENRE_OPTIONS, ...data.genres.filter((g) => !GENRE_OPTIONS.includes(g))].map((genre) => (
-                                    <ChoiceChip key={genre} label={genre} selected={data.genres.includes(genre)} onToggle={() => toggle("genres", genre)} />
+                                {genreOptions.map((genre) => (
+                                    <ChoiceChip
+                                        key={genre}
+                                        label={genre}
+                                        icon={getGenreIcon(genre)}
+                                        selected={data.genres.includes(genre)}
+                                        disabled={genresFull && !data.genres.includes(genre)}
+                                        onToggle={() => toggle("genres", genre)}
+                                    />
                                 ))}
                             </div>
+                            {genresFull ? (
+                                <p role="status" className="flex items-start gap-2 text-sm text-default-500">
+                                    <Icon icon="material-symbols:info-outline" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                                    Llegaste al máximo de {MAX_GENRES} géneros. Quita uno para elegir otro.
+                                </p>
+                            ) : null}
                             <div className="flex gap-2">
                                 <Input
                                     aria-label="Agregar otro género"
                                     placeholder="Otro género"
                                     variant="bordered"
                                     radius="lg"
+                                    startContent={<Icon icon={OTHER_GENRE_ICON} width={20} className="text-default-500" aria-hidden="true" />}
                                     value={otherGenre}
                                     onValueChange={setOtherGenre}
+                                    isDisabled={genresFull}
                                     enterKeyHint="done"
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") {
@@ -510,7 +560,15 @@ export default function MusicianGuidedOnboarding() {
                                         }
                                     }}
                                 />
-                                <Button type="button" variant="bordered" radius="lg" className="h-12 shrink-0" onPress={() => addOther("genres")}>
+                                <Button
+                                    type="button"
+                                    variant="bordered"
+                                    radius="lg"
+                                    className="h-12 shrink-0"
+                                    isDisabled={!otherGenre.trim() || genresFull}
+                                    startContent={<Icon icon="material-symbols:add" width={20} aria-hidden="true" />}
+                                    onPress={() => addOther("genres")}
+                                >
                                     Agregar
                                 </Button>
                             </div>
@@ -521,8 +579,14 @@ export default function MusicianGuidedOnboarding() {
                                 Instrumentos
                             </span>
                             <div id="guide-instruments" className="flex flex-wrap gap-2.5">
-                                {[...INSTRUMENT_OPTIONS, ...data.instruments.filter((i) => !INSTRUMENT_OPTIONS.includes(i))].map((instrument) => (
-                                    <ChoiceChip key={instrument} label={instrument} selected={data.instruments.includes(instrument)} onToggle={() => toggle("instruments", instrument)} />
+                                {instrumentOptions.map((instrument) => (
+                                    <ChoiceChip
+                                        key={instrument}
+                                        label={instrument}
+                                        icon={getGuideInstrumentIcon(instrument)}
+                                        selected={data.instruments.includes(instrument)}
+                                        onToggle={() => toggle("instruments", instrument)}
+                                    />
                                 ))}
                             </div>
                             <div className="flex gap-2">
@@ -531,6 +595,7 @@ export default function MusicianGuidedOnboarding() {
                                     placeholder="Otro instrumento"
                                     variant="bordered"
                                     radius="lg"
+                                    startContent={<Icon icon={OTHER_INSTRUMENT_ICON} width={20} className="text-default-500" aria-hidden="true" />}
                                     value={otherInstrument}
                                     onValueChange={setOtherInstrument}
                                     enterKeyHint="done"
@@ -541,7 +606,15 @@ export default function MusicianGuidedOnboarding() {
                                         }
                                     }}
                                 />
-                                <Button type="button" variant="bordered" radius="lg" className="h-12 shrink-0" onPress={() => addOther("instruments")}>
+                                <Button
+                                    type="button"
+                                    variant="bordered"
+                                    radius="lg"
+                                    className="h-12 shrink-0"
+                                    isDisabled={!otherInstrument.trim()}
+                                    startContent={<Icon icon="material-symbols:add" width={20} aria-hidden="true" />}
+                                    onPress={() => addOther("instruments")}
+                                >
                                     Agregar
                                 </Button>
                             </div>
@@ -559,7 +632,16 @@ export default function MusicianGuidedOnboarding() {
                             </span>
                             <div id="guide-city" className="flex flex-wrap gap-2.5">
                                 {CITY_OPTIONS.map((city) => (
-                                    <ChoiceChip key={city} label={city} selected={data.city === city} onToggle={() => patch({ city }, "city")} />
+                                    <ChoiceChip
+                                        key={city}
+                                        label={city}
+                                        icon={getCityIcon(city)}
+                                        selected={data.city === city}
+                                        onToggle={() => {
+                                            setFieldFocus("location");
+                                            patch({ city }, "city");
+                                        }}
+                                    />
                                 ))}
                             </div>
                             <Input
@@ -569,8 +651,10 @@ export default function MusicianGuidedOnboarding() {
                                 radius="lg"
                                 size="lg"
                                 classNames={inputClasses}
+                                startContent={<Icon icon="material-symbols:location-on-outline" width={22} className="text-default-500" aria-hidden="true" />}
                                 value={CITY_OPTIONS.includes(data.city) ? "" : data.city}
                                 onValueChange={(value) => patch({ city: value }, "city")}
+                                onFocus={() => setFieldFocus("location")}
                                 autoComplete="address-level2"
                             />
                             <FieldError id="err-city" error={error} field="city" />
@@ -591,6 +675,8 @@ export default function MusicianGuidedOnboarding() {
                                 maxLength={6}
                                 value={data.price}
                                 onValueChange={(value) => patch({ price: value.replace(/[^0-9]/g, "") }, "price")}
+                                onFocus={() => setFieldFocus("price")}
+                                onBlur={() => setFieldFocus(null)}
                                 isInvalid={error?.field === "price"}
                                 aria-describedby="err-price"
                             />
@@ -615,9 +701,16 @@ export default function MusicianGuidedOnboarding() {
                             />
                         ) : (
                             <div>
-                                <button type="button" className="min-h-11 text-sm text-primary-text underline underline-offset-4" onClick={() => setShowHour(true)}>
+                                <Button
+                                    type="button"
+                                    variant="light"
+                                    radius="lg"
+                                    className="min-h-11 px-2 text-primary-text"
+                                    startContent={<Icon icon="material-symbols:add-circle-outline" width={20} aria-hidden="true" />}
+                                    onPress={() => setShowHour(true)}
+                                >
                                     Agregar también una tarifa por hora
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </>
@@ -632,11 +725,11 @@ export default function MusicianGuidedOnboarding() {
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={photoSrc} alt="Tu foto de perfil" className="h-full w-full object-cover" />
                                 ) : (
-                                    <Icon icon="lucide:camera" width={40} aria-hidden="true" />
+                                    <Icon icon="material-symbols:camera-outline" width={40} aria-hidden="true" />
                                 )}
                             </div>
                             <div className="flex flex-wrap justify-center gap-2.5">
-                                <Button id="guide-photo-pick" type="button" variant="bordered" radius="lg" size="lg" isLoading={uploading === "photo"} startContent={<Icon icon="lucide:camera" width={18} />} onPress={() => photoInput.current?.click()}>
+                                <Button id="guide-photo-pick" type="button" variant="bordered" radius="lg" size="lg" isLoading={uploading === "photo"} startContent={<Icon icon="material-symbols:camera-outline" width={20} aria-hidden="true" />} onPress={() => photoInput.current?.click()}>
                                     {photoSrc ? "Cambiar foto" : "Tomar o elegir foto"}
                                 </Button>
                             </div>
@@ -655,13 +748,20 @@ export default function MusicianGuidedOnboarding() {
                         </div>
                     </>
                 );
-            case "bio":
+            case "bio": {
+                const bioLength = data.bio.trim().length;
                 return (
                     <>
                         {title("Cuéntanos de ti", "Tres frases bastan: quién eres, qué tocas y qué eventos animas.")}
                         <div className="grid gap-3">
                             <div>
-                                <Button type="button" variant="bordered" radius="lg" onPress={() => patch({ bio: buildBioDraft(data) }, "bio")}>
+                                <Button
+                                    type="button"
+                                    variant="bordered"
+                                    radius="lg"
+                                    startContent={<Icon icon="material-symbols:auto-awesome-outline" width={20} aria-hidden="true" />}
+                                    onPress={() => patch({ bio: buildBioDraft(data) }, "bio")}
+                                >
                                     Usar un borrador con mis datos
                                 </Button>
                             </div>
@@ -680,13 +780,15 @@ export default function MusicianGuidedOnboarding() {
                                 isInvalid={error?.field === "bio"}
                                 aria-describedby="err-bio"
                             />
-                            <p className={`text-sm tabular-nums ${data.bio.trim().length >= BIO_MIN_LENGTH ? "text-success-text" : "text-default-500"}`}>
-                                {data.bio.trim().length >= BIO_MIN_LENGTH ? "Suficiente ✓" : `${data.bio.trim().length} de ${BIO_MIN_LENGTH} caracteres como mínimo`}
+                            <p className={`flex items-center gap-1.5 text-sm tabular-nums ${bioLength >= BIO_MIN_LENGTH ? "text-success-text" : "text-default-500"}`}>
+                                <Icon icon={bioLength >= BIO_MIN_LENGTH ? "material-symbols:check" : "material-symbols:edit-outline"} width={16} aria-hidden="true" />
+                                {bioLength >= BIO_MIN_LENGTH ? "Suficiente" : `${bioLength} de ${BIO_MIN_LENGTH} caracteres como mínimo`}
                             </p>
                             <FieldError id="err-bio" error={error} field="bio" />
                         </div>
                     </>
                 );
+            }
             case "dni":
                 return (
                     <>
@@ -701,6 +803,7 @@ export default function MusicianGuidedOnboarding() {
                                 radius="lg"
                                 size="lg"
                                 classNames={inputClasses}
+                                startContent={<Icon icon="material-symbols:person-outline" width={22} className="text-default-500" aria-hidden="true" />}
                                 value={data.fullname}
                                 onValueChange={(value) => patch({ fullname: value }, "fullname")}
                                 autoComplete="name"
@@ -717,14 +820,14 @@ export default function MusicianGuidedOnboarding() {
                                     <img src={dniPreview} alt="Foto de tu documento" className="max-h-64 w-full object-contain" />
                                 ) : data.dniUrl ? (
                                     <span className="inline-flex items-center gap-2 font-semibold">
-                                        <Icon icon="lucide:check-circle" width={18} aria-hidden="true" /> Documento recibido
+                                        <Icon icon="material-symbols:check-circle-outline" width={18} aria-hidden="true" /> Documento recibido
                                     </span>
                                 ) : (
                                     <span>Coloca el documento dentro del cuadro, sin reflejos</span>
                                 )}
                             </div>
                             <div>
-                                <Button id="guide-dni-pick" type="button" variant="bordered" radius="lg" size="lg" isLoading={uploading === "dni"} startContent={<Icon icon="lucide:camera" width={18} />} onPress={() => dniInput.current?.click()}>
+                                <Button id="guide-dni-pick" type="button" variant="bordered" radius="lg" size="lg" isLoading={uploading === "dni"} startContent={<Icon icon="material-symbols:camera-outline" width={20} aria-hidden="true" />} onPress={() => dniInput.current?.click()}>
                                     {data.dniUrl ? "Cambiar foto del documento" : "Tomar o elegir foto"}
                                 </Button>
                             </div>
@@ -751,7 +854,7 @@ export default function MusicianGuidedOnboarding() {
                         <div id="guide-signature" className="grid gap-3">
                             {data.signatureUrl && !data.signatureDataUrl ? (
                                 <p className="inline-flex items-center gap-2 text-sm font-semibold text-success-text">
-                                    <Icon icon="lucide:check-circle" width={18} aria-hidden="true" /> Ya tienes una firma guardada. Dibuja otra solo si quieres cambiarla.
+                                    <Icon icon="material-symbols:check-circle-outline" width={18} aria-hidden="true" /> Ya tienes una firma guardada. Dibuja otra solo si quieres cambiarla.
                                 </p>
                             ) : null}
                             <SignaturePad
@@ -764,7 +867,7 @@ export default function MusicianGuidedOnboarding() {
                             <FieldError id="err-signature" error={error} field="signature" />
                         </div>
                         <details className="text-sm text-default-500">
-                            <summary className="min-h-11 cursor-pointer text-primary-text underline underline-offset-4">Ver un resumen del contrato</summary>
+                            <summary className={`${FOCUS_RING} min-h-11 cursor-pointer text-primary-text underline underline-offset-4`}>Ver un resumen del contrato</summary>
                             <div className="grid max-w-[46ch] gap-2 pb-2">
                                 <p>1. Objeto: el artista presta servicios musicales en la fecha, hora y lugar acordados.</p>
                                 <p>2. Tarifa: la acordada con el contratante; el pago queda resguardado hasta el evento.</p>
@@ -779,10 +882,16 @@ export default function MusicianGuidedOnboarding() {
                     { label: "Nombre", value: data.name.trim() || "—", go: "nombre" },
                     { label: "Toca", value: `${data.genres.join(", ")} · ${data.instruments.join(", ")}`, go: "toca" },
                     { label: "Ciudad", value: `${data.city || "—"} · S/ ${data.price || "—"} por evento`, go: "donde" },
-                    { label: "Foto", value: photoSrc ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={photoSrc} alt="Tu foto" className="h-10 w-10 rounded-full object-cover" />
-                    ) : "—", go: "foto" },
+                    {
+                        label: "Foto",
+                        value: photoSrc ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={photoSrc} alt="Tu foto" className="h-10 w-10 rounded-full object-cover" />
+                        ) : (
+                            "—"
+                        ),
+                        go: "foto",
+                    },
                     { label: "Biografía", value: data.bio.trim() || "—", go: "bio" },
                     { label: "Documento", value: data.dniUrl ? <span className="font-semibold text-success-text">Recibido ✓</span> : "—", go: "dni" },
                     { label: "Firma", value: data.signatureDataUrl || data.signatureUrl ? <span className="font-semibold text-success-text">Lista ✓</span> : "—", go: "firma" },
@@ -799,12 +908,13 @@ export default function MusicianGuidedOnboarding() {
                                         type="button"
                                         data-guide-change
                                         aria-label={`Cambiar ${row.label.toLowerCase()}`}
-                                        className="min-h-11 px-2 text-sm text-primary-text underline underline-offset-4"
+                                        className={`${FOCUS_RING} inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm text-primary-text hover:underline`}
                                         onClick={() => {
                                             setReturnTo("revision");
                                             goTo(row.go);
                                         }}
                                     >
+                                        <Icon icon="material-symbols:edit-outline" width={16} aria-hidden="true" />
                                         Cambiar
                                     </button>
                                 </div>
@@ -818,7 +928,7 @@ export default function MusicianGuidedOnboarding() {
                 return (
                     <div className="grid justify-items-center gap-5 text-center">
                         <span className="flex h-20 w-20 items-center justify-center rounded-full bg-success/15 text-success-text">
-                            <Icon icon="lucide:check" width={40} aria-hidden="true" />
+                            <Icon icon="material-symbols:check" width={40} aria-hidden="true" />
                         </span>
                         {title("Perfil enviado", "Lo revisamos y te avisamos por la app y por correo en cuanto esté aprobado.")}
                     </div>
@@ -831,20 +941,21 @@ export default function MusicianGuidedOnboarding() {
     return (
         <div className="min-h-[100dvh] bg-background text-foreground">
             <header className="mx-auto flex max-w-5xl items-center px-4 py-4">
-                <span className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-                    <span aria-hidden="true" className="h-[22px] w-[22px] rounded-[7px] bg-gradient-to-br from-primary to-primary-text" />
-                    Chivapp
-                </span>
+                <AppLogo height={30} priority />
             </header>
 
-            <div className="mx-auto grid max-w-5xl gap-10 px-4 pb-8 lg:grid-cols-[minmax(0,34rem)_20rem] lg:justify-center lg:gap-16">
+            <p className="sr-only" role="status" aria-live="polite">
+                {announce}
+            </p>
+
+            <div className="mx-auto grid max-w-5xl gap-10 px-4 pb-8 lg:grid-cols-[minmax(0,32rem)_23rem] lg:justify-center lg:gap-14">
                 <form onSubmit={handleSubmit} noValidate aria-label="Crear tu perfil" className="flex min-h-[calc(100dvh-6rem)] flex-col">
                     <div className="grid gap-1.5 pb-3">
                         <div className="flex min-h-11 items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5">
                                 {inFlow ? (
-                                    <button type="button" aria-label="Volver al paso anterior" onClick={goBack} className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full hover:bg-default-100">
-                                        <Icon icon="lucide:chevron-left" width={22} aria-hidden="true" />
+                                    <button type="button" aria-label="Volver al paso anterior" onClick={goBack} className={`${FOCUS_RING} -ml-2.5 flex h-11 w-11 items-center justify-center rounded-full hover:bg-default-100`}>
+                                        <Icon icon="material-symbols:chevron-left" width={24} aria-hidden="true" />
                                     </button>
                                 ) : null}
                                 <span className="text-sm tabular-nums text-default-500" aria-live="polite">
@@ -852,13 +963,13 @@ export default function MusicianGuidedOnboarding() {
                                 </span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <span role="status" className={`text-[13px] text-success-text transition-opacity ${showSaved ? "opacity-100" : "opacity-0"}`}>
+                                <span role="status" className={`text-[13px] text-success-text transition-opacity motion-reduce:transition-none ${showSaved ? "opacity-100" : "opacity-0"}`}>
                                     {showSaved ? "Guardado ✓" : ""}
                                 </span>
-                                {inFlow && step !== "nombre" ? (
-                                    <button type="button" className="min-h-11 px-2 text-sm text-primary-text underline underline-offset-4 lg:hidden" onClick={() => setPreviewOpen(true)}>
+                                {inFlow && !isDesktop ? (
+                                    <Button type="button" variant="light" radius="lg" size="sm" className="min-h-11 px-2 text-primary-text" startContent={<Icon icon="material-symbols:visibility-outline" width={18} aria-hidden="true" />} onPress={() => setPreviewOpen(true)}>
                                         Ver cómo te ven
-                                    </button>
+                                    </Button>
                                 ) : null}
                             </div>
                         </div>
@@ -871,33 +982,45 @@ export default function MusicianGuidedOnboarding() {
                         {renderStep()}
                         {formError ? (
                             <p role="alert" className="flex items-start gap-2 text-sm font-medium text-danger-text">
-                                <Icon icon="lucide:alert-circle" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                                <Icon icon="material-symbols:error-outline" width={16} className="mt-0.5 shrink-0" aria-hidden="true" />
                                 <span>{formError}</span>
                             </p>
                         ) : null}
                     </div>
 
                     <div className="sticky bottom-0 -mx-4 border-t border-default-200 bg-background px-4 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] pt-3 lg:static lg:mx-0 lg:border-0 lg:px-0">
-                        <Button type="submit" color="primary" size="lg" radius="lg" fullWidth className="h-14 text-[17px] font-semibold" isLoading={busy || uploading !== null}>
+                        <Button
+                            type="submit"
+                            color="primary"
+                            size="lg"
+                            radius="lg"
+                            fullWidth
+                            className="h-14 text-[17px] font-semibold"
+                            isLoading={busy || uploading !== null}
+                            endContent={busy || uploading ? null : <Icon icon={ctaIcon} width={22} aria-hidden="true" />}
+                        >
                             {uploading ? "Subiendo…" : busy && step === "revision" ? "Enviando…" : ctaLabel}
                         </Button>
                     </div>
                 </form>
 
-                <aside aria-label="Vista previa del perfil" className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
-                    <p className="mb-3 text-sm font-semibold">Así te ve un cliente</p>
-                    <ProfilePreview data={data} photoSrc={photoSrc} />
-                </aside>
+                {isDesktop ? (
+                    <aside aria-label="Vista previa de tu perfil" className="lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto lg:pb-2">
+                        <ProfilePreview draft={previewDraft} focus={previewFocus} />
+                    </aside>
+                ) : null}
             </div>
 
-            <Modal isOpen={previewOpen} onOpenChange={setPreviewOpen} placement="bottom" size="lg" scrollBehavior="inside">
-                <ModalContent>
-                    <ModalHeader className="text-base">Así te ve un cliente</ModalHeader>
-                    <ModalBody className="pb-6">
-                        <ProfilePreview data={data} photoSrc={photoSrc} />
-                    </ModalBody>
-                </ModalContent>
-            </Modal>
+            {!isDesktop ? (
+                <Modal isOpen={previewOpen} onOpenChange={setPreviewOpen} placement="bottom" size="lg" scrollBehavior="inside">
+                    <ModalContent>
+                        <ModalHeader className="text-base">Vista previa de tu perfil</ModalHeader>
+                        <ModalBody className="pb-6">
+                            <ProfilePreview draft={previewDraft} focus={previewFocus} scale={0.7} />
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+            ) : null}
         </div>
     );
 }

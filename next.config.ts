@@ -163,12 +163,24 @@ const nextConfig: NextConfig = {
         headers: baseSecurityHeaders,
       },
       {
-        // Todo excepto /uploads: no se permite embeber el sitio en iframes.
-        source: "/((?!uploads/).*)",
+        // Todo excepto /uploads y la vista previa del perfil: no se permite embeber el sitio en iframes.
+        source: "/((?!uploads/|musician/onboarding/preview).*)",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Content-Security-Policy", value: enforcedCsp },
           { key: "Content-Security-Policy-Report-Only", value: reportOnlyCsp },
+        ],
+      },
+      {
+        // La vista previa del perfil se muestra en un iframe de la propia guía: solo del mismo origen.
+        source: "/:path(musician/onboarding/preview)",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          {
+            key: "Content-Security-Policy",
+            value: enforcedCsp.replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+          },
+          { key: "Content-Security-Policy-Report-Only", value: reportOnlyCsp.replace("frame-ancestors 'none'", "frame-ancestors 'self'") },
         ],
       },
       {
