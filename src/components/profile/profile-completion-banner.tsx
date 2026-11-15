@@ -96,7 +96,9 @@ export default function ProfileCompletionBanner() {
             ? needsOnboarding
                 ? "/musician/onboarding"
                 : "/musician/profile"
-            : "/contractor/profile";
+            : validation?.status === "draft"
+              ? "/contractor/onboarding"
+              : "/contractor/profile";
 
     if (statusError) {
         return (
