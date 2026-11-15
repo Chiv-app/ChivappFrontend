@@ -1,3 +1,5 @@
+import { activeProfileHeaders } from "@/lib/active-profile";
+
 export const AUTH_UNAUTHORIZED_EVENT = "chivapp:unauthorized";
 
 function getApiUrl(): string {
@@ -210,6 +212,7 @@ export async function apiFetchWithHeaders<T>(
             credentials: "include",
             headers: {
                 "Content-Type": "application/json",
+                ...activeProfileHeaders(),
                 ...(options.headers || {}),
             },
         });

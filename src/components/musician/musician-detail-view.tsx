@@ -13,6 +13,7 @@ import { Icon } from "@iconify/react";
 import BookActionButton from "@/components/auth/book-action-button";
 import BookingRequestModal from "@/components/booking/booking-request-modal";
 import MusicianDetailsSection from "@/components/musician/musician-details-section";
+import MusicianTeamSection from "@/components/musician/musician-team-section";
 import MusicianRepertoireSection from "@/components/musician/musician-repertoire-section";
 import ShareProfileButton from "@/components/musician/share-profile-button";
 import { useAuth } from "@/contexts/auth-context";
@@ -597,6 +598,8 @@ export default function MusicianDetailView({
                                 {musician.details ? (
                                     <MusicianDetailsSection details={musician.details} kind={musician.profileType ?? "solo"} />
                                 ) : null}
+
+                                <MusicianTeamSection members={musician.team ?? []} playsWith={musician.playsWith ?? []} />
 
                                 {hasPortfolio ? (
                                     <section>

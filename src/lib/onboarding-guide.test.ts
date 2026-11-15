@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    ADDITIONAL_FLOW,
     CHAPTERS,
     FLOW_STEPS,
     OPTIONAL_STEPS,
@@ -7,6 +8,8 @@ import {
     buildBioDraft,
     dataFromProfile,
     emptyGuideData,
+    flowFor,
+    guideStepsFor,
     incompleteSteps,
     minutesLeft,
     resumeStep,
@@ -153,6 +156,42 @@ describe("capítulos y tiempo", () => {
         expect(minutesLeft("revision")).toBe(1);
         expect(minutesLeft("tipo")).toBeGreaterThan(minutesLeft("foto"));
         expect(minutesLeft("welcome")).toBe(0);
+    });
+});
+
+describe("guía corta de un perfil adicional", () => {
+    it("omite documento y firma, que ya se dieron con el primer perfil", () => {
+        expect(ADDITIONAL_FLOW).not.toContain("dni");
+        expect(ADDITIONAL_FLOW).not.toContain("firma");
+        expect(ADDITIONAL_FLOW).toHaveLength(FLOW_STEPS.length - 2);
+        expect(flowFor(false)).toBe(FLOW_STEPS);
+        expect(guideStepsFor(true)).toEqual(["welcome", ...ADDITIONAL_FLOW, "enviado"]);
+    });
+
+    it("no pide documento ni firma al revisar", () => {
+        const profile: GuideData = { ...complete(), dniUrl: null, signatureUrl: null };
+        expect(incompleteSteps(profile)).toEqual(["dni", "firma"]);
+        expect(incompleteSteps(profile, true)).toEqual([]);
+        expect(validateStep("revision", profile, true)).toBeNull();
+        expect(validateStep("revision", profile)?.field).toBe("review");
+    });
+
+    it("el documento y la firma copiados no cuentan como avance del perfil nuevo", () => {
+        const fresh: GuideData = { ...emptyGuideData(), dniUrl: "/uploads/private/dni.jpg", signatureUrl: "/uploads/private/firma.png" };
+        expect(resumeStep(fresh, true)).toBe("welcome");
+        const loaded = dataFromProfile({
+            profile_type: "solo",
+            genres: [],
+            instruments: [],
+            id_document_url: "/uploads/private/dni.jpg",
+            signature_image_url: "/uploads/private/firma.png",
+        } as unknown as MusicianProfileOut);
+        expect(loaded.profileType).toBeNull();
+    });
+
+    it("el tiempo restante se calcula sobre la guía corta", () => {
+        expect(totalMinutes(ADDITIONAL_FLOW)).toBeLessThan(totalMinutes());
+        expect(minutesLeft("tipo", ADDITIONAL_FLOW)).toBe(totalMinutes(ADDITIONAL_FLOW));
     });
 });
 

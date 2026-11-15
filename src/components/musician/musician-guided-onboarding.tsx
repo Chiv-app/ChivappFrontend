@@ -16,9 +16,7 @@ import {
     BIO_MIN_LENGTH,
     CHAPTERS,
     CITY_OPTIONS,
-    FLOW_STEPS,
     GENRE_OPTIONS,
-    GUIDE_STEPS,
     INSTRUMENT_OPTIONS,
     MAX_GENRES,
     OPTIONAL_STEPS,
@@ -26,6 +24,8 @@ import {
     buildBioDraft,
     dataFromProfile,
     emptyGuideData,
+    flowFor,
+    guideStepsFor,
     minutesLeft,
     resumeStep,
     totalMinutes,
@@ -64,7 +64,8 @@ import {
     toggleInList,
     withoutGroupOnly,
 } from "@/lib/profile-details";
-import { getMusicianProfile, submitMusicianProfile, updateMusicianProfile } from "@/lib/profiles";
+import { setActiveProfileId } from "@/lib/active-profile";
+import { getMusicianProfile, invalidateProfileVerificationCache, submitMusicianProfile, updateMusicianProfile } from "@/lib/profiles";
 import { resolveUploadUrl, uploadFile, uploadSignatureDataUrl } from "@/lib/uploads";
 
 const FOCUS_SELECTORS: Record<GuideField, string> = {
@@ -132,7 +133,7 @@ function FieldError({ id, error, field }: { id: string; error: GuideError | null
 }
 
 /** Progreso por capítulos: cada tramo se llena a medida que se avanza y el capítulo actual se lee a la vista. */
-function ChapterBar({ step }: { step: GuideStepId }) {
+function ChapterBar({ step, flow }: { step: GuideStepId; flow: GuideStepId[] }) {
     const currentId = STEP_CHAPTER[step];
     const done = step === "enviado";
     const currentIndex = done ? CHAPTERS.length : CHAPTERS.findIndex((c) => c.id === currentId);
@@ -147,7 +148,7 @@ function ChapterBar({ step }: { step: GuideStepId }) {
                 className="flex gap-1.5"
             >
                 {CHAPTERS.map((chapter, index) => {
-                    const stepsHere = FLOW_STEPS.filter((s) => STEP_CHAPTER[s] === chapter.id);
+                    const stepsHere = flow.filter((s) => STEP_CHAPTER[s] === chapter.id);
                     const position = currentId === chapter.id ? stepsHere.indexOf(step) : 0;
                     const fill = index < currentIndex ? 100 : index === currentIndex ? ((position + 0.4) / stepsHere.length) * 100 : 0;
                     return (
@@ -203,6 +204,9 @@ export default function MusicianGuidedOnboarding() {
     const [otherCity, setOtherCity] = useState("");
     const [chapterNote, setChapterNote] = useState<string | null>(null);
     const [showHour, setShowHour] = useState(false);
+    const [isAdditional, setIsAdditional] = useState(false);
+    const flow = useMemo(() => flowFor(isAdditional), [isAdditional]);
+    const guideSteps = useMemo(() => guideStepsFor(isAdditional), [isAdditional]);
     const [announce, setAnnounce] = useState("");
     // El campo que se está editando manda sobre el paso: la vista previa resalta lo que tocas.
     const [fieldFocus, setFieldFocus] = useState<PreviewFocus>(null);
@@ -239,7 +243,9 @@ export default function MusicianGuidedOnboarding() {
             const initial = dataFromProfile(profile, user.fullname);
             setData(initial);
             setShowHour(Boolean(initial.priceHour));
-            setStep(resumeStep(initial));
+            const additional = profile.is_primary === false;
+            setIsAdditional(additional);
+            setStep(resumeStep(initial, additional));
             setPhase("ready");
         } catch (err) {
             setLoadError(
@@ -307,7 +313,7 @@ export default function MusicianGuidedOnboarding() {
         // Al terminar un capítulo se reconoce el avance. Solo hacia adelante y fuera de «Cambiar» desde la revisión.
         const from = STEP_CHAPTER[step];
         const to = STEP_CHAPTER[next];
-        const forward = FLOW_STEPS.indexOf(next) > FLOW_STEPS.indexOf(step);
+        const forward = flow.indexOf(next) > flow.indexOf(step);
         if (noteTimer.current) clearTimeout(noteTimer.current);
         if (!returnTo && forward && from && to && from !== to) {
             const done = CHAPTERS.find((c) => c.id === from)?.title;
@@ -327,7 +333,7 @@ export default function MusicianGuidedOnboarding() {
             goTo(target);
             return;
         }
-        goTo(GUIDE_STEPS[GUIDE_STEPS.indexOf(step) + 1]);
+        goTo(guideSteps[guideSteps.indexOf(step) + 1]);
     }
 
     function goBack() {
@@ -337,8 +343,8 @@ export default function MusicianGuidedOnboarding() {
             goTo(target);
             return;
         }
-        const index = GUIDE_STEPS.indexOf(step);
-        if (index > 0) goTo(GUIDE_STEPS[index - 1]);
+        const index = guideSteps.indexOf(step);
+        if (index > 0) goTo(guideSteps[index - 1]);
     }
 
     async function persist(current: GuideStepId) {
@@ -389,6 +395,13 @@ export default function MusicianGuidedOnboarding() {
         }
     }
 
+    /** Sale de la guía de un perfil adicional y vuelve al perfil principal (sin borrar nada: queda en borrador). */
+    function leaveAdditionalProfile() {
+        setActiveProfileId(null);
+        invalidateProfileVerificationCache("musician");
+        router.replace("/musician");
+    }
+
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
         if (busy || uploading) return;
@@ -397,10 +410,12 @@ export default function MusicianGuidedOnboarding() {
             return;
         }
         if (step === "enviado") {
-            router.replace("/musician");
+            // Un perfil adicional ya enviado: se vuelve al perfil principal, que es el que tiene el panel completo.
+            if (isAdditional) leaveAdditionalProfile();
+            else router.replace("/musician");
             return;
         }
-        const problem = validateStep(step, data);
+        const problem = validateStep(step, data, isAdditional);
         if (problem) {
             showError(problem);
             return;
@@ -530,11 +545,11 @@ export default function MusicianGuidedOnboarding() {
         if (error?.field === list) setError(null);
     }
 
-    const flowIndex = FLOW_STEPS.indexOf(step) + 1; // 0 si no es un paso numerado
+    const flowIndex = flow.indexOf(step) + 1; // 0 si no es un paso numerado
     const inFlow = flowIndex > 0;
     const chapterId = STEP_CHAPTER[step];
     const chapter = CHAPTERS.find((c) => c.id === chapterId);
-    const chapterSteps = FLOW_STEPS.filter((s) => STEP_CHAPTER[s] === chapterId);
+    const chapterSteps = flow.filter((s) => STEP_CHAPTER[s] === chapterId);
     const chapterPosition = chapterSteps.indexOf(step) + 1;
     const isOptional = OPTIONAL_STEPS.includes(step);
     const photoSrc = photoPreview || resolveUploadUrl(data.photoUrl);
@@ -627,9 +642,10 @@ export default function MusicianGuidedOnboarding() {
                 return (
                     <>
                         {title(
-                            "Armemos tu perfil",
-                            `${FLOW_STEPS.length} pasos cortos, unos ${totalMinutes()} minutos. ${OPTIONAL_STEPS.length} son opcionales. Se guarda solo: puedes salir y seguir cuando quieras.`,
+                            isAdditional ? "Agreguemos tu nuevo perfil" : "Armemos tu perfil",
+                            `${flow.length} pasos cortos, unos ${totalMinutes(flow)} minutos. ${OPTIONAL_STEPS.length} son opcionales. Se guarda solo: puedes salir y seguir cuando quieras.`,
                         )}
+                        {isAdditional ? <Note>Tu documento, tu firma y tus datos de cobro ya los tenemos: no los repites.</Note> : null}
                         <Note>Tus datos privados, como tu documento, los ve solo el equipo de Chivapp.</Note>
                     </>
                 );
@@ -1201,7 +1217,7 @@ export default function MusicianGuidedOnboarding() {
                     .filter((row) => ["notice", "cities", "travel"].includes(row.key))
                     .map((row) => row.value)
                     .join(" · ");
-                const rows: { label: string; value: React.ReactNode; go: GuideStepId; optional?: boolean }[] = [
+                const allRows: { label: string; value: React.ReactNode; go: GuideStepId; optional?: boolean }[] = [
                     {
                         label: "Cómo trabajas",
                         value: data.profileType ? profileBadge(data.profileType, data.groupSize) : "—",
@@ -1227,6 +1243,8 @@ export default function MusicianGuidedOnboarding() {
                     { label: "Documento", value: data.dniUrl ? <span className="font-semibold text-success-text">Recibido ✓</span> : "—", go: "dni" },
                     { label: "Firma", value: data.signatureDataUrl || data.signatureUrl ? <span className="font-semibold text-success-text">Lista ✓</span> : "—", go: "firma" },
                 ];
+                // En un perfil adicional el documento y la firma ya están dados: no hay nada que cambiar aquí.
+                const rows = isAdditional ? allRows.filter((row) => row.go !== "dni" && row.go !== "firma") : allRows;
                 const skipped = rows.filter((row) => row.optional && row.value === SIN_COMPLETAR).length;
                 return (
                     <>
@@ -1327,7 +1345,12 @@ export default function MusicianGuidedOnboarding() {
                                 <span role="status" className={`text-[13px] text-success-text transition-opacity motion-reduce:transition-none ${showSaved ? "opacity-100" : "opacity-0"}`}>
                                     {showSaved ? "Guardado ✓" : ""}
                                 </span>
-                                {inFlow ? <span className="hidden text-[13px] text-default-500 sm:inline">≈ {minutesLeft(step)} min restantes</span> : null}
+                                {isAdditional && step !== "enviado" ? (
+                                    <Button type="button" variant="light" radius="lg" size="sm" className="min-h-11 px-2 text-default-600" onPress={leaveAdditionalProfile}>
+                                        Salir
+                                    </Button>
+                                ) : null}
+                                {inFlow ? <span className="hidden text-[13px] text-default-500 sm:inline">≈ {minutesLeft(step, flow)} min restantes</span> : null}
                                 {inFlow && !isDesktop ? (
                                     <Button type="button" variant="light" radius="lg" size="sm" className="min-h-11 px-2 text-primary-text" startContent={<Icon icon="material-symbols:visibility-outline" width={18} aria-hidden="true" />} onPress={() => setPreviewOpen(true)}>
                                         Ver cómo te ven
@@ -1335,7 +1358,7 @@ export default function MusicianGuidedOnboarding() {
                                 ) : null}
                             </div>
                         </div>
-                        <ChapterBar step={step} />
+                        <ChapterBar step={step} flow={flow} />
                     </div>
 
                     {chapterNote ? (

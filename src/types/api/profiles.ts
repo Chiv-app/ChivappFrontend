@@ -72,6 +72,27 @@ export type MusicianPublicReviewOut = {
     created_at: string;
 };
 
+export type PublicTeamMember = {
+    name: string;
+    specialties: string[];
+    /** Perfil de solista publicado de ese integrante, si lo tiene. */
+    profile_slug: string | null;
+};
+
+export type PublicGroupLink = { name: string; slug: string };
+
+/** Una fila del selector de perfiles de la persona. */
+export type MusicianProfileSummary = {
+    id: string;
+    stage_name: string | null;
+    slug: string | null;
+    profile_type: "solo" | "group";
+    group_size: string | null;
+    status: ProfileStatus;
+    is_primary: boolean;
+    profile_image_url: string | null;
+};
+
 export type MusicianProfilePublicOut = {
     id: string;
     is_ensemble_only?: boolean;
@@ -81,6 +102,9 @@ export type MusicianProfilePublicOut = {
     profile_type?: "solo" | "group";
     group_size?: string | null;
     details?: Record<string, unknown>;
+    /** Integrantes activos de un grupo y grupos en los que toca un solista (solo en el perfil público). */
+    members?: PublicTeamMember[];
+    plays_with?: PublicGroupLink[];
     bio: string | null;
     genres: string[];
     instruments: string[];
@@ -129,6 +153,7 @@ export type ContractorProfilePublicOut = {
 
 export type MusicianProfileOut = MusicianProfilePublicOut & {
     user_id: string;
+    is_primary?: boolean;
     username?: string | null;
     fullname?: string | null;
     email?: string | null;

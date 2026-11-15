@@ -36,6 +36,19 @@ export const FLOW_STEPS: GuideStepId[] = [
 
 export const GUIDE_STEPS: GuideStepId[] = ["welcome", ...FLOW_STEPS, "enviado"];
 
+/**
+ * Guía corta de un perfil adicional: sin documento ni firma, que ya se dieron con el primer perfil.
+ */
+export const ADDITIONAL_FLOW: GuideStepId[] = FLOW_STEPS.filter((s) => s !== "dni" && s !== "firma");
+
+export function flowFor(additional: boolean): GuideStepId[] {
+    return additional ? ADDITIONAL_FLOW : FLOW_STEPS;
+}
+
+export function guideStepsFor(additional: boolean): GuideStepId[] {
+    return ["welcome", ...flowFor(additional), "enviado"];
+}
+
 /** Pasos que no bloquean: se pueden omitir y completar después desde «Mi perfil». */
 export const OPTIONAL_STEPS: GuideStepId[] = ["eventos", "show", "reservas"];
 
@@ -80,15 +93,15 @@ export const STEP_MINUTES: Partial<Record<GuideStepId, number>> = {
     revision: 0.5,
 };
 
-export function minutesLeft(from: GuideStepId): number {
-    const index = FLOW_STEPS.indexOf(from);
+export function minutesLeft(from: GuideStepId, flow: GuideStepId[] = FLOW_STEPS): number {
+    const index = flow.indexOf(from);
     if (index < 0) return 0;
-    const total = FLOW_STEPS.slice(index).reduce((sum, step) => sum + (STEP_MINUTES[step] ?? 0), 0);
+    const total = flow.slice(index).reduce((sum, step) => sum + (STEP_MINUTES[step] ?? 0), 0);
     return Math.max(1, Math.round(total));
 }
 
-export function totalMinutes(): number {
-    return Math.max(1, Math.round(FLOW_STEPS.reduce((sum, step) => sum + (STEP_MINUTES[step] ?? 0), 0)));
+export function totalMinutes(flow: GuideStepId[] = FLOW_STEPS): number {
+    return Math.max(1, Math.round(flow.reduce((sum, step) => sum + (STEP_MINUTES[step] ?? 0), 0)));
 }
 
 export const STEP_LABELS: Record<GuideStepId, string> = {
@@ -235,7 +248,7 @@ export function dataFromProfile(profile: MusicianProfileOut, fallbackFullname?: 
 }
 
 /** Valida un paso. Devuelve el primer problema (con el campo al que enfocar) o null. */
-export function validateStep(step: GuideStepId, d: GuideData): GuideError | null {
+export function validateStep(step: GuideStepId, d: GuideData, additional = false): GuideError | null {
     switch (step) {
         case "tipo":
             if (!d.profileType) return { field: "kind", message: "Elige cómo trabajas: solo o en grupo." };
@@ -277,7 +290,7 @@ export function validateStep(step: GuideStepId, d: GuideData): GuideError | null
                 ? null
                 : { field: "signature", message: "Dibuja tu firma o escribe tu nombre." };
         case "revision": {
-            const missing = incompleteSteps(d);
+            const missing = incompleteSteps(d, additional);
             return missing.length === 0
                 ? null
                 : {
@@ -293,27 +306,22 @@ export function validateStep(step: GuideStepId, d: GuideData): GuideError | null
 const DATA_STEPS: GuideStepId[] = ["tipo", "nombre", "toca", "donde", "foto", "bio", "dni", "firma"];
 
 /** Pasos con datos que aún faltan, en orden. */
-export function incompleteSteps(d: GuideData): GuideStepId[] {
-    return DATA_STEPS.filter((s) => validateStep(s, d) !== null);
+export function incompleteSteps(d: GuideData, additional = false): GuideStepId[] {
+    return DATA_STEPS.filter((s) => !(additional && (s === "dni" || s === "firma"))).filter((s) => validateStep(s, d) !== null);
 }
 
+/**
+ * Hay avance cuando la persona ya llenó algo suyo. El documento y la firma no cuentan: en un perfil adicional
+ * llegan copiados del primero y no significan que haya empezado este perfil.
+ */
 function hasAnyProgress(d: GuideData): boolean {
-    return Boolean(
-        d.genres.length ||
-            d.instruments.length ||
-            d.city.trim() ||
-            d.price ||
-            d.photoUrl ||
-            d.bio.trim() ||
-            d.dniUrl ||
-            d.signatureUrl,
-    );
+    return Boolean(d.genres.length || d.instruments.length || d.city.trim() || d.price || d.photoUrl || d.bio.trim());
 }
 
 /** Paso en el que retomar: la bienvenida si no hay avance, o el primer paso incompleto. */
-export function resumeStep(d: GuideData): GuideStepId {
+export function resumeStep(d: GuideData, additional = false): GuideStepId {
     if (!hasAnyProgress(d)) return "welcome";
-    return incompleteSteps(d)[0] ?? "revision";
+    return incompleteSteps(d, additional)[0] ?? "revision";
 }
 
 /** Borrador de biografía con los datos ya dados (sin IA: es una plantilla). */

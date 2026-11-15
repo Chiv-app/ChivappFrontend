@@ -5,6 +5,7 @@ import type {
     ContractorProfileUpdate,
     MusicianContractGenerateOut,
     MusicianProfileOut,
+    MusicianProfileSummary,
     MusicianProfileUpdate,
     ProfileValidationOut,
     UserRole,
@@ -40,6 +41,16 @@ export function invalidateProfileVerificationCache(role?: ProfileVerificationRol
 
 export function getMusicianProfile() {
     return apiFetch<MusicianProfileOut>("/profiles/musician/me");
+}
+
+/** Los perfiles artísticos de la persona, el principal primero. */
+export function listMyMusicianProfiles() {
+    return apiFetch<MusicianProfileSummary[]>("/profiles/musician/mine");
+}
+
+/** Crea un perfil adicional en borrador (reutiliza documento, firma y cobro de la persona). */
+export function createAdditionalMusicianProfile() {
+    return apiFetch<MusicianProfileOut>("/profiles/musician/additional", { method: "POST" });
 }
 
 export function getMusicianProfileStatus() {

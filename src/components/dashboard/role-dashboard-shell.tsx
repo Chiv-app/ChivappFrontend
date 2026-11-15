@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AppNavbar from "@/components/layout/app-navbar";
+import ProfileSwitcher from "@/components/musician/profile-switcher";
 import EmailVerificationBanner from "@/components/auth/email-verification-banner";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useAuth } from "@/contexts/auth-context";
@@ -271,6 +272,10 @@ export default function RoleDashboardShell({
                             </div>
                         ) : null}
                     </div>
+                ) : null}
+
+                {role === "musician" && !isOnboarding && !ensembleBypass ? (
+                    <ProfileSwitcher className="px-4 lg:px-8 pt-3" />
                 ) : null}
 
                 <main className="p-4 lg:p-8">{children}</main>

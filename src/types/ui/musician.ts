@@ -48,6 +48,9 @@ export type MusicianDetail = MusicianCard & {
     websiteUrl: string | null;
     /** Datos de detalle validados (eventos, show, reservas, experiencia). */
     details?: import("@/lib/profile-details").ProfileDetails;
+    /** Integrantes activos del grupo y grupos en los que toca un solista. */
+    team?: import("@/types/api").PublicTeamMember[];
+    playsWith?: import("@/types/api").PublicGroupLink[];
     reviews: Array<{
         id: string;
         rating: number;

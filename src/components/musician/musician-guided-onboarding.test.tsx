@@ -30,6 +30,7 @@ vi.mock("@/lib/profiles", () => ({
     getMusicianProfile: getProfile,
     updateMusicianProfile: updateProfile,
     submitMusicianProfile: submitProfile,
+    invalidateProfileVerificationCache: vi.fn(),
 }));
 
 vi.mock("@/lib/uploads", () => ({
@@ -240,5 +241,58 @@ describe("MusicianGuidedOnboarding", () => {
 
         await user.click(await screen.findByRole("button", { name: "Reintentar" }));
         expect(await screen.findByRole("heading", { name: "Armemos tu perfil" })).toBeTruthy();
+    });
+
+    it("un perfil adicional usa la guía corta: sin documento ni firma y con salida al perfil principal", async () => {
+        window.localStorage.setItem("chivapp:active-musician-profile", "11111111-1111-4111-8111-111111111111");
+        getProfile.mockResolvedValue(
+            draftProfile({
+                is_primary: false,
+                stage_name: null,
+                id_document_url: "/uploads/private/dni.jpg",
+                signature_image_url: "/uploads/private/firma.png",
+            }),
+        );
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+
+        expect(await screen.findByRole("heading", { name: "Agreguemos tu nuevo perfil" })).toBeTruthy();
+        expect(screen.getByText(/no los repites/)).toBeTruthy();
+        expect(screen.getByText("10 pasos cortos, unos 7 minutos. 3 son opcionales. Se guarda solo: puedes salir y seguir cuando quieras.")).toBeTruthy();
+
+        await user.click(screen.getByRole("button", { name: "Salir" }));
+        expect(window.localStorage.getItem("chivapp:active-musician-profile")).toBeNull();
+        expect(routerMock.replace).toHaveBeenCalledWith("/musician");
+    });
+
+    it("al terminar un perfil adicional, «Ir a mi panel» vuelve al perfil principal", async () => {
+        window.localStorage.setItem("chivapp:active-musician-profile", "11111111-1111-4111-8111-111111111111");
+        getProfile.mockResolvedValue(
+            draftProfile({
+                is_primary: false,
+                profile_type: "solo",
+                stage_name: "Mi grupo",
+                genres: ["Salsa"],
+                instruments: ["Voz"],
+                location_city: "Lima",
+                price_per_event: 300,
+                profile_image_url: "/uploads/foto.jpg",
+                bio: "Soy un grupo de Lima que anima celebraciones con música para toda la familia.",
+                id_document_url: "/uploads/private/dni.jpg",
+                signature_image_url: "/uploads/private/firma.png",
+            }),
+        );
+        submitProfile.mockResolvedValue({});
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+
+        expect(await screen.findByRole("heading", { name: "Revisa y envía" })).toBeTruthy();
+        expect(screen.queryByRole("button", { name: /documento|firma/i })).toBeNull();
+        await user.click(screen.getByRole("button", { name: "Enviar a revisión" }));
+        expect(await screen.findByRole("heading", { name: "Perfil enviado" })).toBeTruthy();
+
+        await user.click(screen.getByRole("button", { name: "Ir a mi panel" }));
+        expect(window.localStorage.getItem("chivapp:active-musician-profile")).toBeNull();
+        expect(routerMock.replace).toHaveBeenCalledWith("/musician");
     });
 });

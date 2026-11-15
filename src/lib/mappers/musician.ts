@@ -205,6 +205,8 @@ export function toMusicianDetail(
     return {
         ...card,
         details: parseDetails(profile.details),
+        team: profile.members ?? [],
+        playsWith: profile.plays_with ?? [],
         availabilityType: profile.availability_type ?? null,
         pricePerHour: toNullableNumber(profile.price_per_hour),
         pricePerEvent: toNullableNumber(profile.price_per_event),
