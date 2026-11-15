@@ -23,4 +23,6 @@ export type MusicianSearchResult = {
     rating_count: number | null;
     main_image_url: string | null;
     is_verified: boolean;
+    profile_type?: "solo" | "group";
+    group_size?: string | null;
 };

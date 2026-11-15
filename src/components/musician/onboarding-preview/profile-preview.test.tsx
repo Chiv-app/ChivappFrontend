@@ -5,6 +5,9 @@ import ProfilePreview from "./profile-preview";
 import { PREVIEW_DRAFT_MESSAGE, PREVIEW_READY_MESSAGE, type PreviewDraft } from "./types";
 
 const draft: PreviewDraft = {
+    profileType: "group",
+    groupSize: "4-5",
+    details: { event_types: ["bodas"] },
     name: "Grupo Aurora",
     city: "Arequipa",
     price: "450",

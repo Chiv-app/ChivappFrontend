@@ -19,6 +19,8 @@ const FOCUS_SELECTORS: Record<Exclude<PreviewFocus, null>, string[]> = {
     photo: ['[data-preview="photo"]'],
     specialty: ['[data-preview="instruments"]', '[data-preview="genres"]'],
     bio: ['[data-preview="about"]', '[data-preview="tagline"]'],
+    events: ['[data-preview="events"]'],
+    show: ['[data-preview="show"]'],
     location: ['[data-preview="location"]'],
     price: ['[data-preview="price"]'],
 };
@@ -64,6 +66,9 @@ function toDetail(draft: PreviewDraft): MusicianDetail {
         spotifyUrl: null,
         websiteUrl: null,
         reviews: [],
+        profileType: draft.profileType,
+        groupSize: draft.groupSize || null,
+        details: draft.details,
     };
 }
 

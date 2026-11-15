@@ -36,6 +36,8 @@ export type MusicianProfileListOut = {
     id: string;
     stage_name: string | null;
     slug?: string | null;
+    profile_type?: "solo" | "group";
+    group_size?: string | null;
     bio?: string | null;
     genres: string[];
     instruments: string[];
@@ -75,6 +77,10 @@ export type MusicianProfilePublicOut = {
     is_ensemble_only?: boolean;
     stage_name?: string | null;
     slug?: string | null;
+    /** «solo» o «group». Los perfiles anteriores a este dato son «solo». */
+    profile_type?: "solo" | "group";
+    group_size?: string | null;
+    details?: Record<string, unknown>;
     bio: string | null;
     genres: string[];
     instruments: string[];
@@ -155,6 +161,9 @@ export type MusicianProfileOut = MusicianProfilePublicOut & {
 
 export type MusicianProfileCreate = {
     is_ensemble_only?: boolean;
+    profile_type?: "solo" | "group";
+    group_size?: string | null;
+    details?: import("@/lib/profile-details").ProfileDetails;
     stage_name: string;
     username?: string | null;
     fullname?: string | null;

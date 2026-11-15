@@ -1,16 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
+    CHAPTERS,
+    FLOW_STEPS,
+    OPTIONAL_STEPS,
+    STEP_CHAPTER,
     buildBioDraft,
+    dataFromProfile,
     emptyGuideData,
     incompleteSteps,
+    minutesLeft,
     resumeStep,
+    totalMinutes,
     validateStep,
     type GuideData,
 } from "./onboarding-guide";
+import type { MusicianProfileOut } from "@/types/api";
 
 function complete(): GuideData {
     return {
         ...emptyGuideData(),
+        profileType: "solo",
         name: "Los Hermanos Quispe",
         fullname: "Carlos Quispe Rivera",
         genres: ["Cumbia"],
@@ -80,7 +89,7 @@ describe("resumeStep", () => {
     });
 
     it("retoma en el primer paso incompleto", () => {
-        const base = { ...emptyGuideData(), name: "Grupo Aurora", genres: ["Salsa"], instruments: ["Voz"] };
+        const base: GuideData = { ...emptyGuideData(), profileType: "solo", name: "Grupo Aurora", genres: ["Salsa"], instruments: ["Voz"] };
         expect(resumeStep(base)).toBe("donde");
         expect(resumeStep({ ...base, city: "Lima", price: "300" })).toBe("foto");
     });
@@ -88,6 +97,62 @@ describe("resumeStep", () => {
     it("va a la revisión cuando todo está completo", () => {
         expect(resumeStep(complete())).toBe("revision");
         expect(incompleteSteps(complete())).toEqual([]);
+    });
+});
+
+describe("tipo de perfil", () => {
+    it("es lo primero que se pide y un grupo debe indicar cuántas personas son", () => {
+        expect(validateStep("tipo", emptyGuideData())?.field).toBe("kind");
+        expect(validateStep("tipo", { ...emptyGuideData(), profileType: "solo" })).toBeNull();
+        expect(validateStep("tipo", { ...emptyGuideData(), profileType: "group" })?.field).toBe("groupSize");
+        expect(validateStep("tipo", { ...emptyGuideData(), profileType: "group", groupSize: "4-5" })).toBeNull();
+    });
+
+    it("la revisión lo exige, pero no exige los pasos opcionales", () => {
+        expect(incompleteSteps({ ...complete(), profileType: null })).toEqual(["tipo"]);
+        expect(incompleteSteps(complete())).toEqual([]);
+        for (const step of OPTIONAL_STEPS) expect(validateStep(step, emptyGuideData())).toBeNull();
+    });
+
+    it("un perfil sin avance vuelve a preguntar el tipo; uno con avance conserva el suyo", () => {
+        const fresh = dataFromProfile({ profile_type: "solo", genres: [], instruments: [] } as unknown as MusicianProfileOut);
+        expect(fresh.profileType).toBeNull();
+        const advanced = dataFromProfile({
+            profile_type: "group",
+            group_size: "6-8",
+            genres: ["Salsa"],
+            instruments: ["Voz"],
+        } as unknown as MusicianProfileOut);
+        expect(advanced.profileType).toBe("group");
+        expect(advanced.groupSize).toBe("6-8");
+        expect(dataFromProfile({ profile_type: "banda", genres: ["Salsa"] } as unknown as MusicianProfileOut).profileType).toBe("solo");
+    });
+
+    it("al cargar solo conserva detalles que el backend acepta", () => {
+        const data = dataFromProfile({
+            genres: ["Salsa"],
+            details: { event_types: ["bodas", "otra"], duration: "2h", clave_vieja: 1 },
+        } as unknown as MusicianProfileOut);
+        expect(data.details).toEqual({ event_types: ["bodas"], duration: "2h" });
+    });
+});
+
+describe("capítulos y tiempo", () => {
+    it("cada paso numerado pertenece a un capítulo existente", () => {
+        const ids = CHAPTERS.map((c) => c.id);
+        for (const step of FLOW_STEPS) expect(ids).toContain(STEP_CHAPTER[step]);
+    });
+
+    it("los capítulos siguen el orden de los pasos", () => {
+        const order = FLOW_STEPS.map((s) => CHAPTERS.findIndex((c) => c.id === STEP_CHAPTER[s]));
+        expect(order).toEqual([...order].sort((a, b) => a - b));
+    });
+
+    it("el tiempo restante baja a medida que se avanza", () => {
+        expect(minutesLeft("tipo")).toBe(totalMinutes());
+        expect(minutesLeft("revision")).toBe(1);
+        expect(minutesLeft("tipo")).toBeGreaterThan(minutesLeft("foto"));
+        expect(minutesLeft("welcome")).toBe(0);
     });
 });
 

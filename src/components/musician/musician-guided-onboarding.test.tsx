@@ -79,8 +79,53 @@ describe("MusicianGuidedOnboarding", () => {
 
         expect(await screen.findByRole("heading", { name: "Armemos tu perfil" })).toBeTruthy();
         await user.click(screen.getByRole("button", { name: "Empezar" }));
+        expect(await screen.findByRole("heading", { name: "¿Cómo trabajas?" })).toBeTruthy();
+        expect(screen.getByText("Tú · 1 de 2")).toBeTruthy();
+    });
+
+    it("no avanza sin elegir cómo trabajas y lo explica", async () => {
+        getProfile.mockResolvedValue(draftProfile());
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+        await user.click(await screen.findByRole("button", { name: "Empezar" }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+        expect(await screen.findByText("Elige cómo trabajas: solo o en grupo.")).toBeTruthy();
+        expect(updateProfile).not.toHaveBeenCalled();
+    });
+
+    it("un grupo debe indicar cuántas personas son", async () => {
+        getProfile.mockResolvedValue(draftProfile());
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+        await user.click(await screen.findByRole("button", { name: "Empezar" }));
+        await user.click(screen.getByRole("radio", { name: /Somos un grupo/ }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+        expect(await screen.findByText("Indica cuántas personas son.")).toBeTruthy();
+        expect(updateProfile).not.toHaveBeenCalled();
+
+        await user.click(screen.getByRole("button", { name: "4 a 5" }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await waitFor(() =>
+            expect(updateProfile).toHaveBeenCalledWith({ profile_type: "group", group_size: "4-5", details: {} }),
+        );
         expect(await screen.findByRole("heading", { name: "¿Cómo te conocen?" })).toBeTruthy();
-        expect(screen.getByText("Paso 1 de 8")).toBeTruthy();
+        expect(screen.getByLabelText("Nombre del grupo")).toBeTruthy();
+    });
+
+    it("un solista guarda sin tamaño de grupo y ve «Nombre artístico»", async () => {
+        getProfile.mockResolvedValue(draftProfile());
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+        await user.click(await screen.findByRole("button", { name: "Empezar" }));
+        await user.click(screen.getByRole("radio", { name: /Trabajo solo/ }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+        await waitFor(() =>
+            expect(updateProfile).toHaveBeenCalledWith({ profile_type: "solo", group_size: null, details: {} }),
+        );
+        expect(await screen.findByLabelText("Nombre artístico")).toBeTruthy();
     });
 
     it("no avanza sin nombre y explica qué falta", async () => {
@@ -88,10 +133,13 @@ describe("MusicianGuidedOnboarding", () => {
         const user = userEvent.setup();
         render(<MusicianGuidedOnboarding />);
         await user.click(await screen.findByRole("button", { name: "Empezar" }));
+        await user.click(screen.getByRole("radio", { name: /Trabajo solo/ }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await screen.findByRole("heading", { name: "¿Cómo te conocen?" });
         await user.click(screen.getByRole("button", { name: "Continuar" }));
 
         expect(await screen.findByText("Escribe tu nombre artístico (mínimo 2 letras).")).toBeTruthy();
-        expect(updateProfile).not.toHaveBeenCalled();
+        expect(updateProfile).toHaveBeenCalledTimes(1);
     });
 
     it("guarda el nombre artístico y pasa a «¿Qué tocas?»", async () => {
@@ -99,11 +147,47 @@ describe("MusicianGuidedOnboarding", () => {
         const user = userEvent.setup();
         render(<MusicianGuidedOnboarding />);
         await user.click(await screen.findByRole("button", { name: "Empezar" }));
-        await user.type(screen.getByLabelText("Nombre artístico"), "Grupo Aurora");
+        await user.click(screen.getByRole("radio", { name: /Trabajo solo/ }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+        await user.type(await screen.findByLabelText("Nombre artístico"), "Grupo Aurora");
         await user.click(screen.getByRole("button", { name: "Continuar" }));
 
         await waitFor(() => expect(updateProfile).toHaveBeenCalledWith({ stage_name: "Grupo Aurora" }));
         expect(await screen.findByRole("heading", { name: "¿Qué tocas?" })).toBeTruthy();
+        expect(screen.getByText("Tu música · 1 de 2")).toBeTruthy();
+    });
+
+    it("un paso opcional se omite sin guardar nada y sigue al siguiente", async () => {
+        getProfile.mockResolvedValue(draftProfile({ stage_name: "Grupo Aurora", genres: ["Salsa"], instruments: ["Voz"] }));
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+        await screen.findByRole("heading", { name: "¿Dónde trabajas y cuánto cobras?" });
+
+        await user.click(screen.getByRole("button", { name: "Volver al paso anterior" }));
+        expect(await screen.findByRole("heading", { name: "¿Qué eventos animas?" })).toBeTruthy();
+        expect(screen.getByText("Opcional · puedes omitirlo")).toBeTruthy();
+
+        await user.click(screen.getByRole("button", { name: "Omitir por ahora" }));
+        expect(await screen.findByRole("heading", { name: "¿Dónde trabajas y cuánto cobras?" })).toBeTruthy();
+        expect(updateProfile).not.toHaveBeenCalled();
+    });
+
+    it("guarda los eventos elegidos dentro de los detalles", async () => {
+        getProfile.mockResolvedValue(draftProfile({ stage_name: "Grupo Aurora", genres: ["Salsa"], instruments: ["Voz"] }));
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+        await screen.findByRole("heading", { name: "¿Dónde trabajas y cuánto cobras?" });
+        await user.click(screen.getByRole("button", { name: "Volver al paso anterior" }));
+        await screen.findByRole("heading", { name: "¿Qué eventos animas?" });
+
+        await user.click(screen.getByRole("button", { name: "Bodas" }));
+        await user.click(screen.getByRole("button", { name: "Quinceañeros" }));
+        await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+        await waitFor(() =>
+            expect(updateProfile).toHaveBeenCalledWith({ details: { event_types: ["bodas", "quinceaneros"] } }),
+        );
+        expect(await screen.findByRole("heading", { name: "¿Dónde trabajas y cuánto cobras?" })).toBeTruthy();
     });
 
     it("retoma en el primer paso incompleto cuando ya hay avance", async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { profileBadge } from "@/lib/profile-details";
 import type { MusicianCard } from "@/types/ui/musician";
 import { Icon } from "@iconify/react";
 import { useReducedMotion } from "framer-motion";
@@ -98,7 +99,9 @@ export default function MusicianCardComponent({
         }`
       : "Nuevo";
 
+  const groupLabel = musician.profileType === "group" ? profileBadge("group", musician.groupSize) : null;
   const metaParts = [
+    groupLabel,
     musician.price == null ? musician.priceLabel : null,
     ratingLabel,
     musician.verified ? "Verificado" : null,

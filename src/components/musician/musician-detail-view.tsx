@@ -12,6 +12,7 @@ import {
 import { Icon } from "@iconify/react";
 import BookActionButton from "@/components/auth/book-action-button";
 import BookingRequestModal from "@/components/booking/booking-request-modal";
+import MusicianDetailsSection from "@/components/musician/musician-details-section";
 import MusicianRepertoireSection from "@/components/musician/musician-repertoire-section";
 import ShareProfileButton from "@/components/musician/share-profile-button";
 import { useAuth } from "@/contexts/auth-context";
@@ -24,6 +25,7 @@ import { useVideoPlayback } from "@/hooks/use-video-playback";
 import { useCancellationPolicy } from "@/hooks/use-cancellation-policy";
 import { formatCancellationSummaryShort } from "@/lib/cancellation-policy";
 import { getVisibleMusicianPrices } from "@/lib/musician-pricing";
+import { profileBadge } from "@/lib/profile-details";
 import {
     getVideoEmbedUrl,
     getYoutubeThumbnailUrl,
@@ -360,6 +362,16 @@ export default function MusicianDetailView({
                                             {musician.genre}
                                         </span>
                                     ) : null}
+                                    {musician.profileType ? (
+                                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-black/55 px-3 py-1 text-xs font-bold text-white shadow-sm backdrop-blur-md">
+                                            <Icon
+                                                icon={musician.profileType === "group" ? "mdi:account-group-outline" : "mdi:account-music-outline"}
+                                                width={14}
+                                                aria-hidden="true"
+                                            />
+                                            {profileBadge(musician.profileType, musician.groupSize)}
+                                        </span>
+                                    ) : null}
                                 </div>
                                 <h1 data-preview="name" className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-[0.95] tracking-tight mb-4 max-w-3xl text-balance drop-shadow-[0_2px_24px_rgba(0,0,0,0.85)]">
                                     {musician.name}
@@ -581,6 +593,10 @@ export default function MusicianDetailView({
                                         </div>
                                     </section>
                                 )}
+
+                                {musician.details ? (
+                                    <MusicianDetailsSection details={musician.details} kind={musician.profileType ?? "solo"} />
+                                ) : null}
 
                                 {hasPortfolio ? (
                                     <section>

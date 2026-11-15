@@ -12,8 +12,22 @@ const valid = {
 };
 
 describe("parsePreviewDraft", () => {
-    it("acepta un borrador válido", () => {
-        expect(parsePreviewDraft(valid)).toEqual(valid);
+    it("acepta un borrador válido y completa el tipo de perfil cuando falta", () => {
+        expect(parsePreviewDraft(valid)).toEqual({ ...valid, profileType: "solo", groupSize: "", details: {} });
+    });
+
+    it("acepta el tipo, el tamaño del grupo y los detalles, y descarta lo que no encaja", () => {
+        const parsed = parsePreviewDraft({
+            ...valid,
+            profileType: "group",
+            groupSize: "4-5",
+            details: { event_types: ["bodas", "fiesta-secreta"], duration: "10h", format: "mixed", otra: "x" },
+        });
+        expect(parsed?.profileType).toBe("group");
+        expect(parsed?.groupSize).toBe("4-5");
+        expect(parsed?.details).toEqual({ event_types: ["bodas"], format: "mixed" });
+        expect(parsePreviewDraft({ ...valid, profileType: "banda" })?.profileType).toBe("solo");
+        expect(parsePreviewDraft({ ...valid, groupSize: "x".repeat(9) })).toBeNull();
     });
 
     it("acepta una foto blob creada en la propia página o ninguna foto", () => {
@@ -43,6 +57,8 @@ describe("parsePreviewFocus", () => {
     it("solo acepta las partes conocidas del perfil", () => {
         expect(parsePreviewFocus("price")).toBe("price");
         expect(parsePreviewFocus("specialty")).toBe("specialty");
+        expect(parsePreviewFocus("events")).toBe("events");
+        expect(parsePreviewFocus("show")).toBe("show");
         expect(parsePreviewFocus("otra")).toBeNull();
         expect(parsePreviewFocus(undefined)).toBeNull();
     });

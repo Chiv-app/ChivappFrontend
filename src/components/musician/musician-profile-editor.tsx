@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import MusicianProfileWizard from "@/components/musician/musician-profile-wizard";
 import EnsembleMemberProfileEditor from "@/components/musician/ensemble-member-profile-editor";
 import MyEnsemblesCard from "@/components/musician/my-ensembles-card";
+import ProfileDetailsCard from "@/components/musician/profile-details-card";
 import { getMusicianProfile } from "@/lib/profiles";
 import type { MusicianProfileOut } from "@/types/api";
 
@@ -59,6 +60,7 @@ export default function MusicianProfileEditor() {
         <>
             <MyEnsemblesCard />
             <MusicianProfileWizard />
+            <ProfileDetailsCard />
         </>
     );
 }

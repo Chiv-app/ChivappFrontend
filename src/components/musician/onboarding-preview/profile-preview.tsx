@@ -64,6 +64,8 @@ function cardFromDraft(draft: PreviewDraft): MusicianCardData {
         rating: null,
         ratingCount: null,
         verified: true,
+        profileType: draft.profileType,
+        groupSize: draft.groupSize || null,
     };
 }
 

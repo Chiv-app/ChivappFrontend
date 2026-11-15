@@ -17,6 +17,10 @@ export type MusicianCard = {
     rating: number | null;
     ratingCount: number | null;
     verified: boolean;
+    /** «solo» (solista) o «group». Ausente en datos anteriores a este dato. */
+    profileType?: "solo" | "group";
+    /** Cuántas personas son, solo en grupos. */
+    groupSize?: string | null;
 };
 
 export type MusicianRepertoireItem = {
@@ -42,6 +46,8 @@ export type MusicianDetail = MusicianCard & {
     youtubeChannelUrl: string | null;
     spotifyUrl: string | null;
     websiteUrl: string | null;
+    /** Datos de detalle validados (eventos, show, reservas, experiencia). */
+    details?: import("@/lib/profile-details").ProfileDetails;
     reviews: Array<{
         id: string;
         rating: number;

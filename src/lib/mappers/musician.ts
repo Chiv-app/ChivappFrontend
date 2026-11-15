@@ -9,6 +9,7 @@ import {
     resolveDisplayPrice,
 } from "@/lib/musician-pricing";
 import { resolveUploadUrl } from "@/lib/uploads";
+import { parseDetails } from "@/lib/profile-details";
 import type { MusicianCard, MusicianDetail } from "@/types/ui/musician";
 
 function resolveGenre(genres: string[] | null | undefined): string {
@@ -71,6 +72,8 @@ function cardBase(input: {
     rating: number | null;
     ratingCount: number | null;
     verified: boolean;
+    profileType?: "solo" | "group";
+    groupSize?: string | null;
 }): MusicianCard {
     return {
         ...input,
@@ -109,6 +112,8 @@ export function toMusicianCardFromList(
         rating: profile.rating_avg,
         ratingCount: profile.rating_count,
         verified: profile.is_verified === true,
+        profileType: profile.profile_type === "group" ? "group" : "solo",
+        groupSize: profile.group_size ?? null,
     });
 }
 
@@ -134,6 +139,8 @@ export function toMusicianCardFromSearch(
         rating: result.rating_avg,
         ratingCount: result.rating_count,
         verified: result.is_verified === true,
+        profileType: result.profile_type === "group" ? "group" : "solo",
+        groupSize: result.group_size ?? null,
     });
 }
 
@@ -191,10 +198,13 @@ export function toMusicianDetail(
         rating: profile.rating_avg,
         ratingCount: profile.rating_count,
         verified: profile.is_verified === true,
+        profileType: profile.profile_type === "group" ? "group" : "solo",
+        groupSize: profile.group_size ?? null,
     });
 
     return {
         ...card,
+        details: parseDetails(profile.details),
         availabilityType: profile.availability_type ?? null,
         pricePerHour: toNullableNumber(profile.price_per_hour),
         pricePerEvent: toNullableNumber(profile.price_per_event),

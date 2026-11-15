@@ -1,11 +1,16 @@
+import { GROUP_SIZE_OPTIONS, type GroupSize, type ProfileDetails, type ProfileKind, parseDetails } from "@/lib/profile-details";
 import type { MusicianProfileOut } from "@/types/api";
 
 /** Pasos de la guía de alta del músico, en orden. */
 export type GuideStepId =
     | "welcome"
+    | "tipo"
     | "nombre"
     | "toca"
+    | "eventos"
     | "donde"
+    | "show"
+    | "reservas"
     | "foto"
     | "bio"
     | "dni"
@@ -13,27 +18,88 @@ export type GuideStepId =
     | "revision"
     | "enviado";
 
-export const GUIDE_STEPS: GuideStepId[] = [
-    "welcome",
+/** Pasos que cuentan en «Capítulo · n de m». */
+export const FLOW_STEPS: GuideStepId[] = [
+    "tipo",
     "nombre",
     "toca",
+    "eventos",
     "donde",
+    "show",
+    "reservas",
     "foto",
     "bio",
     "dni",
     "firma",
     "revision",
-    "enviado",
 ];
 
-/** Pasos que cuentan en «Paso n de 8». */
-export const FLOW_STEPS: GuideStepId[] = ["nombre", "toca", "donde", "foto", "bio", "dni", "firma", "revision"];
+export const GUIDE_STEPS: GuideStepId[] = ["welcome", ...FLOW_STEPS, "enviado"];
+
+/** Pasos que no bloquean: se pueden omitir y completar después desde «Mi perfil». */
+export const OPTIONAL_STEPS: GuideStepId[] = ["eventos", "show", "reservas"];
+
+export type ChapterId = "tu" | "musica" | "show" | "imagen" | "verificacion";
+
+export const CHAPTERS: { id: ChapterId; title: string; icon: string }[] = [
+    { id: "tu", title: "Tú", icon: "mdi:account-music-outline" },
+    { id: "musica", title: "Tu música", icon: "mdi:music-note-outline" },
+    { id: "show", title: "Tu show", icon: "mdi:party-popper" },
+    { id: "imagen", title: "Tu imagen", icon: "mdi:camera-outline" },
+    { id: "verificacion", title: "Verificación", icon: "mdi:shield-check-outline" },
+];
+
+export const STEP_CHAPTER: Partial<Record<GuideStepId, ChapterId>> = {
+    tipo: "tu",
+    nombre: "tu",
+    toca: "musica",
+    eventos: "musica",
+    donde: "show",
+    show: "show",
+    reservas: "show",
+    foto: "imagen",
+    bio: "imagen",
+    dni: "verificacion",
+    firma: "verificacion",
+    revision: "verificacion",
+};
+
+/** Minutos aproximados por paso, para «≈ n min restantes». */
+export const STEP_MINUTES: Partial<Record<GuideStepId, number>> = {
+    tipo: 0.5,
+    nombre: 0.5,
+    toca: 1,
+    eventos: 0.5,
+    donde: 1,
+    show: 0.5,
+    reservas: 0.5,
+    foto: 0.5,
+    bio: 1,
+    dni: 1,
+    firma: 0.5,
+    revision: 0.5,
+};
+
+export function minutesLeft(from: GuideStepId): number {
+    const index = FLOW_STEPS.indexOf(from);
+    if (index < 0) return 0;
+    const total = FLOW_STEPS.slice(index).reduce((sum, step) => sum + (STEP_MINUTES[step] ?? 0), 0);
+    return Math.max(1, Math.round(total));
+}
+
+export function totalMinutes(): number {
+    return Math.max(1, Math.round(FLOW_STEPS.reduce((sum, step) => sum + (STEP_MINUTES[step] ?? 0), 0)));
+}
 
 export const STEP_LABELS: Record<GuideStepId, string> = {
     welcome: "Bienvenida",
+    tipo: "Cómo trabajas",
     nombre: "Nombre",
     toca: "Qué tocas",
+    eventos: "Eventos",
     donde: "Dónde y cuánto",
+    show: "Tu show",
+    reservas: "Reservas",
     foto: "Foto",
     bio: "Biografía",
     dni: "Identidad",
@@ -79,6 +145,10 @@ export const BIO_MIN_LENGTH = 40;
 export const NAME_MIN_LENGTH = 2;
 
 export type GuideData = {
+    /** null mientras la persona no haya elegido: es la primera pregunta de la guía. */
+    profileType: ProfileKind | null;
+    groupSize: GroupSize | null;
+    details: ProfileDetails;
     name: string;
     fullname: string;
     genres: string[];
@@ -94,6 +164,8 @@ export type GuideData = {
 };
 
 export type GuideField =
+    | "kind"
+    | "groupSize"
     | "name"
     | "genres"
     | "instruments"
@@ -110,6 +182,9 @@ export type GuideError = { field: GuideField; message: string };
 
 export function emptyGuideData(): GuideData {
     return {
+        profileType: null,
+        groupSize: null,
+        details: {},
         name: "",
         fullname: "",
         genres: [],
@@ -133,7 +208,10 @@ function toPriceText(value: number | string | null | undefined): string {
 }
 
 export function dataFromProfile(profile: MusicianProfileOut, fallbackFullname?: string | null): GuideData {
-    return {
+    const data: GuideData = {
+        profileType: null,
+        groupSize: null,
+        details: parseDetails(profile.details),
         name: profile.stage_name ?? "",
         fullname: (profile.fullname ?? fallbackFullname ?? "").trim(),
         genres: profile.genres ?? [],
@@ -147,11 +225,24 @@ export function dataFromProfile(profile: MusicianProfileOut, fallbackFullname?: 
         signatureUrl: profile.signature_image_url ?? null,
         signatureDataUrl: null,
     };
+    // El backend siempre devuelve un tipo («solo» por defecto), así que no distingue «elegí solista» de
+    // «aún no elegí». Un perfil sin ningún avance vuelve a preguntarlo; uno con avance conserva el suyo.
+    if (hasAnyProgress(data)) {
+        data.profileType = profile.profile_type === "group" ? "group" : "solo";
+        data.groupSize = GROUP_SIZE_OPTIONS.find((o) => o.value === profile.group_size)?.value ?? null;
+    }
+    return data;
 }
 
 /** Valida un paso. Devuelve el primer problema (con el campo al que enfocar) o null. */
 export function validateStep(step: GuideStepId, d: GuideData): GuideError | null {
     switch (step) {
+        case "tipo":
+            if (!d.profileType) return { field: "kind", message: "Elige cómo trabajas: solo o en grupo." };
+            if (d.profileType === "group" && !d.groupSize) {
+                return { field: "groupSize", message: "Indica cuántas personas son." };
+            }
+            return null;
         case "nombre":
             return d.name.trim().length >= NAME_MIN_LENGTH
                 ? null
@@ -199,7 +290,7 @@ export function validateStep(step: GuideStepId, d: GuideData): GuideError | null
     }
 }
 
-const DATA_STEPS: GuideStepId[] = ["nombre", "toca", "donde", "foto", "bio", "dni", "firma"];
+const DATA_STEPS: GuideStepId[] = ["tipo", "nombre", "toca", "donde", "foto", "bio", "dni", "firma"];
 
 /** Pasos con datos que aún faltan, en orden. */
 export function incompleteSteps(d: GuideData): GuideStepId[] {

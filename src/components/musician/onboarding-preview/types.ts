@@ -1,13 +1,19 @@
 /** Datos y mensajes de la vista previa del perfil dentro de la guía de alta. */
 
+import { type ProfileDetails, type ProfileKind, parseDetails } from "@/lib/profile-details";
+
 export const PREVIEW_ROUTE = "/musician/onboarding/preview";
 export const PREVIEW_DRAFT_MESSAGE = "chivapp:onboarding-preview-draft";
 export const PREVIEW_READY_MESSAGE = "chivapp:onboarding-preview-ready";
 
 /** Parte del perfil que alimenta el paso actual de la guía (se resalta en la vista previa). */
-export type PreviewFocus = "name" | "photo" | "specialty" | "bio" | "location" | "price" | null;
+export type PreviewFocus = "name" | "photo" | "specialty" | "events" | "show" | "bio" | "location" | "price" | null;
 
 export type PreviewDraft = {
+    profileType: ProfileKind;
+    /** Cuántas personas son (solo grupos); vacío si no se eligió. */
+    groupSize: string;
+    details: ProfileDetails;
     name: string;
     city: string;
     price: string;
@@ -19,6 +25,9 @@ export type PreviewDraft = {
 };
 
 export const EMPTY_PREVIEW_DRAFT: PreviewDraft = {
+    profileType: "solo",
+    groupSize: "",
+    details: {},
     name: "",
     city: "",
     price: "",
@@ -28,7 +37,7 @@ export const EMPTY_PREVIEW_DRAFT: PreviewDraft = {
     photo: null,
 };
 
-const FOCUS_VALUES: ReadonlySet<string> = new Set(["name", "photo", "specialty", "bio", "location", "price"]);
+const FOCUS_VALUES: ReadonlySet<string> = new Set(["name", "photo", "specialty", "events", "show", "bio", "location", "price"]);
 
 const MAX_TEXT = 700;
 const MAX_ITEMS = 20;
@@ -71,7 +80,10 @@ export function parsePreviewDraft(value: unknown): PreviewDraft | null {
         if (typeof raw.photo !== "string" || !isSafePhotoSrc(raw.photo)) return null;
         photo = raw.photo;
     }
-    return { name, city, price, genres, instruments, bio, photo };
+    const groupSize = raw.groupSize === undefined ? "" : text(raw.groupSize, 8);
+    if (groupSize === null) return null;
+    const profileType: ProfileKind = raw.profileType === "group" ? "group" : "solo";
+    return { profileType, groupSize, details: parseDetails(raw.details), name, city, price, genres, instruments, bio, photo };
 }
 
 export function parsePreviewFocus(value: unknown): PreviewFocus {
