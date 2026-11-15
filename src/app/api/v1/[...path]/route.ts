@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isProfileId } from "@/lib/active-profile";
 
 function getUpstreamBase(request?: NextRequest): string {
     if (process.env.API_PROXY_TARGET) {
@@ -142,6 +143,12 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
     const xIdempotencyKey = request.headers.get("x-idempotency-key");
     if (xIdempotencyKey) {
         headers.set("x-idempotency-key", xIdempotencyKey);
+    }
+    // Perfil artístico con el que trabaja el músico. Solo se reenvía si tiene forma de id: el servidor lo
+    // vuelve a validar contra los perfiles de quien hace la petición.
+    const musicianProfile = request.headers.get("x-musician-profile-id");
+    if (musicianProfile && isProfileId(musicianProfile)) {
+        headers.set("x-musician-profile-id", musicianProfile);
     }
 
     const hasBody = !["GET", "HEAD"].includes(request.method);
