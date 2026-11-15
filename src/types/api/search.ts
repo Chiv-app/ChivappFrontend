@@ -5,6 +5,8 @@ export type MusicianSearchFilters = {
     min_price_per_event?: number | null;
     max_price_per_event?: number | null;
     available_date?: string | null;
+    profile_type?: "solo" | "group" | null;
+    event_types?: string[] | null;
     skip?: number;
     limit?: number;
 };

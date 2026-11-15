@@ -8,6 +8,7 @@ import EmptyMusiciansState from "@/components/musicians/empty-musicians-state";
 import MasonryItem from "@/components/ui/masonry-item";
 import { todayPeruIso } from "@/lib/date-utils";
 import { searchMusicians } from "@/lib/musicians";
+import { EVENT_TYPE_OPTIONS } from "@/lib/profile-details";
 import { MULTI_QUOTE_MAX, MULTI_QUOTE_MIN, MULTI_QUOTE_NAME } from "@/lib/multi-quote";
 import { MultiQuoteBar, SelectableCard } from "@/components/musicians/multi-quote-selection";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
@@ -24,7 +25,24 @@ type Filters = {
     minPrice: string;
     maxPrice: string;
     availableDate: string;
+    /** "" (todos), "solo" o "group". */
+    profileType: string;
+    /** Tipo de evento (clave de EVENT_TYPE_OPTIONS) o "". */
+    eventType: string;
 };
+
+/** Ficha de filtro: la elegida se rellena; el resto es discreto. */
+function chipClass(selected: boolean): string {
+    return [
+        "inline-flex items-center gap-1.5 min-h-9 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors",
+        selected ? "bg-primary text-primary-foreground font-semibold" : "bg-default-100 text-default-700 hover:bg-default-200",
+    ].join(" ");
+}
+
+const PROFILE_TYPE_CHOICES = [
+    { value: "solo", label: "Solistas", icon: "mdi:account-music-outline" },
+    { value: "group", label: "Grupos", icon: "mdi:account-group-outline" },
+];
 
 const EMPTY_FILTERS: Filters = {
     city: "",
@@ -33,6 +51,8 @@ const EMPTY_FILTERS: Filters = {
     minPrice: "",
     maxPrice: "",
     availableDate: "",
+    profileType: "",
+    eventType: "",
 };
 
 function hasActiveFilters(filters: Filters): boolean {
@@ -189,6 +209,8 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                     ? Number(activeFilters.maxPrice)
                     : undefined,
                 available_date: activeFilters.availableDate.trim() || undefined,
+                profile_type: activeFilters.profileType === "solo" || activeFilters.profileType === "group" ? activeFilters.profileType : undefined,
+                event_types: activeFilters.eventType ? [activeFilters.eventType] : undefined,
                 skip,
                 limit: PAGE_SIZE,
             });
@@ -220,6 +242,8 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
             if (filters.minPrice.trim()) params.set("min_price", filters.minPrice.trim());
             if (filters.maxPrice.trim()) params.set("max_price", filters.maxPrice.trim());
             if (filters.availableDate.trim()) params.set("available_date", filters.availableDate.trim());
+            if (filters.profileType) params.set("profile_type", filters.profileType);
+            if (filters.eventType) params.set("event", filters.eventType);
             const qs = params.toString();
             const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
             if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
@@ -361,6 +385,45 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                             value={filters.maxPrice}
                             onChange={(v) => updateFilter("maxPrice", v)}
                         />
+                    </div>
+
+                    <div className={`${showMobileFilters ? "flex" : "hidden sm:flex"} mt-3 flex-col gap-2.5 pt-2.5 border-t border-default-200/60`}>
+                        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Tipo de artista">
+                            <span className="text-xs font-medium text-default-500 mr-1">Tipo:</span>
+                            {PROFILE_TYPE_CHOICES.map((choice) => {
+                                const selected = filters.profileType === choice.value;
+                                return (
+                                    <button
+                                        key={choice.value}
+                                        type="button"
+                                        aria-pressed={selected}
+                                        onClick={() => updateFilter("profileType", selected ? "" : choice.value)}
+                                        className={chipClass(selected)}
+                                    >
+                                        <Icon icon={choice.icon} width={14} aria-hidden="true" />
+                                        {choice.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Tipo de evento">
+                            <span className="text-xs font-medium text-default-500 mr-1">Evento:</span>
+                            {EVENT_TYPE_OPTIONS.map((option) => {
+                                const selected = filters.eventType === option.value;
+                                return (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        aria-pressed={selected}
+                                        onClick={() => updateFilter("eventType", selected ? "" : option.value)}
+                                        className={chipClass(selected)}
+                                    >
+                                        <Icon icon={option.icon} width={14} aria-hidden="true" />
+                                        {option.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-default-200/60">

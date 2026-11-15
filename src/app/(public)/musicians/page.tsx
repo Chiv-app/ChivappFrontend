@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import MusiciansBrowseView from "@/components/musicians/musicians-browse-view";
+import { EVENT_TYPE_OPTIONS } from "@/lib/profile-details";
 import { searchMusicians } from "@/lib/musicians";
 import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
 import type { MusicianCard } from "@/types/ui/musician";
@@ -33,6 +34,11 @@ export default async function MusiciansPage({ searchParams }: { searchParams: Se
     const minPrice = pickParam(params, "min_price", "minPrice");
     const maxPrice = pickParam(params, "max_price", "maxPrice");
     const availableDate = pickParam(params, "available_date", "date", "availableDate");
+    // Solo se aceptan valores conocidos: cualquier otro se ignora en lugar de romper la búsqueda.
+    const rawType = pickParam(params, "profile_type");
+    const profileType = rawType === "solo" || rawType === "group" ? rawType : "";
+    const rawEvent = pickParam(params, "event");
+    const eventType = EVENT_TYPE_OPTIONS.some((o) => o.value === rawEvent) ? rawEvent : "";
 
     const initialFilters = {
         city,
@@ -41,6 +47,8 @@ export default async function MusiciansPage({ searchParams }: { searchParams: Se
         minPrice,
         maxPrice,
         availableDate,
+        profileType,
+        eventType,
     };
 
     let initialMusicians: MusicianCard[] | undefined = undefined;
@@ -52,6 +60,8 @@ export default async function MusiciansPage({ searchParams }: { searchParams: Se
             min_price_per_event: minPrice ? Number(minPrice) : undefined,
             max_price_per_event: maxPrice ? Number(maxPrice) : undefined,
             available_date: availableDate || undefined,
+            profile_type: profileType || undefined,
+            event_types: eventType ? [eventType] : undefined,
             skip: 0,
             limit: 20,
         });
