@@ -36,6 +36,11 @@ export const MUSICIAN_NAV: DashboardNavItem[] = [
         requiresVerification: true,
     },
     {
+        href: "/musician/calendar",
+        label: "Calendario",
+        icon: "material-symbols:calendar-view-week",
+    },
+    {
         href: "/musician/links",
         label: "Enlaces de pago",
         icon: "material-symbols:link",
@@ -171,6 +176,11 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
         href: "/contractor/bookings",
         label: "Mis reservas",
         icon: "material-symbols:event-available",
+    },
+    {
+        href: "/contractor/calendar",
+        label: "Calendario",
+        icon: "material-symbols:calendar-view-week",
     },
     {
         href: "/contractor/operations",
@@ -331,6 +341,7 @@ export function isEnsembleMemberAllowedPath(pathname: string): boolean {
         pathname === "/musician/profile" ||
         pathname === "/musician/bookings" ||
         pathname.startsWith("/musician/bookings/") ||
+        pathname === "/musician/calendar" ||
         pathname === "/musician/earnings" ||
         pathname.startsWith("/musician/earnings/") ||
         pathname === "/musician/notifications" ||
@@ -344,6 +355,7 @@ export function isEnsembleMemberNavItem(href: string): boolean {
         href === "/musician" ||
         href === "/musician/profile" ||
         href === "/musician/bookings" ||
+        href === "/musician/calendar" ||
         href === "/musician/earnings" ||
         href === "/musician/notifications"
     );
