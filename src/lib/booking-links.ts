@@ -39,7 +39,17 @@ export type BookingLinkPublicOut = {
     total_payable?: number | null;
     event_date: string | null;
     start_time: string | null;
+    end_time?: string | null;
+    event_type?: string | null;
+    location_address?: string | null;
+    location_city?: string | null;
+    location_reference?: string | null;
+    client_fullname?: string | null;
+    client_phone?: string | null;
     client_email?: string | null;
+    client_document_number?: string | null;
+    event_description?: string | null;
+    source?: string | null;
     musician: MusicianLinkProfile;
     status: BookingLinkStatus;
     expires_at: string;
@@ -51,6 +61,7 @@ export type BookingLinkPublicOut = {
 export type BookingLinkCheckout = {
     event_date: string;
     start_time: string;
+    end_time?: string | null;
     event_type: string;
     location_address: string;
     location_city?: string | null;
@@ -59,6 +70,7 @@ export type BookingLinkCheckout = {
     email: string;
     phone: string;
     document_number?: string | null;
+    event_description?: string | null;
     signature_image_url?: string | null;
     accept_terms?: boolean;
     otp?: string | null;
@@ -100,13 +112,51 @@ export type BookingLinkOut = {
     price: number;
     event_date: string | null;
     start_time: string | null;
+    end_time?: string | null;
+    event_type?: string | null;
+    location_address?: string | null;
+    location_city?: string | null;
+    location_reference?: string | null;
+    client_fullname?: string | null;
+    client_phone?: string | null;
     client_email: string | null;
+    client_document_number?: string | null;
+    event_description?: string | null;
+    source?: string | null;
     status: BookingLinkStatus;
     expires_at: string;
     booking_id: string | null;
     created_at: string;
     updated_at: string;
 };
+
+export type BookingLinkAutocompleteOut = {
+    transcript?: string | null;
+    price?: number | null;
+    event_date?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    event_type?: string | null;
+    location_address?: string | null;
+    location_city?: string | null;
+    location_reference?: string | null;
+    client_fullname?: string | null;
+    client_phone?: string | null;
+    client_email?: string | null;
+    client_document_number?: string | null;
+    event_description?: string | null;
+};
+
+export async function autocompleteBookingLink(payload: {
+    text?: string | null;
+    audio_base64?: string | null;
+    audio_mime_type?: string | null;
+}): Promise<BookingLinkAutocompleteOut> {
+    return apiFetch<BookingLinkAutocompleteOut>("/booking-links/autocomplete", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
 
 export async function getMyBookingLinks(): Promise<BookingLinkOut[]> {
     return apiFetch<BookingLinkOut[]>("/booking-links/me");

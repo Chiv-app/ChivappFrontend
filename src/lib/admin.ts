@@ -286,6 +286,26 @@ export function updateAdminPaymentInstructions(payload: {
     );
 }
 
+export type AdminAssistantLimits = {
+    monthly_ai_calls_per_musician: number;
+    monthly_audio_per_musician: number;
+    daily_ai_calls_global: number;
+    global_calls_today: number;
+};
+
+export function getAdminAssistantLimits() {
+    return apiFetch<AdminAssistantLimits>("/admin/assistant-limits");
+}
+
+export function updateAdminAssistantLimits(
+    payload: Omit<AdminAssistantLimits, "global_calls_today">,
+) {
+    return apiFetch<AdminAssistantLimits>("/admin/assistant-limits", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
 export function getAdminSettlements(
     params: { state?: string; skip?: number; limit?: number } = {},
 ) {

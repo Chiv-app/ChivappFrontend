@@ -47,6 +47,12 @@ export const MUSICIAN_NAV: DashboardNavItem[] = [
         requiresVerification: true,
     },
     {
+        href: "/musician/assistant",
+        label: "Asistente IA",
+        icon: "material-symbols:smart-toy",
+        requiresVerification: true,
+    },
+    {
         href: "/musician/members",
         label: "Integrantes",
         icon: "material-symbols:groups",
@@ -104,6 +110,11 @@ export const ADMIN_NAV: DashboardNavItem[] = [
     { href: "/admin/activity", label: "Actividad", icon: "material-symbols:history" },
     { href: "/admin/emails", label: "Correos", icon: "material-symbols:mail" },
     {
+        href: "/admin/assistant",
+        label: "Asistente IA",
+        icon: "material-symbols:smart-toy",
+    },
+    {
         href: "/admin/support",
         label: "Ayuda",
         icon: "material-symbols:support-agent",
@@ -152,6 +163,12 @@ export const ADMIN_MODULES: DashboardModule[] = [
         title: "Correos y plantillas",
         description: "Edita plantillas transaccionales y revisa el historial de envíos.",
         icon: "material-symbols:mail",
+    },
+    {
+        href: "/admin/assistant",
+        title: "Asistente IA",
+        description: "Define cuánto puede usar cada músico el modelo de IA, que paga Chivapp.",
+        icon: "material-symbols:smart-toy",
     },
     {
         href: "/admin/support",
@@ -208,6 +225,13 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
         title: "Enlaces de pago",
         description: "Revisa los enlaces de contratación rápida que has generado.",
         icon: "material-symbols:link",
+        requiresVerification: true,
+    },
+    {
+        href: "/musician/assistant",
+        title: "Asistente IA",
+        description: "Entrena tu tarifario inteligente, prueba el simulador y conecta tu WhatsApp.",
+        icon: "material-symbols:smart-toy",
         requiresVerification: true,
     },
     {

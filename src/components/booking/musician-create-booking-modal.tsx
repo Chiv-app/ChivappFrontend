@@ -22,10 +22,11 @@ export default function MusicianCreateBookingModal({
         <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
-            size="md"
+            size="xl"
+            scrollBehavior="inside"
             placement="center"
             classNames={{
-                base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-md",
+                base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-xl",
                 header: "px-4 sm:px-6",
             }}
         >
@@ -35,7 +36,7 @@ export default function MusicianCreateBookingModal({
                         <ModalHeader className="flex flex-col items-start gap-1 pb-2">
                             <span className="text-xl font-bold">Generar contrata rápida</span>
                             <span className="text-sm font-normal text-default-500">
-                                Define el precio y obtén un enlace de pago para compartir con tu cliente.
+                                Dicta por voz o escribe lo que acordaste por llamada/WhatsApp y genera el enlace pre-llenado.
                             </span>
                         </ModalHeader>
                         <ModalBody className="pb-6">

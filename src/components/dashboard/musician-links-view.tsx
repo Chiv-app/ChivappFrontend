@@ -120,9 +120,20 @@ export default function MusicianLinksView() {
                         return (
                             <Card key={link.id} className="border border-default-200/70 shadow-soft">
                                 <CardBody className="p-5 flex flex-col gap-3">
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex justify-between items-start gap-2">
                                         <div className="flex flex-col">
-                                            <p className="text-xl font-bold text-primary">{formatCurrency(link.price)}</p>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="text-xl font-bold text-primary">{formatCurrency(link.price)}</p>
+                                                {link.source === "whatsapp_ai" && (
+                                                    <Chip size="sm" color="success" variant="flat">IA WhatsApp</Chip>
+                                                )}
+                                                {link.source === "voice_dictation" && (
+                                                    <Chip size="sm" color="secondary" variant="flat">Dictado IA</Chip>
+                                                )}
+                                                {link.source === "simulator" && (
+                                                    <Chip size="sm" color="primary" variant="flat">Simulador IA</Chip>
+                                                )}
+                                            </div>
                                             <p className="text-xs text-default-500 mt-1">Creado: {formatDateTime(link.created_at)}</p>
                                         </div>
                                         <Chip 
@@ -133,6 +144,24 @@ export default function MusicianLinksView() {
                                             {link.status === "completed" ? "Pagado" : isExpired ? "Expirado" : "Pendiente"}
                                         </Chip>
                                     </div>
+
+                                    {(link.client_fullname || link.event_type || link.event_date || link.location_address) && (
+                                        <div className="text-xs text-default-600 bg-default-100/60 rounded-xl p-2.5 flex flex-col gap-1">
+                                            {(link.client_fullname || link.event_type) && (
+                                                <p className="font-semibold text-foreground truncate">
+                                                    {[link.client_fullname, link.event_type].filter(Boolean).join(" · ")}
+                                                </p>
+                                            )}
+                                            {(link.event_date || link.start_time) && (
+                                                <p className="truncate">
+                                                    📅 {[link.event_date, link.start_time?.slice(0, 5)].filter(Boolean).join(" a las ")}
+                                                </p>
+                                            )}
+                                            {link.location_address && (
+                                                <p className="truncate">📍 {link.location_address}</p>
+                                            )}
+                                        </div>
+                                    )}
                                     
                                     <div className="bg-default-50 rounded-xl p-3 flex items-center justify-between border border-default-100">
                                         <div className="truncate text-sm font-medium mr-2">

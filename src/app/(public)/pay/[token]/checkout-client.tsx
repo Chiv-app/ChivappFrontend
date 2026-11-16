@@ -78,16 +78,33 @@ export default function CheckoutClient({
   const [startTime, setStartTime] = useState(
     linkData.start_time ? linkData.start_time.slice(0, 5) : "",
   );
-  const [eventType, setEventType] = useState("");
-  const [location, setLocation] = useState<MapLocation | null>(null);
-  const [fullname, setFullname] = useState("");
+  const [eventType, setEventType] = useState(linkData.event_type || "");
+  const [location, setLocation] = useState<MapLocation | null>(() => {
+    if (!linkData.location_address) return null;
+    return {
+      address: linkData.location_address,
+      city: linkData.location_city || linkData.musician.location_city || null,
+      lat: -13.1631,
+      lng: -74.2236,
+    };
+  });
+  const [fullname, setFullname] = useState(linkData.client_fullname || "");
   const [email, setEmail] = useState(linkData.client_email || "");
-  const [phone, setPhone] = useState("");
-  const [documentNumber, setDocumentNumber] = useState("");
+  const [phone, setPhone] = useState(linkData.client_phone || "");
+  const [documentNumber, setDocumentNumber] = useState(
+    linkData.client_document_number || "",
+  );
   const [step1Attempted, setStep1Attempted] = useState(false);
   const [step2Attempted, setStep2Attempted] = useState(false);
   const [step3Attempted, setStep3Attempted] = useState(false);
   const [isContractPreviewOpen, setIsContractPreviewOpen] = useState(false);
+
+  const isStep1Prefilled = Boolean(
+    linkData.event_date &&
+      linkData.start_time &&
+      linkData.event_type &&
+      linkData.location_address,
+  );
 
   // Identity Flow State
   const [identityStatus, setIdentityStatus] = useState<
@@ -99,8 +116,10 @@ export default function CheckoutClient({
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
 
-  const [activeStep, setActiveStep] = useState<number>(1);
-  const [completedSteps, setCompletedSteps] = useState(new Set<number>());
+  const [activeStep, setActiveStep] = useState<number>(isStep1Prefilled ? 2 : 1);
+  const [completedSteps, setCompletedSteps] = useState(
+    () => new Set<number>(isStep1Prefilled ? [1] : []),
+  );
   const { user, refresh: refreshAuth } = useAuth();
 
   useEffect(() => {
@@ -541,6 +560,7 @@ export default function CheckoutClient({
         const res = await checkoutBookingLink(linkData.token, {
           event_date: eventDate,
           start_time: startTime,
+          end_time: linkData.end_time || undefined,
           event_type: eventType.trim(),
           location_address: location?.address || "",
           location_city: location?.city || "",
@@ -549,6 +569,7 @@ export default function CheckoutClient({
           email: email.trim(),
           phone: phone.trim(),
           document_number: cleanDoc || undefined,
+          event_description: linkData.event_description || undefined,
           signature_image_url: signature,
           accept_terms: termsAccepted,
           otp:
@@ -956,6 +977,24 @@ export default function CheckoutClient({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* COLUMNA IZQUIERDA: Acordeones */}
           <section className="lg:col-span-7 space-y-4">
+            {isStep1Prefilled && (
+              <div className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-start gap-3">
+                <Icon
+                  icon="lucide:check-circle-2"
+                  className="w-5 h-5 text-success shrink-0 mt-0.5"
+                />
+                <div className="text-xs sm:text-sm text-foreground">
+                  <p className="font-bold text-success">
+                    ¡Datos del evento ya pre-cargados!
+                  </p>
+                  <p className="text-default-600 mt-0.5">
+                    Cargamos automáticamente la fecha, hora, lugar y tipo de evento que acordaste con{" "}
+                    <strong>{linkData.musician.stage_name}</strong>. Solo confirma tus datos de contacto, firma el contrato digital y realiza el pago.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* PASO 1 */}
             <div
               className={`bg-content1/95 backdrop-blur-xl rounded-3xl transition-all duration-300 overflow-hidden shadow-xl relative ${
