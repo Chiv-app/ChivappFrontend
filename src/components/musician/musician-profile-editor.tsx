@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import ConnectedAccountsCard from "@/components/auth/connected-accounts-card";
+import CalendarConnectionCard from "@/components/musician/calendar-connection-card";
 import MusicianProfileWizard from "@/components/musician/musician-profile-wizard";
 import EnsembleMemberProfileEditor from "@/components/musician/ensemble-member-profile-editor";
 import MyEnsemblesCard from "@/components/musician/my-ensembles-card";
-import ProfileDetailsCard from "@/components/musician/profile-details-card";
 import { getMusicianProfile } from "@/lib/profiles";
 import type { MusicianProfileOut } from "@/types/api";
 
@@ -43,7 +44,7 @@ export default function MusicianProfileEditor() {
     // Si es un integrante que aún no convierte su perfil a pro
     if (profile.is_ensemble_only) {
         return (
-            <>
+            <div className="flex flex-col gap-6 pb-10">
                 <MyEnsemblesCard />
                 <EnsembleMemberProfileEditor
                     profile={profile}
@@ -52,15 +53,15 @@ export default function MusicianProfileEditor() {
                         void loadProfile();
                     }}
                 />
-            </>
+                <div className="max-w-3xl mx-auto w-full px-4 md:px-0">
+                    <Suspense fallback={null}>
+                        <ConnectedAccountsCard />
+                    </Suspense>
+                    <CalendarConnectionCard />
+                </div>
+            </div>
         );
     }
 
-    return (
-        <>
-            <MyEnsemblesCard />
-            <MusicianProfileWizard />
-            <ProfileDetailsCard />
-        </>
-    );
+    return <MusicianProfileWizard />;
 }

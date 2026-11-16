@@ -36,4 +36,23 @@ describe("MusicianTeamSection", () => {
         expect(screen.getByRole("link", { name: /Los Hermanos Quispe/ }).getAttribute("href")).toBe("/musicians/los-hermanos-quispe");
         expect(screen.queryByRole("heading", { name: "Integrantes" })).toBeNull();
     });
+
+    it("en modo propietario de grupo sin integrantes activos muestra aviso y acceso a gestionar integrantes", () => {
+        render(
+            <MusicianTeamSection
+                members={[]}
+                playsWith={[]}
+                isOwner
+                profileType="group"
+            />,
+        );
+
+        expect(screen.getByRole("heading", { name: "Integrantes" })).toBeTruthy();
+        expect(
+            screen.getByText(/Aún no tienes integrantes activos visibles/i),
+        ).toBeTruthy();
+        expect(
+            screen.getByRole("link", { name: /Gestionar integrantes/i }).getAttribute("href"),
+        ).toBe("/musician/members");
+    });
 });

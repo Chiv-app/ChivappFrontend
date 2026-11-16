@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
     Button,
@@ -21,6 +21,10 @@ import FileUploadField from "@/components/ui/file-upload-field";
 import SignaturePad from "@/components/ui/signature-pad";
 import RepertoireListInput from "@/components/ui/repertoire-list-input";
 import MusicianVerifiedPreview from "@/components/musician/musician-verified-preview";
+import ConnectedAccountsCard from "@/components/auth/connected-accounts-card";
+import CalendarConnectionCard from "@/components/musician/calendar-connection-card";
+import MyEnsemblesCard from "@/components/musician/my-ensembles-card";
+import ProfileDetailsCard from "@/components/musician/profile-details-card";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import ChangePasswordModal from "@/components/profile/change-password-modal";
 import ProfileWizardStepper, {
@@ -137,7 +141,24 @@ export default function MusicianProfileWizard() {
     const { user, refresh } = useAuth();
     const [profile, setProfile] = useState<MusicianProfileOut | null>(null);
     const [validation, setValidation] = useState<ProfileValidationOut | null>(null);
-    const [isEditingVerified, setIsEditingVerified] = useState(false);
+    const [isEditingVerified, setIsEditingVerified] = useState(() => {
+        if (typeof window === "undefined") return false;
+        const params = new URLSearchParams(window.location.search);
+        return (
+            params.has("linked") ||
+            params.has("oauth_error") ||
+            params.get("tab") === "settings"
+        );
+    });
+    const [activeSection, setActiveSection] = useState<"wizard" | "settings">(() => {
+        if (typeof window === "undefined") return "wizard";
+        const params = new URLSearchParams(window.location.search);
+        return params.has("linked") ||
+            params.has("oauth_error") ||
+            params.get("tab") === "settings"
+            ? "settings"
+            : "wizard";
+    });
     const [availability, setAvailability] = useState<AvailabilityOut[]>([]);
     const [media, setMedia] = useState<MusicianMediaOut[]>([]);
     const [activeStep, setActiveStep] = useState(0);
@@ -1552,6 +1573,7 @@ export default function MusicianProfileWizard() {
                 profile={profile}
                 mediaGalleryUrls={mediaGalleryUrls}
                 onEdit={() => {
+                    setActiveSection("wizard");
                     setActiveStep(0);
                     setIsEditingVerified(true);
                     addToast({
@@ -1560,6 +1582,10 @@ export default function MusicianProfileWizard() {
                             "Si guardas cambios, el perfil dejará de ser público hasta nueva aprobación.",
                         color: "warning",
                     });
+                }}
+                onOpenSettings={() => {
+                    setActiveSection("settings");
+                    setIsEditingVerified(true);
                 }}
             />
         );
@@ -1626,45 +1652,131 @@ export default function MusicianProfileWizard() {
                     }
                 }}
             />
-            <div className="flex justify-end gap-2">
-                {user?.is_ensemble_member && profile?.status === "draft" && !profile?.is_ensemble_only ? (
-                    <Button
-                        size="sm"
-                        variant="bordered"
-                        color="danger"
-                        radius="lg"
-                        isLoading={isSaving}
-                        onPress={() => setIsRevertConfirmOpen(true)}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-default-200">
+                <div
+                    role="tablist"
+                    aria-label="Secciones de edición y configuración del perfil"
+                    className="flex overflow-x-auto"
+                >
+                    <button
+                        type="button"
+                        role="tab"
+                        id="profile-tab-wizard"
+                        aria-selected={activeSection === "wizard"}
+                        onClick={() => setActiveSection("wizard")}
+                        className="relative flex-none inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold text-default-600 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus aria-selected:text-primary-text aria-selected:after:absolute aria-selected:after:inset-x-0 aria-selected:after:bottom-0 aria-selected:after:border-b-[3px] aria-selected:after:border-primary-text"
                     >
-                        Volver a perfil básico
-                    </Button>
-                ) : null}
-                {profile?.status === "published" && isEditingVerified ? (
-                    <Button
-                        size="sm"
-                        variant="light"
-                        radius="lg"
-                        onPress={() => {
-                            setIsEditingVerified(false);
-                            setActiveStep(0);
-                        }}
+                        <Icon
+                            icon="material-symbols:edit-square-outline"
+                            width={18}
+                            aria-hidden="true"
+                        />
+                        <span>Datos del perfil</span>
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        id="profile-tab-settings"
+                        aria-selected={activeSection === "settings"}
+                        onClick={() => setActiveSection("settings")}
+                        className="relative flex-none inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold text-default-600 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus aria-selected:text-primary-text aria-selected:after:absolute aria-selected:after:inset-x-0 aria-selected:after:bottom-0 aria-selected:after:border-b-[3px] aria-selected:after:border-primary-text"
                     >
-                        Volver a vista previa
-                    </Button>
-                ) : null}
+                        <Icon
+                            icon="material-symbols:tune"
+                            width={18}
+                            aria-hidden="true"
+                        />
+                        <span>Detalles y configuración</span>
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2 pb-2 sm:pb-0">
+                    {user?.is_ensemble_member && profile?.status === "draft" && !profile?.is_ensemble_only ? (
+                        <Button
+                            size="sm"
+                            variant="bordered"
+                            color="danger"
+                            radius="lg"
+                            isLoading={isSaving}
+                            onPress={() => setIsRevertConfirmOpen(true)}
+                        >
+                            Volver a perfil básico
+                        </Button>
+                    ) : null}
+                    {profile?.status === "published" && isEditingVerified ? (
+                        <Button
+                            size="sm"
+                            variant="flat"
+                            radius="lg"
+                            startContent={
+                                <Icon
+                                    icon="material-symbols:visibility-outline"
+                                    width={18}
+                                />
+                            }
+                            onPress={() => {
+                                setIsEditingVerified(false);
+                                setActiveSection("wizard");
+                                setActiveStep(0);
+                            }}
+                        >
+                            Volver a vista previa
+                        </Button>
+                    ) : null}
+                </div>
             </div>
 
-            <ProfileWizardStepper
-                activeStep={activeStep}
-                validation={displayValidation}
-                onStepSelect={setActiveStep}
-                rejectionReason={profile?.rejection_reason}
-                heading={timelineHeading}
-                subtitle={timelineSubtitle}
-                badgeLabel={timelineBadge}
-            />
+            {activeSection === "settings" ? (
+                <div
+                    role="tabpanel"
+                    aria-labelledby="profile-tab-settings"
+                    className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-10"
+                >
+                    <div className="rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 flex items-start gap-3">
+                        <Icon
+                            icon="material-symbols:verified-outline"
+                            width={22}
+                            className="text-primary-text shrink-0 mt-0.5"
+                            aria-hidden="true"
+                        />
+                        <div className="space-y-1">
+                            <p className="text-sm font-semibold text-foreground">
+                                Ajustes inmediatos sin pasar por revisión
+                            </p>
+                            <p className="text-xs sm:text-sm text-default-600">
+                                Todo lo que configures en esta pestaña (detalles de tu show, formato de trabajo, agrupaciones, calendario y cuentas vinculadas) se actualiza al instante y tu perfil sigue publicado.
+                            </p>
+                        </div>
+                    </div>
 
-            <div className="flex flex-col gap-6">
+                    <ProfileDetailsCard
+                        onSaved={() => {
+                            void refreshProfileState();
+                        }}
+                    />
+                    <MyEnsemblesCard />
+                    <Suspense fallback={null}>
+                        <ConnectedAccountsCard />
+                    </Suspense>
+                    <CalendarConnectionCard />
+                </div>
+            ) : (
+                <div
+                    role="tabpanel"
+                    aria-labelledby="profile-tab-wizard"
+                    className="flex flex-col gap-8"
+                >
+                    <ProfileWizardStepper
+                        activeStep={activeStep}
+                        validation={displayValidation}
+                        onStepSelect={setActiveStep}
+                        rejectionReason={profile?.rejection_reason}
+                        heading={timelineHeading}
+                        subtitle={timelineSubtitle}
+                        badgeLabel={timelineBadge}
+                    />
+
+                    <div className="flex flex-col gap-6">
                     <Card className="border border-default-200/70 shadow-soft">
                         <CardHeader className="flex flex-col items-start gap-2 px-6 pt-6 pb-0">
                             <div className="flex items-center gap-3">
@@ -1828,7 +1940,9 @@ export default function MusicianProfileWizard() {
                             </div>
                         </div>
                     </div>
-            </div>
+                    </div>
+                </div>
+            )}
             <ChangePasswordModal
                 isOpen={isPasswordModalOpen}
                 onClose={() => setIsPasswordModalOpen(false)}

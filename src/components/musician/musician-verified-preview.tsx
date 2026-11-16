@@ -10,6 +10,7 @@ type Props = {
     /** Uploaded gallery image URLs from musician media (fills empty gallery_images). */
     mediaGalleryUrls?: string[];
     onEdit: () => void;
+    onOpenSettings?: () => void;
 };
 
 function PreviewFallback() {
@@ -22,6 +23,7 @@ export default function MusicianVerifiedPreview({
     profile,
     mediaGalleryUrls = [],
     onEdit,
+    onOpenSettings,
 }: Props) {
     const musician = useMemo(
         () => toMusicianDetailFromOwnedProfile(profile, mediaGalleryUrls),
@@ -34,6 +36,7 @@ export default function MusicianVerifiedPreview({
                 musician={musician}
                 mode="owner"
                 onEdit={onEdit}
+                onOpenSettings={onOpenSettings}
             />
         </Suspense>
     );

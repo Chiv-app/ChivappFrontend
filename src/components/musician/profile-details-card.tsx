@@ -46,11 +46,15 @@ function Group({ label, hint, children }: { label: string; hint?: string; childr
     );
 }
 
+type Props = {
+    onSaved?: () => void;
+};
+
 /**
  * Tipo de perfil y detalles que ven los clientes. Es el lugar donde un perfil ya publicado completa lo que
  * la guía de alta pide ahora. Guardar aquí no manda el perfil a revisión.
  */
-export default function ProfileDetailsCard() {
+export default function ProfileDetailsCard({ onSaved }: Props = {}) {
     const [form, setForm] = useState<FormState | null>(null);
     const [initial, setInitial] = useState<string>("");
     const [loadFailed, setLoadFailed] = useState(false);
@@ -151,6 +155,7 @@ export default function ProfileDetailsCard() {
                 details: form.details,
             });
             setInitial(JSON.stringify(form));
+            onSaved?.();
             addToast({ title: "Detalles guardados", description: "Tu perfil se actualiza sin pasar por revisión.", color: "success" });
         } catch (error) {
             const text = error instanceof ApiError && error.message ? error.message : "No pudimos guardar. Inténtalo de nuevo.";

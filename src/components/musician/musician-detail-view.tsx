@@ -38,6 +38,7 @@ type Props = {
     /** Owner preview of the same public layout (no booking CTA). */
     mode?: "public" | "owner";
     onEdit?: () => void;
+    onOpenSettings?: () => void;
 };
 
 function formatPrice(amount: number | null): string {
@@ -113,6 +114,7 @@ export default function MusicianDetailView({
     musician,
     mode = "public",
     onEdit,
+    onOpenSettings,
 }: Props) {
     const isOwner = mode === "owner";
     const { user } = useAuth();
@@ -297,6 +299,22 @@ export default function MusicianDetailView({
                                         >
                                             Ver página pública
                                         </Button>
+                                        {onOpenSettings ? (
+                                            <Button
+                                                variant="bordered"
+                                                radius="lg"
+                                                className="font-semibold"
+                                                onPress={onOpenSettings}
+                                                startContent={
+                                                    <Icon
+                                                        icon="material-symbols:tune"
+                                                        width={18}
+                                                    />
+                                                }
+                                            >
+                                                Configuración y detalles
+                                            </Button>
+                                        ) : null}
                                         <Button
                                             color="primary"
                                             radius="lg"
@@ -599,7 +617,12 @@ export default function MusicianDetailView({
                                     <MusicianDetailsSection details={musician.details} kind={musician.profileType ?? "solo"} />
                                 ) : null}
 
-                                <MusicianTeamSection members={musician.team ?? []} playsWith={musician.playsWith ?? []} />
+                                <MusicianTeamSection
+                                    members={musician.team ?? []}
+                                    playsWith={musician.playsWith ?? []}
+                                    isOwner={isOwner}
+                                    profileType={musician.profileType ?? "solo"}
+                                />
 
                                 {hasPortfolio ? (
                                     <section>
