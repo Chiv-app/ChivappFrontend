@@ -6,12 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AppNavbar from "@/components/layout/app-navbar";
-import ProfileSwitcher from "@/components/musician/profile-switcher";
 import EmailVerificationBanner from "@/components/auth/email-verification-banner";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthModalUrl } from "@/contexts/auth-modal-context";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
+import {
+    consumeOnboardingReturnState,
+    getActiveProfileId,
+    peekOnboardingReturnState,
+    setActiveProfileId,
+} from "@/lib/active-profile";
 import {
     isEnsembleMemberAllowedPath,
     isEnsembleMemberNavItem,
@@ -20,7 +25,10 @@ import {
     isNavItemActive,
     type DashboardNavItem,
 } from "@/lib/dashboard-nav";
-import { getPostLoginPath } from "@/lib/profiles";
+import {
+    getPostLoginPath,
+    invalidateProfileVerificationCache,
+} from "@/lib/profiles";
 import type { UserRole } from "@/types/api";
 
 type Role = Extract<UserRole, "musician" | "contractor">;
@@ -86,13 +94,22 @@ export default function RoleDashboardShell({
         const isEnsembleOnlyUser =
             status?.is_ensemble_only || user?.is_ensemble_member;
         // Mientras el perfil esté en borrador, todo el panel (también «Perfil») lleva a la guía de alta:
-        // el perfil completo se ve cuando se terminó la guía o el perfil está aprobado.
+        // salvo que sea un perfil adicional en borrador de un músico que ya tiene su perfil principal
+        // y regresó a una vista del panel (p. ej. con el botón Atrás del navegador).
         if (
             role === "musician" &&
             status?.status === "draft" &&
             !isEnsembleOnlyUser &&
             pathname !== "/musician/onboarding"
         ) {
+            const activeExtraId = getActiveProfileId();
+            const returnState = peekOnboardingReturnState();
+            if (activeExtraId && (user.is_verified || returnState.hasReturnState)) {
+                const { previousProfileId } = consumeOnboardingReturnState();
+                setActiveProfileId(previousProfileId);
+                invalidateProfileVerificationCache("musician");
+                return;
+            }
             router.replace("/musician/onboarding");
             return;
         }
@@ -272,10 +289,6 @@ export default function RoleDashboardShell({
                             </div>
                         ) : null}
                     </div>
-                ) : null}
-
-                {role === "musician" && !isOnboarding && !ensembleBypass ? (
-                    <ProfileSwitcher className="px-4 lg:px-8 pt-3" />
                 ) : null}
 
                 <main className="p-4 lg:p-8">{children}</main>

@@ -29,6 +29,8 @@ vi.mock("@/lib/profiles", () => ({
     getMusicianProfile: getProfile,
     updateMusicianProfile: updateProfile,
     submitMusicianProfile: vi.fn(),
+    deleteAdditionalMusicianProfile: vi.fn().mockResolvedValue(undefined),
+    invalidateProfileVerificationCache: vi.fn(),
 }));
 
 vi.mock("@/lib/uploads", () => ({

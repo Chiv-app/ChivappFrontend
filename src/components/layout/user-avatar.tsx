@@ -18,6 +18,8 @@ type Props = {
     size?: "sm" | "md" | "lg";
     className?: string;
     showBorder?: boolean;
+    overrideImageUrl?: string | null;
+    overrideName?: string | null;
 };
 
 export default function UserAvatar({
@@ -25,13 +27,16 @@ export default function UserAvatar({
     size = "sm",
     className,
     showBorder = false,
+    overrideImageUrl,
+    overrideName,
 }: Props) {
     const fromUser = resolveUploadUrl(user.profile_picture_url);
+    const fromOverride = overrideImageUrl !== undefined ? resolveUploadUrl(overrideImageUrl) : undefined;
     const [musicianImageUrl, setMusicianImageUrl] = useState<string | null>(null);
     const [hasLoadedMusician, setHasLoadedMusician] = useState(false);
 
     useEffect(() => {
-        if (user.role !== "musician") {
+        if (user.role !== "musician" || overrideImageUrl !== undefined) {
             return;
         }
 
@@ -53,19 +58,24 @@ export default function UserAvatar({
         return () => {
             cancelled = true;
         };
-    }, [user.id, user.role]);
+    }, [user.id, user.role, overrideImageUrl]);
 
-    // Priority: 1. Musician Profile Image (if loaded and exists), 2. Google/User Profile Picture, 3. Fallback
-    const imageUrl = user.role === "musician" 
-        ? (hasLoadedMusician && musicianImageUrl ? musicianImageUrl : fromUser)
-        : fromUser;
+    const displayName = overrideName?.trim() || user.fullname;
+    const imageUrl =
+        fromOverride !== undefined
+            ? fromOverride || fromUser
+            : user.role === "musician"
+              ? hasLoadedMusician && musicianImageUrl
+                  ? musicianImageUrl
+                  : fromUser
+              : fromUser;
 
     return (
         <Avatar
             src={imageUrl ?? undefined}
-            name={getUserInitials(user.fullname)}
+            name={getUserInitials(displayName)}
             showFallback
-            getInitials={() => getUserInitials(user.fullname)}
+            getInitials={() => getUserInitials(displayName)}
             size={size}
             className={`${showBorder ? "ring-2 ring-primary/20" : ""} ${className ?? ""}`}
             classNames={{

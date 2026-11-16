@@ -3,11 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import MusicianGuidedOnboarding from "./musician-guided-onboarding";
 
-const { refreshMock, getProfile, updateProfile, submitProfile } = vi.hoisted(() => ({
+const { refreshMock, getProfile, updateProfile, submitProfile, deleteProfile } = vi.hoisted(() => ({
     refreshMock: vi.fn().mockResolvedValue(undefined),
     getProfile: vi.fn(),
     updateProfile: vi.fn(),
     submitProfile: vi.fn(),
+    deleteProfile: vi.fn().mockResolvedValue(undefined),
 }));
 
 const routerMock = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }));
@@ -30,6 +31,7 @@ vi.mock("@/lib/profiles", () => ({
     getMusicianProfile: getProfile,
     updateMusicianProfile: updateProfile,
     submitMusicianProfile: submitProfile,
+    deleteAdditionalMusicianProfile: deleteProfile,
     invalidateProfileVerificationCache: vi.fn(),
 }));
 
@@ -294,5 +296,31 @@ describe("MusicianGuidedOnboarding", () => {
         await user.click(screen.getByRole("button", { name: "Ir a mi panel" }));
         expect(window.localStorage.getItem("chivapp:active-musician-profile")).toBeNull();
         expect(routerMock.replace).toHaveBeenCalledWith("/musician");
+    });
+
+    it("permite cancelar la creación de un perfil adicional y regresar a la vista y perfil anteriores", async () => {
+        const prevId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+        const newId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+        window.localStorage.setItem("chivapp:active-musician-profile", newId);
+        window.localStorage.setItem("chivapp:onboarding-prev-profile", prevId);
+        window.localStorage.setItem("chivapp:onboarding-return-path", "/musician/profile");
+        getProfile.mockResolvedValue(
+            draftProfile({
+                id: newId,
+                is_primary: false,
+                stage_name: "Nuevo Borrador",
+                id_document_url: "/uploads/private/dni.jpg",
+                signature_image_url: "/uploads/private/firma.png",
+            }),
+        );
+        const user = userEvent.setup();
+        render(<MusicianGuidedOnboarding />);
+
+        expect(await screen.findByRole("button", { name: "Volver a mi perfil" })).toBeTruthy();
+        await user.click(screen.getByRole("button", { name: "Cancelar creación" }));
+
+        await waitFor(() => expect(deleteProfile).toHaveBeenCalledWith(newId));
+        expect(window.localStorage.getItem("chivapp:active-musician-profile")).toBe(prevId);
+        expect(routerMock.replace).toHaveBeenCalledWith("/musician/profile");
     });
 });

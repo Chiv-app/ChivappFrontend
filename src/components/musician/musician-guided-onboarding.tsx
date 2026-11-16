@@ -64,8 +64,17 @@ import {
     toggleInList,
     withoutGroupOnly,
 } from "@/lib/profile-details";
-import { setActiveProfileId } from "@/lib/active-profile";
-import { getMusicianProfile, invalidateProfileVerificationCache, submitMusicianProfile, updateMusicianProfile } from "@/lib/profiles";
+import {
+    consumeOnboardingReturnState,
+    setActiveProfileId,
+} from "@/lib/active-profile";
+import {
+    deleteAdditionalMusicianProfile,
+    getMusicianProfile,
+    invalidateProfileVerificationCache,
+    submitMusicianProfile,
+    updateMusicianProfile,
+} from "@/lib/profiles";
 import { resolveUploadUrl, uploadFile, uploadSignatureDataUrl } from "@/lib/uploads";
 
 const FOCUS_SELECTORS: Record<GuideField, string> = {
@@ -205,6 +214,8 @@ export default function MusicianGuidedOnboarding() {
     const [chapterNote, setChapterNote] = useState<string | null>(null);
     const [showHour, setShowHour] = useState(false);
     const [isAdditional, setIsAdditional] = useState(false);
+    const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+    const [cancelling, setCancelling] = useState(false);
     const flow = useMemo(() => flowFor(isAdditional), [isAdditional]);
     const guideSteps = useMemo(() => guideStepsFor(isAdditional), [isAdditional]);
     const [announce, setAnnounce] = useState("");
@@ -245,6 +256,7 @@ export default function MusicianGuidedOnboarding() {
             setShowHour(Boolean(initial.priceHour));
             const additional = profile.is_primary === false;
             setIsAdditional(additional);
+            setCurrentProfileId(profile.id ?? null);
             setStep(resumeStep(initial, additional));
             setPhase("ready");
         } catch (err) {
@@ -395,11 +407,47 @@ export default function MusicianGuidedOnboarding() {
         }
     }
 
-    /** Sale de la guía de un perfil adicional y vuelve al perfil principal (sin borrar nada: queda en borrador). */
+    /** Sale de la guía de un perfil adicional y vuelve al perfil activo previo (si el borrador está vacío, lo descarta). */
     function leaveAdditionalProfile() {
-        setActiveProfileId(null);
+        const isBlankDraft =
+            !data.name.trim() &&
+            data.genres.length === 0 &&
+            data.instruments.length === 0 &&
+            !data.photoUrl &&
+            !data.bio.trim();
+        if (isBlankDraft && currentProfileId) {
+            void deleteAdditionalMusicianProfile(currentProfileId).catch(() => {});
+        }
+        const { previousProfileId, returnPath } = consumeOnboardingReturnState();
+        setActiveProfileId(previousProfileId);
         invalidateProfileVerificationCache("musician");
-        router.replace("/musician");
+        router.replace(returnPath);
+    }
+
+    /** Cancela explícitamente la creación del perfil adicional eliminando el borrador y regresando a la vista anterior. */
+    async function cancelAdditionalProfile() {
+        if (cancelling || busy) return;
+        setCancelling(true);
+        try {
+            if (currentProfileId) {
+                await deleteAdditionalMusicianProfile(currentProfileId);
+            } else {
+                await deleteAdditionalMusicianProfile();
+            }
+        } catch {
+            // Si ya no existía o falló la red, igual devolvemos al usuario a su perfil anterior.
+        } finally {
+            const { previousProfileId, returnPath } = consumeOnboardingReturnState();
+            setActiveProfileId(previousProfileId);
+            invalidateProfileVerificationCache("musician");
+            addToast({
+                title: "Creación de perfil cancelada",
+                description: "Regresaste a tu perfil anterior.",
+                color: "default",
+            });
+            setCancelling(false);
+            router.replace(returnPath);
+        }
     }
 
     async function handleSubmit(event: FormEvent) {
@@ -1318,8 +1366,37 @@ export default function MusicianGuidedOnboarding() {
 
     return (
         <div className="min-h-[100dvh] bg-background text-foreground">
-            <header className="mx-auto flex max-w-5xl items-center px-4 py-4">
+            <header className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4">
                 <AppLogo height={30} priority />
+                {isAdditional && step !== "enviado" ? (
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="flat"
+                            radius="lg"
+                            size="sm"
+                            className="min-h-10 font-medium"
+                            startContent={<Icon icon="material-symbols:arrow-back" width={18} aria-hidden="true" />}
+                            isDisabled={busy || cancelling}
+                            onPress={leaveAdditionalProfile}
+                        >
+                            Volver a mi perfil
+                        </Button>
+                        <Button
+                            type="button"
+                            color="danger"
+                            variant="light"
+                            radius="lg"
+                            size="sm"
+                            className="min-h-10 font-medium"
+                            isLoading={cancelling}
+                            isDisabled={busy}
+                            onPress={() => void cancelAdditionalProfile()}
+                        >
+                            Cancelar creación
+                        </Button>
+                    </div>
+                ) : null}
             </header>
 
             <p className="sr-only" role="status" aria-live="polite">
@@ -1392,8 +1469,23 @@ export default function MusicianGuidedOnboarding() {
                             {uploading ? "Subiendo…" : busy && step === "revision" ? "Enviando…" : ctaLabel}
                         </Button>
                         {isOptional && !returnTo ? (
-                            <Button type="button" variant="light" radius="lg" fullWidth className="min-h-11" isDisabled={busy} onPress={advance}>
+                            <Button type="button" variant="light" radius="lg" fullWidth className="min-h-11" isDisabled={busy || cancelling} onPress={advance}>
                                 Omitir por ahora
+                            </Button>
+                        ) : null}
+                        {isAdditional && step === "welcome" ? (
+                            <Button
+                                type="button"
+                                variant="light"
+                                color="danger"
+                                radius="lg"
+                                fullWidth
+                                className="min-h-11"
+                                isLoading={cancelling}
+                                isDisabled={busy}
+                                onPress={() => void cancelAdditionalProfile()}
+                            >
+                                Cancelar y volver a mi perfil
                             </Button>
                         ) : null}
                     </div>

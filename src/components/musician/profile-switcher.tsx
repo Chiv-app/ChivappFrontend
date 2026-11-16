@@ -4,7 +4,11 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { addToast } from "@heroui/react";
-import { setActiveProfileId, getActiveProfileId } from "@/lib/active-profile";
+import {
+    getActiveProfileId,
+    saveOnboardingReturnState,
+    setActiveProfileId,
+} from "@/lib/active-profile";
 import { ApiError } from "@/lib/api";
 import { profileBadge } from "@/lib/profile-details";
 import { createAdditionalMusicianProfile, invalidateProfileVerificationCache, listMyMusicianProfiles } from "@/lib/profiles";
@@ -82,7 +86,11 @@ export default function ProfileSwitcher({ className = "" }: Props) {
         if (adding) return;
         setAdding(true);
         try {
+            const currentActiveId = getActiveProfileId() ?? profiles?.[0]?.id ?? null;
+            const currentPath =
+                typeof window !== "undefined" ? window.location.pathname : "/musician";
             const created = await createAdditionalMusicianProfile();
+            saveOnboardingReturnState(currentActiveId, currentPath);
             setActiveProfileId(created.id);
             invalidateProfileVerificationCache("musician");
             router.push("/musician/onboarding");

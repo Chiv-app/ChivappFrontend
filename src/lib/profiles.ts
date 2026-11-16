@@ -53,6 +53,15 @@ export function createAdditionalMusicianProfile() {
     return apiFetch<MusicianProfileOut>("/profiles/musician/additional", { method: "POST" });
 }
 
+/** Cancela y elimina un perfil adicional en borrador. */
+export async function deleteAdditionalMusicianProfile(profileId?: string) {
+    const path = profileId
+        ? `/profiles/musician/additional/${encodeURIComponent(profileId)}`
+        : "/profiles/musician/additional";
+    await apiFetch<void>(path, { method: "DELETE" });
+    invalidateProfileVerificationCache("musician");
+}
+
 export function getMusicianProfileStatus() {
     return apiFetch<ProfileValidationOut>("/profiles/musician/me/status");
 }

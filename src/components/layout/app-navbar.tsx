@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Button,
     Dropdown,
@@ -10,6 +10,7 @@ import {
     DropdownMenu,
     DropdownSection,
     DropdownTrigger,
+    addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import AppLogo from "@/components/layout/app-logo";
@@ -18,22 +19,44 @@ import { useAuthModal } from "@/contexts/auth-modal-context";
 import NotificationsDropdown from "@/components/layout/notifications-dropdown";
 import ThemeToggle from "@/components/layout/theme-toggle";
 import UserAvatar from "@/components/layout/user-avatar";
+import { MAX_PROFILES } from "@/components/musician/profile-switcher";
 import { useIsClient } from "@/hooks/use-is-client";
 import { useScrolledPast } from "@/hooks/use-scrolled-past";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
+import {
+    getActiveProfileId,
+    saveOnboardingReturnState,
+    setActiveProfileId,
+} from "@/lib/active-profile";
+import { ApiError } from "@/lib/api";
 import {
     getNavItemsForRole,
     getRoleHomePath,
     isEnsembleMemberNavItem,
     isNavItemActive,
 } from "@/lib/dashboard-nav";
+import { profileBadge } from "@/lib/profile-details";
+import {
+    PROFILE_VERIFICATION_INVALIDATED_EVENT,
+    createAdditionalMusicianProfile,
+    invalidateProfileVerificationCache,
+    listMyMusicianProfiles,
+} from "@/lib/profiles";
 import { isScrollRevealRoute } from "@/lib/scroll-reveal-routes";
+import type { MusicianProfileSummary } from "@/types/api";
 
 const roleLabels = {
     contractor: "Contratista",
     musician: "Músico",
     admin: "Administrador",
 } as const;
+
+const PROFILE_STATUS_LABELS: Record<string, string> = {
+    draft: "En borrador",
+    pending_review: "En revisión",
+    published: "Publicado",
+    rejected: "Rechazado",
+};
 
 type ModuleEntry = {
     key: string;
@@ -85,6 +108,123 @@ export default function AppNavbar() {
             : user?.role === "contractor"
               ? "/contractor/profile"
               : null;
+
+    const [fetchedProfiles, setFetchedProfiles] = useState<MusicianProfileSummary[]>([]);
+    const [addingProfile, setAddingProfile] = useState(false);
+    const isMusicianReady = authReady && !!user && user.role === "musician";
+    const musicianProfiles = useMemo(
+        () => (isMusicianReady ? fetchedProfiles : []),
+        [isMusicianReady, fetchedProfiles],
+    );
+
+    const loadMusicianProfiles = useCallback(async () => {
+        if (!isMusicianReady) return;
+        try {
+            const list = await listMyMusicianProfiles();
+            setFetchedProfiles(list);
+        } catch {
+            setFetchedProfiles([]);
+        }
+    }, [isMusicianReady]);
+
+    useEffect(() => {
+        if (!isMusicianReady) return;
+        let cancelled = false;
+        listMyMusicianProfiles()
+            .then((list) => {
+                if (!cancelled) setFetchedProfiles(list);
+            })
+            .catch(() => {
+                if (!cancelled) setFetchedProfiles([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isMusicianReady, pathname]);
+
+    useEffect(() => {
+        if (!authReady || user?.role !== "musician") return;
+        const onInvalidated = () => {
+            void loadMusicianProfiles();
+        };
+        window.addEventListener(PROFILE_VERIFICATION_INVALIDATED_EVENT, onInvalidated);
+        return () => {
+            window.removeEventListener(PROFILE_VERIFICATION_INVALIDATED_EVENT, onInvalidated);
+        };
+    }, [authReady, user?.role, loadMusicianProfiles]);
+
+    const primaryMusicianProfile = musicianProfiles[0] ?? null;
+    const storedProfileId = isClient ? getActiveProfileId() : null;
+    const activeMusicianProfile =
+        musicianProfiles.find((p) => p.id === storedProfileId) ?? primaryMusicianProfile;
+    const canAddMusicianProfile =
+        user?.role === "musician" &&
+        musicianProfiles.length > 0 &&
+        musicianProfiles.length < MAX_PROFILES &&
+        primaryMusicianProfile?.status !== "draft";
+    const showMusicianProfilesSection =
+        user?.role === "musician" &&
+        (musicianProfiles.length > 1 || canAddMusicianProfile);
+
+    const navbarDisplayName =
+        user?.role === "musician" && activeMusicianProfile?.stage_name?.trim()
+            ? activeMusicianProfile.stage_name.trim()
+            : user?.fullname || user?.email || "";
+    const navbarSubtitle =
+        user?.role === "musician" && activeMusicianProfile
+            ? profileBadge(activeMusicianProfile.profile_type, activeMusicianProfile.group_size)
+            : user
+              ? roleLabels[user.role]
+              : "";
+
+    async function handleSwitchMusicianProfile(targetId: string) {
+        const target = musicianProfiles.find((p) => p.id === targetId);
+        if (!target) return;
+        if (target.id === activeMusicianProfile?.id) {
+            if (target.status === "draft") {
+                saveOnboardingReturnState(primaryMusicianProfile?.id ?? null, pathname);
+                router.push("/musician/onboarding");
+            } else if (profilePath) {
+                router.push(profilePath);
+            }
+            return;
+        }
+        if (target.status === "draft") {
+            saveOnboardingReturnState(activeMusicianProfile?.id ?? null, pathname);
+            setActiveProfileId(target.id);
+            invalidateProfileVerificationCache("musician");
+            router.push("/musician/onboarding");
+            return;
+        }
+        setActiveProfileId(target.id);
+        invalidateProfileVerificationCache("musician");
+        window.location.reload();
+    }
+
+    async function handleAddMusicianProfile() {
+        if (addingProfile || !canAddMusicianProfile) return;
+        setAddingProfile(true);
+        try {
+            saveOnboardingReturnState(activeMusicianProfile?.id ?? null, pathname);
+            const created = await createAdditionalMusicianProfile();
+            setActiveProfileId(created.id);
+            invalidateProfileVerificationCache("musician");
+            await loadMusicianProfiles();
+            router.push("/musician/onboarding");
+        } catch (error) {
+            const description =
+                error instanceof ApiError && error.message
+                    ? error.message
+                    : "No pudimos crear el perfil. Inténtalo de nuevo.";
+            addToast({
+                title: "No se pudo agregar el perfil",
+                description,
+                color: "danger",
+            });
+        } finally {
+            setAddingProfile(false);
+        }
+    }
 
     const moduleEntries = useMemo((): ModuleEntry[] => {
         if (!user) return [];
@@ -207,13 +347,22 @@ export default function AppNavbar() {
                                             }
                                         >
                                             <span className="flex items-center gap-2.5 min-w-0">
-                                                <UserAvatar user={user} size="sm" />
+                                                <UserAvatar
+                                                    user={user}
+                                                    size="sm"
+                                                    overrideImageUrl={
+                                                        user.role === "musician" && activeMusicianProfile
+                                                            ? activeMusicianProfile.profile_image_url
+                                                            : undefined
+                                                    }
+                                                    overrideName={navbarDisplayName}
+                                                />
                                                 <span className="flex-col items-start min-w-0 text-left leading-tight hidden sm:flex">
                                                     <span className="truncate max-w-[9rem] text-sm text-foreground">
-                                                        {user.fullname || user.email}
+                                                        {navbarDisplayName}
                                                     </span>
                                                     <span className="truncate max-w-[9rem] text-xs font-medium text-default-500">
-                                                        {roleLabels[user.role]}
+                                                        {navbarSubtitle}
                                                     </span>
                                                 </span>
                                             </span>
@@ -221,7 +370,7 @@ export default function AppNavbar() {
                                     </DropdownTrigger>
                                     <DropdownMenu
                                         aria-label="Menú de usuario"
-                                        className="w-[min(19rem,calc(100vw-1.5rem))]"
+                                        className="w-[min(20rem,calc(100vw-1.5rem))]"
                                         itemClasses={{
                                             base: "rounded-xl gap-3 data-[hover=true]:bg-default-100",
                                             title: "text-sm font-medium",
@@ -234,6 +383,18 @@ export default function AppNavbar() {
                                             }
                                             if (key === "search-musicians") {
                                                 router.push("/musicians");
+                                                return;
+                                            }
+                                            if (key === "add-profile") {
+                                                void handleAddMusicianProfile();
+                                                return;
+                                            }
+                                            if (
+                                                typeof key === "string" &&
+                                                key.startsWith("switch-profile:")
+                                            ) {
+                                                const profileId = key.replace("switch-profile:", "");
+                                                void handleSwitchMusicianProfile(profileId);
                                                 return;
                                             }
                                             if (
@@ -259,28 +420,137 @@ export default function AppNavbar() {
                                                 key="identity"
                                                 isReadOnly
                                                 className="h-auto py-3 cursor-default data-[hover=true]:bg-transparent"
-                                                textValue={user.fullname ?? user.email}
+                                                textValue={navbarDisplayName || (user.fullname ?? user.email)}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <UserAvatar
                                                         user={user}
                                                         size="md"
                                                         showBorder
+                                                        overrideImageUrl={
+                                                            user.role === "musician" && activeMusicianProfile
+                                                                ? activeMusicianProfile.profile_image_url
+                                                                : undefined
+                                                        }
+                                                        overrideName={navbarDisplayName}
                                                     />
                                                     <div className="min-w-0 flex-1">
                                                         <p className="font-semibold text-foreground truncate">
-                                                            {user.fullname || user.email}
+                                                            {navbarDisplayName}
                                                         </p>
                                                         <p className="text-xs text-default-500 truncate mt-0.5">
                                                             {user.email}
                                                         </p>
                                                         <span className="inline-flex mt-2 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-secondary">
-                                                            {roleLabels[user.role]}
+                                                            {navbarSubtitle}
                                                         </span>
                                                     </div>
                                                 </div>
                                             </DropdownItem>
                                         </DropdownSection>
+
+                                        {showMusicianProfilesSection ? (
+                                            <DropdownSection
+                                                showDivider
+                                                title="Tus perfiles"
+                                                classNames={{
+                                                    heading:
+                                                        "text-xs font-semibold text-default-500 px-2",
+                                                }}
+                                            >
+                                                {[
+                                                    ...musicianProfiles.map((profile) => {
+                                                        const isActive =
+                                                            profile.id === activeMusicianProfile?.id;
+                                                        const pName =
+                                                            profile.stage_name?.trim() ||
+                                                            "Perfil en borrador";
+                                                        const pDesc = `${profileBadge(
+                                                            profile.profile_type,
+                                                            profile.group_size,
+                                                        )} · ${
+                                                            PROFILE_STATUS_LABELS[profile.status] ??
+                                                            profile.status
+                                                        }${profile.is_primary ? " · Principal" : ""}`;
+                                                        return (
+                                                            <DropdownItem
+                                                                key={`switch-profile:${profile.id}`}
+                                                                textValue={pName}
+                                                                className={
+                                                                    isActive
+                                                                        ? "bg-primary/10 text-primary-text"
+                                                                        : undefined
+                                                                }
+                                                                startContent={
+                                                                    <span
+                                                                        className={`flex size-8 items-center justify-center rounded-lg ${
+                                                                            isActive
+                                                                                ? "bg-primary/20 text-primary-text"
+                                                                                : "bg-default-100 text-default-600"
+                                                                        }`}
+                                                                    >
+                                                                        <Icon
+                                                                            icon={
+                                                                                profile.profile_type ===
+                                                                                "group"
+                                                                                    ? "mdi:account-group-outline"
+                                                                                    : "mdi:account-music-outline"
+                                                                            }
+                                                                            width={18}
+                                                                            aria-hidden="true"
+                                                                        />
+                                                                    </span>
+                                                                }
+                                                                endContent={
+                                                                    isActive ? (
+                                                                        <Icon
+                                                                            icon="material-symbols:check-circle"
+                                                                            width={16}
+                                                                            aria-hidden="true"
+                                                                            className="text-primary"
+                                                                        />
+                                                                    ) : (
+                                                                        <Icon
+                                                                            icon="material-symbols:swap-horiz"
+                                                                            width={16}
+                                                                            aria-hidden="true"
+                                                                            className="text-default-400"
+                                                                        />
+                                                                    )
+                                                                }
+                                                                description={pDesc}
+                                                            >
+                                                                {pName}
+                                                            </DropdownItem>
+                                                        );
+                                                    }),
+                                                    <DropdownItem
+                                                        key="add-profile"
+                                                        isDisabled={!canAddMusicianProfile || addingProfile}
+                                                        textValue="Agregar otro perfil"
+                                                        className="text-primary-text"
+                                                        startContent={
+                                                            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary-text">
+                                                                <Icon
+                                                                    icon="material-symbols:add"
+                                                                    width={18}
+                                                                    aria-hidden="true"
+                                                                />
+                                                            </span>
+                                                        }
+                                                        description={
+                                                            musicianProfiles.length >= MAX_PROFILES
+                                                                ? `Máximo ${MAX_PROFILES} perfiles por cuenta`
+                                                                : "Un solista o tu grupo, sin repetir DNI"
+                                                        }
+                                                    >
+                                                        {addingProfile
+                                                            ? "Creando perfil…"
+                                                            : "Agregar otro perfil"}
+                                                    </DropdownItem>,
+                                                ]}
+                                            </DropdownSection>
+                                        ) : null}
 
                                         {profilePath || user.role === "contractor" ? (
                                             <DropdownSection showDivider title="Cuenta">
