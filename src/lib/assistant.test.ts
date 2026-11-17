@@ -4,13 +4,29 @@ const apiFetch = vi.fn();
 vi.mock("./api", () => ({ apiFetch: (...args: unknown[]) => apiFetch(...args) }));
 
 import {
+    answerAssistantPending,
+    configToUpdate,
+    createAssistantKnowledge,
+    deleteAssistantKnowledge,
+    dismissAssistantPending,
     getAssistantConfig,
+    getAssistantReadiness,
     getAssistantUsage,
     getWhatsAppChannel,
     listAssistantConversations,
+    listAssistantKnowledge,
+    listAssistantPending,
+    listAssistantVersions,
+    previewAssistantCompare,
+    previewAssistantQuote,
+    restoreAssistantVersion,
+    saveAssistantConfigChange,
     simulateAssistantChat,
+    updateAssistantConfig,
     updateAssistantConversationStatus,
+    updateAssistantKnowledge,
     updateWhatsAppChannel,
+    type MusicianAssistantConfigOut,
 } from "./assistant";
 
 beforeEach(() => {
@@ -173,5 +189,241 @@ describe("cliente del asistente IA frente al contrato del servidor", () => {
 
         expect(apiFetch).toHaveBeenCalledWith("/assistant/usage");
         expect(usage.ai_calls_limit).toBe(300);
+    });
+
+    it("la configuración trae tono, ejemplos de voz y reglas de aviso sin perderlos", async () => {
+        const escalation_rules = { big_event_on: true, big_event_guests: 150, special_date_on: false, unknown_question_on: true };
+        apiFetch.mockResolvedValueOnce({
+            profile_id: "p-1",
+            enabled: true,
+            packages: [],
+            zone_surcharges: [],
+            night_surcharge_amount: 0,
+            night_surcharge_start_hour: 23,
+            special_date_surcharge_percent: 0,
+            max_discount_amount: 0,
+            max_discount_percent: 0,
+            tone: "formal",
+            voice_examples: ["Con gusto, ya te cuento"],
+            escalation_rules,
+        });
+
+        const config = await getAssistantConfig("p-1");
+
+        expect(config.tone).toBe("formal");
+        expect(config.voice_examples).toEqual(["Con gusto, ya te cuento"]);
+        expect(config.escalation_rules).toEqual(escalation_rules);
+    });
+
+    it("guardar un cambio reenvía la configuración completa con ese cambio", async () => {
+        const saved: MusicianAssistantConfigOut = {
+            id: "p-1",
+            profile_id: "p-1",
+            enabled: true,
+            greeting_message: "Hola",
+            packages: [{ id: "k4", name: "Show estándar", members_count: 4, duration_hours: 1, price: 450 }],
+            additional_hour_price: 200,
+            zone_surcharges: [{ zone: "Surco", surcharge: 0 }],
+            per_km_rate: null,
+            night_surcharge_amount: 50,
+            night_surcharge_start_hour: 23,
+            special_date_surcharge_percent: 15,
+            max_discount_amount: 30,
+            max_discount_percent: 10,
+            custom_instructions: "Sé amable",
+            tone: "cercano",
+            voice_examples: ["Perfecto, lo dejo anotado."],
+            escalation_rules: { big_event_on: false, big_event_guests: 100, special_date_on: false, unknown_question_on: true },
+            updated_at: "",
+        };
+        apiFetch.mockResolvedValueOnce({ ...saved, tone: "breve" });
+
+        const updated = await saveAssistantConfigChange(saved, { tone: "breve" });
+
+        const [path, init] = apiFetch.mock.calls[0];
+        expect(path).toBe("/assistant/config?profile_id=p-1");
+        expect(init.method).toBe("PUT");
+        const body = JSON.parse(init.body);
+        expect(body).toEqual({ ...configToUpdate(saved), tone: "breve" });
+        expect(body.packages).toHaveLength(1);
+        expect(body.zone_surcharges).toEqual([{ zone: "Surco", surcharge: 0 }]);
+        expect(body.voice_examples).toEqual(["Perfecto, lo dejo anotado."]);
+        expect(body.escalation_rules.unknown_question_on).toBe(true);
+        expect(updated.tone).toBe("breve");
+    });
+
+    it("el guardado clásico sigue sin mandar tono, voz ni reglas (el servidor los conserva)", async () => {
+        apiFetch.mockResolvedValueOnce({ profile_id: "p-1", enabled: true, packages: [], zone_surcharges: [] });
+
+        await updateAssistantConfig({ enabled: true, greeting_message: "Hola" }, "p-1");
+
+        const body = JSON.parse(apiFetch.mock.calls[0][1].body);
+        expect(body).toEqual({ enabled: true, greeting_message: "Hola" });
+    });
+
+    it("el conocimiento se lista, crea, edita y borra en /assistant/knowledge", async () => {
+        const entry = {
+            id: "k-1",
+            question: "¿Pueden pedir canciones especiales?",
+            answer: "Sí, hasta 3.",
+            source: "entrevista",
+            created_at: "2026-11-16T10:00:00Z",
+            updated_at: "2026-11-16T10:00:00Z",
+        };
+        apiFetch
+            .mockResolvedValueOnce([entry])
+            .mockResolvedValueOnce(entry)
+            .mockResolvedValueOnce({ ...entry, answer: "Sí, hasta 4." })
+            .mockResolvedValueOnce(undefined);
+
+        const list = await listAssistantKnowledge("p-1");
+        expect(apiFetch.mock.calls[0][0]).toBe("/assistant/knowledge?profile_id=p-1");
+        expect(list[0].source).toBe("entrevista");
+
+        await createAssistantKnowledge({ question: entry.question, answer: entry.answer, source: "entrevista" }, "p-1");
+        const [createPath, createInit] = apiFetch.mock.calls[1];
+        expect(createPath).toBe("/assistant/knowledge?profile_id=p-1");
+        expect(createInit.method).toBe("POST");
+        expect(JSON.parse(createInit.body)).toEqual({
+            question: entry.question,
+            answer: entry.answer,
+            source: "entrevista",
+        });
+
+        const edited = await updateAssistantKnowledge("k-1", { question: entry.question, answer: "Sí, hasta 4." });
+        const [putPath, putInit] = apiFetch.mock.calls[2];
+        expect(putPath).toBe("/assistant/knowledge/k-1");
+        expect(putInit.method).toBe("PUT");
+        expect(JSON.parse(putInit.body)).toEqual({ question: entry.question, answer: "Sí, hasta 4." });
+        expect(edited.answer).toBe("Sí, hasta 4.");
+
+        await deleteAssistantKnowledge("k-1", "p-1");
+        const [delPath, delInit] = apiFetch.mock.calls[3];
+        expect(delPath).toBe("/assistant/knowledge/k-1?profile_id=p-1");
+        expect(delInit.method).toBe("DELETE");
+    });
+
+    it("sin perfil elegido, las rutas de conocimiento no llevan query", async () => {
+        apiFetch.mockResolvedValueOnce([]);
+
+        await listAssistantKnowledge();
+
+        expect(apiFetch).toHaveBeenCalledWith("/assistant/knowledge");
+    });
+
+    it("el 422 del servidor llega como error con su mensaje en español", async () => {
+        const detail = "El pago y la cancelación los define tu contrata; el asistente ya responde desde ahí.";
+        apiFetch.mockRejectedValueOnce(Object.assign(new Error(detail), { status: 422 }));
+
+        await expect(createAssistantKnowledge({ question: "¿Piden anticipo?", answer: "Sí, la mitad." })).rejects.toThrow(
+            detail
+        );
+    });
+
+    it("las dudas pendientes se listan, responden (POST answer) y descartan (POST dismiss)", async () => {
+        const pending = {
+            id: "q-1",
+            question: "¿Pueden tocar en la playa?",
+            context: "Queremos algo en la playa",
+            asked_count: 3,
+            status: "open",
+            conversation_id: "c-1",
+            created_at: "2026-11-16T10:00:00Z",
+        };
+        apiFetch
+            .mockResolvedValueOnce([pending])
+            .mockResolvedValueOnce({ id: "k-9", question: pending.question, answer: "Sí, con sonido propio.", source: "conversacion" })
+            .mockResolvedValueOnce(undefined);
+
+        const list = await listAssistantPending("p-1");
+        expect(apiFetch.mock.calls[0][0]).toBe("/assistant/pending?profile_id=p-1");
+        expect(list[0].asked_count).toBe(3);
+
+        await answerAssistantPending("q-1", "Sí, con sonido propio.", "p-1");
+        const [answerPath, answerInit] = apiFetch.mock.calls[1];
+        expect(answerPath).toBe("/assistant/pending/q-1/answer?profile_id=p-1");
+        expect(answerInit.method).toBe("POST");
+        expect(JSON.parse(answerInit.body)).toEqual({ answer: "Sí, con sonido propio." });
+
+        await dismissAssistantPending("q-1", "p-1");
+        const [dismissPath, dismissInit] = apiFetch.mock.calls[2];
+        expect(dismissPath).toBe("/assistant/pending/q-1/dismiss?profile_id=p-1");
+        expect(dismissInit.method).toBe("POST");
+        expect(dismissInit.body).toBeUndefined();
+    });
+
+    it("las versiones se listan y se restauran con POST", async () => {
+        apiFetch
+            .mockResolvedValueOnce([{ number: 3, label: "Restaurada", package_count: 2, tone: "cercano", is_current: true }])
+            .mockResolvedValueOnce({ number: 4, label: "Restaurada desde la 2", package_count: 2, tone: "formal", is_current: true });
+
+        const versions = await listAssistantVersions("p-1");
+        expect(apiFetch.mock.calls[0][0]).toBe("/assistant/versions?profile_id=p-1");
+        expect(versions[0].is_current).toBe(true);
+
+        const restored = await restoreAssistantVersion(2, "p-1");
+        const [path, init] = apiFetch.mock.calls[1];
+        expect(path).toBe("/assistant/versions/2/restore?profile_id=p-1");
+        expect(init.method).toBe("POST");
+        expect(restored.number).toBe(4);
+    });
+
+    it("la preparación se pide a /assistant/readiness", async () => {
+        apiFetch.mockResolvedValueOnce({
+            score: 62,
+            items: [{ key: "pricing", title: "Precios", detail: "2 paquetes", progress: 1, weight: 25 }],
+        });
+
+        const readiness = await getAssistantReadiness("p-1");
+
+        expect(apiFetch).toHaveBeenCalledWith("/assistant/readiness?profile_id=p-1");
+        expect(readiness.score).toBe(62);
+        expect(readiness.items[0].key).toBe("pricing");
+    });
+
+    it("la vista previa de cotización manda la configuración sin guardar y los datos del caso", async () => {
+        apiFetch.mockResolvedValueOnce({
+            total: 480,
+            package_name: "Show estándar",
+            summary: "S/ 480.00",
+            lines: [{ label: "Show estándar", amount: 450 }],
+            out_of_coverage: false,
+        });
+
+        const quote = await previewAssistantQuote(
+            {
+                config: { enabled: true, packages: [{ id: "k4", name: "Show estándar", members_count: 4, duration_hours: 1, price: 450 }] },
+                members_count: 4,
+                duration_hours: 1,
+                zone: "Surco",
+                start_time: "20:00",
+                special_date: false,
+                requested_discount: true,
+            },
+            "p-1"
+        );
+
+        const [path, init] = apiFetch.mock.calls[0];
+        expect(path).toBe("/assistant/preview/quote?profile_id=p-1");
+        expect(init.method).toBe("POST");
+        const body = JSON.parse(init.body);
+        expect(body.config.packages[0].price).toBe(450);
+        expect(body).toMatchObject({ members_count: 4, zone: "Surco", start_time: "20:00", special_date: false, requested_discount: true });
+        expect(quote.total).toBe(480);
+        expect(quote.lines[0].amount).toBe(450);
+    });
+
+    it("la comparación manda la configuración del formulario dentro de `config`", async () => {
+        apiFetch.mockResolvedValueOnce([
+            { key: "base", label: "Show estándar", current_total: 450, proposed_total: 500, current_summary: "a", proposed_summary: "b", changed: true },
+        ]);
+
+        const cases = await previewAssistantCompare({ enabled: true, additional_hour_price: 250 });
+
+        const [path, init] = apiFetch.mock.calls[0];
+        expect(path).toBe("/assistant/preview/compare");
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({ config: { enabled: true, additional_hour_price: 250 } });
+        expect(cases[0].changed).toBe(true);
     });
 });

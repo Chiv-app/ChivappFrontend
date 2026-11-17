@@ -25,33 +25,81 @@ import {
   getWhatsAppChannel,
   updateWhatsAppChannel,
   listAssistantConversations,
+  listAssistantPending,
   updateAssistantConversationStatus,
   type AssistantPackageItem,
+  type AssistantPendingQuestion,
   type AssistantZoneSurchargeItem,
   type MusicianAssistantConfigOut,
+  type MusicianAssistantConfigUpdate,
   type MusicianWhatsAppChannelOut,
+  type MusicianWhatsAppChannelUpdate,
   type AssistantConversationOut,
 } from "@/lib/assistant";
 import { formatCurrency } from "@/lib/booking-labels";
 import AssistantUsageBanner from "@/components/musician/assistant-usage-banner";
-
-type AssistantTabKey = "training" | "whatsapp" | "conversations";
+import AssistantHomeTab from "@/components/musician/assistant/home-tab";
+import AssistantFlowTab from "@/components/musician/assistant/flow-tab";
+import AssistantKnowledgeTab from "@/components/musician/assistant/knowledge-tab";
+import AssistantVoiceTab from "@/components/musician/assistant/voice-tab";
+import AssistantPendingTab from "@/components/musician/assistant/pending-tab";
+import AssistantVersionsTab from "@/components/musician/assistant/versions-tab";
+import AssistantMessageTools from "@/components/musician/assistant/message-trace";
+import {
+  ChangesPreviewCard,
+  QuotePreviewCard,
+  pricingDiffersFromSaved,
+} from "@/components/musician/assistant/training-previews";
+import {
+  conversationsNeedingMusician,
+  type AssistantTabKey,
+} from "@/components/musician/assistant/shared";
 
 const TABS: { key: AssistantTabKey; label: string; icon: string }[] = [
+  {
+    key: "home",
+    label: "Inicio",
+    icon: "material-symbols:home-outline",
+  },
+  {
+    key: "flow",
+    label: "Cómo atiende",
+    icon: "material-symbols:support-agent",
+  },
   {
     key: "training",
     label: "Entrenamiento y Simulador",
     icon: "material-symbols:smart-toy-outline",
   },
   {
-    key: "whatsapp",
-    label: "Conexión WhatsApp (Meta)",
-    icon: "ic:baseline-whatsapp",
+    key: "knowledge",
+    label: "Lo que sabe",
+    icon: "material-symbols:description",
+  },
+  {
+    key: "voice",
+    label: "Cómo habla",
+    icon: "material-symbols:chat",
+  },
+  {
+    key: "pending",
+    label: "Pendientes",
+    icon: "material-symbols:pending-actions",
+  },
+  {
+    key: "versions",
+    label: "Versiones",
+    icon: "material-symbols:history",
   },
   {
     key: "conversations",
     label: "Conversaciones y Links",
     icon: "material-symbols:forum-outline",
+  },
+  {
+    key: "whatsapp",
+    label: "Conexión WhatsApp (Meta)",
+    icon: "ic:baseline-whatsapp",
   },
 ];
 
@@ -67,9 +115,15 @@ export default function MusicianAssistantView() {
     "Tu perfil activo";
 
   const baseId = useId();
-  const [activeTab, setActiveTab] = useState<AssistantTabKey>("training");
+  const [activeTab, setActiveTab] = useState<AssistantTabKey>("home");
   const tabRefs = useRef<Record<AssistantTabKey, HTMLButtonElement | null>>({
+    home: null,
+    flow: null,
     training: null,
+    knowledge: null,
+    voice: null,
+    pending: null,
+    versions: null,
     whatsapp: null,
     conversations: null,
   });
@@ -128,6 +182,11 @@ export default function MusicianAssistantView() {
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
 
+  // --- Dudas pendientes (lo que un cliente preguntó y el asistente no supo) ---
+  const [pendingQuestions, setPendingQuestions] = useState<
+    AssistantPendingQuestion[]
+  >([]);
+
   const hydrateConfigForm = useCallback((cfg: MusicianAssistantConfigOut) => {
     setConfig(cfg);
     setEnabled(cfg.enabled);
@@ -163,13 +222,18 @@ export default function MusicianAssistantView() {
   const loadAll = useCallback(async () => {
     setLoadingConfig(true);
     try {
-      const [profilesList, cfg, wa, convs] = await Promise.all([
+      const [profilesList, cfg, wa, convs, pendingList] = await Promise.all([
         listMyMusicianProfiles().catch(() => [] as MusicianProfileSummary[]),
         getAssistantConfig(activeProfileId),
         getWhatsAppChannel(),
         listAssistantConversations(),
+        // Las dudas pendientes solo alimentan la pestaña nueva: si fallan, el resto sigue cargando.
+        listAssistantPending(activeProfileId).catch(
+          () => [] as AssistantPendingQuestion[],
+        ),
       ]);
       setMyProfiles(profilesList);
+      setPendingQuestions(pendingList);
       if (!selectedProfileId && cfg.profile_id) {
         setSelectedProfileId(cfg.profile_id);
       }
@@ -228,60 +292,63 @@ export default function MusicianAssistantView() {
     }
   }, [simConversation?.messages]);
 
+  // Las reglas del formulario ya limpiadas, tal como se guardan. Las usan el guardado y las vistas previas.
+  const buildConfigPayload = (): MusicianAssistantConfigUpdate => {
+    const cleanedPackages = packages
+      .filter((p) => p.name.trim() && Number(p.price) >= 10)
+      .map((p, idx) => ({
+        id: p.id || `pkg-${idx + 1}`,
+        name: p.name.trim(),
+        members_count: Math.max(1, Number(p.members_count) || 1),
+        duration_hours: Math.max(0.25, Number(p.duration_hours) || 1),
+        price: Number(p.price),
+        description: p.description?.trim() || null,
+      }));
+
+    const cleanedZones = zoneSurcharges
+      .filter((z) => z.zone.trim())
+      .map((z) => ({
+        zone: z.zone.trim(),
+        surcharge: Math.max(0, Number(z.surcharge) || 0),
+        distance_km:
+          z.distance_km != null && String(z.distance_km) !== ""
+            ? Math.max(0, Number(z.distance_km))
+            : null,
+      }));
+
+    return {
+      enabled,
+      greeting_message: greetingMessage.trim() || null,
+      packages: cleanedPackages,
+      additional_hour_price: additionalHourPrice.trim()
+        ? Number(additionalHourPrice)
+        : null,
+      zone_surcharges: cleanedZones,
+      per_km_rate: perKmRate.trim() ? Number(perKmRate) : null,
+      night_surcharge_amount: Math.max(0, Number(nightSurchargeAmount) || 0),
+      night_surcharge_start_hour: Math.min(
+        23,
+        Math.max(0, Number(nightSurchargeStartHour) || 23),
+      ),
+      special_date_surcharge_percent: Math.min(
+        200,
+        Math.max(0, Number(specialDatePercent) || 0),
+      ),
+      max_discount_amount: Math.max(0, Number(maxDiscountAmount) || 0),
+      max_discount_percent: Math.min(
+        80,
+        Math.max(0, Number(maxDiscountPercent) || 0),
+      ),
+      custom_instructions: customInstructions.trim() || null,
+    };
+  };
+
   const handleSaveConfig = async () => {
     setSavingConfig(true);
     try {
-      const cleanedPackages = packages
-        .filter((p) => p.name.trim() && Number(p.price) >= 10)
-        .map((p, idx) => ({
-          id: p.id || `pkg-${idx + 1}`,
-          name: p.name.trim(),
-          members_count: Math.max(1, Number(p.members_count) || 1),
-          duration_hours: Math.max(0.25, Number(p.duration_hours) || 1),
-          price: Number(p.price),
-          description: p.description?.trim() || null,
-        }));
-
-      const cleanedZones = zoneSurcharges
-        .filter((z) => z.zone.trim())
-        .map((z) => ({
-          zone: z.zone.trim(),
-          surcharge: Math.max(0, Number(z.surcharge) || 0),
-          distance_km:
-            z.distance_km != null && String(z.distance_km) !== ""
-              ? Math.max(0, Number(z.distance_km))
-              : null,
-        }));
-
+      // Sin tono, voz ni reglas de aviso: el servidor los conserva tal como están.
       const updated = await updateAssistantConfig(
-        {
-          enabled,
-          greeting_message: greetingMessage.trim() || null,
-          packages: cleanedPackages,
-          additional_hour_price: additionalHourPrice.trim()
-            ? Number(additionalHourPrice)
-            : null,
-          zone_surcharges: cleanedZones,
-          per_km_rate: perKmRate.trim() ? Number(perKmRate) : null,
-          night_surcharge_amount: Math.max(
-            0,
-            Number(nightSurchargeAmount) || 0,
-          ),
-          night_surcharge_start_hour: Math.min(
-            23,
-            Math.max(0, Number(nightSurchargeStartHour) || 23),
-          ),
-          special_date_surcharge_percent: Math.min(
-            200,
-            Math.max(0, Number(specialDatePercent) || 0),
-          ),
-          max_discount_amount: Math.max(0, Number(maxDiscountAmount) || 0),
-          max_discount_percent: Math.min(
-            80,
-            Math.max(0, Number(maxDiscountPercent) || 0),
-          ),
-          custom_instructions: customInstructions.trim() || null,
-        },
+        buildConfigPayload(),
         activeProfileId,
       );
       hydrateConfigForm(updated);
@@ -458,6 +525,44 @@ export default function MusicianAssistantView() {
     }
   };
 
+  // Un ajuste de protección de WhatsApp hecho desde «Cómo atiende»: mismo dato y mismo endpoint que la pestaña de WhatsApp.
+  const handleChannelChange = async (patch: MusicianWhatsAppChannelUpdate) => {
+    try {
+      const updated = await updateWhatsAppChannel(patch);
+      setWaChannel(updated);
+      if (patch.is_active !== undefined) setWaIsActive(updated.is_active);
+      if (patch.auto_pause_on_human_reply !== undefined)
+        setWaAutoPause(updated.auto_pause_on_human_reply);
+      if (patch.ignore_ensemble_members !== undefined)
+        setWaIgnoreMembers(updated.ignore_ensemble_members);
+      if (patch.ignore_personal_chats !== undefined)
+        setWaIgnorePersonal(updated.ignore_personal_chats);
+      addToast({ title: "Ajuste de WhatsApp guardado", color: "success" });
+    } catch (err: unknown) {
+      addToast({
+        title: "No se pudo guardar el ajuste",
+        description: (err as Error).message || "Intenta nuevamente.",
+        color: "danger",
+      });
+    }
+  };
+
+  // Tras restaurar una versión hay que volver a leer la configuración y rehacer el formulario.
+  const handleVersionRestored = async (restoredNumber: number) => {
+    const fresh = await getAssistantConfig(activeProfileId);
+    hydrateConfigForm(fresh);
+    addToast({
+      title: `Versión ${restoredNumber} restaurada`,
+      description: "Tu asistente ya usa esa configuración.",
+      color: "success",
+    });
+  };
+
+  const handleOpenConversation = (conversationId: string) => {
+    setSelectedConvId(conversationId);
+    setActiveTab("conversations");
+  };
+
   const handleTabKeyDown = (
     e: React.KeyboardEvent<HTMLButtonElement>,
     idx: number,
@@ -488,6 +593,17 @@ export default function MusicianAssistantView() {
     conversations.find((c) => c.id === selectedConvId) ||
     conversations[0] ||
     null;
+
+  const conversationsNeedingYou = conversationsNeedingMusician(
+    conversations,
+    activeProfileId,
+  );
+  const pendingBadgeCount =
+    pendingQuestions.length + conversationsNeedingYou.length;
+
+  // Reglas del formulario (sin guardar) para las vistas previas, y si difieren de lo guardado.
+  const formPayload = buildConfigPayload();
+  const formDiffersFromSaved = pricingDiffersFromSaved(formPayload, config);
 
   return (
     <div className="flex flex-col gap-6">
@@ -528,7 +644,12 @@ export default function MusicianAssistantView() {
         </div>
       </div>
 
-      <AssistantUsageBanner refreshKey={simConversation?.messages?.length ?? 0} />
+      {/* En «Inicio» el aviso de uso va dentro de la propia pestaña. */}
+      {activeTab !== "home" && (
+        <AssistantUsageBanner
+          refreshKey={simConversation?.messages?.length ?? 0}
+        />
+      )}
 
       {/* Pestañas accesibles con roving tabindex */}
       <div
@@ -571,9 +692,55 @@ export default function MusicianAssistantView() {
                   {conversations.length}
                 </span>
               )}
+              {tab.key === "pending" && pendingBadgeCount > 0 && (
+                <span
+                  className={`px-1.5 py-0.5 text-[11px] rounded-full ${
+                    isSelected
+                      ? "bg-white/20 text-white"
+                      : "bg-warning-100 text-warning-700"
+                  }`}
+                >
+                  {pendingBadgeCount}
+                </span>
+              )}
             </button>
           );
         })}
+      </div>
+
+      {/* INICIO: preparación del asistente */}
+      <div
+        id={`${baseId}-panel-home`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-home`}
+        hidden={activeTab !== "home"}
+      >
+        {activeTab === "home" && (
+          <AssistantHomeTab
+            profileId={activeProfileId}
+            usageRefreshKey={simConversation?.messages?.length ?? 0}
+            onGoTo={setActiveTab}
+          />
+        )}
+      </div>
+
+      {/* CÓMO ATIENDE: recorrido del asistente y cuándo te avisa */}
+      <div
+        id={`${baseId}-panel-flow`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-flow`}
+        hidden={activeTab !== "flow"}
+      >
+        {activeTab === "flow" && (
+          <AssistantFlowTab
+            config={config}
+            profileId={activeProfileId}
+            channel={waChannel}
+            onChannelChange={handleChannelChange}
+            onConfigSaved={setConfig}
+            onGoTo={setActiveTab}
+          />
+        )}
       </div>
 
       {/* TAB 1: ENTRENAMIENTO + SIMULADOR EN VIVO */}
@@ -587,6 +754,18 @@ export default function MusicianAssistantView() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Columna izquierda: Reglas de precios y entrenamiento */}
             <div className="lg:col-span-7 flex flex-col gap-5">
+              {/* Vista previa de cómo cotiza el asistente con las reglas en pantalla */}
+              <QuotePreviewCard
+                payload={formPayload}
+                profileId={activeProfileId}
+              />
+              {formDiffersFromSaved && (
+                <ChangesPreviewCard
+                  payload={formPayload}
+                  profileId={activeProfileId}
+                />
+              )}
+
               {/* 1. Paquetes por integrantes y duración */}
               <Card className="border border-default-200 shadow-xs">
                 <CardBody className="flex flex-col gap-4 p-5">
@@ -1034,8 +1213,14 @@ export default function MusicianAssistantView() {
                         Chivapp.
                       </div>
                     )}
-                    {simConversation?.messages.map((msg) => {
+                    {simConversation?.messages.map((msg, msgIdx, allMsgs) => {
                       const isClientMsg = msg.sender === "client";
+                      // Mensaje del cliente al que responde este mensaje (para «Enseñarle esta respuesta»).
+                      const previousClientText =
+                        allMsgs
+                          .slice(0, msgIdx)
+                          .reverse()
+                          .find((m) => m.sender === "client")?.text ?? null;
                       return (
                         <div
                           key={msg.id}
@@ -1052,6 +1237,15 @@ export default function MusicianAssistantView() {
                             </span>
                           )}
                           <span>{msg.text}</span>
+                          {!isClientMsg && msg.trace && (
+                            <div className="whitespace-normal">
+                              <AssistantMessageTools
+                                message={msg}
+                                previousClientText={previousClientText}
+                                profileId={activeProfileId}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1165,6 +1359,70 @@ export default function MusicianAssistantView() {
               </Card>
             </div>
           </div>
+        )}
+      </div>
+
+      {/* LO QUE SABE: fuentes, contrata, entrevista y respuestas enseñadas */}
+      <div
+        id={`${baseId}-panel-knowledge`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-knowledge`}
+        hidden={activeTab !== "knowledge"}
+      >
+        {activeTab === "knowledge" && (
+          <AssistantKnowledgeTab profileId={activeProfileId} />
+        )}
+      </div>
+
+      {/* CÓMO HABLA: tono y ejemplos de voz */}
+      <div
+        id={`${baseId}-panel-voice`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-voice`}
+        hidden={activeTab !== "voice"}
+      >
+        {activeTab === "voice" && (
+          <AssistantVoiceTab
+            config={config}
+            profileId={activeProfileId}
+            onConfigSaved={setConfig}
+            onGoTo={setActiveTab}
+          />
+        )}
+      </div>
+
+      {/* PENDIENTES: chats que esperan al músico y dudas sin responder */}
+      <div
+        id={`${baseId}-panel-pending`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-pending`}
+        hidden={activeTab !== "pending"}
+      >
+        {activeTab === "pending" && (
+          <AssistantPendingTab
+            profileId={activeProfileId}
+            conversations={conversationsNeedingYou}
+            pending={pendingQuestions}
+            onPendingResolved={(id) =>
+              setPendingQuestions((prev) => prev.filter((q) => q.id !== id))
+            }
+            onOpenConversation={handleOpenConversation}
+          />
+        )}
+      </div>
+
+      {/* VERSIONES: copias de la configuración y restaurar */}
+      <div
+        id={`${baseId}-panel-versions`}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-tab-versions`}
+        hidden={activeTab !== "versions"}
+      >
+        {activeTab === "versions" && (
+          <AssistantVersionsTab
+            profileId={activeProfileId}
+            onRestored={handleVersionRestored}
+          />
         )}
       </div>
 

@@ -1,5 +1,15 @@
 import { apiFetch } from "./api";
 
+export type AssistantTone = "cercano" | "formal" | "breve";
+
+export type AssistantEscalationRules = {
+  big_event_on: boolean;
+  /** Entre 10 y 5000 invitados. */
+  big_event_guests: number;
+  special_date_on: boolean;
+  unknown_question_on: boolean;
+};
+
 export type AssistantPackageItem = {
   id: string;
   name: string;
@@ -33,6 +43,12 @@ export type MusicianAssistantConfigOut = {
   max_discount_amount: number;
   max_discount_percent: number;
   custom_instructions?: string | null;
+  /** Cómo suena al redactar. Opcional: un servidor anterior no lo manda. */
+  tone?: AssistantTone;
+  /** Mensajes del propio músico que el asistente imita (máx. 10, cada uno de hasta 300 caracteres). */
+  voice_examples?: string[];
+  /** Cuándo el asistente se detiene y te pasa la conversación. */
+  escalation_rules?: AssistantEscalationRules;
   updated_at: string;
 };
 
@@ -49,6 +65,10 @@ export type MusicianAssistantConfigUpdate = {
   max_discount_amount?: number;
   max_discount_percent?: number;
   custom_instructions?: string | null;
+  // Opcionales: si no se envían, el servidor conserva lo que ya tenía.
+  tone?: AssistantTone;
+  voice_examples?: string[];
+  escalation_rules?: AssistantEscalationRules;
 };
 
 export type MusicianWhatsAppChannelOut = {
@@ -81,6 +101,22 @@ export type MusicianWhatsAppChannelUpdate = {
   ignored_phones?: string[];
 };
 
+export type AssistantTraceKnowledge = {
+  /** "contract" | "policy" | "profile" | "package" | "faq" */
+  source: string;
+  ref: string;
+  score: number;
+};
+
+/** Cómo respondió el asistente. Ausente o null cuando contestó el motor por reglas. */
+export type AssistantTrace = {
+  engine: "agent" | string;
+  tools: string[];
+  knowledge: AssistantTraceKnowledge[];
+  rounds: number;
+  ms: number;
+};
+
 export type AssistantMessageItem = {
   id: string;
   sender: "client" | "assistant" | "musician" | string;
@@ -88,6 +124,7 @@ export type AssistantMessageItem = {
   media_type?: "text" | "audio" | string;
   created_at: string;
   booking_link_token?: string | null;
+  trace?: AssistantTrace | null;
 };
 
 export type AssistantConversationOut = {
@@ -345,4 +382,219 @@ export async function updateAssistantConversationStatus(
     body: JSON.stringify({ status }),
   });
   return toConversation(row);
+}
+
+// --- Entrenamiento del asistente: conocimiento, dudas, versiones, preparación y vistas previas ---
+
+/** Arma `?profile_id=...` (y otros parámetros) para las rutas que aceptan perfil opcional. */
+function profileQuery(profileId?: string | null, extra?: Record<string, string>): string {
+  const params = new URLSearchParams(extra);
+  if (profileId) params.set("profile_id", profileId);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/**
+ * Convierte la configuración guardada en el cuerpo completo del PUT. El servidor reemplaza todos los campos
+ * clásicos, así que para cambiar uno solo hay que reenviar el resto tal cual.
+ */
+export function configToUpdate(config: MusicianAssistantConfigOut): MusicianAssistantConfigUpdate {
+  return {
+    enabled: config.enabled,
+    greeting_message: config.greeting_message ?? null,
+    packages: config.packages ?? [],
+    additional_hour_price: config.additional_hour_price ?? null,
+    zone_surcharges: config.zone_surcharges ?? [],
+    per_km_rate: config.per_km_rate ?? null,
+    night_surcharge_amount: config.night_surcharge_amount,
+    night_surcharge_start_hour: config.night_surcharge_start_hour,
+    special_date_surcharge_percent: config.special_date_surcharge_percent,
+    max_discount_amount: config.max_discount_amount,
+    max_discount_percent: config.max_discount_percent,
+    custom_instructions: config.custom_instructions ?? null,
+    ...(config.tone ? { tone: config.tone } : {}),
+    ...(config.voice_examples ? { voice_examples: config.voice_examples } : {}),
+    ...(config.escalation_rules ? { escalation_rules: config.escalation_rules } : {}),
+  };
+}
+
+/** Guarda un cambio sobre la configuración completa que ya está guardada (no sobre lo que hay a medio editar). */
+export async function saveAssistantConfigChange(
+  current: MusicianAssistantConfigOut,
+  change: MusicianAssistantConfigUpdate,
+  profileId?: string | null
+): Promise<MusicianAssistantConfigOut> {
+  return updateAssistantConfig({ ...configToUpdate(current), ...change }, profileId ?? current.profile_id);
+}
+
+export type AssistantKnowledgeSource = "tu" | "conversacion" | "entrevista";
+
+export type AssistantKnowledgeEntry = {
+  id: string;
+  question: string;
+  answer: string;
+  source: AssistantKnowledgeSource | string;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export async function listAssistantKnowledge(profileId?: string | null): Promise<AssistantKnowledgeEntry[]> {
+  return apiFetch<AssistantKnowledgeEntry[]>(`/assistant/knowledge${profileQuery(profileId)}`);
+}
+
+/** Si la pregunta es de pago, cancelación, anticipo, reembolso o llegada, el servidor responde 422 con el motivo en español. */
+export async function createAssistantKnowledge(
+  payload: { question: string; answer: string; source?: AssistantKnowledgeSource },
+  profileId?: string | null
+): Promise<AssistantKnowledgeEntry> {
+  return apiFetch<AssistantKnowledgeEntry>(`/assistant/knowledge${profileQuery(profileId)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAssistantKnowledge(
+  id: string,
+  payload: { question: string; answer: string },
+  profileId?: string | null
+): Promise<AssistantKnowledgeEntry> {
+  return apiFetch<AssistantKnowledgeEntry>(`/assistant/knowledge/${encodeURIComponent(id)}${profileQuery(profileId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAssistantKnowledge(id: string, profileId?: string | null): Promise<void> {
+  await apiFetch<void>(`/assistant/knowledge/${encodeURIComponent(id)}${profileQuery(profileId)}`, {
+    method: "DELETE",
+  });
+}
+
+export type AssistantPendingQuestion = {
+  id: string;
+  question: string;
+  context?: string | null;
+  asked_count: number;
+  status: string;
+  conversation_id?: string | null;
+  created_at?: string | null;
+};
+
+export async function listAssistantPending(profileId?: string | null): Promise<AssistantPendingQuestion[]> {
+  return apiFetch<AssistantPendingQuestion[]>(`/assistant/pending${profileQuery(profileId)}`);
+}
+
+/** Responde una duda: el servidor la convierte en una respuesta de conocimiento. */
+export async function answerAssistantPending(
+  id: string,
+  answer: string,
+  profileId?: string | null
+): Promise<AssistantKnowledgeEntry> {
+  return apiFetch<AssistantKnowledgeEntry>(`/assistant/pending/${encodeURIComponent(id)}/answer${profileQuery(profileId)}`, {
+    method: "POST",
+    body: JSON.stringify({ answer }),
+  });
+}
+
+export async function dismissAssistantPending(id: string, profileId?: string | null): Promise<void> {
+  await apiFetch<void>(`/assistant/pending/${encodeURIComponent(id)}/dismiss${profileQuery(profileId)}`, {
+    method: "POST",
+  });
+}
+
+export type AssistantConfigVersion = {
+  number: number;
+  label: string;
+  created_at?: string | null;
+  knowledge_count?: number | null;
+  package_count: number;
+  tone?: string | null;
+  is_current: boolean;
+};
+
+export async function listAssistantVersions(profileId?: string | null): Promise<AssistantConfigVersion[]> {
+  return apiFetch<AssistantConfigVersion[]>(`/assistant/versions${profileQuery(profileId)}`);
+}
+
+/** Restaura una versión (el servidor crea una nueva con ese contenido). Después hay que recargar la configuración. */
+export async function restoreAssistantVersion(
+  number: number,
+  profileId?: string | null
+): Promise<AssistantConfigVersion> {
+  return apiFetch<AssistantConfigVersion>(`/assistant/versions/${number}/restore${profileQuery(profileId)}`, {
+    method: "POST",
+  });
+}
+
+export type AssistantReadinessKey = "pricing" | "knowledge" | "voice" | "pending" | "whatsapp" | "tests";
+
+export type AssistantReadinessItem = {
+  key: AssistantReadinessKey | string;
+  title: string;
+  detail: string;
+  /** De 0 a 1. */
+  progress: number;
+  weight: number;
+};
+
+export type AssistantReadiness = {
+  /** De 0 a 100. */
+  score: number;
+  items: AssistantReadinessItem[];
+};
+
+export async function getAssistantReadiness(profileId?: string | null): Promise<AssistantReadiness> {
+  return apiFetch<AssistantReadiness>(`/assistant/readiness${profileQuery(profileId)}`);
+}
+
+export type AssistantQuotePreviewInput = {
+  /** Reglas del formulario SIN guardar. Si no se envía, el servidor usa las guardadas. */
+  config?: MusicianAssistantConfigUpdate;
+  members_count?: number;
+  duration_hours?: number;
+  zone?: string;
+  /** "HH:MM" */
+  start_time?: string;
+  special_date: boolean;
+  requested_discount: boolean;
+};
+
+export type AssistantQuotePreview = {
+  total: number;
+  package_name: string;
+  summary: string;
+  lines: { label: string; amount: number }[];
+  out_of_coverage: boolean;
+};
+
+/** No consume IA ni guarda nada. */
+export async function previewAssistantQuote(
+  payload: AssistantQuotePreviewInput,
+  profileId?: string | null
+): Promise<AssistantQuotePreview> {
+  return apiFetch<AssistantQuotePreview>(`/assistant/preview/quote${profileQuery(profileId)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export type AssistantComparePreview = {
+  key: string;
+  label: string;
+  current_total: number;
+  proposed_total: number;
+  current_summary: string;
+  proposed_summary: string;
+  changed: boolean;
+};
+
+/** Compara casos de ejemplo con lo guardado y con la configuración del formulario sin guardar. */
+export async function previewAssistantCompare(
+  config: MusicianAssistantConfigUpdate,
+  profileId?: string | null
+): Promise<AssistantComparePreview[]> {
+  return apiFetch<AssistantComparePreview[]>(`/assistant/preview/compare${profileQuery(profileId)}`, {
+    method: "POST",
+    body: JSON.stringify({ config }),
+  });
 }
