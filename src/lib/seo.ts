@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { resolveUploadUrl } from "@/lib/uploads";
 
 export const SITE_NAME = "Chivapp";
+/** Titular legal de Chivapp, tal como figura en su ficha RUC. Debe coincidir con el negocio verificado en Meta. */
+export const LEGAL_OPERATOR_NAME = "TUCTO RIVERA MIGUEL ANGEL";
 export const SITE_TAGLINE = "Encuentra y contrata músicos para tu evento.";
 /** Título de la home: palabras clave primero y la marca al final (~55 caracteres). */
 export const SITE_TITLE = "Contrata músicos para bodas y eventos en Perú | Chivapp";

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
+import { LEGAL_OPERATOR_NAME, SITE_NAME, buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata({
     title: "Privacidad y Cookies",
@@ -36,11 +36,17 @@ export default function PrivacyPage() {
                     Política de Privacidad y Protección de Datos
                 </h1>
                 <p className="text-default-500 text-sm">
-                    Última actualización: 6 de noviembre de 2026 · Conforme a la Ley N° 29733 (Perú) y estándares internacionales
+                    Última actualización: 17 de noviembre de 2026 · Conforme a la Ley N° 29733 (Perú) y estándares internacionales
                 </p>
             </header>
 
             <Section title="1. Marco Legal y Compromiso de Privacidad">
+                <p>
+                    <strong className="text-foreground">Responsable del tratamiento:</strong> los datos personales
+                    recolectados a través de chiv.app son tratados por{" "}
+                    <strong className="text-foreground">{LEGAL_OPERATOR_NAME}</strong>, titular de {SITE_NAME}.
+                    Contacto: <strong className="text-foreground">soporte@chiv.app</strong>.
+                </p>
                 <p>
                     En {SITE_NAME} valoramos y respetamos tu derecho a la privacidad. Esta Política de
                     Privacidad describe cómo recopilamos, utilizamos, almacenamos, divulgamos y protegemos

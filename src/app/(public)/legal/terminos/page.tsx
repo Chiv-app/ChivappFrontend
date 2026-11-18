@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
+import { LEGAL_OPERATOR_NAME, SITE_NAME, buildPageMetadata } from "@/lib/seo";
 import {
     fetchCancellationPolicy,
     getPartialRefundMaxDays,
@@ -41,11 +41,15 @@ export default async function TermsPage() {
                     Términos y condiciones de uso
                 </h1>
                 <p className="text-default-500 text-sm">
-                    Última actualización: 6 de noviembre de 2026 · Legislación de la República del Perú
+                    Última actualización: 17 de noviembre de 2026 · Legislación de la República del Perú
                 </p>
             </header>
 
             <Section title="1. Aceptación de estos términos">
+                <p>
+                    {SITE_NAME} (chiv.app) es operado por{" "}
+                    <strong className="text-foreground">{LEGAL_OPERATOR_NAME}</strong>, Perú.
+                </p>
                 <p>
                     Al crear una cuenta, navegar o utilizar la plataforma {SITE_NAME}, aceptas estos Términos y
                     Condiciones en su totalidad, así como nuestra{" "}

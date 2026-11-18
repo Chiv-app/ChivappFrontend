@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppLogo from "@/components/layout/app-logo";
+import { LEGAL_OPERATOR_NAME, SITE_NAME } from "@/lib/seo";
 
 export default function Footer() {
     return (
@@ -83,6 +84,9 @@ export default function Footer() {
                 <p className="text-xs sm:text-sm text-white/55 text-center sm:text-left">
                     © {new Date().getFullYear()} Chivapp. Todos los derechos
                     reservados.
+                </p>
+                <p className="text-xs sm:text-sm text-white/55 text-center sm:text-left mt-1.5">
+                    {SITE_NAME} es un servicio operado por {LEGAL_OPERATOR_NAME}, Perú.
                 </p>
             </div>
         </footer>
