@@ -171,7 +171,7 @@ export default function MusicianAssistantView() {
   const [waAccessToken, setWaAccessToken] = useState("");
   const [waIsActive, setWaIsActive] = useState(true);
   const [waAutoPause, setWaAutoPause] = useState(true);
-  const [waIgnoreMembers, setWaIgnoreMembers] = useState(true);
+  const [waIgnoreMembers, setWaIgnoreMembers] = useState(false);
   const [waIgnorePersonal, setWaIgnorePersonal] = useState(true);
   const [waIgnoredPhonesText, setWaIgnoredPhonesText] = useState("");
 

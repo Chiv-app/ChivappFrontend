@@ -136,6 +136,12 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
     if (xSignature) {
         headers.set("x-signature", xSignature);
     }
+    // Firma de los webhooks de WhatsApp (Meta): HMAC-SHA256 del cuerpo con el secreto de la app. Sin esta cabecera el
+    // backend rechaza cada mensaje entrante con 401. El cuerpo se reenvía tal cual (bytes), así que la firma sigue válida.
+    const xHubSignature = request.headers.get("x-hub-signature-256");
+    if (xHubSignature) {
+        headers.set("x-hub-signature-256", xHubSignature);
+    }
     const xRequestId = request.headers.get("x-request-id");
     if (xRequestId) {
         headers.set("x-request-id", xRequestId);
