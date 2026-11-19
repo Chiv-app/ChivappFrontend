@@ -367,13 +367,23 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
             <BookingCalendarSyncModal
                 booking={booking}
+                role={role}
+                isMemberView={isMemberView}
                 isOpen={isCalendarSyncOpen}
                 onOpenChange={setIsCalendarSyncOpen}
                 onUpdated={handleUpdated}
             />
 
             <div className="flex justify-end gap-2 mb-2">
-                {!isMemberView && role === "musician" && (
+                {((!isMemberView && role === "musician") ||
+                    (!isMemberView &&
+                        role === "contractor" &&
+                        confirmed &&
+                        booking.status !== "completed") ||
+                    (isMemberView &&
+                        memberAccepted &&
+                        confirmed &&
+                        booking.status !== "completed")) && (
                     <Button
                         variant="flat"
                         color="primary"

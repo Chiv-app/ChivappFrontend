@@ -19,6 +19,8 @@ import { apiFetch } from "@/lib/api";
 
 type Props = {
     booking: BookingOut;
+    role?: "musician" | "contractor";
+    isMemberView?: boolean;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdated: (booking: BookingOut) => void;
@@ -26,16 +28,16 @@ type Props = {
 
 export default function BookingCalendarSyncModal({
     booking,
+    role = "musician",
+    isMemberView = false,
     isOpen,
     onOpenChange,
     onUpdated,
 }: Props) {
+    const isLeadMusician = role === "musician" && !isMemberView;
+    const isContractor = role === "contractor";
     const [isLoading, setIsLoading] = useState(false);
     const [includeContractor, setIncludeContractor] = useState(true);
-    // Let's assume members are fetched or just not selected initially if we don't have them in BookingOut, 
-    // actually we might not have the list of members in BookingOut.
-    // We would need to fetch the ensemble members to list them.
-    // To keep it simple, we can fetch them when the modal opens.
     const [members, setMembers] = useState<{id: string; name: string; }[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
     const [membersLoading, setMembersLoading] = useState(false);
@@ -44,10 +46,15 @@ export default function BookingCalendarSyncModal({
         let cancelled = false;
         void Promise.resolve().then(() => {
             if (cancelled) return;
-            setIncludeContractor(true);
+            setIncludeContractor(!isMemberView);
             setSelectedMembers([]);
-            setMembersLoading(true);
+            setMembersLoading(isLeadMusician);
         });
+        if (!isLeadMusician) {
+            return () => {
+                cancelled = true;
+            };
+        }
         apiFetch<{ status: string; ensemble_member_id: string; member_fullname: string }[]>(`/bookings/${booking.id}/member-invites`)
             .then(data => {
                 if (!cancelled) {
@@ -62,7 +69,7 @@ export default function BookingCalendarSyncModal({
             });
             
         return () => { cancelled = true; };
-    }, [isOpen, booking.id]);
+    }, [isOpen, booking.id, isLeadMusician, isMemberView]);
 
     async function handleSync() {
         setIsLoading(true);
@@ -70,8 +77,8 @@ export default function BookingCalendarSyncModal({
             const updated = await apiFetch<BookingOut>("/bookings/" + booking.id + "/calendar-sync", {
                 method: "POST",
                 body: JSON.stringify({
-                    include_contractor: includeContractor,
-                    ensemble_member_ids: selectedMembers,
+                    include_contractor: isMemberView ? false : includeContractor,
+                    ensemble_member_ids: isLeadMusician ? selectedMembers : [],
                 }),
             });
             onUpdated(updated);
@@ -99,37 +106,59 @@ export default function BookingCalendarSyncModal({
                             {title}
                         </ModalHeader>
                         <ModalBody>
-                            <p className="text-default-500 text-sm">
-                                Esto creará o actualizará un evento en tu Google Calendar.
-                                Selecciona a quiénes deseas incluir como invitados para que también reciban la invitación en su calendario.
-                            </p>
-                            
-                            <div className="mt-4 flex flex-col gap-4">
-                                <Checkbox 
-                                    isSelected={includeContractor} 
-                                    onValueChange={setIncludeContractor}
-                                >
-                                    Incluir al contratista ({booking.contractor_name || "Cliente"})
-                                </Checkbox>
-                                
-                                {membersLoading ? (
-                                    <div className="text-sm text-default-400">Cargando integrantes...</div>
-                                ) : members.length > 0 ? (
-                                    <CheckboxGroup 
-                                        label="Incluir integrantes de tu agrupación:"
-                                        value={selectedMembers}
-                                        onValueChange={setSelectedMembers}
-                                    >
-                                        {members.map(m => (
-                                            <Checkbox key={m.id} value={m.id}>
-                                                {m.name}
-                                            </Checkbox>
-                                        ))}
-                                    </CheckboxGroup>
-                                ) : (
-                                    <div className="text-sm text-default-400">No hay integrantes que hayan aceptado esta convocatoria.</div>
-                                )}
-                            </div>
+                            {isMemberView ? (
+                                <p className="text-default-500 text-sm">
+                                    Esto creará o actualizará el evento de esta presentación en tu Google Calendar conectado.
+                                </p>
+                            ) : isContractor ? (
+                                <>
+                                    <p className="text-default-500 text-sm">
+                                        Esto creará o actualizará el evento de tu contratación en tu Google Calendar conectado.
+                                    </p>
+                                    <div className="mt-4 flex flex-col gap-4">
+                                        <Checkbox
+                                            isSelected={includeContractor}
+                                            onValueChange={setIncludeContractor}
+                                        >
+                                            Incluir al músico ({booking.musician_name || "Artista"})
+                                        </Checkbox>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-default-500 text-sm">
+                                        Esto creará o actualizará un evento en tu Google Calendar.
+                                        Selecciona a quiénes deseas incluir como invitados para que también reciban la invitación en su calendario.
+                                    </p>
+                                    
+                                    <div className="mt-4 flex flex-col gap-4">
+                                        <Checkbox 
+                                            isSelected={includeContractor} 
+                                            onValueChange={setIncludeContractor}
+                                        >
+                                            Incluir al contratista ({booking.contractor_name || "Cliente"})
+                                        </Checkbox>
+                                        
+                                        {membersLoading ? (
+                                            <div className="text-sm text-default-400">Cargando integrantes...</div>
+                                        ) : members.length > 0 ? (
+                                            <CheckboxGroup 
+                                                label="Incluir integrantes de tu agrupación:"
+                                                value={selectedMembers}
+                                                onValueChange={setSelectedMembers}
+                                            >
+                                                {members.map(m => (
+                                                    <Checkbox key={m.id} value={m.id}>
+                                                        {m.name}
+                                                    </Checkbox>
+                                                ))}
+                                            </CheckboxGroup>
+                                        ) : (
+                                            <div className="text-sm text-default-400">No hay integrantes que hayan aceptado esta convocatoria.</div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </ModalBody>
                         <ModalFooter>
                             <Button variant="light" onPress={onClose}>
