@@ -5,6 +5,7 @@ import { Button, Input, Textarea, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
 import { autocompleteBookingLink, type BookingLinkOut } from "@/lib/booking-links";
+import { startVoiceDictation, type VoiceDictationSession } from "@/lib/voice-dictation";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 import { formatCurrency } from "@/lib/booking-labels";
 import { todayPeruIso } from "@/lib/date-utils";
@@ -33,8 +34,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     const [quickNote, setQuickNote] = useState("");
     const [isExtracting, setIsExtracting] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
+    const dictationSessionRef = useRef<VoiceDictationSession | null>(null);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [createdLink, setCreatedLink] = useState<string | null>(null);
@@ -52,9 +52,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
 
     useEffect(() => {
         return () => {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-                mediaRecorderRef.current.stop();
-            }
+            dictationSessionRef.current?.stop();
         };
     }, []);
 
@@ -110,16 +108,16 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
             setShowExtraFields(true);
             filledCount++;
         }
-        if (data.transcript && !quickNote.trim()) {
+        if (data.transcript) {
             setQuickNote(data.transcript);
         }
         setSourceType("voice_dictation");
         addToast({
-            title: filledCount > 0 ? "Datos extraídos automáticamente" : "Nota procesada",
+            title: filledCount > 0 ? "Datos extraídos automáticamente" : "No se detectaron datos claros",
             description:
                 filledCount > 0
                     ? `Se completaron ${filledCount} campo(s) de la contrata. Revísalos antes de generar el link.`
-                    : "No se detectaron campos específicos; puedes completarlos manualmente.",
+                    : "Menciona el tipo de evento, fecha, hora, lugar, teléfono del cliente o monto.",
             color: filledCount > 0 ? "success" : "warning",
         });
     };
@@ -150,7 +148,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
 
     const handleToggleVoiceRecording = async () => {
         if (isRecording) {
-            mediaRecorderRef.current?.stop();
+            dictationSessionRef.current?.stop();
             setIsRecording(false);
             return;
         }
@@ -162,44 +160,21 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
             });
             return;
         }
-        let stream: MediaStream | null = null;
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const candidates = [
-                "audio/webm;codecs=opus",
-                "audio/webm",
-                "audio/mp4",
-                "audio/ogg;codecs=opus",
-            ];
-            const preferredMime =
-                typeof MediaRecorder !== "undefined" &&
-                typeof MediaRecorder.isTypeSupported === "function"
-                    ? candidates.find((c) => MediaRecorder.isTypeSupported(c))
-                    : undefined;
-            const recorder = preferredMime
-                ? new MediaRecorder(stream, { mimeType: preferredMime })
-                : new MediaRecorder(stream);
-            const activeStream = stream;
-            const effectiveMime = (recorder.mimeType || preferredMime || "audio/webm").split(";")[0];
-            audioChunksRef.current = [];
-            recorder.ondataavailable = (ev) => {
-                if (ev.data.size > 0) {
-                    audioChunksRef.current.push(ev.data);
-                }
-            };
-            recorder.onstop = async () => {
-                activeStream.getTracks().forEach((t) => t.stop());
-                const blob = new Blob(audioChunksRef.current, { type: effectiveMime });
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const base64DataUrl = typeof reader.result === "string" ? reader.result : "";
-                    if (!base64DataUrl) return;
+            const session = await startVoiceDictation({
+                initialText: quickNote,
+                onTranscriptChange: (liveText) => {
+                    setQuickNote(liveText);
+                },
+                onComplete: async ({ transcriptText, base64DataUrl, mimeType }) => {
+                    const effectiveText = transcriptText.trim() || quickNote.trim();
+                    if (!effectiveText && !base64DataUrl) return;
                     setIsExtracting(true);
                     try {
                         const res = await autocompleteBookingLink({
-                            text: quickNote.trim() || null,
-                            audio_base64: base64DataUrl,
-                            audio_mime_type: effectiveMime,
+                            text: effectiveText || null,
+                            audio_base64: base64DataUrl || null,
+                            audio_mime_type: mimeType,
                         });
                         applyExtractedFields(res);
                     } catch (err: unknown) {
@@ -211,14 +186,11 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                     } finally {
                         setIsExtracting(false);
                     }
-                };
-                reader.readAsDataURL(blob);
-            };
-            mediaRecorderRef.current = recorder;
-            recorder.start();
+                },
+            });
+            dictationSessionRef.current = session;
             setIsRecording(true);
         } catch (err: unknown) {
-            stream?.getTracks().forEach((t) => t.stop());
             const errName = err instanceof DOMException ? err.name : "";
             const isNoDevice = errName === "NotFoundError" || errName === "DevicesNotFoundError";
             const isBusy = errName === "NotReadableError" || errName === "TrackStartError";

@@ -38,6 +38,7 @@ import {
 } from "@/lib/assistant";
 import { formatCurrency } from "@/lib/booking-labels";
 import AssistantUsageBanner from "@/components/musician/assistant-usage-banner";
+import { startVoiceDictation, type VoiceDictationSession } from "@/lib/voice-dictation";
 import AssistantHomeTab from "@/components/musician/assistant/home-tab";
 import AssistantFlowTab from "@/components/musician/assistant/flow-tab";
 import AssistantKnowledgeTab from "@/components/musician/assistant/knowledge-tab";
@@ -156,8 +157,7 @@ export default function MusicianAssistantView() {
   const [simQuoteSummary, setSimQuoteSummary] = useState<string | null>(null);
   const [simBookingUrl, setSimBookingUrl] = useState<string | null>(null);
   const [isRecordingSim, setIsRecordingSim] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const dictationSessionRef = useRef<VoiceDictationSession | null>(null);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   // --- Estado del Canal WhatsApp (Meta Cloud API) ---
@@ -412,7 +412,7 @@ export default function MusicianAssistantView() {
 
   const handleToggleSimAudio = async () => {
     if (isRecordingSim) {
-      mediaRecorderRef.current?.stop();
+      dictationSessionRef.current?.stop();
       setIsRecordingSim(false);
       return;
     }
@@ -427,47 +427,28 @@ export default function MusicianAssistantView() {
       });
       return;
     }
-    let stream: MediaStream | null = null;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const candidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/mp4",
-        "audio/ogg;codecs=opus",
-      ];
-      const preferredMime =
-        typeof MediaRecorder !== "undefined" &&
-        typeof MediaRecorder.isTypeSupported === "function"
-          ? candidates.find((c) => MediaRecorder.isTypeSupported(c))
-          : undefined;
-      const recorder = preferredMime
-        ? new MediaRecorder(stream, { mimeType: preferredMime })
-        : new MediaRecorder(stream);
-      const activeStream = stream;
-      const effectiveMime = (recorder.mimeType || preferredMime || "audio/webm").split(";")[0];
-      audioChunksRef.current = [];
-      recorder.ondataavailable = (ev) => {
-        if (ev.data.size > 0) audioChunksRef.current.push(ev.data);
-      };
-      recorder.onstop = () => {
-        activeStream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: effectiveMime });
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64DataUrl =
-            typeof reader.result === "string" ? reader.result : "";
-          if (base64DataUrl) {
-            void handleSendSimulation("", false, base64DataUrl, effectiveMime);
+      const session = await startVoiceDictation({
+        initialText: simInput,
+        onTranscriptChange: (liveText) => {
+          setSimInput(liveText);
+        },
+        onComplete: ({ transcriptText, base64DataUrl, mimeType }) => {
+          const effectiveText = transcriptText.trim();
+          if (effectiveText || base64DataUrl) {
+            setSimInput("");
+            void handleSendSimulation(
+              effectiveText,
+              false,
+              base64DataUrl || undefined,
+              mimeType,
+            );
           }
-        };
-        reader.readAsDataURL(blob);
-      };
-      mediaRecorderRef.current = recorder;
-      recorder.start();
+        },
+      });
+      dictationSessionRef.current = session;
       setIsRecordingSim(true);
     } catch {
-      stream?.getTracks().forEach((t) => t.stop());
       addToast({
         title: "No se pudo acceder al micrófono",
         description: "Verifica los permisos de micrófono desde el ícono de la barra de direcciones.",
