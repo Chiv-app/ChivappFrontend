@@ -10,7 +10,9 @@ import {
     type CalendarBusy,
     type CalendarEvent,
     type CalendarView,
+    buildGoogleCalendarTemplateUrl,
     describeState,
+    downloadCalendarIcs,
     eventsOnDay,
     formatRange,
     formatTime,
@@ -454,10 +456,51 @@ export default function PersonCalendar({ role }: Props) {
                                     <Icon icon={selected.synced ? "logos:google-calendar" : "material-symbols:event-busy-outline"} width={18} aria-hidden="true" />
                                     {selected.synced ? "Ya está en tu Google Calendar." : "Todavía no está en tu Google Calendar."}
                                 </p>
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                    <Button
+                                        as="a"
+                                        href={buildGoogleCalendarTemplateUrl({
+                                            title: `Chivapp: ${selected.title}${selected.profile_name ? ` - ${selected.profile_name}` : ""}`,
+                                            startIso: selected.start,
+                                            endIso: selected.end,
+                                            location: [selected.address, selected.city].filter(Boolean).join(", "),
+                                            description: describeState(selected),
+                                        })}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        size="sm"
+                                        variant="bordered"
+                                        radius="lg"
+                                        startContent={<Icon icon="logos:google-calendar" width={15} />}
+                                    >
+                                        Abrir en Google Calendar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="bordered"
+                                        radius="lg"
+                                        onPress={() =>
+                                            downloadCalendarIcs({
+                                                uid: selected.booking_id,
+                                                title: `Chivapp: ${selected.title}${selected.profile_name ? ` - ${selected.profile_name}` : ""}`,
+                                                startIso: selected.start,
+                                                endIso: selected.end,
+                                                location: [selected.address, selected.city].filter(Boolean).join(", "),
+                                                description: describeState(selected),
+                                            })
+                                        }
+                                        startContent={<Icon icon="lucide:download" width={15} />}
+                                    >
+                                        Descargar .ics
+                                    </Button>
+                                </div>
                             </ModalBody>
-                            <ModalFooter>
+                            <ModalFooter className="flex-wrap">
                                 <Button variant="light" radius="lg" onPress={() => setSelected(null)}>
                                     Cerrar
+                                </Button>
+                                <Button as={Link} href={`${detailHref}/${selected.booking_id}`} variant="flat" color="primary" radius="lg" className="font-semibold">
+                                    Ir a esta reserva
                                 </Button>
                                 <Button as={Link} href={detailHref} color="primary" radius="lg" className="font-semibold">
                                     Ver mis reservas

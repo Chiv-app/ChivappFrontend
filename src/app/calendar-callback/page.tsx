@@ -92,10 +92,11 @@ function CalendarCallbackContent() {
               todas las agendas que generes se guardarán automáticamente en tu calendario.
             </p>
             <Button 
-              onClick={() => { if (user?.role === "contractor") { router.push("/contractor/profile"); } else { router.push("/musician/profile"); } } }
-              className="w-full"
+              color="primary"
+              onPress={() => { if (user?.role === "contractor") { router.push("/contractor/calendar"); } else { router.push("/musician/calendar"); } } }
+              className="w-full font-semibold"
             >
-              Volver a mi Panel
+              Ir a mi Calendario
             </Button>
           </div>
         )}

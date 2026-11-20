@@ -1940,6 +1940,7 @@ export default function MusicianProfileWizard() {
                             </div>
                         </div>
                     </div>
+                    <CalendarConnectionCard />
                     </div>
                 </div>
             )}

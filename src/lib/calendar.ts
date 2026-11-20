@@ -170,3 +170,122 @@ export function describeState(event: Pick<CalendarEvent, "state" | "kind">): str
     }
     return event.state === "confirmed" ? "El pago de la reserva está retenido: el evento está confirmado." : "Todavía sin pago: la hora queda apartada como tentativa.";
 }
+
+function toCompactLocalDateTime(isoOrDateAndTime: string): string {
+    const d = new Date(isoOrDateAndTime);
+    if (Number.isNaN(d.getTime())) {
+        return isoOrDateAndTime.replace(/[-:]/g, "").slice(0, 15);
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+}
+
+export function buildBookingStartEndIso(booking: {
+    event_date: string;
+    start_time: string;
+    end_time?: string | null;
+}): { startIso: string; endIso: string } {
+    const normTime = (t: string) => {
+        const clean = t.trim().slice(0, 5);
+        return /^\d{2}:\d{2}$/.test(clean) ? `${clean}:00` : "20:00:00";
+    };
+    const startIso = `${booking.event_date}T${normTime(booking.start_time)}`;
+    if (booking.end_time) {
+        const endCandidate = `${booking.event_date}T${normTime(booking.end_time)}`;
+        const st = new Date(startIso);
+        const et = new Date(endCandidate);
+        if (!Number.isNaN(st.getTime()) && !Number.isNaN(et.getTime()) && et <= st) {
+            const nextDay = addDays(et, 1);
+            return {
+                startIso,
+                endIso: `${toIsoDate(nextDay)}T${normTime(booking.end_time)}`,
+            };
+        }
+        return { startIso, endIso: endCandidate };
+    }
+    const st = new Date(startIso);
+    if (Number.isNaN(st.getTime())) {
+        return { startIso, endIso: startIso };
+    }
+    const endDate = new Date(st.getTime() + 60 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const endIso = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}:00`;
+    return { startIso, endIso };
+}
+
+export function buildGoogleCalendarTemplateUrl(params: {
+    title: string;
+    startIso: string;
+    endIso: string;
+    location?: string | null;
+    description?: string | null;
+}): string {
+    const startStamp = toCompactLocalDateTime(params.startIso);
+    const endStamp = toCompactLocalDateTime(params.endIso);
+    const search = new URLSearchParams({
+        action: "TEMPLATE",
+        text: params.title,
+        dates: `${startStamp}/${endStamp}`,
+        ctz: "America/Lima",
+    });
+    if (params.location?.trim()) {
+        search.set("location", params.location.trim());
+    }
+    if (params.description?.trim()) {
+        search.set("details", params.description.trim());
+    }
+    return `https://calendar.google.com/calendar/render?${search.toString()}`;
+}
+
+export function downloadCalendarIcs(params: {
+    uid: string;
+    title: string;
+    startIso: string;
+    endIso: string;
+    location?: string | null;
+    description?: string | null;
+}): void {
+    if (typeof window === "undefined") return;
+    const escapeIcs = (val: string) =>
+        val
+            .replace(/\\/g, "\\\\")
+            .replace(/;/g, "\\;")
+            .replace(/,/g, "\\,")
+            .replace(/\r?\n/g, "\\n");
+    const startStamp = toCompactLocalDateTime(params.startIso);
+    const endStamp = toCompactLocalDateTime(params.endIso);
+    const nowUtc = new Date()
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d+Z$/, "Z");
+    const lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Chivapp//Agenda Musical//ES",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        `UID:${params.uid}@chiv.app`,
+        `DTSTAMP:${nowUtc}`,
+        `DTSTART;TZID=America/Lima:${startStamp}`,
+        `DTEND;TZID=America/Lima:${endStamp}`,
+        `SUMMARY:${escapeIcs(params.title)}`,
+    ];
+    if (params.location?.trim()) {
+        lines.push(`LOCATION:${escapeIcs(params.location.trim())}`);
+    }
+    if (params.description?.trim()) {
+        lines.push(`DESCRIPTION:${escapeIcs(params.description.trim())}`);
+    }
+    lines.push("END:VEVENT", "END:VCALENDAR");
+    const content = lines.join("\r\n");
+    const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chivapp-evento-${params.uid.slice(0, 8)}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
