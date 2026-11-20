@@ -19,6 +19,7 @@ import { requestBookingChange } from "@/lib/bookings";
 import {
     formatLocationReference,
     parseLocationReference,
+    searchPlaces,
 } from "@/lib/geocoding";
 import type { BookingOut, UserRole } from "@/types/api";
 
@@ -96,12 +97,41 @@ export default function BookingEditCommitmentModal({
             return;
         }
 
-        const locationReference = location
-            ? formatLocationReference(location.lat, location.lng)
-            : reference.trim() || null;
-
         setIsSaving(true);
         try {
+            let effectiveLocation = location;
+            if (
+                (!effectiveLocation ||
+                    !Number.isFinite(effectiveLocation.lat) ||
+                    !Number.isFinite(effectiveLocation.lng)) &&
+                !reference.trim()
+            ) {
+                const query = [address.trim(), city.trim()]
+                    .filter(Boolean)
+                    .join(", ");
+                if (query.length >= 3) {
+                    const matches = await searchPlaces(query).catch(() => []);
+                    if (matches.length > 0) {
+                        effectiveLocation = {
+                            address: address.trim(),
+                            city: city.trim() || matches[0].city || null,
+                            lat: matches[0].lat,
+                            lng: matches[0].lng,
+                        };
+                    }
+                }
+            }
+
+            const locationReference =
+                effectiveLocation &&
+                Number.isFinite(effectiveLocation.lat) &&
+                Number.isFinite(effectiveLocation.lng)
+                    ? formatLocationReference(
+                          effectiveLocation.lat,
+                          effectiveLocation.lng,
+                      )
+                    : reference.trim() || null;
+
             const updated = await requestBookingChange(booking.id, {
                 location_address: address.trim(),
                 location_city: city.trim() || null,
@@ -168,14 +198,28 @@ export default function BookingEditCommitmentModal({
                                 <Input
                                     label="Dirección"
                                     value={address}
-                                    onValueChange={setAddress}
+                                    onValueChange={(val) => {
+                                        setAddress(val);
+                                        setLocation((prev) =>
+                                            prev
+                                                ? { ...prev, lat: Number.NaN, lng: Number.NaN, address: val }
+                                                : null,
+                                        );
+                                    }}
                                     variant="bordered"
                                     isRequired
                                 />
                                 <Input
                                     label="Ciudad"
                                     value={city}
-                                    onValueChange={setCity}
+                                    onValueChange={(val) => {
+                                        setCity(val);
+                                        setLocation((prev) =>
+                                            prev
+                                                ? { ...prev, lat: Number.NaN, lng: Number.NaN, city: val }
+                                                : null,
+                                        );
+                                    }}
                                     variant="bordered"
                                 />
                                 <div className="relative z-10">
@@ -187,6 +231,11 @@ export default function BookingEditCommitmentModal({
                                             key={`edit-map-${booking.id}-${mapMountKey}`}
                                             value={location}
                                             onChange={handleLocationChange}
+                                            fallbackQuery={
+                                                [address.trim(), city.trim()]
+                                                    .filter(Boolean)
+                                                    .join(", ") || undefined
+                                            }
                                         />
                                     ) : null}
                                 </div>

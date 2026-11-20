@@ -50,14 +50,93 @@ function toMapLocation(result: NominatimResult): MapLocation {
     };
 }
 
-export async function searchPlaces(query: string): Promise<MapLocation[]> {
-    if (!query.trim()) return [];
+function expandPeruvianAbbreviations(input: string): string {
+    return input
+        .replace(/\bav\.?(?=\s)/gi, "Avenida")
+        .replace(/\bjr\.?(?=\s)/gi, "Jirón")
+        .replace(/\bca\.?(?=\s)/gi, "Calle")
+        .replace(/\bp(?:s)?je\.?(?=\s)/gi, "Pasaje")
+        .replace(/\bprol(?:g)?\.?(?=\s)/gi, "Prolongación")
+        .replace(/\bmcal\.?(?=\s)/gi, "Mariscal")
+        .replace(/\bgral\.?(?=\s)/gi, "General")
+        .replace(/\balm\.?(?=\s)/gi, "Almirante")
+        .replace(/\bc(?:r)?nel\.?(?=\s)/gi, "Coronel")
+        .replace(/\bcmdte\.?(?=\s)/gi, "Comandante")
+        .replace(/\b(?:n°|nro\.?|núm\.?|num\.?|s\/n)\s*/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
 
+function stripAddressNoise(input: string): string {
+    return input
+        .replace(/\([^)]*\)/g, " ")
+        .replace(
+            /\b(?:dpto\.?|dep\.?|departamento|int\.?|interior|piso|of\.?|oficina|mz\.?|manzana|lt\.?|lote|etapa|sector|bloque|cdra\.?|cuadra)\s*[a-z0-9\-]+/gi,
+            " ",
+        )
+        .replace(
+            /\b(?:urb\.?|urbanizaci[oó]n|asoc\.?|asociaci[oó]n|aa\.?\s*hh\.?|residencial)\s+/gi,
+            " ",
+        )
+        .replace(/\s*,\s*,+/g, ", ")
+        .replace(/\s+,/g, ",")
+        .replace(/\s+/g, " ")
+        .replace(/^[,\s]+|[,\s]+$/g, "")
+        .trim();
+}
+
+export function buildPeruvianSearchQueries(rawQuery: string): string[] {
+    const base = rawQuery.trim();
+    if (!base) return [];
+
+    const expanded = expandPeruvianAbbreviations(base);
+    const cleaned = stripAddressNoise(expanded);
+    const withoutHouseNumbers = cleaned
+        .replace(/\b\d{1,5}(?:-[a-z0-9]+)?\b/gi, " ")
+        .replace(/\s*,\s*,+/g, ", ")
+        .replace(/\s+,/g, ",")
+        .replace(/\s+/g, " ")
+        .replace(/^[,\s]+|[,\s]+$/g, "")
+        .trim();
+
+    const segments = cleaned
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length >= 3);
+
+    const candidates: string[] = [
+        base,
+        expanded,
+        cleaned,
+        withoutHouseNumbers,
+    ];
+
+    if (segments.length >= 2) {
+        candidates.push(segments.slice(-2).join(", "));
+    }
+    if (segments.length >= 1) {
+        candidates.push(segments[segments.length - 1]);
+    }
+
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const candidate of candidates) {
+        const norm = candidate.trim();
+        const key = norm.toLowerCase();
+        if (norm.length >= 3 && !seen.has(key)) {
+            seen.add(key);
+            unique.push(norm);
+        }
+    }
+    return unique;
+}
+
+async function fetchNominatimSearch(q: string): Promise<MapLocation[]> {
     const params = new URLSearchParams({
         format: "json",
-        q: query.trim(),
+        q,
         countrycodes: "pe",
-        limit: "5",
+        limit: "6",
         addressdetails: "1",
     });
 
@@ -74,6 +153,24 @@ export async function searchPlaces(query: string): Promise<MapLocation[]> {
 
     const results = (await response.json()) as NominatimResult[];
     return results.map(toMapLocation);
+}
+
+export async function searchPlaces(query: string): Promise<MapLocation[]> {
+    const candidates = buildPeruvianSearchQueries(query);
+    if (candidates.length === 0) return [];
+
+    for (const candidate of candidates) {
+        try {
+            const locations = await fetchNominatimSearch(candidate);
+            if (locations.length > 0) {
+                return locations;
+            }
+        } catch {
+            // Continúa con el siguiente candidato más amplio si falla o expira
+        }
+    }
+
+    return [];
 }
 
 export async function reverseGeocode(lat: number, lng: number): Promise<MapLocation | null> {

@@ -44,13 +44,26 @@ function FitBounds({ points }: { points: LiveMapPoint[] }) {
             return;
         }
         const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
-        map.fitBounds(bounds.pad(0.25));
+        map.fitBounds(bounds.pad(0.25), { maxZoom: 16 });
     }, [map, points]);
 
     useEffect(() => {
-        const id = window.setTimeout(() => map.invalidateSize(), 80);
-        return () => window.clearTimeout(id);
-    }, [map, points]);
+        const timers = [80, 250, 500].map((ms) =>
+            window.setTimeout(() => map.invalidateSize(), ms),
+        );
+        const container = map.getContainer();
+        let observer: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== "undefined" && container) {
+            observer = new ResizeObserver(() => {
+                map.invalidateSize();
+            });
+            observer.observe(container);
+        }
+        return () => {
+            timers.forEach((id) => window.clearTimeout(id));
+            observer?.disconnect();
+        };
+    }, [map]);
 
     return null;
 }

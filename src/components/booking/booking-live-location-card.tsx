@@ -16,6 +16,7 @@ import {
     updateLiveLocation,
     watchDevicePosition,
 } from "@/lib/booking-location";
+import { searchPlaces } from "@/lib/geocoding";
 import type {
     LiveLocationParticipantOut,
     LiveLocationSessionOut,
@@ -160,14 +161,57 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
         };
     }, [bookingId]);
 
+    const [fallbackEventCoords, setFallbackEventCoords] = useState<{
+        query: string;
+        lat: number;
+        lng: number;
+    } | null>(null);
+
+    const eventFallbackQuery = useMemo(() => {
+        if (!session) return "";
+        if (session.event.lat != null && session.event.lng != null) return "";
+        return [session.event.address?.trim(), session.event.city?.trim()]
+            .filter(Boolean)
+            .join(", ")
+            .trim();
+    }, [session]);
+
+    useEffect(() => {
+        if (eventFallbackQuery.length < 3) return;
+        let cancelled = false;
+        void searchPlaces(eventFallbackQuery)
+            .then((matches) => {
+                if (cancelled || matches.length === 0) return;
+                setFallbackEventCoords({
+                    query: eventFallbackQuery,
+                    lat: matches[0].lat,
+                    lng: matches[0].lng,
+                });
+            })
+            .catch(() => undefined);
+        return () => {
+            cancelled = true;
+        };
+    }, [eventFallbackQuery]);
+
     const points = useMemo(() => {
         if (!session) return [] as LiveMapPoint[];
         const list: LiveMapPoint[] = [];
-        if (session.event.lat != null && session.event.lng != null) {
+        const eventLat =
+            session.event.lat ??
+            (fallbackEventCoords?.query === eventFallbackQuery
+                ? fallbackEventCoords.lat
+                : null);
+        const eventLng =
+            session.event.lng ??
+            (fallbackEventCoords?.query === eventFallbackQuery
+                ? fallbackEventCoords.lng
+                : null);
+        if (eventLat != null && eventLng != null) {
             list.push({
                 key: "event",
-                lat: session.event.lat,
-                lng: session.event.lng,
+                lat: eventLat,
+                lng: eventLng,
                 label: "Punto del evento",
                 color: "#b45309",
             });
@@ -191,7 +235,7 @@ export default function BookingLiveLocationCard({ bookingId }: Props) {
             });
         });
         return list;
-    }, [session]);
+    }, [session, fallbackEventCoords, eventFallbackQuery]);
 
     async function withBusy(action: () => Promise<void>) {
         setIsBusy(true);

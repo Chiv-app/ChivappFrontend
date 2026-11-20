@@ -25,7 +25,7 @@ import {
 import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
-import { formatLocationReference } from "@/lib/geocoding";
+import { formatLocationReference, searchPlaces } from "@/lib/geocoding";
 import { formatCurrency } from "@/lib/booking-labels";
 import { formatPeruDate, todayPeruIso } from "@/lib/date-utils";
 import { sanitizeContractHtml } from "@/lib/sanitize-html";
@@ -84,10 +84,48 @@ export default function CheckoutClient({
     return {
       address: linkData.location_address,
       city: linkData.location_city || linkData.musician.location_city || null,
-      lat: -13.1631,
-      lng: -74.2236,
+      lat: Number.NaN,
+      lng: Number.NaN,
     };
   });
+
+  useEffect(() => {
+    const initialAddress = linkData.location_address?.trim();
+    const initialCity = (
+      linkData.location_city ||
+      linkData.musician.location_city ||
+      ""
+    ).trim();
+    const query = [initialAddress, initialCity].filter(Boolean).join(", ");
+    if (!initialAddress || query.length < 3) return;
+
+    let cancelled = false;
+    void searchPlaces(query)
+      .then((matches) => {
+        if (cancelled || matches.length === 0) return;
+        const top = matches[0];
+        setLocation((prev) => {
+          if (prev && Number.isFinite(prev.lat) && Number.isFinite(prev.lng)) {
+            return prev;
+          }
+          return {
+            address: prev?.address || initialAddress,
+            city: prev?.city || top.city || initialCity || null,
+            lat: top.lat,
+            lng: top.lng,
+          };
+        });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    linkData.location_address,
+    linkData.location_city,
+    linkData.musician.location_city,
+  ]);
   const [fullname, setFullname] = useState(linkData.client_fullname || "");
   const [email, setEmail] = useState(linkData.client_email || "");
   const [phone, setPhone] = useState(linkData.client_phone || "");
@@ -1213,6 +1251,15 @@ export default function CheckoutClient({
                       <LocationMapPickerField
                         value={location}
                         onChange={setLocation}
+                        fallbackQuery={
+                          [
+                            linkData.location_address,
+                            linkData.location_city ||
+                              linkData.musician.location_city,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || undefined
+                        }
                       />
                     </div>
                     {step1Attempted &&

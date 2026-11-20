@@ -32,6 +32,7 @@ import { isEmailTakenError } from "@/lib/auth-errors";
 import {
   formatLocationReference,
   normalizeStartTime,
+  searchPlaces,
   validateBookingRequest,
 } from "@/lib/geocoding";
 import type { AvailabilityOut } from "@/types/api";
@@ -487,16 +488,53 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
       const parsedGuests = guestsCount.trim() ? Number(guestsCount.trim()) : null;
       const parsedDuration = durationHours.trim() ? Number(durationHours.trim()) : null;
       const parsedBudget = estimatedBudget.trim() ? Number(estimatedBudget.trim()) : null;
+      let effectiveLocation = location;
+      if (
+        (!effectiveLocation ||
+          !Number.isFinite(effectiveLocation.lat) ||
+          !Number.isFinite(effectiveLocation.lng)) &&
+        (location?.address?.trim() || locationCity.trim())
+      ) {
+        const query = [location?.address?.trim(), locationCity.trim()]
+          .filter(Boolean)
+          .join(", ");
+        if (query.length >= 3) {
+          const matches = await searchPlaces(query).catch(() => []);
+          if (matches.length > 0) {
+            effectiveLocation = {
+              address:
+                location?.address?.trim() ||
+                locationCity.trim() ||
+                matches[0].address,
+              city:
+                location?.city ||
+                locationCity.trim() ||
+                matches[0].city ||
+                null,
+              lat: matches[0].lat,
+              lng: matches[0].lng,
+            };
+          }
+        }
+      }
       const booking = await createBooking({
         musician_id: musician.id,
         event_date: eventDate,
         start_time: normalizeStartTime(startTime),
         end_time: null,
-        location_address: location?.address || "",
-        location_city: location?.city || locationCity.trim() || null,
-        location_reference: location
-          ? formatLocationReference(location.lat, location.lng)
-          : null,
+        location_address:
+          effectiveLocation?.address || locationCity.trim() || "",
+        location_city:
+          effectiveLocation?.city || locationCity.trim() || null,
+        location_reference:
+          effectiveLocation &&
+          Number.isFinite(effectiveLocation.lat) &&
+          Number.isFinite(effectiveLocation.lng)
+            ? formatLocationReference(
+                effectiveLocation.lat,
+                effectiveLocation.lng,
+              )
+            : null,
         event_type: eventType,
         event_description: eventDescription.trim() || null,
         guests_count:
@@ -749,6 +787,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
             setLocationCity(loc.city);
           }
         }}
+        fallbackQuery={locationCity.trim() || undefined}
       />
       {attemptedSubmit && !location?.address && !locationCity.trim() && (
         <p role="alert" className="text-xs text-danger -mt-2">

@@ -68,6 +68,7 @@ vi.mock("@/lib/geocoding", async (importOriginal) => {
 });
 
 import LocationMapPicker from "./location-map-picker";
+import { buildPeruvianSearchQueries } from "@/lib/server/geocoding";
 
 describe("LocationMapPicker", () => {
     beforeEach(() => {
@@ -173,5 +174,85 @@ describe("LocationMapPicker", () => {
             address: "Av. Arequipa 1200, Dpto 402",
             city: "Lince",
         });
+    });
+
+    it("geocodes and moves pin when user searches a new address and presses Enter even if a pin already existed", async () => {
+        searchPlacesMock.mockResolvedValue([
+            {
+                lat: -16.398866,
+                lng: -71.536961,
+                address: "Plaza de Armas, Arequipa",
+                city: "Arequipa",
+            },
+        ]);
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        const initial: MapLocation = {
+            lat: -13.1631,
+            lng: -74.2236,
+            address: "Dirección anterior",
+            city: "Ayacucho",
+        };
+
+        render(<LocationMapPicker value={initial} onChange={onChange} />);
+
+        const input = screen.getByLabelText(/Buscar lugar/i);
+        await user.clear(input);
+        await user.type(input, "Plaza de Armas Arequipa{Enter}");
+
+        await waitFor(() => {
+            expect(onChange).toHaveBeenLastCalledWith({
+                lat: -16.398866,
+                lng: -71.536961,
+                address: "Plaza de Armas Arequipa",
+                city: "Arequipa",
+            });
+        });
+    });
+
+    it("auto-geocodes prefilled address when coordinates are NaN", async () => {
+        searchPlacesMock.mockResolvedValueOnce([
+            {
+                lat: -12.1215,
+                lng: -77.0301,
+                address: "Avenida José Larco 450, Miraflores, Lima",
+                city: "Miraflores",
+            },
+        ]);
+        const onChange = vi.fn();
+        const prefilled: MapLocation = {
+            lat: Number.NaN,
+            lng: Number.NaN,
+            address: "Av. Larco 450",
+            city: "Miraflores",
+        };
+
+        render(<LocationMapPicker value={prefilled} onChange={onChange} />);
+
+        await waitFor(() => {
+            expect(searchPlacesMock).toHaveBeenCalledWith("Av. Larco 450, Miraflores");
+            expect(onChange).toHaveBeenCalledWith({
+                lat: -12.1215,
+                lng: -77.0301,
+                address: "Av. Larco 450",
+                city: "Miraflores",
+            });
+        });
+    });
+
+    it("builds progressive Peruvian search query fallbacks for Nominatim", () => {
+        const queries = buildPeruvianSearchQueries(
+            "Av. Mcal. Cáceres 820, Dpto 302, Urb. Jardín, Huamanga (Frente al parque)",
+        );
+        expect(queries[0]).toBe(
+            "Av. Mcal. Cáceres 820, Dpto 302, Urb. Jardín, Huamanga (Frente al parque)",
+        );
+        expect(queries).toContain(
+            "Avenida Mariscal Cáceres 820, Jardín, Huamanga",
+        );
+        expect(queries).toContain(
+            "Avenida Mariscal Cáceres, Jardín, Huamanga",
+        );
+        expect(queries).toContain("Huamanga");
     });
 });

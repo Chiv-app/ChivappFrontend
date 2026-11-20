@@ -35,6 +35,7 @@ const markerIcon = L.icon({
 type Props = {
   value: MapLocation | null;
   onChange: (location: MapLocation) => void;
+  fallbackQuery?: string;
 };
 
 function normalizeCoord(coord: number): number {
@@ -94,15 +95,23 @@ function InvalidateSizeOnMount() {
   return null;
 }
 
-export default function LocationMapPicker({ value, onChange }: Props) {
-  const [searchQuery, setSearchQuery] = useState(() => value?.address ?? "");
+export default function LocationMapPicker({
+  value,
+  onChange,
+  fallbackQuery,
+}: Props) {
+  const [searchQuery, setSearchQuery] = useState(
+    () => value?.address ?? fallbackQuery ?? "",
+  );
   const [suggestions, setSuggestions] = useState<MapLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
+  const [isUserTyping, setIsUserTyping] = useState(false);
 
   const isUserTypingRef = useRef(false);
   const resolveReqIdRef = useRef(0);
   const searchReqIdRef = useRef(0);
+  const lastAutoGeocodedRef = useRef("");
   const valueRef = useRef<MapLocation | null>(value);
 
   useEffect(() => {
@@ -118,6 +127,63 @@ export default function LocationMapPicker({ value, onChange }: Props) {
   const hasValidCoords = Boolean(
     value && Number.isFinite(value.lat) && Number.isFinite(value.lng),
   );
+
+  const autoGeocodeTarget = useMemo(() => {
+    if (hasValidCoords) return "";
+    const fromVal = [value?.address, value?.city]
+      .filter((item): item is string => Boolean(item && item.trim()))
+      .join(", ")
+      .trim();
+    if (fromVal.length >= 3) return fromVal;
+    const fromFallback = (fallbackQuery ?? "").trim();
+    return fromFallback.length >= 3 ? fromFallback : "";
+  }, [hasValidCoords, value?.address, value?.city, fallbackQuery]);
+
+  useEffect(() => {
+    if (!autoGeocodeTarget || isUserTypingRef.current) return;
+    if (lastAutoGeocodedRef.current === autoGeocodeTarget) return;
+    lastAutoGeocodedRef.current = autoGeocodeTarget;
+
+    let cancelled = false;
+    const timeout = window.setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const matches = await searchPlaces(autoGeocodeTarget);
+        if (cancelled || matches.length === 0) return;
+        const current = valueRef.current;
+        if (
+          current &&
+          Number.isFinite(current.lat) &&
+          Number.isFinite(current.lng)
+        ) {
+          return;
+        }
+        const top = matches[0];
+        const resolvedAddress = current?.address?.trim() || top.address;
+        const resolvedCity = current?.city?.trim() || top.city || null;
+        if (!isUserTypingRef.current) {
+          setSearchQuery(resolvedAddress);
+        }
+        onChange({
+          lat: normalizeCoord(top.lat),
+          lng: normalizeCoord(top.lng),
+          address: resolvedAddress,
+          city: resolvedCity,
+        });
+      } catch {
+        // Silencioso en auto-geocodificación inicial
+      } finally {
+        if (!cancelled) {
+          setIsSearching(false);
+        }
+      }
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [autoGeocodeTarget, onChange]);
 
   const valLat = value?.lat;
   const valLng = value?.lng;
@@ -158,6 +224,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
     };
 
     isUserTypingRef.current = false;
+    setIsUserTyping(false);
     setSuggestions([]);
     onChange(immediateLocation);
     if (!currentVal?.address) {
@@ -177,6 +244,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
           city: location.city ?? valueRef.current?.city ?? null,
         };
         isUserTypingRef.current = false;
+        setIsUserTyping(false);
         setSearchQuery(resolved.address);
         setSuggestions([]);
         onChange(resolved);
@@ -188,6 +256,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
         city: valueRef.current?.city ?? null,
       };
       isUserTypingRef.current = false;
+      setIsUserTyping(false);
       setSearchQuery(fallbackLocation.address);
       setSuggestions([]);
       onChange(fallbackLocation);
@@ -199,6 +268,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
         city: valueRef.current?.city ?? null,
       };
       isUserTypingRef.current = false;
+      setIsUserTyping(false);
       setSearchQuery(fallbackLocation.address);
       setSuggestions([]);
       onChange(fallbackLocation);
@@ -278,6 +348,21 @@ export default function LocationMapPicker({ value, onChange }: Props) {
         const results = await searchPlaces(trimmed);
         if (reqId === searchReqIdRef.current && isUserTypingRef.current) {
           setSuggestions(results);
+          const current = valueRef.current;
+          const currentHasCoords = Boolean(
+            current &&
+              Number.isFinite(current.lat) &&
+              Number.isFinite(current.lng),
+          );
+          if (!currentHasCoords && results.length > 0) {
+            const top = results[0];
+            onChange({
+              lat: normalizeCoord(top.lat),
+              lng: normalizeCoord(top.lng),
+              address: trimmed,
+              city: top.city || current?.city || null,
+            });
+          }
         }
       } catch {
         if (reqId === searchReqIdRef.current) {
@@ -291,11 +376,12 @@ export default function LocationMapPicker({ value, onChange }: Props) {
     }, 350);
 
     return () => window.clearTimeout(timeout);
-  }, [searchQuery]);
+  }, [searchQuery, onChange]);
 
   function handleSuggestionSelect(location: MapLocation) {
     resolveReqIdRef.current += 1;
     isUserTypingRef.current = false;
+    setIsUserTyping(false);
     setIsResolving(false);
     const normalized: MapLocation = {
       address: location.address,
@@ -315,9 +401,45 @@ export default function LocationMapPicker({ value, onChange }: Props) {
     resolveReqIdRef.current += 1;
     const reqId = resolveReqIdRef.current;
     isUserTypingRef.current = false;
+    setIsUserTyping(false);
+    const currentSuggestions = suggestions;
     setSuggestions([]);
 
     const currentVal = valueRef.current;
+
+    if (currentSuggestions.length > 0) {
+      const top = currentSuggestions[0];
+      onChange({
+        lat: normalizeCoord(top.lat),
+        lng: normalizeCoord(top.lng),
+        address: trimmed,
+        city: top.city || currentVal?.city || "Lima",
+      });
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const matches = await searchPlaces(trimmed);
+      if (reqId !== resolveReqIdRef.current) return;
+      if (matches.length > 0) {
+        const top = matches[0];
+        onChange({
+          lat: normalizeCoord(top.lat),
+          lng: normalizeCoord(top.lng),
+          address: trimmed,
+          city: top.city || currentVal?.city || "Lima",
+        });
+        return;
+      }
+    } catch {
+      // Fallback below if searchPlaces fails
+    } finally {
+      if (reqId === resolveReqIdRef.current) {
+        setIsSearching(false);
+      }
+    }
+
     if (
       currentVal &&
       Number.isFinite(currentVal.lat) &&
@@ -332,38 +454,12 @@ export default function LocationMapPicker({ value, onChange }: Props) {
       return;
     }
 
-    if (suggestions.length > 0) {
-      const top = suggestions[0];
-      onChange({
-        lat: normalizeCoord(top.lat),
-        lng: normalizeCoord(top.lng),
-        address: trimmed,
-        city: top.city || "Lima",
-      });
-      return;
-    }
-
-    const provisional: MapLocation = {
+    onChange({
       lat: center[0],
       lng: center[1],
       address: trimmed,
       city: currentVal?.city || "Lima",
-    };
-    onChange(provisional);
-
-    try {
-      const matches = await searchPlaces(trimmed);
-      if (reqId !== resolveReqIdRef.current || matches.length === 0) return;
-      const top = matches[0];
-      onChange({
-        lat: normalizeCoord(top.lat),
-        lng: normalizeCoord(top.lng),
-        address: trimmed,
-        city: top.city || "Lima",
-      });
-    } catch {
-      // Keep provisional location if searchPlaces fails
-    }
+    });
   }
 
   return (
@@ -377,6 +473,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
             value={searchQuery}
             onValueChange={(val) => {
               isUserTypingRef.current = true;
+              setIsUserTyping(true);
               setSearchQuery(val);
               const trimmed = val.trim();
               if (!trimmed || trimmed.length < 3) {
@@ -406,6 +503,21 @@ export default function LocationMapPicker({ value, onChange }: Props) {
             endContent={
               <div className="flex items-center gap-1">
                 {isSearching ? <Spinner size="sm" color="primary" /> : null}
+                {searchQuery.trim().length >= 3 ? (
+                  <Button
+                    color="primary"
+                    variant="light"
+                    size="sm"
+                    isIconOnly
+                    onPress={() => {
+                      void applyManualSearchQuery(searchQuery);
+                    }}
+                    aria-label="Buscar dirección en el mapa"
+                    className="text-primary-text hover:bg-primary-50"
+                  >
+                    <Icon icon="lucide:search" className="w-4 h-4" />
+                  </Button>
+                ) : null}
                 <Button
                   color="primary"
                   variant="light"
@@ -439,7 +551,7 @@ export default function LocationMapPicker({ value, onChange }: Props) {
       </div>
 
       {searchQuery.trim().length >= 3 &&
-      (!value || value.address !== searchQuery.trim()) ? (
+      (isUserTyping || !hasValidCoords || value?.address !== searchQuery.trim()) ? (
         <Button
           size="sm"
           variant="flat"

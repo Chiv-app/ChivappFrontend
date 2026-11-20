@@ -22,6 +22,7 @@ import {
     formatLocationReference,
     getMinEventDate,
     normalizeStartTime,
+    searchPlaces,
 } from "@/lib/geocoding";
 import { getMusicianProfile } from "@/lib/profiles";
 import type { EnsembleMemberOut } from "@/types/api";
@@ -406,13 +407,28 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
 
         const effectiveAddress = locationAddress.trim() || location?.address?.trim() || "";
         const effectiveCity = locationCity.trim() || location?.city?.trim() || null;
-        const effectiveReference =
-            location && Number.isFinite(location.lat) && Number.isFinite(location.lng)
-                ? formatLocationReference(location.lat, location.lng)
-                : null;
 
         setIsSubmitting(true);
         try {
+            let resolvedCoords =
+                location && Number.isFinite(location.lat) && Number.isFinite(location.lng)
+                    ? { lat: location.lat, lng: location.lng }
+                    : null;
+
+            if (!resolvedCoords && effectiveAddress.length >= 3) {
+                const query = [effectiveAddress, effectiveCity]
+                    .filter(Boolean)
+                    .join(", ");
+                const matches = await searchPlaces(query).catch(() => []);
+                if (matches.length > 0) {
+                    resolvedCoords = { lat: matches[0].lat, lng: matches[0].lng };
+                }
+            }
+
+            const effectiveReference = resolvedCoords
+                ? formatLocationReference(resolvedCoords.lat, resolvedCoords.lng)
+                : null;
+
             const booking = await createMusicianBooking({
                 contractor_fullname: contractorFullname.trim() || null,
                 contractor_email: contractorEmail.trim().toLowerCase() || null,
@@ -702,7 +718,14 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                 placeholder="Ej. Av. Mariscal Cáceres 820"
                                 isRequired
                                 value={locationAddress}
-                                onValueChange={setLocationAddress}
+                                onValueChange={(val) => {
+                                    setLocationAddress(val);
+                                    setLocation((prev) =>
+                                        prev
+                                            ? { ...prev, lat: Number.NaN, lng: Number.NaN, address: val }
+                                            : null,
+                                    );
+                                }}
                                 variant="bordered"
                                 radius="lg"
                             />
@@ -710,7 +733,14 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                 label="Distrito / Ciudad"
                                 placeholder="Ej. Huamanga, Lima"
                                 value={locationCity}
-                                onValueChange={setLocationCity}
+                                onValueChange={(val) => {
+                                    setLocationCity(val);
+                                    setLocation((prev) =>
+                                        prev
+                                            ? { ...prev, lat: Number.NaN, lng: Number.NaN, city: val }
+                                            : null,
+                                    );
+                                }}
                                 variant="bordered"
                                 radius="lg"
                             />
@@ -721,6 +751,11 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                 <LocationMapPickerField
                                     value={location}
                                     onChange={handleMapLocationChange}
+                                    fallbackQuery={
+                                        [locationAddress.trim(), locationCity.trim()]
+                                            .filter(Boolean)
+                                            .join(", ") || undefined
+                                    }
                                 />
                             </div>
                         ) : null}
