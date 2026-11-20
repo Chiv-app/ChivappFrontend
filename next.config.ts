@@ -131,7 +131,7 @@ const baseSecurityHeaders = [
   {
     key: "Permissions-Policy",
     value:
-      'camera=(), microphone=(), geolocation=(self), payment=(self "https://www.mercadopago.com" "https://www.mercadopago.com.pe" "https://mercadopago.com" "https://mercadopago.com.pe" "https://sdk.mercadopago.com" "https://api.mercadopago.com")',
+      'camera=(), microphone=(self), geolocation=(self), payment=(self "https://www.mercadopago.com" "https://www.mercadopago.com.pe" "https://mercadopago.com" "https://mercadopago.com.pe" "https://sdk.mercadopago.com" "https://api.mercadopago.com")',
   },
 ];
 

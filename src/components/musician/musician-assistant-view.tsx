@@ -427,25 +427,38 @@ export default function MusicianAssistantView() {
       });
       return;
     }
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
-        ? "audio/webm"
-        : "audio/mp4";
-      const recorder = new MediaRecorder(stream, { mimeType });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/mp4",
+        "audio/ogg;codecs=opus",
+      ];
+      const preferredMime =
+        typeof MediaRecorder !== "undefined" &&
+        typeof MediaRecorder.isTypeSupported === "function"
+          ? candidates.find((c) => MediaRecorder.isTypeSupported(c))
+          : undefined;
+      const recorder = preferredMime
+        ? new MediaRecorder(stream, { mimeType: preferredMime })
+        : new MediaRecorder(stream);
+      const activeStream = stream;
+      const effectiveMime = (recorder.mimeType || preferredMime || "audio/webm").split(";")[0];
       audioChunksRef.current = [];
       recorder.ondataavailable = (ev) => {
         if (ev.data.size > 0) audioChunksRef.current.push(ev.data);
       };
       recorder.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        activeStream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: effectiveMime });
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64DataUrl =
             typeof reader.result === "string" ? reader.result : "";
           if (base64DataUrl) {
-            void handleSendSimulation("", false, base64DataUrl, mimeType);
+            void handleSendSimulation("", false, base64DataUrl, effectiveMime);
           }
         };
         reader.readAsDataURL(blob);
@@ -454,9 +467,10 @@ export default function MusicianAssistantView() {
       recorder.start();
       setIsRecordingSim(true);
     } catch {
+      stream?.getTracks().forEach((t) => t.stop());
       addToast({
         title: "No se pudo acceder al micrófono",
-        description: "Verifica los permisos de tu navegador.",
+        description: "Verifica los permisos de micrófono desde el ícono de la barra de direcciones.",
         color: "warning",
       });
     }

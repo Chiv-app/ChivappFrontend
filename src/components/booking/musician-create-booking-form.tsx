@@ -228,10 +228,25 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             });
             return;
         }
+        let stream: MediaStream | null = null;
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
-            const recorder = new MediaRecorder(stream, { mimeType });
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const candidates = [
+                "audio/webm;codecs=opus",
+                "audio/webm",
+                "audio/mp4",
+                "audio/ogg;codecs=opus",
+            ];
+            const preferredMime =
+                typeof MediaRecorder !== "undefined" &&
+                typeof MediaRecorder.isTypeSupported === "function"
+                    ? candidates.find((c) => MediaRecorder.isTypeSupported(c))
+                    : undefined;
+            const recorder = preferredMime
+                ? new MediaRecorder(stream, { mimeType: preferredMime })
+                : new MediaRecorder(stream);
+            const activeStream = stream;
+            const effectiveMime = (recorder.mimeType || preferredMime || "audio/webm").split(";")[0];
             audioChunksRef.current = [];
             recorder.ondataavailable = (ev) => {
                 if (ev.data.size > 0) {
@@ -239,8 +254,8 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                 }
             };
             recorder.onstop = () => {
-                stream.getTracks().forEach((t) => t.stop());
-                const blob = new Blob(audioChunksRef.current, { type: mimeType });
+                activeStream.getTracks().forEach((t) => t.stop());
+                const blob = new Blob(audioChunksRef.current, { type: effectiveMime });
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     const base64DataUrl = typeof reader.result === "string" ? reader.result : "";
@@ -250,7 +265,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                         const res = await autocompleteBookingLink({
                             text: quickNote.trim() || null,
                             audio_base64: base64DataUrl,
-                            audio_mime_type: mimeType,
+                            audio_mime_type: effectiveMime,
                         });
                         applyExtractedFields(res);
                     } catch (err: unknown) {
@@ -268,10 +283,22 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             mediaRecorderRef.current = recorder;
             recorder.start();
             setIsRecording(true);
-        } catch {
+        } catch (err: unknown) {
+            stream?.getTracks().forEach((t) => t.stop());
+            const errName = err instanceof DOMException ? err.name : "";
+            const isNoDevice = errName === "NotFoundError" || errName === "DevicesNotFoundError";
+            const isBusy = errName === "NotReadableError" || errName === "TrackStartError";
             addToast({
-                title: "Permiso de micrófono denegado",
-                description: "Habilita el micrófono en tu navegador o escribe los detalles en texto.",
+                title: isNoDevice
+                    ? "No se detectó un micrófono"
+                    : isBusy
+                      ? "Micrófono en uso"
+                      : "Permiso de micrófono bloqueado",
+                description: isNoDevice
+                    ? "Conecta un micrófono o escribe los detalles en el cuadro de texto."
+                    : isBusy
+                      ? "Otra aplicación está usando el micrófono. Ciérrala e inténtalo de nuevo."
+                      : "Permite el acceso al micrófono desde el ícono junto a la barra de direcciones del navegador.",
                 color: "warning",
             });
         }
