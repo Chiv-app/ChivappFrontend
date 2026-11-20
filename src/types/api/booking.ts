@@ -31,7 +31,7 @@ export type BookingBatchCreate = {
 };
 
 export type MusicianBookingCreate = {
-    contractor_fullname: string;
+    contractor_fullname?: string | null;
     contractor_email?: string | null;
     contractor_phone?: string | null;
     document_type?: string | null;
@@ -46,8 +46,11 @@ export type MusicianBookingCreate = {
     location_reference?: string | null;
     event_type: string;
     event_description?: string | null;
+    requested_repertoire?: string[] | null;
     price_agreed: number;
     musician_quote_notes?: string | null;
+    already_paid?: boolean;
+    ensemble_member_ids?: string[] | null;
 };
 
 export type BookingUpdate = {

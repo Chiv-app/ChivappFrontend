@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
     Button,
+    Checkbox,
+    Chip,
     Divider,
     Input,
     Select,
@@ -13,81 +15,350 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
+import { autocompleteBookingLink } from "@/lib/booking-links";
 import { createMusicianBooking } from "@/lib/bookings";
+import { listEnsembleMembers } from "@/lib/ensemble-members";
 import {
     formatLocationReference,
     getMinEventDate,
     normalizeStartTime,
-    validateBookingRequest,
 } from "@/lib/geocoding";
+import { getMusicianProfile } from "@/lib/profiles";
+import type { EnsembleMemberOut } from "@/types/api";
 
 const EVENT_TYPES = [
-    "Boda",
-    "Quinceañero",
     "Cumpleaños",
-    "Aniversario",
-    "Evento corporativo",
+    "Boda",
     "Serenata",
+    "Aniversario",
+    "Quinceañero",
+    "Evento corporativo",
     "Otro",
 ];
 
 const DOCUMENT_TYPES = ["DNI", "CE", "Pasaporte", "RUC", "Otro"];
 
+type WizardStep = 1 | 2 | 3;
+
 type Props = {
     onSuccess?: () => void;
 };
 
+function addHoursToTime(startTime: string, hoursToAdd: number): string {
+    const match = /^(\d{1,2}):(\d{2})/.exec(startTime.trim());
+    if (!match) return "";
+    const baseHours = Number(match[1]);
+    const baseMinutes = Number(match[2]);
+    if (Number.isNaN(baseHours) || Number.isNaN(baseMinutes)) return "";
+    const totalMinutes = (baseHours * 60 + baseMinutes + Math.round(hoursToAdd * 60)) % (24 * 60);
+    const endH = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const endM = String(totalMinutes % 60).padStart(2, "0");
+    return `${endH}:${endM}`;
+}
+
 export default function MusicianCreateBookingForm({ onSuccess }: Props) {
     const router = useRouter();
+    const [step, setStep] = useState<WizardStep>(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [contractorFullname, setContractorFullname] = useState("");
-    const [contractorEmail, setContractorEmail] = useState("");
-    const [contractorPhone, setContractorPhone] = useState("");
-    const [documentType, setDocumentType] = useState("");
-    const [documentNumber, setDocumentNumber] = useState("");
-    const [contractorAddress, setContractorAddress] = useState("");
-    const [contractorCity, setContractorCity] = useState("");
+    // Paso 1: Dictado por voz o texto con IA
+    const [quickNote, setQuickNote] = useState("");
+    const [isExtracting, setIsExtracting] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
 
+    // Paso 2: Evento, horario y ubicación
+    const [eventType, setEventType] = useState("");
     const [eventDate, setEventDate] = useState("");
     const [startTime, setStartTime] = useState("");
-    const [eventType, setEventType] = useState("");
-    const [eventDescription, setEventDescription] = useState("");
+    const [endTime, setEndTime] = useState("");
+    const [locationAddress, setLocationAddress] = useState("");
+    const [locationCity, setLocationCity] = useState("");
     const [location, setLocation] = useState<MapLocation | null>(null);
+    const [showMapPicker, setShowMapPicker] = useState(false);
+    const [eventDescription, setEventDescription] = useState("");
 
+    // Paso 3: Cliente (en borrador), precio e integrantes
+    const [contractorPhone, setContractorPhone] = useState("");
+    const [contractorFullname, setContractorFullname] = useState("");
+    const [contractorEmail, setContractorEmail] = useState("");
+    const [documentType, setDocumentType] = useState("DNI");
+    const [documentNumber, setDocumentNumber] = useState("");
     const [priceAgreed, setPriceAgreed] = useState("");
     const [quoteNotes, setQuoteNotes] = useState("");
 
+    // Integrantes del grupo (solo cuando el perfil activo es group)
+    const [isGroupProfile, setIsGroupProfile] = useState(false);
+    const [activeMembers, setActiveMembers] = useState<EnsembleMemberOut[]>([]);
+    const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+
     const minEventDate = useMemo(() => getMinEventDate(), []);
+
+    useEffect(() => {
+        let cancelled = false;
+        getMusicianProfile()
+            .then((profile) => {
+                if (cancelled) return;
+                const isGroup = (profile.profile_type || "solo") === "group";
+                setIsGroupProfile(isGroup);
+                if (isGroup) {
+                    return listEnsembleMembers({ status: "active" }).then((members) => {
+                        if (cancelled) return;
+                        setActiveMembers(members);
+                        setSelectedMemberIds(new Set(members.map((m) => m.id)));
+                    });
+                }
+            })
+            .catch(() => {
+                // Silencioso: si falla la carga de integrantes no bloquea el formulario
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+                mediaRecorderRef.current.stop();
+            }
+        };
+    }, []);
+
+    function applyExtractedFields(data: Awaited<ReturnType<typeof autocompleteBookingLink>>) {
+        let filledCount = 0;
+        if (data.price != null && data.price >= 10) {
+            setPriceAgreed(String(data.price));
+            filledCount++;
+        }
+        if (data.event_date) {
+            setEventDate(data.event_date);
+            filledCount++;
+        }
+        if (data.start_time) {
+            setStartTime(data.start_time.slice(0, 5));
+            filledCount++;
+        }
+        if (data.end_time) {
+            setEndTime(data.end_time.slice(0, 5));
+            filledCount++;
+        }
+        if (data.event_type) {
+            setEventType(data.event_type);
+            filledCount++;
+        }
+        if (data.location_address) {
+            setLocationAddress(data.location_address);
+            filledCount++;
+        }
+        if (data.location_city) {
+            setLocationCity(data.location_city);
+            filledCount++;
+        }
+        if (data.client_fullname) {
+            setContractorFullname(data.client_fullname);
+            filledCount++;
+        }
+        if (data.client_phone) {
+            setContractorPhone(data.client_phone);
+            filledCount++;
+        }
+        if (data.client_email) {
+            setContractorEmail(data.client_email);
+            filledCount++;
+        }
+        if (data.client_document_number) {
+            setDocumentNumber(data.client_document_number);
+            filledCount++;
+        }
+        if (data.event_description) {
+            setEventDescription(data.event_description);
+            filledCount++;
+        }
+        if (data.transcript && !quickNote.trim()) {
+            setQuickNote(data.transcript);
+        }
+        addToast({
+            title: filledCount > 0 ? "Datos extraídos con IA" : "Nota procesada",
+            description:
+                filledCount > 0
+                    ? `Completamos ${filledCount} campo(s). Revisa el evento y lugar antes de continuar.`
+                    : "Completa los datos del evento en los siguientes pasos.",
+            color: filledCount > 0 ? "success" : "warning",
+        });
+        setStep(2);
+    }
+
+    async function handleExtractFromText() {
+        if (!quickNote.trim()) {
+            addToast({
+                title: "Escribe o dicta los detalles",
+                description: "Describe en una frase qué acordaste con el cliente o avanza manualmente.",
+                color: "warning",
+            });
+            return;
+        }
+        setIsExtracting(true);
+        try {
+            const res = await autocompleteBookingLink({ text: quickNote.trim() });
+            applyExtractedFields(res);
+        } catch (err: unknown) {
+            addToast({
+                title: "No se pudo autocompletar",
+                description: (err as Error).message || "Puedes llenar los campos manualmente.",
+                color: "danger",
+            });
+        } finally {
+            setIsExtracting(false);
+        }
+    }
+
+    async function handleToggleVoiceRecording() {
+        if (isRecording) {
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+            return;
+        }
+        if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+            addToast({
+                title: "Micrófono no disponible",
+                description: "Tu navegador no permite grabar audio aquí. Escribe o pega el texto.",
+                color: "warning",
+            });
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+            const recorder = new MediaRecorder(stream, { mimeType });
+            audioChunksRef.current = [];
+            recorder.ondataavailable = (ev) => {
+                if (ev.data.size > 0) {
+                    audioChunksRef.current.push(ev.data);
+                }
+            };
+            recorder.onstop = () => {
+                stream.getTracks().forEach((t) => t.stop());
+                const blob = new Blob(audioChunksRef.current, { type: mimeType });
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const base64DataUrl = typeof reader.result === "string" ? reader.result : "";
+                    if (!base64DataUrl) return;
+                    setIsExtracting(true);
+                    try {
+                        const res = await autocompleteBookingLink({
+                            text: quickNote.trim() || null,
+                            audio_base64: base64DataUrl,
+                            audio_mime_type: mimeType,
+                        });
+                        applyExtractedFields(res);
+                    } catch (err: unknown) {
+                        addToast({
+                            title: "No se pudo procesar el audio",
+                            description: (err as Error).message || "Puedes escribir los datos manualmente.",
+                            color: "danger",
+                        });
+                    } finally {
+                        setIsExtracting(false);
+                    }
+                };
+                reader.readAsDataURL(blob);
+            };
+            mediaRecorderRef.current = recorder;
+            recorder.start();
+            setIsRecording(true);
+        } catch {
+            addToast({
+                title: "Permiso de micrófono denegado",
+                description: "Habilita el micrófono en tu navegador o escribe los detalles en texto.",
+                color: "warning",
+            });
+        }
+    }
+
+    function handleMapLocationChange(loc: MapLocation | null) {
+        setLocation(loc);
+        if (loc) {
+            if (loc.address && !locationAddress.trim()) {
+                setLocationAddress(loc.address);
+            } else if (loc.address) {
+                setLocationAddress(loc.address);
+            }
+            if (loc.city) {
+                setLocationCity(loc.city);
+            }
+        }
+    }
+
+    function validateStep2(): boolean {
+        if (!eventType.trim() || eventType.trim().length < 2) {
+            addToast({
+                title: "Tipo de evento requerido",
+                description: "Indica qué tipo de evento es (ej. Cumpleaños, Boda, Serenata).",
+                color: "warning",
+            });
+            return false;
+        }
+        if (!eventDate) {
+            addToast({
+                title: "Fecha requerida",
+                description: "Selecciona la fecha de la presentación.",
+                color: "warning",
+            });
+            return false;
+        }
+        if (!startTime) {
+            addToast({
+                title: "Hora de inicio requerida",
+                description: "Indica la hora en la que inicia el show.",
+                color: "warning",
+            });
+            return false;
+        }
+        const effectiveAddress = locationAddress.trim() || location?.address?.trim() || "";
+        if (effectiveAddress.length < 3) {
+            addToast({
+                title: "Ubicación requerida",
+                description: "Escribe la dirección del evento o selecciónala en el mapa.",
+                color: "warning",
+            });
+            return false;
+        }
+        return true;
+    }
+
+    function toggleMemberSelection(memberId: string) {
+        setSelectedMemberIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(memberId)) {
+                next.delete(memberId);
+            } else {
+                next.add(memberId);
+            }
+            return next;
+        });
+    }
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
+        if (!validateStep2()) {
+            setStep(2);
+            return;
+        }
 
-        if (!contractorFullname.trim()) {
+        const cleanPhone = contractorPhone.trim();
+        const phoneDigits = cleanPhone.replace(/\D/g, "");
+        if (phoneDigits.length < 7) {
             addToast({
-                title: "Nombre requerido",
-                description: "Indica el nombre del contratista.",
+                title: "Teléfono del cliente obligatorio",
+                description: "Ingresa el número de celular o WhatsApp del cliente.",
                 color: "warning",
             });
             return;
         }
 
-        const validationError = validateBookingRequest({
-            eventDate,
-            startTime,
-            eventType,
-            location,
-        });
-        if (validationError) {
-            addToast({
-                title: "Campos incompletos",
-                description: validationError,
-                color: "warning",
-            });
-            return;
-        }
-
-        const trimmedPrice = priceAgreed.trim();
+        const trimmedPrice = priceAgreed.trim().replace(",", ".");
         const price = Number(trimmedPrice);
         if (!trimmedPrice || Number.isNaN(price) || price < 10 || price > 50000) {
             addToast({
@@ -106,39 +377,51 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             return;
         }
 
+        const effectiveAddress = locationAddress.trim() || location?.address?.trim() || "";
+        const effectiveCity = locationCity.trim() || location?.city?.trim() || null;
+        const effectiveReference =
+            location && Number.isFinite(location.lat) && Number.isFinite(location.lng)
+                ? formatLocationReference(location.lat, location.lng)
+                : null;
+
         setIsSubmitting(true);
         try {
             const booking = await createMusicianBooking({
-                contractor_fullname: contractorFullname.trim(),
+                contractor_fullname: contractorFullname.trim() || null,
                 contractor_email: contractorEmail.trim().toLowerCase() || null,
-                contractor_phone: contractorPhone.trim() || null,
-                document_type: documentType || null,
+                contractor_phone: cleanPhone,
+                document_type: documentNumber.trim() ? documentType || "DNI" : null,
                 document_number: documentNumber.trim() || null,
-                contractor_address: contractorAddress.trim() || null,
-                contractor_city: contractorCity.trim() || null,
+                contractor_address: effectiveAddress || null,
+                contractor_city: effectiveCity,
                 event_date: eventDate,
                 start_time: normalizeStartTime(startTime),
-                end_time: null,
-                location_address: location!.address,
-                location_city: location!.city,
-                location_reference: formatLocationReference(location!.lat, location!.lng),
-                event_type: eventType,
+                end_time: endTime ? normalizeStartTime(endTime) : null,
+                location_address: effectiveAddress,
+                location_city: effectiveCity,
+                location_reference: effectiveReference,
+                event_type: eventType.trim(),
                 event_description: eventDescription.trim() || null,
                 price_agreed: price,
                 musician_quote_notes: quoteNotes.trim() || null,
+                already_paid: true,
+                ensemble_member_ids:
+                    isGroupProfile && selectedMemberIds.size > 0
+                        ? Array.from(selectedMemberIds)
+                        : null,
             });
 
             addToast({
-                title: "Cotización creada",
+                title: "Contrata registrada y confirmada",
                 description:
-                    "El cliente recibirá la cotización para aceptarla, firmar el contrato y pagar a través de Chivapp.",
+                    "Tu agenda quedó bloqueada y ya puedes gestionar la presentación y el reparto a tu banda.",
                 color: "success",
             });
             onSuccess?.();
             router.push(`/musician/bookings/${booking.id}`);
         } catch (error) {
             addToast({
-                title: "No se pudo crear",
+                title: "No se pudo registrar la contrata",
                 description:
                     error instanceof Error ? error.message : "Intenta de nuevo.",
                 color: "danger",
@@ -148,196 +431,513 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
         }
     }
 
+    const stepsMeta: Array<{ id: WizardStep; title: string }> = [
+        { id: 1, title: "1. Dictado o resumen" },
+        { id: 2, title: "2. Evento y lugar" },
+        { id: 3, title: "3. Cliente, precio y equipo" },
+    ];
+
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <section className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                    <Icon icon="material-symbols:person" width={20} className="text-primary" />
-                    <h3 className="font-semibold text-foreground">Datos del contratista</h3>
+        <div className="flex flex-col gap-5">
+            {/* Barra de pasos guiada */}
+            <nav aria-label="Pasos para registrar nueva contrata" className="grid grid-cols-3 gap-2">
+                {stepsMeta.map((item) => {
+                    const active = step === item.id;
+                    const completed = step > item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                                if (item.id < step) {
+                                    setStep(item.id);
+                                } else if (item.id === 2) {
+                                    setStep(2);
+                                } else if (item.id === 3 && validateStep2()) {
+                                    setStep(3);
+                                }
+                            }}
+                            className={`flex flex-col gap-1.5 text-left rounded-xl p-2.5 border transition-colors ${
+                                active
+                                    ? "border-primary bg-primary/10 text-primary-text"
+                                    : completed
+                                      ? "border-success/40 bg-success/5 text-success-text"
+                                      : "border-default-200 bg-content1 text-default-500"
+                            }`}
+                        >
+                            <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs font-semibold truncate">{item.title}</span>
+                                {completed ? (
+                                    <Icon icon="lucide:check-circle-2" width={14} className="shrink-0" />
+                                ) : null}
+                            </div>
+                            <div className="h-1 w-full rounded-full bg-default-200 overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all ${
+                                        completed
+                                            ? "w-full bg-success"
+                                            : active
+                                              ? "w-2/3 bg-primary"
+                                              : "w-0"
+                                    }`}
+                                />
+                            </div>
+                        </button>
+                    );
+                })}
+            </nav>
+
+            {step === 1 && (
+                <div className="flex flex-col gap-4 py-1">
+                    <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4 flex flex-col gap-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <Icon icon="material-symbols:mic-rounded" className="text-primary" width={22} />
+                                <span className="text-sm font-bold text-foreground">
+                                    Autocompletar con voz o texto (IA)
+                                </span>
+                            </div>
+                            <Button
+                                size="sm"
+                                color={isRecording ? "danger" : "primary"}
+                                variant={isRecording ? "solid" : "flat"}
+                                onPress={handleToggleVoiceRecording}
+                                isDisabled={isExtracting}
+                                startContent={
+                                    <Icon
+                                        icon={isRecording ? "lucide:square" : "lucide:mic"}
+                                        width={15}
+                                    />
+                                }
+                            >
+                                {isRecording ? "Detener grabación" : "Dictar por voz"}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-default-600">
+                            Dicta o pega lo que cerraste por WhatsApp (fecha, hora, lugar, teléfono del cliente, monto y canciones) para llenar los pasos siguientes en segundos.
+                        </p>
+                        <Textarea
+                            aria-label="Resumen del acuerdo por llamada o WhatsApp"
+                            minRows={3}
+                            maxRows={5}
+                            placeholder='Ej: "Cerré con Carlos (987654321) un cumpleaños el 2026-12-20 de 8pm a 10pm en Av. Mariscal Cáceres 820 Huamanga por S/ 800, pidió Las Mañanitas"'
+                            value={quickNote}
+                            onValueChange={setQuickNote}
+                            variant="bordered"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) {
+                                    e.preventDefault();
+                                    void handleExtractFromText();
+                                }
+                            }}
+                        />
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                            <Button
+                                variant="flat"
+                                radius="lg"
+                                size="sm"
+                                onPress={() => setStep(2)}
+                                endContent={<Icon icon="lucide:arrow-right" width={15} />}
+                            >
+                                Prefiero escribir paso a paso
+                            </Button>
+                            <Button
+                                color="primary"
+                                variant="solid"
+                                radius="lg"
+                                isLoading={isExtracting}
+                                onPress={() => void handleExtractFromText()}
+                                startContent={!isExtracting ? <Icon icon="lucide:sparkles" width={16} /> : undefined}
+                            >
+                                Extraer datos y continuar
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                        label="Nombre completo"
-                        isRequired
-                        value={contractorFullname}
-                        onValueChange={setContractorFullname}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Input
-                        label="Correo (opcional)"
-                        type="email"
-                        value={contractorEmail}
-                        onValueChange={setContractorEmail}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Input
-                        label="Teléfono (opcional)"
-                        value={contractorPhone}
-                        onValueChange={setContractorPhone}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Select
-                        label="Tipo de documento (opcional)"
-                        selectedKeys={documentType ? [documentType] : []}
-                        onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            setDocumentType(value ? String(value) : "");
-                        }}
-                        variant="bordered"
-                        radius="lg"
-                    >
-                        {DOCUMENT_TYPES.map((type) => (
-                            <SelectItem key={type}>{type}</SelectItem>
-                        ))}
-                    </Select>
-                    <Input
-                        label="Número de documento (opcional)"
-                        value={documentNumber}
-                        onValueChange={setDocumentNumber}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Input
-                        label="Ciudad del cliente (opcional)"
-                        value={contractorCity}
-                        onValueChange={setContractorCity}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Input
-                        className="sm:col-span-2"
-                        label="Dirección del cliente (opcional)"
-                        value={contractorAddress}
-                        onValueChange={setContractorAddress}
-                        variant="bordered"
-                        radius="lg"
-                    />
+            )}
+
+            {step === 2 && (
+                <div className="flex flex-col gap-4 py-1">
+                    <section className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <Icon icon="material-symbols:event" width={20} className="text-primary" />
+                            <h3 className="font-semibold text-foreground">Evento y horario</h3>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                            {EVENT_TYPES.map((type) => {
+                                const selected = eventType.trim().toLowerCase() === type.toLowerCase();
+                                return (
+                                    <Chip
+                                        key={type}
+                                        as="button"
+                                        type="button"
+                                        size="sm"
+                                        color={selected ? "primary" : "default"}
+                                        variant={selected ? "solid" : "flat"}
+                                        className="cursor-pointer"
+                                        onClick={() => setEventType(type)}
+                                    >
+                                        {type}
+                                    </Chip>
+                                );
+                            })}
+                        </div>
+
+                        <Input
+                            label="Tipo de evento"
+                            placeholder="Ej. Cumpleaños, Serenata, Boda"
+                            isRequired
+                            value={eventType}
+                            onValueChange={setEventType}
+                            variant="bordered"
+                            radius="lg"
+                        />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <Input
+                                label="Fecha del evento"
+                                type="date"
+                                isRequired
+                                min={minEventDate}
+                                value={eventDate}
+                                onValueChange={setEventDate}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                            <Input
+                                label="Hora de inicio"
+                                type="time"
+                                isRequired
+                                value={startTime}
+                                onValueChange={(val) => {
+                                    setStartTime(val);
+                                    if (!endTime && val) {
+                                        setEndTime(addHoursToTime(val, 1));
+                                    }
+                                }}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                            <Input
+                                label="Hora de fin / duración"
+                                type="time"
+                                value={endTime}
+                                onValueChange={setEndTime}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                        </div>
+
+                        {startTime ? (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs text-default-500 mr-1">Duración rápida:</span>
+                                {[1, 2, 3, 4].map((hrs) => (
+                                    <Button
+                                        key={hrs}
+                                        size="sm"
+                                        variant="flat"
+                                        radius="lg"
+                                        className="h-7 min-w-0 px-2.5 text-xs"
+                                        onPress={() => setEndTime(addHoursToTime(startTime, hrs))}
+                                    >
+                                        +{hrs} h
+                                    </Button>
+                                ))}
+                            </div>
+                        ) : null}
+                    </section>
+
+                    <Divider />
+
+                    <section className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <Icon icon="material-symbols:location-on" width={20} className="text-primary" />
+                                <h3 className="font-semibold text-foreground">Ubicación del evento</h3>
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="flat"
+                                color="primary"
+                                radius="lg"
+                                onPress={() => setShowMapPicker((v) => !v)}
+                                startContent={<Icon icon="lucide:map-pin" width={14} />}
+                            >
+                                {showMapPicker ? "Ocultar mapa" : "Colocar pin en el mapa"}
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <Input
+                                className="sm:col-span-2"
+                                label="Dirección exacta del evento"
+                                placeholder="Ej. Av. Mariscal Cáceres 820"
+                                isRequired
+                                value={locationAddress}
+                                onValueChange={setLocationAddress}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                            <Input
+                                label="Distrito / Ciudad"
+                                placeholder="Ej. Huamanga, Lima"
+                                value={locationCity}
+                                onValueChange={setLocationCity}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                        </div>
+
+                        {showMapPicker ? (
+                            <div className="pt-1">
+                                <LocationMapPickerField
+                                    value={location}
+                                    onChange={handleMapLocationChange}
+                                />
+                            </div>
+                        ) : null}
+
+                        <Textarea
+                            label="Notas y repertorio para la banda (opcional)"
+                            placeholder="Ej. Vestimenta formal, canciones pedidas por el cliente o indicaciones de llegada…"
+                            value={eventDescription}
+                            onValueChange={setEventDescription}
+                            variant="bordered"
+                            radius="lg"
+                            minRows={2}
+                        />
+                    </section>
+
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                        <Button
+                            variant="flat"
+                            radius="lg"
+                            onPress={() => setStep(1)}
+                            startContent={<Icon icon="lucide:arrow-left" width={16} />}
+                        >
+                            Volver al dictado
+                        </Button>
+                        <Button
+                            color="primary"
+                            radius="lg"
+                            className="font-semibold"
+                            onPress={() => {
+                                if (validateStep2()) {
+                                    setStep(3);
+                                }
+                            }}
+                            endContent={<Icon icon="lucide:arrow-right" width={16} />}
+                        >
+                            Siguiente: Cliente y precio
+                        </Button>
+                    </div>
                 </div>
-            </section>
+            )}
 
-            <Divider />
+            {step === 3 && (
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 py-1">
+                    <section className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <Icon icon="material-symbols:person" width={20} className="text-primary" />
+                            <h3 className="font-semibold text-foreground">Datos del cliente</h3>
+                        </div>
+                        <p className="text-xs text-default-500">
+                            Solo el celular es obligatorio. Si agregas su DNI, nombre o correo, dejaremos creado su perfil en borrador para que pueda completarlo si ingresa a Chivapp.
+                        </p>
 
-            <section className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                    <Icon icon="material-symbols:event" width={20} className="text-primary" />
-                    <h3 className="font-semibold text-foreground">Evento y lugar</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                        label="Fecha del evento"
-                        type="date"
-                        isRequired
-                        min={minEventDate}
-                        value={eventDate}
-                        onValueChange={setEventDate}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Input
-                        label="Hora de inicio"
-                        type="time"
-                        isRequired
-                        value={startTime}
-                        onValueChange={setStartTime}
-                        variant="bordered"
-                        radius="lg"
-                    />
-                    <Select
-                        className="sm:col-span-2"
-                        label="Tipo de evento"
-                        isRequired
-                        selectedKeys={eventType ? [eventType] : []}
-                        onSelectionChange={(keys) => {
-                            const value = Array.from(keys)[0];
-                            setEventType(value ? String(value) : "");
-                        }}
-                        variant="bordered"
-                        radius="lg"
-                    >
-                        {EVENT_TYPES.map((type) => (
-                            <SelectItem key={type}>{type}</SelectItem>
-                        ))}
-                    </Select>
-                </div>
-                <LocationMapPickerField value={location} onChange={setLocation} />
-                <Textarea
-                    label="Descripción del evento (opcional)"
-                    value={eventDescription}
-                    onValueChange={setEventDescription}
-                    variant="bordered"
-                    radius="lg"
-                    minRows={2}
-                />
-            </section>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Input
+                                label="Celular / WhatsApp del cliente"
+                                type="tel"
+                                inputMode="tel"
+                                placeholder="Ej. 987654321"
+                                isRequired
+                                value={contractorPhone}
+                                onValueChange={setContractorPhone}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                            <Input
+                                label="Nombre del cliente (opcional)"
+                                placeholder="Ej. Carlos Pérez"
+                                value={contractorFullname}
+                                onValueChange={setContractorFullname}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                            <Select
+                                label="Tipo de documento (opcional)"
+                                selectedKeys={documentType ? [documentType] : []}
+                                onSelectionChange={(keys) => {
+                                    const value = Array.from(keys)[0];
+                                    setDocumentType(value ? String(value) : "");
+                                }}
+                                variant="bordered"
+                                radius="lg"
+                            >
+                                {DOCUMENT_TYPES.map((type) => (
+                                    <SelectItem key={type}>{type}</SelectItem>
+                                ))}
+                            </Select>
+                            <Input
+                                label="Número de documento (opcional)"
+                                placeholder="DNI, CE o RUC"
+                                value={documentNumber}
+                                onValueChange={setDocumentNumber}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                            <Input
+                                className="sm:col-span-2"
+                                label="Correo del cliente (opcional)"
+                                type="email"
+                                inputMode="email"
+                                placeholder="cliente@ejemplo.com"
+                                value={contractorEmail}
+                                onValueChange={setContractorEmail}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                        </div>
+                    </section>
 
-            <Divider />
+                    <Divider />
 
-            <section className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                    <Icon icon="material-symbols:payments" width={20} className="text-primary" />
-                    <h3 className="font-semibold text-foreground">Precio</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                        label="Lo que tú recibes (precio total)"
-                        type="number"
-                        min={10}
-                        max={50000}
-                        step="0.01"
-                        isRequired
-                        value={priceAgreed}
-                        onValueChange={setPriceAgreed}
-                        variant="bordered"
-                        radius="lg"
-                        startContent={<span className="text-default-400 text-sm">S/</span>}
-                    />
-                </div>
-                <Textarea
-                    label="Notas / condiciones (opcional)"
-                    value={quoteNotes}
-                    onValueChange={setQuoteNotes}
-                    variant="bordered"
-                    radius="lg"
-                    minRows={2}
-                    placeholder="Detalle de horas, repertorio, condiciones especiales…"
-                />
-            </section>
+                    <section className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <Icon icon="material-symbols:payments" width={20} className="text-primary" />
+                            <h3 className="font-semibold text-foreground">Precio acordado</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Input
+                                label="Monto total acordado"
+                                type="number"
+                                min={10}
+                                max={50000}
+                                step="0.01"
+                                isRequired
+                                value={priceAgreed}
+                                onValueChange={setPriceAgreed}
+                                variant="bordered"
+                                radius="lg"
+                                startContent={<span className="text-default-400 text-sm">S/</span>}
+                                description="Pago gestionado directamente contigo (0 % comisión en Chivapp)."
+                            />
+                            <Input
+                                label="Nota de pago / saldo (opcional)"
+                                placeholder="Ej. Adelantó S/ 200 por Yape, resto en el evento"
+                                value={quoteNotes}
+                                onValueChange={setQuoteNotes}
+                                variant="bordered"
+                                radius="lg"
+                            />
+                        </div>
+                    </section>
 
-            <Divider />
+                    {isGroupProfile && activeMembers.length > 0 ? (
+                        <>
+                            <Divider />
+                            <section className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <div className="flex items-center gap-2">
+                                        <Icon icon="material-symbols:groups" width={20} className="text-primary" />
+                                        <h3 className="font-semibold text-foreground">
+                                            Convocar integrantes ({selectedMemberIds.size}/{activeMembers.length})
+                                        </h3>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="flat"
+                                        radius="lg"
+                                        onPress={() => {
+                                            if (selectedMemberIds.size === activeMembers.length) {
+                                                setSelectedMemberIds(new Set());
+                                            } else {
+                                                setSelectedMemberIds(new Set(activeMembers.map((m) => m.id)));
+                                            }
+                                        }}
+                                    >
+                                        {selectedMemberIds.size === activeMembers.length
+                                            ? "Desmarcar todos"
+                                            : "Seleccionar a toda la banda"}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-default-500">
+                                    Los integrantes marcados recibirán la convocatoria del evento apenas guardes la contrata.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                                    {activeMembers.map((member) => {
+                                        const isChecked = selectedMemberIds.has(member.id);
+                                        return (
+                                            <div
+                                                key={member.id}
+                                                className={`flex items-center justify-between gap-2 rounded-xl border p-2.5 transition-colors ${
+                                                    isChecked
+                                                        ? "border-primary/40 bg-primary/5"
+                                                        : "border-default-200 bg-content1"
+                                                }`}
+                                            >
+                                                <Checkbox
+                                                    isSelected={isChecked}
+                                                    onValueChange={() => toggleMemberSelection(member.id)}
+                                                    size="sm"
+                                                >
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-semibold text-foreground">
+                                                            {member.fullname}
+                                                        </span>
+                                                        {member.specialties.length > 0 ? (
+                                                            <span className="text-xs text-default-500">
+                                                                {member.specialties.slice(0, 2).join(", ")}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                </Checkbox>
+                                                {member.profile_slug ? (
+                                                    <a
+                                                        href={`/musicians/${member.profile_slug}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs font-medium text-primary-text hover:underline shrink-0"
+                                                    >
+                                                        Perfil solista
+                                                    </a>
+                                                ) : null}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        </>
+                    ) : null}
 
-            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
-                <Icon
-                    icon="material-symbols:info"
-                    width={22}
-                    className="text-primary shrink-0 mt-0.5"
-                />
-                <p className="text-sm text-default-600 leading-relaxed">
-                    Se creará como cotización. El cliente la recibirá para aceptarla, firmar
-                    el contrato y pagar el 100 % de forma segura a través de Chivapp con
-                    Mercado Pago. La reserva se confirma automáticamente al acreditarse el
-                    pago.
-                </p>
-            </div>
-
-            <div className="flex justify-end gap-2">
-                <Button
-                    type="submit"
-                    color="primary"
-                    radius="lg"
-                    className="font-semibold"
-                    isLoading={isSubmitting}
-                    startContent={
-                        isSubmitting ? undefined : (
-                            <Icon icon="material-symbols:add-circle" width={18} />
-                        )
-                    }
-                >
-                    Enviar cotización
-                </Button>
-            </div>
-        </form>
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                        <Button
+                            variant="flat"
+                            radius="lg"
+                            onPress={() => setStep(2)}
+                            startContent={<Icon icon="lucide:arrow-left" width={16} />}
+                        >
+                            Atrás
+                        </Button>
+                        <Button
+                            type="submit"
+                            color="primary"
+                            radius="lg"
+                            className="font-semibold"
+                            isLoading={isSubmitting}
+                            startContent={
+                                isSubmitting ? undefined : (
+                                    <Icon icon="material-symbols:check-circle" width={18} />
+                                )
+                            }
+                        >
+                            Registrar contrata confirmada
+                        </Button>
+                    </div>
+                </form>
+            )}
+        </div>
     );
 }

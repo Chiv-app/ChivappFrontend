@@ -7,7 +7,7 @@ import {
     ModalContent,
     ModalHeader,
 } from "@heroui/react";
-import MusicianCreateLinkForm from "@/components/booking/musician-create-link-form";
+import MusicianCreateBookingForm from "@/components/booking/musician-create-booking-form";
 
 type Props = {
     isOpen: boolean;
@@ -19,28 +19,30 @@ export default function MusicianCreateBookingModal({
     onOpenChange,
 }: Props) {
     return (
-        <Modal closeButton={<ModalCloseButton aria-label="Cerrar" />}
+        <Modal
+            closeButton={<ModalCloseButton aria-label="Cerrar" />}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
-            size="xl"
+            size="2xl"
             scrollBehavior="inside"
             placement="center"
             classNames={{
-                base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-xl",
+                base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-2xl",
                 header: "px-4 sm:px-6",
+                body: "px-4 sm:px-6",
             }}
         >
             <ModalContent>
                 {(onClose) => (
                     <>
                         <ModalHeader className="flex flex-col items-start gap-1 pb-2">
-                            <span className="text-xl font-bold">Generar contrata rápida</span>
+                            <span className="text-xl font-bold">Nueva contrata</span>
                             <span className="text-sm font-normal text-default-500">
-                                Dicta por voz o escribe lo que acordaste por llamada/WhatsApp y genera el enlace pre-llenado.
+                                Registra una reserva ya acordada y pagada por fuera para bloquear tu agenda y gestionar tu presentación.
                             </span>
                         </ModalHeader>
                         <ModalBody className="pb-6">
-                            <MusicianCreateLinkForm onSuccess={onClose} />
+                            <MusicianCreateBookingForm onSuccess={onClose} />
                         </ModalBody>
                     </>
                 )}

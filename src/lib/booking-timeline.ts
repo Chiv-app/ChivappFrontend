@@ -238,6 +238,7 @@ export function getCompletionGates(
     options?: {
         hasReview?: boolean;
         role?: "musician" | "contractor";
+        isExternalBooking?: boolean;
     },
 ): {
     canFinalize: boolean;
@@ -246,14 +247,20 @@ export function getCompletionGates(
 } {
     const hasReview = Boolean(options?.hasReview);
     const role = options?.role;
+    const isExternalBooking = Boolean(options?.isExternalBooking);
     const statusIndex = statusToStepIndex(status);
 
     const confirmedDone = statusIndex >= 3 && status !== "cancelled";
     const eventPhaseDone =
+        status === "payment_retained" ||
+        status === "change_pending" ||
         status === "in_progress" ||
         status === "payment_released" ||
         status === "completed";
-    const reviewDone = hasReview || status === "completed";
+    const reviewDone =
+        hasReview ||
+        status === "completed" ||
+        (isExternalBooking && role === "musician");
     const finalized = status === "completed";
 
     const gates: CompletionGate[] = [
@@ -267,7 +274,7 @@ export function getCompletionGates(
             id: "event",
             title: "Fase de evento activa",
             done: eventPhaseDone,
-            hint: "El músico debe habilitar la fase de evento.",
+            hint: "Se activa automáticamente al confirmarse la reserva.",
         },
         {
             id: "review",

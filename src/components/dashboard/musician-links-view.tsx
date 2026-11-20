@@ -6,9 +6,15 @@ import {
     Card,
     CardBody,
     Chip,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalHeader,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import MusicianCreateLinkForm from "@/components/booking/musician-create-link-form";
+import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import { getMyBookingLinks, BookingLinkOut } from "@/lib/booking-links";
 import { formatCurrency } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
@@ -17,6 +23,7 @@ export default function MusicianLinksView() {
     const [links, setLinks] = useState<BookingLinkOut[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     async function loadLinks() {
         setIsLoading(true);
@@ -65,11 +72,54 @@ export default function MusicianLinksView() {
                             Mis links de pago
                         </h1>
                         <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                            Aquí puedes ver todos los enlaces de pago que has generado para compartir con tus clientes.
+                            Aquí puedes ver y crear enlaces de pago pre-llenados para que tus clientes firmen el contrato y paguen en línea.
                         </p>
                     </div>
+                    <Button
+                        color="primary"
+                        radius="lg"
+                        className="font-semibold shadow-glow hover:shadow-glow-lg transition-shadow w-full sm:w-auto"
+                        startContent={<Icon icon="material-symbols:add" width={18} />}
+                        onPress={() => setIsCreateOpen(true)}
+                    >
+                        Nuevo link de pago
+                    </Button>
                 </div>
             </div>
+
+            <Modal
+                closeButton={<ModalCloseButton aria-label="Cerrar" />}
+                isOpen={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
+                size="xl"
+                scrollBehavior="inside"
+                placement="center"
+                classNames={{
+                    base: "mx-2 sm:mx-auto max-w-[calc(100vw-1rem)] sm:max-w-xl",
+                    header: "px-4 sm:px-6",
+                }}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col items-start gap-1 pb-2">
+                                <span className="text-xl font-bold">Nuevo link de pago</span>
+                                <span className="text-sm font-normal text-default-500">
+                                    Dicta por voz o escribe lo que acordaste y genera el enlace pre-llenado para cobrar por Chivapp.
+                                </span>
+                            </ModalHeader>
+                            <ModalBody className="pb-6">
+                                <MusicianCreateLinkForm
+                                    onSuccess={() => {
+                                        onClose();
+                                        void loadLinks();
+                                    }}
+                                />
+                            </ModalBody>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
 
             {loadError ? (
                 <Card className="border border-danger/30 bg-danger/5 shadow-soft">
@@ -107,8 +157,19 @@ export default function MusicianLinksView() {
                             No has creado ningún link todavía
                         </p>
                         <p className="text-sm text-default-500">
-                            Puedes generar uno desde la vista de Reservas usando &quot;Nueva contrata&quot;.
+                            Genera un enlace pre-llenado para que tu cliente revise el contrato y pague con tarjeta o Yape.
                         </p>
+                        <div>
+                            <Button
+                                color="primary"
+                                radius="lg"
+                                className="font-semibold mt-1"
+                                startContent={<Icon icon="material-symbols:add" width={18} />}
+                                onPress={() => setIsCreateOpen(true)}
+                            >
+                                Nuevo link de pago
+                            </Button>
+                        </div>
                     </CardBody>
                 </Card>
             ) : (
@@ -124,13 +185,13 @@ export default function MusicianLinksView() {
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="text-xl font-bold text-primary">{formatCurrency(link.price)}</p>
-                                                {link.source === "whatsapp_ai" && (
+                                                {(link.source === "whatsapp_ai" || link.source === "assistant_whatsapp") && (
                                                     <Chip size="sm" color="success" variant="flat">IA WhatsApp</Chip>
                                                 )}
-                                                {link.source === "voice_dictation" && (
+                                                {(link.source === "voice_dictation" || link.source === "voice_autocomplete") && (
                                                     <Chip size="sm" color="secondary" variant="flat">Dictado IA</Chip>
                                                 )}
-                                                {link.source === "simulator" && (
+                                                {(link.source === "simulator" || link.source === "assistant_simulator") && (
                                                     <Chip size="sm" color="primary" variant="flat">Simulador IA</Chip>
                                                 )}
                                             </div>

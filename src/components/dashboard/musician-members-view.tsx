@@ -594,9 +594,22 @@ export default function MusicianMembersView() {
                                         <div className="flex items-center gap-3">
                                             <Avatar name={member.fullname} size="sm" className="flex-shrink-0" />
                                             <div className="min-w-0">
-                                                <p className="font-semibold text-foreground truncate">
-                                                    {member.fullname}
-                                                </p>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <p className="font-semibold text-foreground truncate">
+                                                        {member.fullname}
+                                                    </p>
+                                                    {member.profile_slug ? (
+                                                        <a
+                                                            href={`/musicians/${member.profile_slug}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1 text-xs font-medium text-primary-text hover:underline"
+                                                        >
+                                                            <Icon icon="lucide:external-link" width={12} />
+                                                            Perfil solista
+                                                        </a>
+                                                    ) : null}
+                                                </div>
                                                 <p className="text-sm text-default-500 truncate">
                                                     {member.email}
                                                 </p>

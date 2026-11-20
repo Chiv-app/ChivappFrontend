@@ -26,7 +26,6 @@ import {
     getBooking,
     listBookingMessages,
     postBookingMessage,
-    startBookingEvent,
 } from "@/lib/bookings";
 import { getCompletionGates } from "@/lib/booking-timeline";
 import type {
@@ -94,9 +93,9 @@ export default function BookingConfirmedWorkspace({
     const [isSendingMessage, setIsSendingMessage] = useState(false);
 
     const [isCompleting, setIsCompleting] = useState(false);
-    const [isStarting, setIsStarting] = useState(false);
     const [isWithdrawingChange, setIsWithdrawingChange] = useState(false);
     const [isFinalReviewOpen, setIsFinalReviewOpen] = useState(false);
+    const isExternalBooking = Number(booking.platform_fee_amount ?? 0) === 0;
 
     const loadMessages = useCallback(() => {
         setMessagesError(null);
@@ -138,27 +137,6 @@ export default function BookingConfirmedWorkspace({
             });
         } finally {
             setIsSendingMessage(false);
-        }
-    }
-
-    async function handleStartEvent() {
-        setIsStarting(true);
-        try {
-            const updated = await startBookingEvent(booking.id);
-            onUpdated(updated);
-            addToast({
-                title: "Evento habilitado",
-                description: "Ya pueden compartir fotos y reseña.",
-                color: "success",
-            });
-        } catch (error) {
-            addToast({
-                title: "No se pudo iniciar",
-                description: error instanceof Error ? error.message : "Intenta de nuevo.",
-                color: "danger",
-            });
-        } finally {
-            setIsStarting(false);
         }
     }
 
@@ -205,6 +183,7 @@ export default function BookingConfirmedWorkspace({
         const { canFinalize, missing } = getCompletionGates(booking.status, {
             hasReview,
             role,
+            isExternalBooking,
         });
 
         if (!canFinalize) {
@@ -257,6 +236,8 @@ export default function BookingConfirmedWorkspace({
     const canChat =
         booking.status !== "cancelled" && booking.status !== "completed";
     const showReview =
+        booking.status === "payment_retained" ||
+        booking.status === "change_pending" ||
         booking.status === "in_progress" ||
         booking.status === "payment_released" ||
         booking.status === "completed";
@@ -265,22 +246,24 @@ export default function BookingConfirmedWorkspace({
     const canAddReview =
         !isMemberMode &&
         role === "contractor" &&
-        (booking.status === "in_progress" ||
+        (booking.status === "payment_retained" ||
+            booking.status === "change_pending" ||
+            booking.status === "in_progress" ||
             booking.status === "payment_released");
     const showCompletePanel =
         !isMemberMode && booking.status !== "cancelled" && !isCompleted;
     const completion = getCompletionGates(booking.status, {
         hasReview,
         role,
+        isExternalBooking,
     });
 
-    const showPaymentActions =
-        !isMemberMode &&
-        (role === "musician" && booking.status === "payment_retained");
     const showMusicianRecommend =
         !isMemberMode &&
         role === "musician" &&
-        (booking.status === "in_progress" ||
+        (booking.status === "payment_retained" ||
+            booking.status === "change_pending" ||
+            booking.status === "in_progress" ||
             booking.status === "payment_released" ||
             booking.status === "completed");
 
@@ -339,7 +322,9 @@ export default function BookingConfirmedWorkspace({
                 </CollapsiblePhaseSection>
             ) : null}
 
-            {booking.status === "in_progress" ? (
+            {booking.status === "payment_retained" ||
+            booking.status === "change_pending" ||
+            booking.status === "in_progress" ? (
                 <CollapsiblePhaseSection
                     icon="material-symbols:location-on"
                     title="Ubicación en vivo"
@@ -452,37 +437,6 @@ export default function BookingConfirmedWorkspace({
                     defaultExpanded={false}
                 >
                     <div className="flex flex-col gap-6 pt-2">
-                        {showPaymentActions ? (
-                            <div className="border border-warning/30 shadow-soft rounded-2xl bg-warning/5 p-6 flex flex-col gap-5">
-                                <div className="flex items-center gap-2">
-                                    <Icon icon="material-symbols:account-balance-wallet" width={22} />
-                                    <h3 className="text-lg font-bold">Pagos del evento</h3>
-                                </div>
-                                {role === "musician" &&
-                                booking.status === "payment_retained" ? (
-                                    <div className="flex flex-col gap-3">
-                                        <div>
-                                            <h4 className="font-semibold text-foreground">
-                                                Pago total cubierto
-                                            </h4>
-                                            <p className="text-sm text-default-600 mt-1">
-                                                La reserva se pagó al 100 % con Mercado Pago. Puedes
-                                                habilitar la fase de evento para fotos y reseña.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            color="primary"
-                                            radius="lg"
-                                            className="w-fit font-semibold"
-                                            isLoading={isStarting}
-                                            onPress={handleStartEvent}
-                                        >
-                                            Habilitar fase de evento
-                                        </Button>
-                                    </div>
-                                ) : null}
-                            </div>
-                        ) : null}
                         <BookingDocumentsCard
                             booking={booking}
                             title="Contrato y pagos"

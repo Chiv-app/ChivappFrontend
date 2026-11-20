@@ -14,6 +14,7 @@ export type EnsembleMemberOut = {
     invite_expired?: boolean;
     member_user_id: string | null;
     leader_name?: string | null;
+    profile_slug?: string | null;
     invited_at: string | null;
     joined_at: string | null;
     /** Quién terminó la relación: el líder (baja) o el integrante (rechazó o se salió). */

@@ -9,11 +9,7 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/booking-labels";
-import {
-    getContractorRecommendation,
-} from "@/lib/bookings";
 import {
     listBookingMemberInvites,
     listBookingMemberPayouts,
@@ -31,6 +27,8 @@ type Props = {
 };
 
 const EVENT_STATUSES = new Set([
+    "payment_retained",
+    "change_pending",
     "in_progress",
     "payment_released",
     "completed",
@@ -40,30 +38,22 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
     const [invites, setInvites] = useState<BookingMemberInviteOut[]>([]);
     const [payouts, setPayouts] = useState<BookingMemberPayoutOut[]>([]);
     const [amounts, setAmounts] = useState<Record<string, string>>({});
-    const [hasReview, setHasReview] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     const eventReady = EVENT_STATUSES.has(booking.status);
-    const canPay = eventReady && hasReview;
+    const canPay = eventReady;
     const accepted = invites.filter((i) => i.status === "accepted");
 
     const refresh = useCallback(async () => {
         setLoadError(null);
-        const [inviteRows, payoutRows, recommendation] = await Promise.all([
+        const [inviteRows, payoutRows] = await Promise.all([
             listBookingMemberInvites(booking.id),
             listBookingMemberPayouts(booking.id),
-            getContractorRecommendation(booking.id).catch((err) => {
-                if (err instanceof ApiError && err.status === 404) {
-                    return null;
-                }
-                throw err;
-            }),
         ]);
         setInvites(inviteRows);
         setPayouts(payoutRows);
-        setHasReview(recommendation != null);
 
         const next: Record<string, string> = {};
         for (const payout of payoutRows) {
@@ -252,28 +242,11 @@ export default function BookingMemberPayoutPanel({ booking }: Props) {
                     <h3 className="text-lg font-bold">Pago a integrantes</h3>
                 </div>
                 <p className="text-sm text-default-500">
-                    Se habilita al finalizar el show y después de dejar tu reseña al
-                    contratista. Si cierras sin pagar, la reserva seguirá en{" "}
+                    Se habilita al confirmarse la reserva. Si cierras sin pagar, la reserva seguirá en{" "}
                     <Link href="/musician/payouts" className="text-primary-text underline">
                         Pagos
                     </Link>
                     .
-                </p>
-            </div>
-        );
-    }
-
-    if (!hasReview) {
-        return (
-            <div className="border border-warning/30 shadow-soft rounded-2xl bg-warning/5 p-6 flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                    <Icon icon="material-symbols:rate-review" width={22} />
-                    <h3 className="text-lg font-bold">Pago a integrantes</h3>
-                </div>
-                <p className="text-sm text-default-600">
-                    Deja primero tu reseña al contratista para poder repartir y pagar
-                    a tus músicos con el monto del show (
-                    {formatCurrency(Number(booking.price_agreed || 0))}).
                 </p>
             </div>
         );
