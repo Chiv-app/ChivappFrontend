@@ -230,6 +230,33 @@ export default function BookingEnsemblePanel({ booking }: Props) {
         }
     }
 
+    async function handleInviteSingle(memberId: string) {
+        setWorkingId(memberId);
+        try {
+            const created = await createBookingMemberInvites(booking.id, [memberId]);
+            setInvites((prev) => {
+                const map = new Map(prev.map((i) => [i.ensemble_member_id, i]));
+                for (const row of created) map.set(row.ensemble_member_id, row);
+                return Array.from(map.values());
+            });
+            setSelected((prev) => prev.filter((id) => id !== memberId));
+            addToast({
+                title: "Correo de convocatoria enviado",
+                description: "Se envió la invitación del evento al correo del integrante.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo enviar la convocatoria",
+                description:
+                    error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setWorkingId(null);
+        }
+    }
+
     async function handleResend(memberId: string) {
         setWorkingId(memberId);
         try {
@@ -319,32 +346,52 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                 <p className="text-sm font-medium">Elegir integrantes</p>
                                 <div className="flex flex-col gap-2">
                                     {selectable.map((member) => (
-                                        <Checkbox
+                                        <div
                                             key={member.id}
-                                            isSelected={selected.includes(member.id)}
-                                            onValueChange={(checked) => {
-                                                setSelected((prev) =>
-                                                    checked
-                                                        ? [...prev, member.id]
-                                                        : prev.filter((id) => id !== member.id),
-                                                );
-                                            }}
+                                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-default-200/70 px-3 py-2"
                                         >
-                                            <span className="font-medium">{member.fullname}</span>
-                                            <span className="text-default-500 text-sm ml-2">
-                                                {member.specialties.join(", ")}
-                                            </span>
-                                            {member.status === "invited" ? (
-                                                <Chip
-                                                    size="sm"
-                                                    color="warning"
-                                                    variant="flat"
-                                                    className="ml-2 text-xs h-5"
-                                                >
-                                                    Invitación pendiente
-                                                </Chip>
-                                            ) : null}
-                                        </Checkbox>
+                                            <Checkbox
+                                                isSelected={selected.includes(member.id)}
+                                                onValueChange={(checked) => {
+                                                    setSelected((prev) =>
+                                                        checked
+                                                            ? [...prev, member.id]
+                                                            : prev.filter((id) => id !== member.id),
+                                                    );
+                                                }}
+                                            >
+                                                <span className="font-medium">{member.fullname}</span>
+                                                <span className="text-default-500 text-sm ml-2">
+                                                    {member.specialties.join(", ")}
+                                                </span>
+                                                {member.status === "invited" ? (
+                                                    <Chip
+                                                        size="sm"
+                                                        color="warning"
+                                                        variant="flat"
+                                                        className="ml-2 text-xs h-5"
+                                                    >
+                                                        Invitación pendiente
+                                                    </Chip>
+                                                ) : null}
+                                            </Checkbox>
+                                            <Button
+                                                size="sm"
+                                                variant="flat"
+                                                color="primary"
+                                                radius="lg"
+                                                isLoading={workingId === member.id}
+                                                startContent={
+                                                    <Icon
+                                                        icon="material-symbols:send"
+                                                        width={15}
+                                                    />
+                                                }
+                                                onPress={() => handleInviteSingle(member.id)}
+                                            >
+                                                Enviar correo
+                                            </Button>
+                                        </div>
                                     ))}
                                 </div>
                                 <Button
@@ -436,38 +483,36 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                                         </div>
                                                     )}
 
-                                                    {invite.status === "pending" && (
-                                                        <div className="flex items-center gap-2 ml-2">
-                                                            {invite.respond_url ? (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="flat"
-                                                                    radius="lg"
-                                                                    isIconOnly
-                                                                    aria-label="Copiar link"
-                                                                    onPress={() => copyLink(invite.respond_url)}
-                                                                >
-                                                                    <Icon icon="lucide:link" width={16} />
-                                                                </Button>
-                                                            ) : null}
+                                                    <div className="flex items-center gap-2 ml-2">
+                                                        {invite.respond_url ? (
                                                             <Button
                                                                 size="sm"
                                                                 variant="flat"
-                                                                color="primary"
                                                                 radius="lg"
-                                                                isLoading={workingId === invite.ensemble_member_id}
-                                                                startContent={
-                                                                    <Icon
-                                                                        icon="material-symbols:forward-to-inbox-outline"
-                                                                        width={16}
-                                                                    />
-                                                                }
-                                                                onPress={() => handleResend(invite.ensemble_member_id)}
+                                                                isIconOnly
+                                                                aria-label="Copiar link"
+                                                                onPress={() => copyLink(invite.respond_url)}
                                                             >
-                                                                Reenviar correo
+                                                                <Icon icon="lucide:link" width={16} />
                                                             </Button>
-                                                        </div>
-                                                    )}
+                                                        ) : null}
+                                                        <Button
+                                                            size="sm"
+                                                            variant="flat"
+                                                            color="primary"
+                                                            radius="lg"
+                                                            isLoading={workingId === invite.ensemble_member_id}
+                                                            startContent={
+                                                                <Icon
+                                                                    icon="material-symbols:forward-to-inbox-outline"
+                                                                    width={16}
+                                                                />
+                                                            }
+                                                            onPress={() => handleResend(invite.ensemble_member_id)}
+                                                        >
+                                                            Reenviar correo
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </li>
                                         );
