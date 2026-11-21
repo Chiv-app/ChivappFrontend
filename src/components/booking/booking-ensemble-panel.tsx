@@ -157,9 +157,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
 
     const refresh = useCallback(async () => {
         const [memberRows, inviteRows] = await Promise.all([
-            listEnsembleMembers({ status: "active" }).catch(() =>
-                listEnsembleMembers(),
-            ),
+            listEnsembleMembers(),
             listBookingMemberInvites(booking.id),
         ]);
         setMembers(memberRows.filter((m) => m.status !== "inactive"));

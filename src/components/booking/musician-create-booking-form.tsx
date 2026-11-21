@@ -104,10 +104,11 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                 const isGroup = (profile.profile_type || "solo") === "group";
                 setIsGroupProfile(isGroup);
                 if (isGroup) {
-                    return listEnsembleMembers({ status: "active" }).then((members) => {
+                    return listEnsembleMembers().then((members) => {
                         if (cancelled) return;
-                        setActiveMembers(members);
-                        setSelectedMemberIds(new Set(members.map((m) => m.id)));
+                        const eligible = members.filter((m) => m.status !== "inactive");
+                        setActiveMembers(eligible);
+                        setSelectedMemberIds(new Set(eligible.map((m) => m.id)));
                     });
                 }
             })

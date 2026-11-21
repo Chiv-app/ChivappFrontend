@@ -558,7 +558,7 @@ export default function ContractorGuidedOnboarding() {
                             <h1 ref={headingRef} tabIndex={-1} className="text-[28px] font-bold leading-tight tracking-tight outline-none">
                                 Perfil enviado
                             </h1>
-                            <p className="mx-auto mt-2.5 max-w-[42ch] text-default-500">Lo revisamos y te avisamos por la app y por correo en cuanto esté aprobado.</p>
+                            <p className="mx-auto mt-2.5 max-w-[42ch] text-default-500">Tu perfil de contratista ya quedó verificado y activo automáticamente.</p>
                         </div>
                     </div>
                 );

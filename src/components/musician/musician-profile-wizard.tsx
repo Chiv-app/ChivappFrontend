@@ -578,20 +578,18 @@ export default function MusicianProfileWizard() {
                 setIsEditingVerified(true);
             }
             if (showToast) {
-                if (wasPublished && updated.status === "draft") {
+                if (updated.status === "published") {
                     addToast({
-                        title: "Perfil en borrador",
-                        description: statusData.can_submit
-                            ? "Tus cambios quitaron la publicación. Ya puedes enviar a revisión sin recorrer los demás pasos."
-                            : "Tus cambios quitaron la publicación. Completa los campos obligatorios pendientes y envía a revisión.",
-                        color: "warning",
+                        title: "¡Perfil verificado y publicado!",
+                        description: "Tu perfil está activo y visible en el directorio.",
+                        color: "success",
                     });
                 } else {
                     addToast({
                         title: "Cambios guardados",
                         description: statusData.can_submit
-                            ? "Listo. Puedes enviar a revisión con este cambio."
-                            : "Guardado. Revisa los campos obligatorios pendientes antes de enviar.",
+                            ? "Listo. Ya tienes todos los campos obligatorios completos."
+                            : "Guardado. Completa los campos obligatorios pendientes para activar tu perfil automáticamente.",
                         color: statusData.can_submit ? "success" : "warning",
                     });
                 }
@@ -645,10 +643,12 @@ export default function MusicianProfileWizard() {
 
             const updated = await submitMusicianProfile();
             setProfile(updated);
+            await refresh();
             await refreshValidation();
+            setIsEditingVerified(false);
             addToast({
-                title: "Perfil enviado",
-                description: "Tu perfil fue enviado a revisión manual.",
+                title: "¡Perfil verificado y publicado!",
+                description: "Tu perfil quedó verificado y publicado automáticamente.",
                 color: "success",
             });
         } catch (error) {
@@ -1576,12 +1576,6 @@ export default function MusicianProfileWizard() {
                     setActiveSection("wizard");
                     setActiveStep(0);
                     setIsEditingVerified(true);
-                    addToast({
-                        title: "Modo edición",
-                        description:
-                            "Si guardas cambios, el perfil dejará de ser público hasta nueva aprobación.",
-                        color: "warning",
-                    });
                 }}
                 onOpenSettings={() => {
                     setActiveSection("settings");
@@ -1624,8 +1618,8 @@ export default function MusicianProfileWizard() {
         profile?.status === "pending_review"
             ? "Un administrador está revisando tu información. Podrás volver a editar si te lo solicitan."
             : isEditMode
-              ? "Solo son obligatorios Identidad, Especialidad y Documento. El resto es opcional."
-              : "Completa Identidad, Especialidad y Documento para enviar a revisión. El resto es opcional y puedes hacerlo después.";
+              ? "Solo son obligatorios Identidad, Especialidad, Ubicación/tarifa, Documento y Firma. Tu perfil se mantiene verificado y público al guardar."
+              : "Completa los pasos obligatorios para verificar y publicar tu perfil automáticamente. El resto es opcional y puedes hacerlo después.";
     const timelineBadge =
         isReReview && profile?.status !== "pending_review"
             ? "Edición de perfil"

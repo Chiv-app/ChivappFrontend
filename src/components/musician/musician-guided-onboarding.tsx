@@ -1296,7 +1296,7 @@ export default function MusicianGuidedOnboarding() {
                 const skipped = rows.filter((row) => row.optional && row.value === SIN_COMPLETAR).length;
                 return (
                     <>
-                        {title("Revisa y envía", "Un integrante del equipo revisa tu perfil. Te avisamos en la app y por correo.")}
+                        {title("Revisa y envía", "Confirma tus datos para verificar y publicar tu perfil automáticamente.")}
                         {skipped > 0 ? (
                             <p className="flex items-start gap-2 rounded-xl bg-primary/10 p-3 text-sm text-primary-text">
                                 <Icon icon="mdi:lightbulb-on-outline" width={18} className="mt-0.5 shrink-0" aria-hidden="true" />
@@ -1339,12 +1339,12 @@ export default function MusicianGuidedOnboarding() {
                         <span className="flex h-20 w-20 items-center justify-center rounded-full bg-success/15 text-success-text">
                             <Icon icon="material-symbols:check" width={40} aria-hidden="true" />
                         </span>
-                        {title("Perfil enviado", "Lo revisamos y te avisamos por la app y por correo en cuanto esté aprobado.")}
+                        {title("Perfil enviado", "Tu perfil ya quedó verificado y publicado automáticamente en el directorio.")}
                         <ol className="grid w-full max-w-sm gap-3 text-left text-sm">
                             {[
-                                ["mdi:account-check-outline", "Revisamos tu perfil", "Un integrante del equipo valida tus datos."],
-                                ["mdi:bell-outline", "Te avisamos", "Por la app y por correo."],
-                                ["mdi:inbox-arrow-down-outline", "Recibes solicitudes", "Los clientes te encuentran y te escriben."],
+                                ["mdi:account-check-outline", "Perfil verificado", "Tus datos obligatorios están completos y tu cuenta ya está activa."],
+                                ["mdi:bell-outline", "Visible en el directorio", "Los contratistas ya pueden encontrar tu perfil y enviarte solicitudes."],
+                                ["mdi:inbox-arrow-down-outline", "Recibes solicitudes", "Gestiona contratas, links de pago y agenda desde tu panel."],
                             ].map(([icon, heading, text]) => (
                                 <li key={heading} className="flex items-start gap-3">
                                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-text">

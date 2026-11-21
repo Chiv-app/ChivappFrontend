@@ -155,7 +155,7 @@ export default function ProfileCompletionBanner() {
                                   ? " Tu perfil no aparece en las búsquedas porque falta tu ciudad o tu tarifa. Complétalas para volver a aparecer."
                                   : validation.is_public
                                     ? " Tu perfil está publicado, pero faltan requisitos nuevos por completar."
-                                    : " Termina los pasos pendientes y envíalo a revisión (24–48 h hábiles)."}
+                                    : " Termina los pasos pendientes para verificar y activar tu perfil automáticamente."}
                         </p>
                     </div>
                     <Button

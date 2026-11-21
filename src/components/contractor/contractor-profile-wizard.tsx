@@ -181,20 +181,18 @@ export default function ContractorProfileWizard() {
                 setIsEditingVerified(true);
             }
             if (showToast) {
-                if (wasPublished && updated.status === "draft") {
+                if (updated.status === "published") {
                     addToast({
-                        title: "Perfil en borrador",
-                        description: statusData.can_submit
-                            ? "Tus cambios quitaron la verificación. Ya puedes enviar a revisión sin recorrer los demás pasos."
-                            : "Tus cambios quitaron la verificación. Completa los campos obligatorios pendientes y envía a revisión.",
-                        color: "warning",
+                        title: "¡Perfil verificado!",
+                        description: "Tu cuenta de contratista está activa y verificada.",
+                        color: "success",
                     });
                 } else {
                     addToast({
                         title: "Cambios guardados",
                         description: statusData.can_submit
-                            ? "Listo. Puedes enviar a revisión con este cambio."
-                            : "Guardado. Revisa los campos obligatorios pendientes antes de enviar.",
+                            ? "Listo. Ya tienes todos los campos obligatorios completos."
+                            : "Guardado. Completa los campos obligatorios pendientes para verificar tu cuenta automáticamente.",
                         color: statusData.can_submit ? "success" : "warning",
                     });
                 }
@@ -247,10 +245,16 @@ export default function ContractorProfileWizard() {
 
             const updated = await submitContractorProfile();
             setProfile(updated);
+            try {
+                await refresh();
+            } catch {
+                // auth refresh is non-blocking
+            }
             await refreshValidation();
+            setIsEditingVerified(false);
             addToast({
-                title: "Perfil enviado",
-                description: "Tu verificación fue enviada a revisión manual.",
+                title: "¡Perfil verificado!",
+                description: "Tu perfil de contratista quedó verificado automáticamente.",
                 color: "success",
             });
         } catch (error) {
@@ -435,12 +439,6 @@ export default function ContractorProfileWizard() {
                 onEdit={() => {
                     setActiveStep(0);
                     setIsEditingVerified(true);
-                    addToast({
-                        title: "Modo edición",
-                        description:
-                            "Si guardas cambios, tu perfil volverá a revisión y las reservas se pausarán temporalmente.",
-                        color: "warning",
-                    });
                 }}
             />
         );
@@ -474,8 +472,8 @@ export default function ContractorProfileWizard() {
         profile?.status === "pending_review"
             ? "Un administrador está revisando tu información."
             : isEditMode
-              ? "Modifica lo que necesites y envía a revisión."
-              : "Valida tu identidad para habilitar reservas. Los contratos de cada evento los diseña el músico.";
+              ? "Modifica lo que necesites; tu perfil se mantiene verificado mientras tenga los campos obligatorios."
+              : "Completa tus datos e identidad para verificar tu cuenta automáticamente y habilitar reservas.";
     const timelineBadge =
         isEditMode || profile?.status === "draft"
             ? "Edición de perfil"

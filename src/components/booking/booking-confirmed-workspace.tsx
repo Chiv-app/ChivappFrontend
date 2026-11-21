@@ -54,7 +54,7 @@ function LockedFeatureCard({ title, icon, actionText }: { title: string, icon: s
                 </div>
                 <h3 className="text-lg font-bold">{title}</h3>
                 <p className="text-sm text-default-600 max-w-sm">
-                    Para usar esta función, necesitas completar tu perfil y esperar la validación del administrador.
+                    Para usar esta función, completa los datos obligatorios de tu perfil para verificar tu cuenta automáticamente.
                 </p>
                 <Button
                     as="a"
