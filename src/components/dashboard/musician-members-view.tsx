@@ -333,20 +333,13 @@ export default function MusicianMembersView() {
             setMembers((prev) =>
                 prev.map((m) => (m.id === updated.id ? updated : m)),
             );
-            setInviteLink(updated.invite_url);
-            setEditing(updated);
-            setCreatedMember(null);
-            setForm({
-                fullname: updated.fullname,
-                email: updated.email,
-                phone: updated.phone ?? "",
-                specialties: [...updated.specialties],
-                notes: updated.notes ?? "",
-            });
-            setIsFormOpen(true);
+            if (editing?.id === updated.id) {
+                setEditing(updated);
+                setInviteLink(updated.invite_url);
+            }
             addToast({
-                title: "Enlace regenerado",
-                description: "Cópialo y envíaselo al integrante.",
+                title: "Correo de invitación reenviado",
+                description: `Se envió nuevamente la invitación a ${updated.email}.`,
                 color: "success",
             });
         } catch (error) {
@@ -722,15 +715,14 @@ export default function MusicianMembersView() {
                                             <Tooltip
                                                 content={
                                                     meta.key === "expired"
-                                                        ? "Regenerar enlace"
-                                                        : "Reenviar enlace"
+                                                        ? "Reenviar nueva invitación por correo"
+                                                        : "Reenviar correo de invitación"
                                                 }
                                                 placement="top"
                                             >
                                                 <Button
-                                                    isIconOnly
                                                     size="sm"
-                                                    variant="light"
+                                                    variant="flat"
                                                     color={
                                                         meta.key === "expired"
                                                             ? "warning"
@@ -739,20 +731,23 @@ export default function MusicianMembersView() {
                                                     radius="lg"
                                                     aria-label={
                                                         meta.key === "expired"
-                                                            ? "Regenerar enlace"
-                                                            : "Reenviar enlace"
+                                                            ? "Reenviar invitación"
+                                                            : "Reenviar correo"
                                                     }
                                                     isLoading={workingId === member.id}
+                                                    startContent={
+                                                        <Icon
+                                                            icon={
+                                                                meta.key === "expired"
+                                                                    ? "material-symbols:refresh"
+                                                                    : "material-symbols:forward-to-inbox-outline"
+                                                            }
+                                                            width={16}
+                                                        />
+                                                    }
                                                     onPress={() => handleResend(member)}
                                                 >
-                                                    <Icon
-                                                        icon={
-                                                            meta.key === "expired"
-                                                                ? "material-symbols:refresh"
-                                                                : "material-symbols:forward-to-inbox-outline"
-                                                        }
-                                                        width={18}
-                                                    />
+                                                    Reenviar correo
                                                 </Button>
                                             </Tooltip>
                                         ) : null}
@@ -1034,23 +1029,17 @@ export default function MusicianMembersView() {
                                             <div className="rounded-2xl border border-primary/30 bg-primary/10 px-4 py-4 flex flex-col gap-3">
                                                 <div>
                                                     <p className="text-sm font-semibold text-foreground">
-                                                        Enlace de invitación
+                                                        Invitación por correo electrónico
                                                     </p>
                                                     <p className="text-xs text-default-500 mt-1">
-                                                        Disponible hasta que cree su
-                                                        contraseña.
+                                                        Se envió una invitación a <strong>{editing.email}</strong>. Si aún no la vio o expiró, puedes reenviarle el correo ahora mismo.
                                                     </p>
                                                 </div>
                                                 {modalInviteLink ? (
                                                     <p className="text-xs text-default-700 break-all rounded-xl bg-content1/80 px-3 py-2 border border-default-200">
                                                         {modalInviteLink}
                                                     </p>
-                                                ) : (
-                                                    <p className="text-xs text-warning">
-                                                        No hay enlace vigente. Regenera
-                                                        uno nuevo.
-                                                    </p>
-                                                )}
+                                                ) : null}
                                                 {editing.invite_expires_at ? (
                                                     <p className="text-xs text-default-500">
                                                         {editing.invite_expired
@@ -1059,24 +1048,25 @@ export default function MusicianMembersView() {
                                                     </p>
                                                 ) : null}
                                                 <div className="flex flex-wrap gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        color="primary"
-                                                        variant="flat"
-                                                        radius="lg"
-                                                        isDisabled={!modalInviteLink}
-                                                        startContent={
-                                                            <Icon
-                                                                icon="material-symbols:content-copy"
-                                                                width={16}
-                                                            />
-                                                        }
-                                                        onPress={() =>
-                                                            copyInvite(modalInviteLink)
-                                                        }
-                                                    >
-                                                        Copiar enlace
-                                                    </Button>
+                                                    {modalInviteLink ? (
+                                                        <Button
+                                                            size="sm"
+                                                            color="primary"
+                                                            variant="flat"
+                                                            radius="lg"
+                                                            startContent={
+                                                                <Icon
+                                                                    icon="material-symbols:content-copy"
+                                                                    width={16}
+                                                                />
+                                                            }
+                                                            onPress={() =>
+                                                                copyInvite(modalInviteLink)
+                                                            }
+                                                        >
+                                                            Copiar enlace
+                                                        </Button>
+                                                    ) : null}
                                                     <Button
                                                         size="sm"
                                                         variant="flat"
@@ -1084,7 +1074,7 @@ export default function MusicianMembersView() {
                                                             editingState?.key ===
                                                             "expired"
                                                                 ? "warning"
-                                                                : "default"
+                                                                : "primary"
                                                         }
                                                         radius="lg"
                                                         isLoading={
@@ -1105,9 +1095,7 @@ export default function MusicianMembersView() {
                                                             handleResend(editing)
                                                         }
                                                     >
-                                                        {editingState?.key === "expired"
-                                                            ? "Regenerar enlace"
-                                                            : "Reenviar enlace"}
+                                                        Reenviar correo de invitación
                                                     </Button>
                                                 </div>
                                             </div>

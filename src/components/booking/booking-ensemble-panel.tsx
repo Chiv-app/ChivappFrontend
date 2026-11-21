@@ -334,6 +334,16 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                             <span className="text-default-500 text-sm ml-2">
                                                 {member.specialties.join(", ")}
                                             </span>
+                                            {member.status === "invited" ? (
+                                                <Chip
+                                                    size="sm"
+                                                    color="warning"
+                                                    variant="flat"
+                                                    className="ml-2 text-xs h-5"
+                                                >
+                                                    Invitación pendiente
+                                                </Chip>
+                                            ) : null}
                                         </Checkbox>
                                     ))}
                                 </div>
@@ -347,7 +357,7 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                         <Icon icon="material-symbols:send" width={18} />
                                     }
                                 >
-                                    Asociar al evento
+                                    Asociar y enviar correo
                                 </Button>
                             </div>
                         ) : null}
@@ -426,27 +436,35 @@ export default function BookingEnsemblePanel({ booking }: Props) {
                                                         </div>
                                                     )}
 
-                                                    {invite.respond_url && invite.status === "pending" && (
+                                                    {invite.status === "pending" && (
                                                         <div className="flex items-center gap-2 ml-2">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="flat"
-                                                                radius="lg"
-                                                                isIconOnly
-                                                                aria-label="Copiar link"
-                                                                onPress={() => copyLink(invite.respond_url)}
-                                                            >
-                                                                <Icon icon="lucide:link" width={16} />
-                                                            </Button>
+                                                            {invite.respond_url ? (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="flat"
+                                                                    radius="lg"
+                                                                    isIconOnly
+                                                                    aria-label="Copiar link"
+                                                                    onPress={() => copyLink(invite.respond_url)}
+                                                                >
+                                                                    <Icon icon="lucide:link" width={16} />
+                                                                </Button>
+                                                            ) : null}
                                                             <Button
                                                                 size="sm"
                                                                 variant="flat"
                                                                 color="primary"
                                                                 radius="lg"
                                                                 isLoading={workingId === invite.ensemble_member_id}
+                                                                startContent={
+                                                                    <Icon
+                                                                        icon="material-symbols:forward-to-inbox-outline"
+                                                                        width={16}
+                                                                    />
+                                                                }
                                                                 onPress={() => handleResend(invite.ensemble_member_id)}
                                                             >
-                                                                Reenviar
+                                                                Reenviar correo
                                                             </Button>
                                                         </div>
                                                     )}
