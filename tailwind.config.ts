@@ -24,8 +24,8 @@ const config = {
                 "4xl": "2rem",
             },
             maxWidth: {
-                content: "80rem",
-                footer: "75rem",
+                content: "100%",
+                footer: "100%",
             },
             boxShadow: {
                 soft: "0 2px 12px -4px rgb(16 24 32 / 0.06)",

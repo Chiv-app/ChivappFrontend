@@ -393,11 +393,11 @@ function StickyCollapsingTimeline({
             ref={shellRef}
             className={`sticky z-40 top-[var(--app-navbar-height)] transition-[padding,background-color,border-color,backdrop-filter] ${TRANSITION} ${
                 collapsed
-                    ? "bg-background/85 backdrop-blur-xl border-b border-default-200/50 py-2 sm:py-2.5 -mx-4 px-4 lg:-mx-8 lg:px-8 shadow-xs"
+                    ? "bg-background/85 backdrop-blur-xl border-b border-default-200/50 py-2 sm:py-2.5 -mx-3 px-3 sm:-mx-6 sm:px-6 shadow-xs"
                     : "bg-transparent border-b border-transparent py-0 mb-1"
             }`}
         >
-            <div className="max-w-6xl mx-auto">
+            <div className="w-full">
                 <div
                     className={`overflow-hidden transition-all ${TRANSITION} ${
                         collapsed

@@ -30,7 +30,7 @@ function Section({
 
 export default function PrivacyPage() {
     return (
-        <div className="container mx-auto max-w-content px-4 sm:px-6 py-12 sm:py-16 flex flex-col gap-10">
+        <div className="w-full max-w-content mx-auto px-3 sm:px-6 py-12 sm:py-16 flex flex-col gap-10">
             <header className="flex flex-col gap-2">
                 <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
                     Política de Privacidad y Protección de Datos

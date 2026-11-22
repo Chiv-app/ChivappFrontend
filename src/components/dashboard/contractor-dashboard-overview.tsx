@@ -25,7 +25,7 @@ export default function ContractorDashboardOverview({
     retainedExpenses = 0,
 }: Props) {
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+        <div className="w-full flex flex-col gap-8">
             <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
                     Tu espacio de gestión

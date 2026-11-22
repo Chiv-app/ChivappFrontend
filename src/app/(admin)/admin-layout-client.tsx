@@ -57,8 +57,8 @@ export default function AdminLayoutClient({
         return (
             <div className="min-h-[100dvh] bg-background" aria-busy="true">
                 <div className="h-[var(--app-navbar-height)] border-b border-default-200 bg-content1 animate-pulse" />
-                <div className="p-4 lg:p-8">
-                    <div className="max-w-4xl mx-auto h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
+                <div className="px-3 sm:px-6 py-4 lg:py-6">
+                    <div className="w-full h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
                 </div>
             </div>
         );
@@ -68,7 +68,7 @@ export default function AdminLayoutClient({
         <div className="min-h-[100dvh] bg-background">
             <AppNavbar />
             <div className="pt-[var(--app-navbar-height)]">
-                <div className="p-4 lg:p-8">
+                <div className="w-full px-3 sm:px-6 py-4 lg:py-6">
                     <AdminShell>{children}</AdminShell>
                 </div>
             </div>

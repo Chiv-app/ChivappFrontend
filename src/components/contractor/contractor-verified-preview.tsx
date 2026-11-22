@@ -28,7 +28,7 @@ export default function ContractorVerifiedPreview({
     const documentUrl = resolveUploadUrl(profile.id_document_url);
 
     return (
-        <div className="max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <div className="rounded-3xl border border-success/25 bg-gradient-to-br from-success/10 via-content1 to-content1 px-6 py-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
@@ -39,9 +39,8 @@ export default function ContractorVerifiedPreview({
                             <VerifiedBadge size="sm" />
                         </div>
                         <h1 className="text-3xl font-bold text-foreground">Mi perfil</h1>
-                        <p className="text-default-600 mt-2 max-w-xl">
-                            Tu identidad ya está validada. Si editas datos, el perfil volverá a
-                            revisión y se deshabilitarán temporalmente las reservas.
+                        <p className="text-default-600 mt-2 max-w-2xl">
+                            Tu perfil está verificado y activo. Puedes actualizar tu información cuando lo necesites.
                         </p>
                     </div>
                     <Button

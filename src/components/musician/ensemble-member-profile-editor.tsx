@@ -138,7 +138,7 @@ export default function EnsembleMemberProfileEditor({
                         />
                         <Input
                             label="Teléfono"
-                            placeholder="+51 987 654 321"
+                            placeholder="Ej. +51 987 654 321"
                             value={phone}
                             onValueChange={setPhone}
                             variant="bordered"

@@ -40,7 +40,7 @@ export default function WhyChivappSection({ reviews = [] }: Props) {
             id="why-chivapp"
             className="scroll-mt-24 py-24 md:py-32 border-t border-default-200/60 bg-content1/20"
         >
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full px-3 sm:px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}

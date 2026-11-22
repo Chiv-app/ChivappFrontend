@@ -53,7 +53,7 @@ export default function MusicianLinksView() {
 
     if (isLoading) {
         return (
-            <div className="max-w-4xl mx-auto flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4">
                 <div className="h-28 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
                 <div className="h-64 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
@@ -61,7 +61,7 @@ export default function MusicianLinksView() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
                 <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
                     <div className="min-w-0">
@@ -173,7 +173,7 @@ export default function MusicianLinksView() {
                     </CardBody>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                     {links.map((link) => {
                         const isExpired = link.status === "expired" || new Date(link.expires_at) < new Date();
                         const linkUrl = typeof window !== "undefined" ? `${window.location.origin}/pay/${link.token}` : "";

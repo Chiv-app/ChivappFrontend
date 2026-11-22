@@ -275,10 +275,10 @@ export default function ContractorProfileWizard() {
         switch (currentStepDef.key) {
             case "personal":
                 return (
-                    <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
                             label="Nombre completo"
-                            placeholder="Tu nombre y apellidos completos"
+                            placeholder="Ej. Juan Pérez Gómez"
                             value={fullname}
                             onValueChange={setFullname}
                             variant="bordered"
@@ -287,7 +287,7 @@ export default function ContractorProfileWizard() {
                         />
                         <Input
                             label="Nombre de usuario (opcional)"
-                            placeholder="ej. juan-perez"
+                            placeholder="Ej. juan-perez"
                             description={usernameCheck ? usernameCheck.message : "Identificador único para tu perfil público."}
                             color={usernameCheck ? (usernameCheck.available ? "success" : "danger") : "default"}
                             errorMessage={usernameCheck && !usernameCheck.available ? usernameCheck.message : undefined}
@@ -307,7 +307,7 @@ export default function ContractorProfileWizard() {
                         />
                         <Input
                             label="Teléfono"
-                            placeholder="+51 999 999 999"
+                            placeholder="Ej. +51 999 888 777"
                             value={phone}
                             onValueChange={setPhone}
                             variant="bordered"
@@ -328,6 +328,7 @@ export default function ContractorProfileWizard() {
                         </Select>
                         <Input
                             label="Número de documento"
+                            placeholder="Ej. 71234567"
                             value={documentNumber}
                             onValueChange={setDocumentNumber}
                             variant="bordered"
@@ -335,6 +336,7 @@ export default function ContractorProfileWizard() {
                         />
                         <Input
                             label="Ciudad"
+                            placeholder="Ej. Lima"
                             value={city}
                             onValueChange={setCity}
                             variant="bordered"
@@ -342,6 +344,7 @@ export default function ContractorProfileWizard() {
                         />
                         <Input
                             label="Dirección"
+                            placeholder="Ej. Av. Principal 123, Miraflores"
                             value={address}
                             onValueChange={setAddress}
                             variant="bordered"
@@ -349,11 +352,13 @@ export default function ContractorProfileWizard() {
                         />
                         <Textarea
                             label="Notas adicionales (opcional)"
+                            placeholder="Ej. Organizador frecuente de eventos familiares y corporativos..."
                             value={bio}
                             onValueChange={setBio}
                             variant="bordered"
+                            className="md:col-span-2"
                         />
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-default-200/80 bg-default-50/50 mt-1">
+                        <div className="md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-default-200/80 bg-default-50/50 mt-1">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 rounded-xl bg-primary/10 text-primary-text shrink-0">
                                     <Icon icon="solar:lock-password-bold-duotone" className="text-2xl" />
@@ -401,7 +406,7 @@ export default function ContractorProfileWizard() {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto">
+            <div className="w-full">
                 <div className="h-96 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
             </div>
         );
@@ -409,7 +414,7 @@ export default function ContractorProfileWizard() {
 
     if (loadError || !displayValidation) {
         return (
-            <div className="max-w-6xl mx-auto">
+            <div className="w-full">
                 <Card className="border border-default-200/70 shadow-soft">
                     <CardBody className="gap-4 p-6">
                         <h1 className="text-2xl font-bold">Verificación de contratista</h1>
@@ -480,7 +485,7 @@ export default function ContractorProfileWizard() {
             : "Verificación de contratista";
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+        <div className="w-full flex flex-col gap-8">
             {profile?.status === "published" && isEditingVerified ? (
                 <div className="flex justify-end">
                     <Button

@@ -76,7 +76,7 @@ export default function MusicianDashboardPage() {
     return (
         <div className="flex flex-col gap-4">
             {loadError ? (
-                <div className="max-w-6xl mx-auto w-full rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="w-full rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <p className="text-sm font-semibold text-danger">
                             Error al cargar indicadores del panel

@@ -26,10 +26,17 @@ export const UI = {
         "font-semibold shadow-glow hover:shadow-glow-lg transition-shadow",
     skeleton: "rounded-4xl bg-content1 border border-default-200/70 animate-pulse",
     input: {
-        inputWrapper: "border-default-400 data-[hover=true]:border-default-500",
-        input: "placeholder:text-default-500",
+        label: "text-foreground/90 font-semibold",
+        inputWrapper:
+            "bg-content1 border-default-300/90 dark:border-default-200 shadow-xs data-[hover=true]:border-default-400 group-data-[focus=true]:border-primary group-data-[focus=true]:ring-2 group-data-[focus=true]:ring-primary/20 transition-all",
+        input: "text-foreground font-medium placeholder:text-slate-400/85 dark:placeholder:text-slate-500 placeholder:font-normal focus:placeholder:opacity-45 transition-opacity",
+        description: "text-default-500 text-xs",
     },
     authInput: {
-        input: "placeholder:text-default-600",
+        label: "text-foreground/90 font-semibold",
+        inputWrapper:
+            "bg-content1 border-default-300/90 dark:border-default-200 shadow-xs data-[hover=true]:border-default-400 group-data-[focus=true]:border-primary group-data-[focus=true]:ring-2 group-data-[focus=true]:ring-primary/20 transition-all",
+        input: "text-foreground font-medium placeholder:text-slate-400/85 dark:placeholder:text-slate-500 placeholder:font-normal focus:placeholder:opacity-45 transition-opacity",
+        description: "text-default-500 text-xs",
     },
 } as const;

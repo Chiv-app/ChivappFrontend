@@ -258,13 +258,13 @@ export default function MusicianDetailView({
                 <div
                     className={
                         isOwner
-                            ? "pb-28 -mx-4 lg:-mx-8 -mt-4 lg:-mt-8"
+                            ? "pb-28 -mx-3 sm:-mx-6 -mt-4 lg:-mt-6"
                             : "pb-28"
                     }
                 >
                     {isOwner ? (
                         <div className="border-b border-success/20 bg-gradient-to-br from-success/10 via-content1 to-content1">
-                            <div className="container mx-auto max-w-content px-4 sm:px-6 lg:px-10 py-5 sm:py-6">
+                            <div className="w-full max-w-content mx-auto px-3 sm:px-6 py-5 sm:py-6">
                                 <div className="flex flex-wrap items-start justify-between gap-4">
                                     <div>
                                         <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -276,10 +276,8 @@ export default function MusicianDetailView({
                                         <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
                                             Mi perfil público
                                         </h2>
-                                        <p className="text-default-600 mt-1.5 max-w-xl text-sm sm:text-base">
-                                            Así te ven los contratistas. Si editas información, el
-                                            perfil volverá a revisión y dejará de mostrarse hasta nueva
-                                            aprobación.
+                                        <p className="text-default-600 mt-1.5 max-w-2xl text-sm sm:text-base">
+                                            Así te ven los contratistas. Puedes actualizar tu información y portafolio cuando lo necesites.
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
@@ -444,7 +442,7 @@ export default function MusicianDetailView({
                         ) : null}
                     </section>
 
-                    <div className="container mx-auto max-w-content px-4 sm:px-6 lg:px-10 py-10 lg:py-16">
+                    <div className="w-full max-w-content mx-auto px-3 sm:px-6 py-10 lg:py-16">
                         {!isOwner ? (
                             <div className="mb-8">
                                 <Link
@@ -825,7 +823,7 @@ export default function MusicianDetailView({
                         isOwner ? "Acciones del perfil" : "Precio y contratación"
                     }
                 >
-                    <div className="container mx-auto max-w-content px-4 sm:px-6 lg:px-10 py-3 sm:py-4 flex items-center justify-between gap-4">
+                    <div className="w-full max-w-content mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 sm:gap-6 min-w-0">
                             {hasPricing ? (
                                 <>

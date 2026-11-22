@@ -256,7 +256,7 @@ export default function MusicianEarningsView() {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4">
                 <div className="h-32 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
                 <div className="h-48 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
@@ -267,7 +267,7 @@ export default function MusicianEarningsView() {
     const showMember = isEnsembleMember;
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-secondary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
                 <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
                     <div className="min-w-0">

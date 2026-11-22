@@ -1035,7 +1035,7 @@ export default function MusicianGuidedOnboarding() {
                                 id="guide-price"
                                 label="Tarifa por evento"
                                 labelPlacement="outside"
-                                placeholder="300"
+                                placeholder="Ej. 300"
                                 variant="bordered"
                                 radius="lg"
                                 size="lg"
@@ -1059,7 +1059,7 @@ export default function MusicianGuidedOnboarding() {
                                 id="guide-price-hour"
                                 label="Tarifa por hora (opcional)"
                                 labelPlacement="outside"
-                                placeholder="120"
+                                placeholder="Ej. 120"
                                 variant="bordered"
                                 radius="lg"
                                 size="lg"
@@ -1366,7 +1366,7 @@ export default function MusicianGuidedOnboarding() {
 
     return (
         <div className="min-h-[100dvh] bg-background text-foreground">
-            <header className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4">
+            <header className="flex w-full items-center justify-between gap-3 px-3 sm:px-6 py-4">
                 <AppLogo height={30} priority />
                 {isAdditional && step !== "enviado" ? (
                     <div className="flex items-center gap-2">
@@ -1403,7 +1403,7 @@ export default function MusicianGuidedOnboarding() {
                 {announce}
             </p>
 
-            <div className="mx-auto grid max-w-5xl gap-10 px-4 pb-8 lg:grid-cols-[minmax(0,32rem)_23rem] lg:justify-center lg:gap-14">
+            <div className="grid w-full gap-10 px-3 sm:px-6 pb-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-14">
                 <form onSubmit={handleSubmit} noValidate aria-label="Crear tu perfil" className="flex min-h-[calc(100dvh-6rem)] flex-col">
                     <div className="grid gap-1.5 pb-3">
                         <div className="flex min-h-11 items-center justify-between gap-2">

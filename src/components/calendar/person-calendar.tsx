@@ -313,7 +313,7 @@ export default function PersonCalendar({ role }: Props) {
     }
 
     return (
-        <section aria-labelledby="calendar-title" className="mx-auto grid w-full max-w-6xl gap-4">
+        <section aria-labelledby="calendar-title" className="grid w-full gap-4">
             <header className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <Button isIconOnly variant="bordered" radius="full" aria-label={activeView === "month" ? "Mes anterior" : activeView === "week" ? "Semana anterior" : "Día anterior"} onPress={() => go(-1)} className="min-h-11 min-w-11">

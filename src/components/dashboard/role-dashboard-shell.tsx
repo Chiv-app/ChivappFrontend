@@ -44,8 +44,8 @@ function AuthGateSkeleton() {
     return (
         <div className="min-h-[100dvh] bg-background" aria-busy="true">
             <div className="h-[var(--app-navbar-height)] border-b border-default-200 bg-content1 animate-pulse" />
-            <div className="p-4 lg:p-8">
-                <div className="max-w-4xl mx-auto h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
+            <div className="px-3 sm:px-6 py-4 lg:py-6">
+                <div className="w-full h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
             </div>
         </div>
     );
@@ -241,12 +241,12 @@ export default function RoleDashboardShell({
             <AppNavbar />
 
             <div className="pt-[var(--app-navbar-height)] pb-20 lg:pb-8">
-                <EmailVerificationBanner className="px-4 lg:px-8 pt-3" />
+                <EmailVerificationBanner className="px-3 sm:px-6 pt-3" />
 
                 {user.is_email_verified === false &&
                 pathname !== profilePath &&
                 isEmailVerifiedOnlyPath(pathname, navItems) ? (
-                    <div className="flex flex-col gap-3 px-4 lg:px-8 pt-4">
+                    <div className="flex flex-col gap-3 px-3 sm:px-6 pt-4">
                         <div
                             role="alert"
                             className="rounded-4xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-default-700 shadow-soft"
@@ -259,7 +259,7 @@ export default function RoleDashboardShell({
                 {!isVerified &&
                 (pathname !== profilePath ||
                     status?.status === "pending_review") ? (
-                    <div className="flex flex-col gap-3 px-4 lg:px-8 pt-4">
+                    <div className="flex flex-col gap-3 px-3 sm:px-6 pt-4">
                         {!isVerified &&
                         pathname !== profilePath &&
                         !ensembleBypass ? (
@@ -291,7 +291,7 @@ export default function RoleDashboardShell({
                     </div>
                 ) : null}
 
-                <main className="p-4 lg:p-8">{children}</main>
+                <main className="w-full px-3 sm:px-6 py-4 lg:py-6">{children}</main>
             </div>
 
             {showMobileBottomNav && (

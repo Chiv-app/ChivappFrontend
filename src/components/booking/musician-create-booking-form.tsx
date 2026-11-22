@@ -823,7 +823,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                             </Select>
                             <Input
                                 label="Número de documento (opcional)"
-                                placeholder="DNI, CE o RUC"
+                                placeholder="Ej. 71234567 (DNI, CE o RUC)"
                                 value={documentNumber}
                                 onValueChange={setDocumentNumber}
                                 variant="bordered"
@@ -834,7 +834,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                 label="Correo del cliente (opcional)"
                                 type="email"
                                 inputMode="email"
-                                placeholder="cliente@ejemplo.com"
+                                placeholder="Ej. cliente@correo.com"
                                 value={contractorEmail}
                                 onValueChange={setContractorEmail}
                                 variant="bordered"

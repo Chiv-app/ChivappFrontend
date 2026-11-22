@@ -21,8 +21,8 @@ type Props = {
 export default function HomeView({ musicians, hasMoreMusicians = false, stats = null, reviews = [] }: Props) {
     return (
         <div className="relative w-full overflow-x-clip">
-            <div className="absolute top-[var(--app-navbar-height)] left-0 right-0 z-40 px-4 sm:px-6">
-                <div className="max-w-[1400px] mx-auto">
+            <div className="absolute top-[var(--app-navbar-height)] left-0 right-0 z-40 px-3 sm:px-6">
+                <div className="w-full">
                     <ProfileCompletionBanner />
                 </div>
             </div>

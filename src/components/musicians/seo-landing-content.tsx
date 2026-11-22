@@ -111,7 +111,7 @@ export default function SeoLandingContent({
     return (
         <section
             aria-labelledby="seo-landing-title"
-            className="max-w-[1800px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 mt-12 sm:mt-16"
+            className="w-full px-3 sm:px-6 mt-12 sm:mt-16"
         >
             {jsonLd.map((entry, index) => (
                 <script
@@ -121,7 +121,7 @@ export default function SeoLandingContent({
                 />
             ))}
 
-            <div className="max-w-3xl flex flex-col gap-6 text-default-600 text-sm sm:text-base leading-relaxed">
+            <div className="w-full flex flex-col gap-6 text-default-600 text-sm sm:text-base leading-relaxed">
                 <div className="flex flex-col gap-2">
                     <h2
                         id="seo-landing-title"

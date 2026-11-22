@@ -524,7 +524,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                placeholder="cliente@ejemplo.com"
+                placeholder="Ej. cliente@correo.com"
                 description="Si lo indicas, el enlace quedará reservado únicamente para ese correo."
                 value={clientEmail}
                 onValueChange={setClientEmail}

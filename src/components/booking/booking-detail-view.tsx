@@ -280,7 +280,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto h-96 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
+            <div className="w-full h-96 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
         );
     }
 
@@ -315,7 +315,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
             );
         }
         return (
-            <div className="max-w-6xl mx-auto text-center py-16">
+            <div className="w-full text-center py-16">
                 <p className="text-default-500 mb-4">No se encontró esta reserva.</p>
                 <Button as={Link} href={listHref} variant="flat" radius="lg">
                     Volver al listado
@@ -342,7 +342,7 @@ export default function BookingDetailView({ bookingId, role }: Props) {
     const canCancel = !isMemberView && isCancellableBookingStatus(booking.status);
 
     return (
-        <div className="max-w-6xl mx-auto px-0">
+        <div className="w-full px-0">
             <CancelBookingModal
                 bookingId={booking.id}
                 isOpen={isCancelOpen}

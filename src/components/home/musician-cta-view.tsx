@@ -8,13 +8,13 @@ export default function MusicianCtaSection() {
     const { openRegister } = useAuthModal();
 
     return (
-        <section className="px-4 sm:px-6 lg:px-8 pb-10 pt-16">
+        <section className="px-3 sm:px-6 pb-10 pt-16">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="max-w-[1600px] mx-auto bg-foreground text-background rounded-[3rem] px-6 py-20 md:py-32 text-center relative overflow-hidden"
+                className="w-full bg-foreground text-background rounded-[3rem] px-6 py-20 md:py-32 text-center relative overflow-hidden"
             >
                 {/* Efecto visual oscuro de fondo */}
                 <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />

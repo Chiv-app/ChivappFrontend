@@ -19,9 +19,9 @@ export default function HomeSeoSection() {
     return (
         <section
             aria-labelledby="home-seo-title"
-            className="container mx-auto max-w-content px-4 sm:px-6 py-12 sm:py-16"
+            className="w-full max-w-content mx-auto px-3 sm:px-6 py-12 sm:py-16"
         >
-            <div className="max-w-3xl flex flex-col gap-3 text-default-600 text-sm sm:text-base leading-relaxed">
+            <div className="w-full flex flex-col gap-3 text-default-600 text-sm sm:text-base leading-relaxed">
                 <h2
                     id="home-seo-title"
                     className="text-xl sm:text-2xl font-bold text-foreground tracking-tight"

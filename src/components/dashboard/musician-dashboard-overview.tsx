@@ -35,7 +35,7 @@ export default function MusicianDashboardOverview({
     const recentBookingAlerts = bookingNotifications.slice(0, 4);
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+        <div className="w-full flex flex-col gap-8">
             <section className="rounded-3xl border border-default-200/70 bg-gradient-to-br from-primary/20 via-primary/5 to-content1 px-6 py-7 overflow-hidden relative shadow-soft">
                 <div className="pointer-events-none absolute -top-16 -right-16 size-64 rounded-full bg-primary/20 blur-3xl" />
                 <div className="relative z-10 max-w-2xl">
@@ -325,7 +325,7 @@ export default function MusicianDashboardOverview({
                         Accesos directos a lo que usas día a día.
                     </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                     {MUSICIAN_MODULES.map((module) => (
                                                     <DashboardModuleCard
                                 key={module.title}

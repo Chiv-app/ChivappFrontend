@@ -55,7 +55,7 @@ export default async function GenreCityPage({ params }: Props) {
 
     return (
         <div className="pt-4 sm:pt-6 pb-16 sm:pb-24">
-            <header className="max-w-[1800px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 mb-5">
+            <header className="w-full px-3 sm:px-6 mb-5">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
                     Contratar {genreInSentence} en {cityName}
                 </h1>

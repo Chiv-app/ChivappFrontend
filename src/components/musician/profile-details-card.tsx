@@ -89,7 +89,7 @@ export default function ProfileDetailsCard({ onSaved }: Props = {}) {
     const dirty = useMemo(() => form !== null && JSON.stringify(form) !== initial, [form, initial]);
 
     if (loadFailed) return null;
-    if (!form) return <div className="mx-auto h-40 w-full max-w-3xl animate-pulse rounded-2xl bg-default-100" />;
+    if (!form) return <div className="h-40 w-full animate-pulse rounded-2xl bg-default-100" />;
 
     const setDetails = (update: (current: ProfileDetails) => ProfileDetails) => {
         setForm((current) => (current ? { ...current, details: update(current.details) } : current));
@@ -175,7 +175,7 @@ export default function ProfileDetailsCard({ onSaved }: Props = {}) {
     const citiesFull = (form.details.other_cities?.length ?? 0) >= MAX_OTHER_CITIES;
 
     return (
-        <Card className="mx-auto w-full max-w-3xl" shadow="sm">
+        <Card className="w-full" shadow="sm">
             <CardHeader className="flex flex-col items-start gap-1 px-5 pt-5 sm:px-6">
                 <h2 className="text-xl font-bold">Detalles de tu perfil</h2>
                 <p className="text-sm text-default-500">

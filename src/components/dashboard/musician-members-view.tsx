@@ -436,7 +436,7 @@ export default function MusicianMembersView() {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4">
                 <div className={UI.skeleton + " h-32"} />
                 <div className={UI.skeleton + " h-64"} />
             </div>
@@ -444,7 +444,7 @@ export default function MusicianMembersView() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <section className={UI.pageHero}>
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div className="min-w-0">
@@ -476,7 +476,7 @@ export default function MusicianMembersView() {
                     aria-label="Buscar integrantes por nombre o correo"
                     value={query}
                     onValueChange={setQuery}
-                    placeholder="Buscar por nombre o correo"
+                    placeholder="Buscar por nombre o correo..."
                     variant="bordered"
                     radius="lg"
                     startContent={
@@ -486,7 +486,7 @@ export default function MusicianMembersView() {
                             className="text-default-400"
                         />
                     }
-                    className="sm:max-w-sm"
+                    className="sm:max-w-md"
                     classNames={UI.authInput}
                 />
                 <div className="flex flex-wrap gap-2">
@@ -965,7 +965,7 @@ export default function MusicianMembersView() {
                                             <Input
                                                 label="Correo electrónico"
                                                 type="email"
-                                                placeholder="integrante@email.com"
+                                                placeholder="Ej. integrante@correo.com"
                                                 description={
                                                     editing
                                                         ? "El correo no se puede cambiar"
@@ -985,7 +985,7 @@ export default function MusicianMembersView() {
                                             />
                                             <Input
                                                 label="Teléfono"
-                                                placeholder="Opcional"
+                                                placeholder="Ej. +51 999 888 777 (opcional)"
                                                 variant="bordered"
                                                 value={form.phone}
                                                 onValueChange={(value) =>
@@ -1007,13 +1007,13 @@ export default function MusicianMembersView() {
                                                     specialties,
                                                 }))
                                             }
-                                            placeholder="Ej. Trompeta"
+                                            placeholder="Ej. Trompeta, Voz"
                                             suggestions={INSTRUMENT_SUGGESTIONS}
                                         />
 
                                         <Textarea
                                             label="Notas internas"
-                                            placeholder="Solo tú las ves (opcional)"
+                                            placeholder="Escribe una nota interna visible solo para ti (opcional)..."
                                             variant="bordered"
                                             value={form.notes}
                                             onValueChange={(value) =>
@@ -1023,6 +1023,7 @@ export default function MusicianMembersView() {
                                                 }))
                                             }
                                             minRows={2}
+                                            classNames={UI.input}
                                         />
 
                                         {editing && isInvitePending(editing) ? (

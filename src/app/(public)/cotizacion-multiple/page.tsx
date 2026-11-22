@@ -13,7 +13,7 @@ export const metadata: Metadata = buildPageMetadata({
 
 export default function MultiQuotePage() {
     return (
-        <div className="container mx-auto max-w-content px-4 sm:px-6 py-10 sm:py-14">
+        <div className="w-full max-w-content mx-auto px-3 sm:px-6 py-8 sm:py-12">
             <Suspense fallback={<p className="text-default-500">Cargando…</p>}>
                 <MultiQuoteForm />
             </Suspense>

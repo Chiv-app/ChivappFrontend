@@ -53,7 +53,7 @@ export default function MusicianProfileEditor() {
                         void loadProfile();
                     }}
                 />
-                <div className="max-w-3xl mx-auto w-full px-4 md:px-0">
+                <div className="w-full">
                     <Suspense fallback={null}>
                         <ConnectedAccountsCard />
                     </Suspense>

@@ -167,7 +167,7 @@ export default function MusicianBookingsView() {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4">
                 <div className="h-28 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
                 <div className="h-64 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
@@ -175,7 +175,7 @@ export default function MusicianBookingsView() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <CancelBookingModal
                 bookingId={cancelTargetId}
                 isOpen={cancelTargetId != null}
@@ -322,10 +322,10 @@ export default function MusicianBookingsView() {
                             setQuery(val);
                             setPage(1);
                         }}
-                        placeholder="Buscar por evento, cliente, ciudad o estado"
+                        placeholder="Buscar por evento, cliente, ciudad o estado..."
                         variant="bordered"
                         radius="lg"
-                        className="w-full max-w-sm"
+                        className="w-full max-w-md"
                         startContent={
                             <Icon
                                 icon="material-symbols:search"
@@ -396,7 +396,7 @@ export default function MusicianBookingsView() {
                     <div
                         className={
                             layout === "cards"
-                                ? "grid grid-cols-1 md:grid-cols-2 gap-3"
+                                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4"
                                 : "flex flex-col gap-3"
                         }
                     >

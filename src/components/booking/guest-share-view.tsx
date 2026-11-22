@@ -149,7 +149,7 @@ export default function GuestShareView({ token }: { token: string }) {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-16">
+            <div className="w-full px-3 sm:px-6 py-16">
                 <div className="h-72 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
         );
@@ -216,7 +216,7 @@ export default function GuestShareView({ token }: { token: string }) {
     }
 
     return (
-        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-8 sm:py-10 flex flex-col gap-6">
+        <div className="w-full px-3 sm:px-6 py-8 sm:py-10 flex flex-col gap-6">
             <Card className="border border-default-200/70 shadow-soft overflow-hidden">
                 <div className="bg-gradient-to-br from-primary/15 via-primary/5 to-transparent px-4 py-5 sm:px-6 sm:py-6">
                     <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-3">

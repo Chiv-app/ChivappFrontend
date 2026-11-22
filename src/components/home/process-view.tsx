@@ -31,7 +31,7 @@ export default function ProcessSection() {
             id="how-it-works"
             className="scroll-mt-24 border-t border-default-200/60 bg-content1/40 py-24 md:py-32 overflow-hidden"
         >
-            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full px-3 sm:px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}

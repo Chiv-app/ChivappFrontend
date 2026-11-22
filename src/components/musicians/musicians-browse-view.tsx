@@ -91,21 +91,21 @@ function FilterField({
         <label
             htmlFor={id}
             className={[
-                "flex items-center gap-2 h-11 px-3.5 rounded-2xl border transition-colors bg-content1/95 shadow-soft focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus",
+                "flex items-center gap-2 h-12 px-3.5 rounded-2xl border transition-all bg-content1/95 shadow-soft focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary",
                 isActive
                     ? "border-primary bg-primary/5"
-                    : "border-default-200/80 hover:border-default-400 focus-within:border-primary",
+                    : "border-default-300/80 hover:border-default-400",
             ].join(" ")}
         >
             <Icon
                 icon={icon}
                 width={18}
                 height={18}
-                className={isActive ? "text-primary-text shrink-0" : "text-default-500 shrink-0"}
+                className={isActive ? "text-primary-text shrink-0" : "text-default-400 shrink-0"}
                 aria-hidden="true"
             />
             <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-xs font-semibold text-default-600 leading-none">
+                <span className="text-xs font-semibold text-foreground/85 leading-none">
                     {label}
                 </span>
                 <input
@@ -118,7 +118,7 @@ function FilterField({
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
                     aria-label={label}
-                    className="w-full min-w-[6.5rem] bg-transparent outline-none text-base sm:text-sm text-foreground placeholder:text-default-500 mt-0.5"
+                    className="w-full min-w-[6.5rem] bg-transparent outline-none text-base sm:text-sm font-medium text-foreground placeholder:font-normal placeholder:text-slate-400/85 dark:placeholder:text-slate-500 focus:placeholder:opacity-45 mt-0.5"
                 />
                 {listId && suggestions ? (
                     <datalist id={listId}>
@@ -299,7 +299,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
         <div className="w-full">
             <section
                 aria-label="Filtros de búsqueda de músicos"
-                className="max-w-[1800px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16"
+                className="w-full px-3 sm:px-6"
             >
                 <div className="rounded-3xl border border-default-200/80 bg-content1/90 backdrop-blur-md p-3.5 sm:p-4 shadow-soft">
                     <div className="flex items-center justify-between gap-2 sm:hidden mb-2.5">
@@ -484,10 +484,10 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                 </div>
             </section>
 
-            <div className="max-w-[1800px] mx-auto w-full px-4 sm:px-8 md:px-12 lg:px-16 pt-6 sm:pt-8">
+            <div className="w-full px-3 sm:px-6 pt-6 sm:pt-8">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7 lg:gap-8">
-                        {Array.from({ length: 6 }).map((_, i) => (
+                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-7 lg:gap-8">
+                        {Array.from({ length: 8 }).map((_, i) => (
                             <div
                                 key={i}
                                 className="rounded-3xl sm:rounded-4xl bg-content1 border border-default-200/70 animate-pulse min-h-64 sm:min-h-72"
@@ -524,7 +524,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                             </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7 lg:gap-8 grid-flow-dense auto-rows-[10px]">
+                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-7 lg:gap-8 grid-flow-dense auto-rows-[10px]">
                             {musicians.map((m, i) => {
                                 const isSelected = selected.some((item) => item.id === m.id);
                                 return (

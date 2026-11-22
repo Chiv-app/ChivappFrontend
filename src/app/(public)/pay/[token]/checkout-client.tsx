@@ -683,7 +683,7 @@ export default function CheckoutClient({
         <div className="absolute top-1/2 right-0 w-[450px] h-[450px] bg-warning/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 flex flex-col gap-6 sm:gap-8">
+      <div className="relative z-10 w-full px-3 sm:px-6 py-6 lg:py-8 flex flex-col gap-6 sm:gap-8">
         {/* 1. HERO CABECERA */}
         <section className="bg-content1 rounded-[2rem] p-6 sm:p-8 border border-divider shadow-2xl relative overflow-hidden flex flex-col lg:flex-row gap-8 lg:gap-12">
           <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>

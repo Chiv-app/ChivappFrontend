@@ -206,7 +206,7 @@ export default function MusicianReportsView() {
 
     if (isLoading && !data) {
         return (
-            <div className="max-w-6xl mx-auto flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4">
                 <div className="h-28 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
                 <div className="h-72 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
@@ -214,7 +214,7 @@ export default function MusicianReportsView() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-secondary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft">
                 <Chip color="secondary" variant="flat" size="sm" className="mb-3">
                     Analítica

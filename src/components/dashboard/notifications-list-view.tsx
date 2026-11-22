@@ -99,7 +99,7 @@ export default function NotificationsListView() {
 
     if (isLoading && notifications.length === 0) {
         return (
-            <div className="max-w-3xl mx-auto h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
+            <div className="w-full h-64 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
         );
     }
 
@@ -109,7 +109,7 @@ export default function NotificationsListView() {
     );
 
     return (
-        <div className="max-w-3xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-6 py-6 shadow-soft overflow-hidden relative flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">

@@ -9,7 +9,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     const pathname = usePathname();
 
     return (
-        <div className="max-w-[1400px] mx-auto min-w-0">
+        <div className="w-full min-w-0">
             <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-4 sm:gap-6 items-start">
                 <aside className="lg:sticky lg:top-[calc(var(--app-navbar-height)+1rem)] min-w-0">
                     <div className="rounded-3xl border border-default-200/70 bg-content1 shadow-soft p-2 sm:p-3">

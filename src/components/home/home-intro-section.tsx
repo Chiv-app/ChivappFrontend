@@ -28,7 +28,7 @@ export default function HomeIntroSection({
     return (
         <section
             id="musicians"
-            className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pb-32"
+            className="w-full px-3 sm:px-6 pb-32"
         >
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

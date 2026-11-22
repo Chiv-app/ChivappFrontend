@@ -454,6 +454,112 @@ div:has(> [data-slot="wrapper"]) > div:first-child,
 
 
 /* ==========================================================================
+   Global Form Controls, Inputs, Textareas, Selects & Placeholders UX/UI
+   ========================================================================== */
+
+/* 1. Placeholders: Clearly muted, lighter weight (400), and further dimmed on focus
+   so users never confuse placeholder hints with actual entered data */
+input::placeholder,
+textarea::placeholder,
+[data-slot="input"]::placeholder,
+[data-slot="textarea"]::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder,
+.dark [data-slot="input"]::placeholder,
+.dark [data-slot="textarea"]::placeholder {
+  color: #64748b !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder,
+[data-slot="input"]:focus::placeholder,
+[data-slot="textarea"]:focus::placeholder {
+  opacity: 0.45 !important;
+}
+
+/* 2. Entered Input & Textarea Values: Medium weight (500) and full foreground contrast
+   for unmistakable visual distinction from placeholders */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+[data-slot="input"],
+[data-slot="textarea"] {
+  font-weight: 500;
+  color: hsl(var(--heroui-foreground));
+}
+
+/* 3. HeroUI Input / Textarea / Select Wrapper Surface, Border & Focus Ring */
+[data-slot="input-wrapper"],
+[data-slot="trigger"] {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+html:not(.dark) [data-slot="input-wrapper"]:not([data-invalid="true"]):not([data-focus="true"]),
+html:not(.dark) [data-slot="trigger"]:not([data-invalid="true"]):not([data-focus="true"]):not([data-open="true"]) {
+  border-color: rgba(148, 163, 184, 0.55);
+  background-color: #ffffff;
+}
+
+.dark [data-slot="input-wrapper"]:not([data-invalid="true"]):not([data-focus="true"]),
+.dark [data-slot="trigger"]:not([data-invalid="true"]):not([data-focus="true"]):not([data-open="true"]) {
+  border-color: rgba(148, 163, 184, 0.24);
+  background-color: rgba(26, 34, 44, 0.85);
+}
+
+[data-slot="input-wrapper"][data-hover="true"]:not([data-focus="true"]):not([data-invalid="true"]),
+[data-slot="trigger"][data-hover="true"]:not([data-focus="true"]):not([data-open="true"]):not([data-invalid="true"]) {
+  border-color: rgba(100, 116, 139, 0.75);
+}
+
+.dark [data-slot="input-wrapper"][data-hover="true"]:not([data-focus="true"]):not([data-invalid="true"]),
+.dark [data-slot="trigger"][data-hover="true"]:not([data-focus="true"]):not([data-open="true"]):not([data-invalid="true"]) {
+  border-color: rgba(148, 163, 184, 0.42);
+}
+
+[data-slot="input-wrapper"][data-focus="true"]:not([data-invalid="true"]),
+[data-slot="input-wrapper"]:focus-within:not([data-invalid="true"]),
+[data-slot="trigger"][data-focus="true"]:not([data-invalid="true"]),
+[data-slot="trigger"][data-open="true"]:not([data-invalid="true"]) {
+  border-color: #1698b8 !important;
+  box-shadow: 0 0 0 3px rgba(22, 152, 184, 0.16) !important;
+}
+
+.dark [data-slot="input-wrapper"][data-focus="true"]:not([data-invalid="true"]),
+.dark [data-slot="input-wrapper"]:focus-within:not([data-invalid="true"]),
+.dark [data-slot="trigger"][data-focus="true"]:not([data-invalid="true"]),
+.dark [data-slot="trigger"][data-open="true"]:not([data-invalid="true"]) {
+  border-color: #46c0d9 !important;
+  box-shadow: 0 0 0 3px rgba(70, 192, 217, 0.2) !important;
+}
+
+/* 4. Form Labels & Select Values */
+[data-slot="label"] {
+  font-weight: 600 !important;
+  color: hsl(var(--heroui-foreground) / 0.9);
+}
+
+[data-slot="trigger"][data-has-value="true"] [data-slot="value"] {
+  font-weight: 500;
+  color: hsl(var(--heroui-foreground)) !important;
+}
+
+[data-slot="trigger"]:not([data-has-value="true"]) [data-slot="value"] {
+  font-weight: 400;
+  color: #94a3b8 !important;
+}
+
+.dark [data-slot="trigger"]:not([data-has-value="true"]) [data-slot="value"] {
+  color: #64748b !important;
+}
+
+/* ==========================================================================
    Mobile UX & Virtual Keyboard Handling
    ========================================================================== */
 

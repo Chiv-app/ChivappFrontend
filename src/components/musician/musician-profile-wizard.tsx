@@ -954,12 +954,14 @@ export default function MusicianProfileWizard() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
                                 label="Ciudad"
+                                placeholder="Ej. Lima, Ayacucho, Arequipa"
                                 value={locationCity}
                                 onValueChange={setLocationCity}
                                 variant="bordered"
                             />
                             <Input
                                 label="Zona / distrito"
+                                placeholder="Ej. Miraflores, Huamanga"
                                 value={locationZone}
                                 onValueChange={setLocationZone}
                                 variant="bordered"
@@ -974,6 +976,7 @@ export default function MusicianProfileWizard() {
                             availabilityType === "both" ? (
                                 <Input
                                     label="Precio por hora (S/)"
+                                    placeholder="Ej. 350.00"
                                     value={pricePerHour}
                                     onValueChange={setPricePerHour}
                                     variant="bordered"
@@ -985,6 +988,7 @@ export default function MusicianProfileWizard() {
                             availabilityType === "both" ? (
                                 <Input
                                     label="Precio por evento (S/)"
+                                    placeholder="Ej. 850.00"
                                     value={pricePerEvent}
                                     onValueChange={setPricePerEvent}
                                     variant="bordered"
@@ -1093,7 +1097,7 @@ export default function MusicianProfileWizard() {
                                 <div className="flex flex-col gap-4 p-4 rounded-2xl bg-default-50/50 border border-default-200">
                                     <Input
                                         label="Número de celular registrado en Yape / Plin"
-                                        placeholder="987654321"
+                                        placeholder="Ej. 987 654 321"
                                         value={payoutPhone}
                                         onValueChange={setPayoutPhone}
                                         variant="bordered"
@@ -1104,7 +1108,7 @@ export default function MusicianProfileWizard() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <Input
                                             label="Nombre del titular en Yape / Plin"
-                                            placeholder="Tal como aparece registrado"
+                                            placeholder="Ej. Juan Pérez (tal como aparece registrado)"
                                             value={payoutBeneficiaryName}
                                             onValueChange={setPayoutBeneficiaryName}
                                             variant="bordered"
@@ -1124,7 +1128,7 @@ export default function MusicianProfileWizard() {
                                 <div className="flex flex-col gap-4 p-4 rounded-2xl bg-default-50/50 border border-default-200">
                                     <Input
                                         label="Correo electrónico de Mercado Pago"
-                                        placeholder="usuario@ejemplo.com"
+                                        placeholder="Ej. usuario@correo.com"
                                         value={payoutMpEmail}
                                         onValueChange={setPayoutMpEmail}
                                         variant="bordered"
@@ -1132,7 +1136,7 @@ export default function MusicianProfileWizard() {
                                     />
                                     <Input
                                         label="Nombre del titular de la cuenta"
-                                        placeholder="Nombre registrado en Mercado Pago"
+                                        placeholder="Ej. Juan Pérez (registrado en Mercado Pago)"
                                         value={payoutBeneficiaryName}
                                         onValueChange={setPayoutBeneficiaryName}
                                         variant="bordered"
@@ -1157,7 +1161,7 @@ export default function MusicianProfileWizard() {
                     <div className="flex flex-col gap-6">
                         <div>
                             <p className="text-sm font-medium mb-3">Galería de fotos</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                 {media
                                     .filter((item) => item.type === "image")
                                     .map((item) => (
@@ -1340,6 +1344,7 @@ export default function MusicianProfileWizard() {
                             Agrega al menos una red social o sitio web para que los contratistas
                             puedan conocerte mejor.
                         </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {SOCIAL_FIELDS.map((field) => {
                             const valueMap = {
                                 instagram_url: instagramUrl,
@@ -1379,6 +1384,7 @@ export default function MusicianProfileWizard() {
                                 />
                             );
                         })}
+                        </div>
                     </div>
                 );
 
@@ -1534,7 +1540,7 @@ export default function MusicianProfileWizard() {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto">
+            <div className="w-full">
                 <div className="h-96 rounded-4xl bg-content1 border border-default-200 animate-pulse" />
             </div>
         );
@@ -1542,7 +1548,7 @@ export default function MusicianProfileWizard() {
 
     if (loadError || !displayValidation) {
         return (
-            <div className="max-w-6xl mx-auto">
+            <div className="w-full">
                 <Card className="border border-default-200/70 shadow-soft">
                     <CardBody className="gap-4 p-6">
                         <h1 className="text-2xl font-bold">Completa tu perfil de músico</h1>
@@ -1626,7 +1632,7 @@ export default function MusicianProfileWizard() {
             : "Onboarding de músico";
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-8">
+        <div className="w-full flex flex-col gap-8">
             <ConfirmDialog
                 isOpen={isRevertConfirmOpen}
                 onOpenChange={setIsRevertConfirmOpen}
@@ -1724,7 +1730,7 @@ export default function MusicianProfileWizard() {
                 <div
                     role="tabpanel"
                     aria-labelledby="profile-tab-settings"
-                    className="mx-auto flex w-full max-w-3xl flex-col gap-6 pb-10"
+                    className="flex w-full flex-col gap-6 pb-10"
                 >
                     <div className="rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 flex items-start gap-3">
                         <Icon

@@ -48,7 +48,7 @@ export default function MyEnsemblesCard() {
     if (ensembles.length === 0) return null;
 
     return (
-        <section aria-labelledby="my-ensembles-title" className="mx-auto mb-6 w-full max-w-3xl rounded-2xl border border-default-200 bg-content1 p-5">
+        <section aria-labelledby="my-ensembles-title" className="mb-6 w-full rounded-2xl border border-default-200 bg-content1 p-5">
             <h2 id="my-ensembles-title" className="text-base font-bold">
                 Mis agrupaciones
             </h2>

@@ -801,7 +801,7 @@ export default function BookingMercadoPagoModal({
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <Input
                                                 label="Celular registrado en Yape"
-                                                placeholder="987654321"
+                                                placeholder="Ej. 987 654 321"
                                                 type="tel"
                                                 inputMode="numeric"
                                                 autoComplete="tel-national"
@@ -821,7 +821,7 @@ export default function BookingMercadoPagoModal({
                                             />
                                             <Input
                                                 label="DNI del titular de Yape (opcional)"
-                                                placeholder="12345678"
+                                                placeholder="Ej. 71234567"
                                                 type="text"
                                                 inputMode="numeric"
                                                 value={yapeDocNumber}
@@ -835,7 +835,7 @@ export default function BookingMercadoPagoModal({
                                         <div className="grid grid-cols-1 gap-4">
                                             <Input
                                                 label="Código de aprobación (6 dígitos)"
-                                                placeholder="123456"
+                                                placeholder="Ej. 123456"
                                                 type="text"
                                                 inputMode="numeric"
                                                 autoComplete="one-time-code"
@@ -898,7 +898,7 @@ export default function BookingMercadoPagoModal({
                                             <Input
                                                 id="mp-card-payer-email"
                                                 aria-label="Correo electrónico del titular"
-                                                placeholder="tu.correo@ejemplo.com"
+                                                placeholder="Ej. tu.correo@ejemplo.com"
                                                 type="email"
                                                 autoComplete="email"
                                                 value={cardPayerEmail}

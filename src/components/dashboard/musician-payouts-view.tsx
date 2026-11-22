@@ -122,7 +122,7 @@ export default function MusicianPayoutsView() {
 
     if (!isVerificationLoading && !profileIsVerified) {
         return (
-            <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+            <div className="flex flex-col gap-6 w-full">
                 <div className="flex flex-col items-start gap-1">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         Pagos a integrantes
@@ -244,7 +244,7 @@ export default function MusicianPayoutsView() {
 
     if (isLoading) {
         return (
-            <div className="max-w-6xl mx-auto flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-4">
                 <div className="h-28 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
                 <div className="h-64 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
@@ -252,7 +252,7 @@ export default function MusicianPayoutsView() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-secondary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft">
                 <Chip color="secondary" variant="flat" size="sm" className="mb-3">
                     Pagos a tu agrupación

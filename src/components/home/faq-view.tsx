@@ -81,7 +81,7 @@ export default function FaqSection() {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }}
             />
-            <div className="max-w-[800px] mx-auto px-4 sm:px-6 md:px-8">
+            <div className="w-full px-3 sm:px-6">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
