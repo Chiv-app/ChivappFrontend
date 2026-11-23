@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     return buildPageMetadata({
         title: `Contratar ${genreInSentence} en ${cityName}, Perú`,
-        description: `Contrata ${genreInSentence} en ${cityName} para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
+        description: `Contrata ${genreInSentence} en ${cityName}: servicios musicales para cumpleaños, bodas, serenatas y fiestas. Compara videos, repertorio y tarifas en ${SITE_NAME}.`,
         path: `/musicos/${genero}/${ciudad}`,
     });
 }

@@ -68,7 +68,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     // 2. Extraer combinaciones únicas para SEO Automático (Estrategia Airbnb)
-    const uniqueGenres = new Set<string>();
+    const uniqueGenres = new Set<string>([
+        "rock",
+        "mariachi",
+        "salsa",
+        "cumbia",
+        "orquesta",
+        "dj",
+        "jazz",
+        "musica-criolla",
+    ]);
     const uniqueCombinations = new Set<string>(); // "genero|ciudad"
 
     musicians.forEach((m) => {

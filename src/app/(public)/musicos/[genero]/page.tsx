@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const genreInSentence = formatGenreName(genero, { inSentence: true });
 
     return buildPageMetadata({
-        title: `Contratar ${genreInSentence} en Perú`,
-        description: `Contrata ${genreInSentence} en Perú para bodas, fiestas y eventos. Compara perfiles, repertorio, tarifas y reseñas, y paga protegido en ${SITE_NAME}.`,
+        title: `Contratar ${genreInSentence} en Perú — Bandas y músicos para eventos`,
+        description: `Encuentra y contrata ${genreInSentence} en Perú. Servicios musicales para cumpleaños, bodas, serenatas y fiestas: compara perfiles, repertorio y tarifas en ${SITE_NAME}.`,
         path: `/musicos/${genero}`,
     });
 }
@@ -25,10 +25,22 @@ export const revalidate = 60;
 
 const SEARCH_LIMIT = 20;
 
+const CORE_SEO_GENRE_SLUGS = new Set([
+    "rock",
+    "mariachi",
+    "salsa",
+    "cumbia",
+    "orquesta",
+    "dj",
+    "jazz",
+    "musica-criolla",
+]);
+
 export default async function GenrePage({ params }: Props) {
     const { genero } = await params;
     const genreName = formatGenreName(genero);
     const genreInSentence = formatGenreName(genero, { inSentence: true });
+    const normalizedSlug = decodeURIComponent(genero || "").toLowerCase().trim();
 
     let initialMusicians: MusicianCard[] | undefined;
     try {
@@ -41,7 +53,11 @@ export default async function GenrePage({ params }: Props) {
         initialMusicians = undefined;
     }
 
-    if (initialMusicians !== undefined && initialMusicians.length === 0) {
+    if (
+        initialMusicians !== undefined &&
+        initialMusicians.length === 0 &&
+        !CORE_SEO_GENRE_SLUGS.has(normalizedSlug)
+    ) {
         notFound();
     }
 

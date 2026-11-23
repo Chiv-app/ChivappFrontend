@@ -6,8 +6,8 @@ import { SITE_NAME, buildPageMetadata } from "@/lib/seo";
 import type { MusicianCard } from "@/types/ui/musician";
 
 export const metadata: Metadata = buildPageMetadata({
-    title: "Músicos",
-    description: `Explora todos los músicos verificados de ${SITE_NAME} y filtra por ciudad, género, instrumento, fecha o presupuesto.`,
+    title: "Contratar músicos, bandas de rock, mariachis y grupos en Perú",
+    description: `Directorio para contratar músicos en Perú: encuentra banda de rock, mariachis, orquestas y DJs. Servicios musicales para cumpleaños, bodas y serenatas en ${SITE_NAME}.`,
     path: "/musicians",
 });
 
@@ -73,10 +73,10 @@ export default async function MusiciansPage({ searchParams }: { searchParams: Se
         <div className="pt-4 sm:pt-6 pb-16 sm:pb-24">
             <header className="w-full px-3 sm:px-6 mb-5">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                    Explora músicos y agrupaciones para tu evento
+                    Contratar músicos, bandas y grupos musicales para tu evento
                 </h1>
                 <p className="text-sm sm:text-base text-default-600 mt-1">
-                    Artistas verificados con precios claros y reserva protegida en todo el Perú.
+                    Servicios musicales para cumpleaños, bodas, serenatas y fiestas: encuentra banda de rock, mariachis, orquestas y DJs verificados en todo el Perú.
                 </p>
             </header>
             <MusiciansBrowseView

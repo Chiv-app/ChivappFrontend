@@ -5,11 +5,28 @@ export const SITE_NAME = "Chivapp";
 /** Titular legal de Chivapp, tal como figura en su ficha RUC. Debe coincidir con el negocio verificado en Meta. */
 export const LEGAL_OPERATOR_NAME = "TUCTO RIVERA MIGUEL ANGEL";
 export const SITE_TAGLINE = "Encuentra y contrata músicos para tu evento.";
-/** Título de la home: palabras clave primero y la marca al final (~55 caracteres). */
-export const SITE_TITLE = "Contrata músicos para bodas y eventos en Perú | Chivapp";
-/** Descripción de la home: las primeras ~155 letras son lo que suele mostrar Google. */
+/** Título de la home: palabras clave primero y la marca al final (~57 caracteres, <= 65). */
+export const SITE_TITLE = "Contratar músicos y bandas para eventos en Perú | Chivapp";
+/** Descripción de la home: las primeras ~155 letras son lo que suele mostrar Google (<= 170). */
 export const SITE_DESCRIPTION =
-    "Contrata músicos y agrupaciones verificadas en Perú para bodas, fiestas y eventos. Compara perfiles y repertorio, pide tu cotización y paga protegido en Chivapp.";
+    "Contratar músicos en Perú: servicios musicales para cumpleaños, bodas y serenatas. Encuentra banda de rock, mariachis, orquestas y DJs en Chivapp.";
+
+export const SEO_KEYWORDS = [
+    "contratar músicos",
+    "contratar músicos en Perú",
+    "servicios musicales para cumpleaños",
+    "música en vivo para cumpleaños",
+    "encontrar banda de rock",
+    "contratar banda de rock",
+    "contratar mariachis",
+    "contratar orquesta",
+    "contratar DJ para fiestas",
+    "músicos para bodas",
+    "músicos para serenatas",
+    "grupos musicales para eventos",
+    "bandas para fiestas en Perú",
+    "Chivapp",
+];
 
 /**
  * Serializa JSON-LD para un <script>. JSON.stringify no escapa "<", así que
@@ -82,6 +99,7 @@ export function buildPageMetadata({
     return {
         title: { absolute: fullTitle },
         description,
+        keywords: SEO_KEYWORDS,
         alternates: { canonical: url },
         robots: noIndex
             ? { index: false, follow: false }
@@ -119,10 +137,18 @@ export function websiteJsonLd() {
         "@context": "https://schema.org",
         "@type": "WebSite",
         name: SITE_NAME,
-        alternateName: ["Chivapp"],
+        alternateName: ["Chivapp", "Chivapp Perú"],
         url,
         description: SITE_DESCRIPTION,
-        inLanguage: "es",
+        inLanguage: "es-PE",
+        potentialAction: {
+            "@type": "SearchAction",
+            target: {
+                "@type": "EntryPoint",
+                urlTemplate: `${url}/musicians?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+        },
         publisher: {
             "@type": "Organization",
             name: SITE_NAME,
@@ -141,6 +167,18 @@ export function organizationJsonLd() {
         url,
         logo: absoluteUrl("/logo-chivappv2.png"),
         description: SITE_DESCRIPTION,
+        areaServed: {
+            "@type": "Country",
+            name: "Perú",
+        },
+        knowsAbout: [
+            "Contratar músicos",
+            "Servicios musicales para cumpleaños",
+            "Bandas de rock para eventos",
+            "Mariachis para serenatas",
+            "Orquestas y grupos musicales para bodas",
+            "DJs y música en vivo en Perú",
+        ],
         contactPoint: {
             "@type": "ContactPoint",
             contactType: "customer service",
