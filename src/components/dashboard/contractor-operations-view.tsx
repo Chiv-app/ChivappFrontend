@@ -7,11 +7,14 @@ import {
     Card,
     CardBody,
     Chip,
-    Tab,
-    Tabs,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import {
+    DashboardKpiStrip,
+    DashboardModuleHeader,
+    DashboardPillTabs,
+} from "@/components/dashboard/dashboard-module-header";
 import {
     BOOKING_STATUS_LABELS,
     PAYMENT_STATUS_LABELS,
@@ -173,77 +176,29 @@ export default function ContractorOperationsView() {
         );
     }
 
-    const moneyCards = [
-        {
-            label: "Pagado (bruto)",
-            value: summary.total_out,
-            hint:
-                (summary.total_fees ?? 0) > 0
-                    ? `Servicio ${formatCurrency(summary.total_service ?? 0)} · comisión ${formatCurrency(summary.total_fees ?? 0)}`
-                    : "Transferencias a la plataforma",
-            icon: "material-symbols:arrow-outward",
-            tone: "text-danger",
-            bg: "bg-danger/10",
-        },
-        {
-            label: "Devuelto",
-            value: summary.total_in,
-            hint:
-                (summary.total_refund_pending ?? 0) > 0
-                    ? `Pendiente ${formatCurrency(summary.total_refund_pending ?? 0)}`
-                    : "Devoluciones ya validadas",
-            icon: "material-symbols:undo",
-            tone: "text-success",
-            bg: "bg-success/10",
-        },
-        {
-            label: "Neto",
-            value: summary.net_out,
-            hint: "Pagado bruto − devuelto validado",
-            icon: "material-symbols:account-balance",
-            tone: "text-primary",
-            bg: "bg-primary/10",
-        },
-        {
-            label: "Protegido",
-            value: summary.total_retained,
-            hint: "En garantía (bruto)",
-            icon: "material-symbols:lock",
-            tone: "text-secondary",
-            bg: "bg-secondary/10",
-        },
-    ];
-
     return (
-        <div className="w-full flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
-                    <div className="min-w-0">
-                        <Chip color="primary" variant="flat" size="sm" className="mb-3">
-                            Actuar · Enterarte · Dinero
-                        </Chip>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                            Operaciones
-                        </h1>
-                        <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                            Todo lo que debes hacer o saber de tus reservas: cotizaciones,
-                            pagos, disputas y reembolsos, con acceso directo a cada evento.
-                        </p>
-                    </div>
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Operaciones"
+                subtitle="Todo lo que debes hacer o saber de tus reservas: cotizaciones, pagos, disputas y reembolsos, con acceso directo a cada evento."
+                actions={
                     <Button
                         as={Link}
                         href="/contractor/bookings"
                         variant="flat"
-                        radius="lg"
-                        className="font-semibold w-full sm:w-auto"
+                        radius="full"
+                        className="font-semibold"
                         startContent={
-                            <Icon icon="material-symbols:event-available" width={18} />
+                            <Icon
+                                icon="material-symbols:event-available"
+                                width={18}
+                            />
                         }
                     >
                         Ir a reservas
                     </Button>
-                </div>
-            </div>
+                }
+            />
 
             {loadError ? (
                 <Card className="border border-danger/30 bg-danger/5 shadow-soft">
@@ -271,93 +226,86 @@ export default function ContractorOperationsView() {
                 </Card>
             ) : (
                 <>
-                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                        <Card className="border border-warning/30 bg-warning/5 shadow-soft">
-                            <CardBody className="p-4 gap-1">
-                                <p className="text-sm text-default-500">Tu turno</p>
-                                <p className="text-2xl font-bold text-foreground">
-                                    {summary.pending_me_count}
-                                </p>
-                            </CardBody>
-                        </Card>
-                        <Card className="border border-secondary/30 bg-secondary/5 shadow-soft">
-                            <CardBody className="p-4 gap-1">
-                                <p className="text-sm text-default-500">En espera</p>
-                                <p className="text-2xl font-bold text-foreground">
-                                    {summary.pending_other_count}
-                                </p>
-                            </CardBody>
-                        </Card>
-                        <Card className="border border-danger/20 bg-danger/5 shadow-soft">
-                            <CardBody className="p-4 gap-1">
-                                <p className="text-sm text-default-500">Disputas / reembolsos</p>
-                                <p className="text-2xl font-bold text-foreground">
-                                    {summary.dispute_count}
-                                </p>
-                            </CardBody>
-                        </Card>
-                        <Card className="border border-default-200/70 shadow-soft">
-                            <CardBody className="p-4 gap-1">
-                                <p className="text-sm text-default-500">En revisión (pagos)</p>
-                                <p className="text-2xl font-bold text-foreground">
-                                    {formatCurrency(summary.total_pending)}
-                                </p>
-                            </CardBody>
-                        </Card>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                        {moneyCards.map((card) => (
-                            <Card key={card.label} className="border border-default-200/70 shadow-soft">
-                                <CardBody className="gap-3 p-5">
-                                    <div
-                                        className={`flex size-10 items-center justify-center rounded-2xl ${card.bg} ${card.tone}`}
-                                    >
-                                        <Icon icon={card.icon} width={20} />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-default-500">{card.label}</p>
-                                        <p className="text-2xl font-bold text-foreground mt-1">
-                                            {formatCurrency(card.value)}
-                                        </p>
-                                        <p className="text-xs text-default-400 mt-1">{card.hint}</p>
-                                    </div>
-                                </CardBody>
-                            </Card>
-                        ))}
-                    </div>
+                    <DashboardKpiStrip
+                        items={[
+                            {
+                                key: "action",
+                                label: "Tu turno",
+                                value: summary.pending_me_count,
+                                dotClass: "bg-warning",
+                                isSelected: tab === "action",
+                                activeClass:
+                                    "bg-warning/15 border-warning/40 text-foreground",
+                                onClick: () =>
+                                    setTab((prev) =>
+                                        prev === "action" ? "all" : "action",
+                                    ),
+                            },
+                            {
+                                key: "waiting",
+                                label: "En espera",
+                                value: summary.pending_other_count,
+                                dotClass: "bg-primary",
+                            },
+                            {
+                                key: "disputes",
+                                label: "Disputas / reembolsos",
+                                value: summary.dispute_count,
+                                dotClass: "bg-danger",
+                                isSelected: tab === "disputes",
+                                activeClass:
+                                    "bg-danger/15 border-danger/40 text-foreground",
+                                onClick: () =>
+                                    setTab((prev) =>
+                                        prev === "disputes" ? "all" : "disputes",
+                                    ),
+                            },
+                            {
+                                key: "retained",
+                                label: "Protegido",
+                                value: formatCurrency(summary.total_retained),
+                                dotClass: "bg-success",
+                            },
+                        ]}
+                        summaryLabel="Neto pagado:"
+                        summaryValue={formatCurrency(summary.net_out)}
+                        summarySelected={tab === "money"}
+                        onSummaryClick={() =>
+                            setTab((prev) => (prev === "money" ? "all" : "money"))
+                        }
+                    />
 
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3">
                             <div>
-                                <h2 className="text-xl font-bold text-foreground">Actividad</h2>
-                                <p className="text-sm text-default-500 mt-1">
+                                <h2 className="text-lg font-bold text-foreground">
+                                    Actividad
+                                </h2>
+                                <p className="text-xs sm:text-sm text-default-500 mt-0.5">
                                     Cada ítem abre la reserva correspondiente.
                                 </p>
                             </div>
-                            <Tabs
-                                aria-label="Filtrar operaciones por categoría"
+                            <DashboardPillTabs
+                                ariaLabel="Filtrar operaciones por categoría"
                                 selectedKey={tab}
-                                onSelectionChange={(key) => setTab(key as ViewTab)}
-                                size="sm"
-                                variant="solid"
-                                color="primary"
-                                classNames={{
-                                    base: "w-full sm:w-auto overflow-x-auto",
-                                    tabList: "gap-1",
-                                }}
-                            >
-                                <Tab
-                                    key="action"
-                                    title={`Pendientes (${summary.pending_me_count + summary.pending_other_count})`}
-                                />
-                                <Tab key="money" title="Dinero" />
-                                <Tab
-                                    key="disputes"
-                                    title={`Disputas (${summary.dispute_count})`}
-                                />
-                                <Tab key="all" title="Todas" />
-                            </Tabs>
+                                onSelect={setTab}
+                                items={[
+                                    {
+                                        key: "action",
+                                        label: "Pendientes",
+                                        count:
+                                            summary.pending_me_count +
+                                            summary.pending_other_count,
+                                    },
+                                    { key: "money", label: "Dinero" },
+                                    {
+                                        key: "disputes",
+                                        label: "Disputas",
+                                        count: summary.dispute_count,
+                                    },
+                                    { key: "all", label: "Todas" },
+                                ]}
+                            />
                         </div>
 
                         {filteredItems.length === 0 ? (

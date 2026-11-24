@@ -186,7 +186,14 @@ export default function RoleDashboardShell({
     const isBookingDetailRoute = /^\/(musician|contractor)\/bookings\/[^/]+$/.test(
         pathname,
     );
-    const hasEmbeddedSubNav = pathname === "/musician/bookings";
+    const hasEmbeddedSubNav =
+        pathname.startsWith("/musician/bookings") ||
+        pathname.startsWith("/musician/calendar") ||
+        pathname.startsWith("/musician/links") ||
+        pathname.startsWith("/musician/members") ||
+        pathname.startsWith("/musician/payouts") ||
+        pathname.startsWith("/musician/earnings") ||
+        pathname.startsWith("/musician/reports");
 
     const activeHubSubItems = useMemo(() => {
         if (!activeHub?.subItems || isBookingDetailRoute || hasEmbeddedSubNav)

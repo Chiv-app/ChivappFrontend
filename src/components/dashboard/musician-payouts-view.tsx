@@ -8,11 +8,15 @@ import {
     CardBody,
     Chip,
     Input,
-    Tab,
-    Tabs,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import {
+    DashboardKpiStrip,
+    DashboardModuleHeader,
+    DashboardPillTabs,
+    EQUIPO_SUB_NAV,
+} from "@/components/dashboard/dashboard-module-header";
 import {
     BOOKING_STATUS_LABELS,
     formatBookingDate,
@@ -252,20 +256,13 @@ export default function MusicianPayoutsView() {
     }
 
     return (
-        <div className="w-full flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-secondary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft">
-                <Chip color="secondary" variant="flat" size="sm" className="mb-3">
-                    Pagos a tu agrupación
-                </Chip>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                    Pagos
-                </h1>
-                <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                    Aquí figuran las reservas con integrantes asociados, a quién debes
-                    pagar y el estado de cada reparto. Puedes cerrar el show sin pagar; el
-                    pendiente se queda en este módulo.
-                </p>
-            </div>
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Reparto por evento"
+                subtitle="Aquí figuran las reservas con integrantes asociados, a quién debes pagar y el estado de cada reparto."
+                subNav={EQUIPO_SUB_NAV}
+                subNavAriaLabel="Secciones de Equipo"
+            />
 
             {loadError ? (
                 <Card className="border border-danger/30 bg-danger/5 shadow-soft">
@@ -308,65 +305,62 @@ export default function MusicianPayoutsView() {
                 </Card>
             ) : null}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                {[
+            <DashboardKpiStrip
+                items={[
                     {
-                        label: "Reservas",
-                        value: stats.total,
-                        icon: "material-symbols:event",
-                    },
-                    {
-                        label: "Listas para pagar",
-                        value: stats.readyCount,
-                        icon: "material-symbols:check-circle",
-                    },
-                    {
+                        key: "pending",
                         label: "Pendiente",
                         value: formatCurrency(stats.pendingAmount),
-                        icon: "material-symbols:hourglass-top",
-                        isText: true,
+                        dotClass: "bg-warning",
+                        isSelected: filter === "pending",
+                        activeClass: "bg-warning/15 border-warning/40 text-foreground",
+                        onClick: () =>
+                            setFilter((prev) =>
+                                prev === "pending" ? "all" : "pending",
+                            ),
                     },
                     {
+                        key: "ready",
+                        label: "Listas para pagar",
+                        value: stats.readyCount,
+                        dotClass: "bg-primary",
+                        isSelected: filter === "ready",
+                        activeClass: "bg-primary/15 border-primary/40 text-foreground",
+                        onClick: () =>
+                            setFilter((prev) =>
+                                prev === "ready" ? "all" : "ready",
+                            ),
+                    },
+                    {
+                        key: "paid",
                         label: "Pagado",
                         value: formatCurrency(stats.paidAmount),
-                        icon: "material-symbols:payments",
-                        isText: true,
+                        dotClass: "bg-success",
+                        isSelected: filter === "paid",
+                        activeClass: "bg-success/15 border-success/40 text-foreground",
+                        onClick: () =>
+                            setFilter((prev) =>
+                                prev === "paid" ? "all" : "paid",
+                            ),
                     },
-                ].map((item) => (
-                    <Card key={item.label} className="border border-default-200/70 shadow-soft">
-                        <CardBody className="gap-2 p-3 sm:p-4">
-                            <Icon
-                                icon={item.icon}
-                                width={20}
-                                className="text-secondary"
-                            />
-                            <p className="text-xs text-default-500">
-                                {item.label}
-                            </p>
-                            <p
-                                className={`font-bold ${
-                                    item.isText ? "text-base sm:text-lg" : "text-xl sm:text-2xl"
-                                }`}
-                            >
-                                {item.value}
-                            </p>
-                        </CardBody>
-                    </Card>
-                ))}
-            </div>
+                ]}
+                summaryLabel="Total eventos:"
+                summaryValue={stats.total}
+                summarySelected={filter === "all"}
+                onSummaryClick={() => setFilter("all")}
+            />
 
-            <Tabs
-                aria-label="Filtrar repartos a integrantes por estado"
+            <DashboardPillTabs
+                ariaLabel="Filtrar repartos a integrantes por estado"
                 selectedKey={filter}
-                onSelectionChange={(key) => setFilter(key as FilterKey)}
-                variant="underlined"
-                color="secondary"
-            >
-                <Tab key="pending" title="Pendientes" />
-                <Tab key="ready" title="Listas para pagar" />
-                <Tab key="paid" title="Pagadas" />
-                <Tab key="all" title="Todas" />
-            </Tabs>
+                onSelect={setFilter}
+                items={[
+                    { key: "all", label: "Todas", count: stats.total },
+                    { key: "pending", label: "Pendientes" },
+                    { key: "ready", label: "Listas para pagar", count: stats.readyCount },
+                    { key: "paid", label: "Pagadas" },
+                ]}
+            />
 
             {filtered.length === 0 ? (
                 <Card className="border border-default-200/70 shadow-soft">

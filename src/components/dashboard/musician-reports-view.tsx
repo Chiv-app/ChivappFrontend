@@ -6,7 +6,6 @@ import {
     Button,
     Card,
     CardBody,
-    Chip,
     Input,
     Select,
     SelectItem,
@@ -15,6 +14,11 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import {
+    DashboardKpiStrip,
+    DashboardModuleHeader,
+    FINANZAS_SUB_NAV,
+} from "@/components/dashboard/dashboard-module-header";
 import {
     Bar,
     BarChart,
@@ -214,19 +218,13 @@ export default function MusicianReportsView() {
     }
 
     return (
-        <div className="w-full flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-secondary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft">
-                <Chip color="secondary" variant="flat" size="sm" className="mb-3">
-                    Analítica
-                </Chip>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                    Reportes
-                </h1>
-                <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                    Visualiza reservas, ingresos, pagos a integrantes y quejas con
-                    filtros por fecha, agrupación y estado.
-                </p>
-            </div>
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Reportes y Analítica"
+                subtitle="Visualiza reservas, ingresos, pagos a integrantes y quejas con filtros por fecha, agrupación y estado."
+                subNav={FINANZAS_SUB_NAV}
+                subNavAriaLabel="Secciones de Finanzas"
+            />
 
             <Card className="border border-default-200/70 shadow-soft">
                 <CardBody className="gap-4 p-4 sm:p-5">
@@ -341,43 +339,30 @@ export default function MusicianReportsView() {
                 )
             ) : (
                 <>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        {[
+                    <DashboardKpiStrip
+                        items={[
                             {
-                                label: "Reservas",
-                                value: String(data.bookings_total),
-                                hint: `${data.bookings_completed} finalizadas`,
+                                key: "bookings",
+                                label: `Reservas (${data.bookings_completed} finalizadas)`,
+                                value: data.bookings_total,
+                                dotClass: "bg-primary",
                             },
                             {
-                                label: "Cotizado",
-                                value: formatCurrency(data.revenue_quoted),
-                                hint: "Precio acordado del periodo",
-                            },
-                            {
-                                label: "Cobrado",
+                                key: "released",
+                                label: "Cobrado (tu parte)",
                                 value: formatCurrency(data.revenue_released),
-                                hint: "Tu parte ya cobrada",
+                                dotClass: "bg-success",
                             },
                             {
-                                label: "Pagado a integrantes",
+                                key: "members",
+                                label: `Pagado a integrantes (${formatCurrency(data.member_pending)} pend.)`,
                                 value: formatCurrency(data.member_paid),
-                                hint: `${formatCurrency(data.member_pending)} pendiente`,
+                                dotClass: "bg-secondary",
                             },
-                        ].map((card) => (
-                            <Card
-                                key={card.label}
-                                className="border border-default-200/70 shadow-soft"
-                            >
-                                <CardBody className="gap-1 p-4">
-                                    <p className="text-xs text-default-500">{card.label}</p>
-                                    <p className="text-xl font-bold">{card.value}</p>
-                                    <p className="text-xs text-default-500">
-                                        {card.hint}
-                                    </p>
-                                </CardBody>
-                            </Card>
-                        ))}
-                    </div>
+                        ]}
+                        summaryLabel="Total cotizado:"
+                        summaryValue={formatCurrency(data.revenue_quoted)}
+                    />
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                         <Card className="border border-default-200/70 shadow-soft">

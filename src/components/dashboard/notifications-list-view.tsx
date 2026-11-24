@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, CardBody, Chip, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { DashboardModuleHeader } from "@/components/dashboard/dashboard-module-header";
 import { useAuth } from "@/contexts/auth-context";
 import { useNotifications } from "@/contexts/notifications-context";
 import {
@@ -109,30 +110,26 @@ export default function NotificationsListView() {
     );
 
     return (
-        <div className="w-full flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-6 py-6 shadow-soft overflow-hidden relative flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                        Notificaciones
-                    </h1>
-                    <p className="text-default-500 mt-2">
-                        Alertas sobre verificación de perfil, reservas, cotizaciones, contratos y pagos.
-                    </p>
-                </div>
-                {unreadCount > 0 ? (
-                    <Button
-                        color="primary"
-                        variant="flat"
-                        radius="lg"
-                        size="sm"
-                        className="font-semibold"
-                        isLoading={isMarkingAll}
-                        onPress={() => void handleMarkAllRead()}
-                    >
-                        Marcar todas como leídas ({unreadCount})
-                    </Button>
-                ) : null}
-            </div>
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Notificaciones"
+                subtitle="Alertas sobre verificación de perfil, reservas, cotizaciones, contratos y pagos."
+                actions={
+                    unreadCount > 0 ? (
+                        <Button
+                            color="primary"
+                            variant="flat"
+                            radius="full"
+                            size="sm"
+                            className="font-semibold"
+                            isLoading={isMarkingAll}
+                            onPress={() => void handleMarkAllRead()}
+                        >
+                            Marcar todas como leídas ({unreadCount})
+                        </Button>
+                    ) : null
+                }
+            />
 
             {error ? (
                 <Card className="border border-danger/30 bg-danger/5 shadow-soft">

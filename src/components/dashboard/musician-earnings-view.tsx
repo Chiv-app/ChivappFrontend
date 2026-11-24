@@ -13,11 +13,15 @@ import {
     ModalContent,
     ModalFooter,
     ModalHeader,
-    Tab,
-    Tabs,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import {
+    DashboardKpiStrip,
+    DashboardModuleHeader,
+    DashboardPillTabs,
+    FINANZAS_SUB_NAV,
+} from "@/components/dashboard/dashboard-module-header";
 import { useAuth } from "@/contexts/auth-context";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
 import {
@@ -266,39 +270,95 @@ export default function MusicianEarningsView() {
     const showPlatform = isVerified;
     const showMember = isEnsembleMember;
 
+    const mainTabItems = [
+        ...(showPlatform
+            ? [
+                  { key: "debts" as MainTab, label: "Deuda por show", count: (summary.debts ?? []).length },
+                  { key: "payments" as MainTab, label: "Historial de pagos", count: (summary.items ?? []).length },
+              ]
+            : []),
+        ...(showMember
+            ? [{ key: "member" as MainTab, label: "Como integrante", count: (memberIncome.items ?? []).length }]
+            : []),
+    ];
+
     return (
-        <div className="w-full flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-secondary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
-                    <div className="min-w-0">
-                        <Chip color="secondary" variant="flat" size="sm" className="mb-3">
-                            Control financiero
-                        </Chip>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                            Ingresos
-                        </h1>
-                        <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                            {showPlatform && showMember
-                                ? "Consulta la deuda de la plataforma, el historial de cada pago y lo que te asignaron como integrante."
-                                : showMember
-                                  ? "Aquí ves lo que el líder te asignó por cada evento y el estado de cada pago."
-                                  : "El dinero de los shows lo retiene Chivapp. Revisa deudas por show y el historial de cada pago."}
-                        </p>
-                    </div>
-                    <Button
-                        as={Link}
-                        href="/musician/bookings"
-                        variant="flat"
-                        radius="lg"
-                        className="font-semibold w-full sm:w-auto"
-                        startContent={
-                            <Icon icon="material-symbols:calendar-month" width={18} />
-                        }
-                    >
-                        Ir a reservas
-                    </Button>
-                </div>
-            </div>
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Ingresos"
+                subtitle={
+                    showPlatform && showMember
+                        ? "Consulta la deuda de la plataforma, el historial de cada pago y lo que te asignaron como integrante."
+                        : showMember
+                          ? "Aquí ves lo que el líder te asignó por cada evento y el estado de cada pago."
+                          : "El dinero de los shows lo retiene Chivapp. Revisa deudas por show y el historial de cada pago."
+                }
+                subNav={FINANZAS_SUB_NAV}
+                subNavAriaLabel="Secciones de Finanzas"
+                actions={
+                    <>
+                        {showPlatform && (summary.total_app_debt ?? 0) > 0 ? (
+                            summary.pending_payout_request ? (
+                                <Chip
+                                    color="success"
+                                    variant="flat"
+                                    size="md"
+                                    startContent={
+                                        <Icon
+                                            icon="material-symbols:check-circle"
+                                            width={16}
+                                        />
+                                    }
+                                    className="px-3 font-semibold"
+                                >
+                                    Retiro solicitado (
+                                    {formatCurrency(
+                                        summary.pending_payout_request.amount,
+                                    )}
+                                    )
+                                </Chip>
+                            ) : (
+                                <Button
+                                    color="primary"
+                                    radius="full"
+                                    className="font-bold shadow-soft"
+                                    isLoading={isRequestingPayout}
+                                    onPress={handleRequestPayout}
+                                    startContent={
+                                        !isRequestingPayout ? (
+                                            <Icon
+                                                icon="material-symbols:payments-outline"
+                                                width={18}
+                                            />
+                                        ) : undefined
+                                    }
+                                >
+                                    Solicitar retiro (
+                                    {formatCurrency(
+                                        summary.total_app_debt ?? 0,
+                                    )}
+                                    )
+                                </Button>
+                            )
+                        ) : null}
+                        <Button
+                            as={Link}
+                            href="/musician/bookings"
+                            variant="flat"
+                            radius="full"
+                            className="font-semibold"
+                            startContent={
+                                <Icon
+                                    icon="material-symbols:calendar-month"
+                                    width={18}
+                                />
+                            }
+                        >
+                            Ir a reservas
+                        </Button>
+                    </>
+                }
+            />
 
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -320,21 +380,12 @@ export default function MusicianEarningsView() {
             ) : null}
 
             {showPlatform || showMember ? (
-                <Tabs
-                    aria-label="Secciones de ingresos del músico"
+                <DashboardPillTabs
+                    ariaLabel="Secciones de ingresos del músico"
                     selectedKey={mainTab}
-                    onSelectionChange={(key) => setMainTab(key as MainTab)}
-                    variant="underlined"
-                    color="secondary"
-                >
-                    {showPlatform ? <Tab key="debts" title="Deuda por show" /> : null}
-                    {showPlatform ? (
-                        <Tab key="payments" title="Historial de pagos" />
-                    ) : null}
-                    {showMember ? (
-                        <Tab key="member" title="Como integrante" />
-                    ) : null}
-                </Tabs>
+                    onSelect={setMainTab}
+                    items={mainTabItems}
+                />
             ) : null}
 
             {showPlatform && mainTab === "debts" ? (
@@ -343,8 +394,6 @@ export default function MusicianEarningsView() {
                     filteredDebts={filteredDebts}
                     filter={debtFilter}
                     onFilterChange={setDebtFilter}
-                    isRequestingPayout={isRequestingPayout}
-                    onPayoutRequest={handleRequestPayout}
                 />
             ) : null}
 
@@ -393,53 +442,14 @@ function PlatformDebtsSection({
     filteredDebts,
     filter,
     onFilterChange,
-    isRequestingPayout,
-    onPayoutRequest,
 }: {
     summary: MusicianEarningsSummary;
     filteredDebts: MusicianDebtItem[];
     filter: DebtFilter;
     onFilterChange: (value: DebtFilter) => void;
-    isRequestingPayout: boolean;
-    onPayoutRequest: () => void;
 }) {
-    const cards = [
-        {
-            label: "Deuda de la app",
-            value: summary.total_app_debt ?? 0,
-            hint: "Shows finalizados listos para pago",
-            icon: "material-symbols:account-balance",
-            tone: "text-primary",
-            bg: "bg-primary/10",
-        },
-        {
-            label: "En disputa",
-            value: summary.total_disputed ?? 0,
-            hint: "Con queja abierta o pendiente de admin",
-            icon: "material-symbols:report",
-            tone: "text-danger",
-            bg: "bg-danger/10",
-        },
-        {
-            label: "Cobrado",
-            value: summary.total_released,
-            hint: "Pagos autorizados por admin",
-            icon: "material-symbols:account-balance-wallet",
-            tone: "text-success",
-            bg: "bg-success/10",
-        },
-        {
-            label: "Por cobrar (en curso)",
-            value: summary.total_retained_active ?? 0,
-            hint: "Shows aún no finalizados",
-            icon: "material-symbols:lock",
-            tone: "text-secondary",
-            bg: "bg-secondary/10",
-        },
-    ];
-
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
             {(summary.total_chargeback_debt ?? 0) > 0 ? (
                 <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 flex items-start gap-3">
                     <Icon icon="material-symbols:warning" width={20} className="text-warning-text shrink-0 mt-0.5" />
@@ -453,77 +463,65 @@ function PlatformDebtsSection({
                     </div>
                 </div>
             ) : null}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-foreground">Resumen de deuda</h2>
-                {(summary.total_app_debt ?? 0) > 0 && (
-                    summary.pending_payout_request ? (
-                        <Chip
-                            color="success"
-                            variant="flat"
-                            size="lg"
-                            startContent={<Icon icon="material-symbols:check-circle" width={18} />}
-                            className="px-3 py-2 font-semibold"
-                        >
-                            Retiro solicitado ({formatCurrency(summary.pending_payout_request.amount)}) · En proceso
-                        </Chip>
-                    ) : (
-                        <Button
-                            color="primary"
-                            isLoading={isRequestingPayout}
-                            onPress={onPayoutRequest}
-                            startContent={
-                                !isRequestingPayout ? (
-                                    <Icon icon="material-symbols:payments-outline" width={18} />
-                                ) : undefined
-                            }
-                        >
-                            Solicitar retiro ({formatCurrency(summary.total_app_debt ?? 0)})
-                        </Button>
-                    )
-                )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                {cards.map((card) => (
-                    <Card key={card.label} className="border border-default-200/70 shadow-soft">
-                        <CardBody className="gap-3 p-5">
-                            <div
-                                className={`flex size-10 items-center justify-center rounded-2xl ${card.bg} ${card.tone}`}
-                            >
-                                <Icon icon={card.icon} width={20} />
-                            </div>
-                            <div>
-                                <p className="text-sm text-default-500">{card.label}</p>
-                                <p className="text-2xl font-bold text-foreground mt-1">
-                                    {formatCurrency(card.value)}
-                                </p>
-                                <p className="text-xs text-default-400 mt-1">{card.hint}</p>
-                            </div>
-                        </CardBody>
-                    </Card>
-                ))}
-            </div>
+
+            <DashboardKpiStrip
+                items={[
+                    {
+                        key: "payable",
+                        label: "Deuda de la app (por retirar)",
+                        value: formatCurrency(summary.total_app_debt ?? 0),
+                        dotClass: "bg-primary",
+                        isSelected: filter === "payable",
+                        onClick: () =>
+                            onFilterChange(
+                                filter === "payable" ? "all" : "payable",
+                            ),
+                    },
+                    {
+                        key: "disputed",
+                        label: "En disputa",
+                        value: formatCurrency(summary.total_disputed ?? 0),
+                        dotClass: "bg-danger",
+                        isSelected: filter === "disputed",
+                        activeClass: "bg-danger/15 border-danger/40 text-foreground",
+                        onClick: () =>
+                            onFilterChange(
+                                filter === "disputed" ? "all" : "disputed",
+                            ),
+                    },
+                    {
+                        key: "retained",
+                        label: "Por cobrar (en curso)",
+                        value: formatCurrency(summary.total_retained_active ?? 0),
+                        dotClass: "bg-warning",
+                    },
+                ]}
+                summaryLabel="Total cobrado:"
+                summaryValue={formatCurrency(summary.total_released)}
+                summarySelected={filter === "settled"}
+                onSummaryClick={() =>
+                    onFilterChange(filter === "settled" ? "all" : "settled")
+                }
+            />
 
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-xl font-bold text-foreground">Deuda por show</h2>
-                    <p className="text-sm text-default-500 mt-1">
-                        Shows finalizados y liquidaciones. El admin autoriza cada
-                        pago.
+                    <h2 className="text-lg font-bold text-foreground">Deuda por show</h2>
+                    <p className="text-xs sm:text-sm text-default-500 mt-0.5">
+                        Shows finalizados y liquidaciones. El admin autoriza cada pago.
                     </p>
                 </div>
-                <Tabs
-                    aria-label="Filtrar deuda por show según estado"
+                <DashboardPillTabs
+                    ariaLabel="Filtrar deuda por show según estado"
                     selectedKey={filter}
-                    onSelectionChange={(key) => onFilterChange(key as DebtFilter)}
-                    size="sm"
-                    variant="solid"
-                    color="secondary"
-                >
-                    <Tab key="all" title="Todos" />
-                    <Tab key="payable" title="Por cobrar" />
-                    <Tab key="disputed" title="En disputa" />
-                    <Tab key="settled" title="Cobrados" />
-                </Tabs>
+                    onSelect={onFilterChange}
+                    items={[
+                        { key: "all", label: "Todos" },
+                        { key: "payable", label: "Por cobrar" },
+                        { key: "disputed", label: "En disputa" },
+                        { key: "settled", label: "Cobrados" },
+                    ]}
+                />
             </div>
 
             {filteredDebts.length === 0 ? (
@@ -557,26 +555,24 @@ function PlatformPaymentsSection({
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-xl font-bold text-foreground">
+                    <h2 className="text-lg font-bold text-foreground">
                         Historial de pagos
                     </h2>
-                    <p className="text-sm text-default-500 mt-1">
+                    <p className="text-xs sm:text-sm text-default-500 mt-0.5">
                         Cada pago total asociado a tus reservas.
                     </p>
                 </div>
-                <Tabs
-                    aria-label="Filtrar historial de pagos por estado"
+                <DashboardPillTabs
+                    ariaLabel="Filtrar historial de pagos por estado"
                     selectedKey={filter}
-                    onSelectionChange={(key) => onFilterChange(key as PaymentFilter)}
-                    size="sm"
-                    variant="solid"
-                    color="secondary"
-                >
-                    <Tab key="all" title="Todos" />
-                    <Tab key="retained" title="Por cobrar" />
-                    <Tab key="released" title="Cobrados" />
-                    <Tab key="initiated" title="Iniciados" />
-                </Tabs>
+                    onSelect={onFilterChange}
+                    items={[
+                        { key: "all", label: "Todos" },
+                        { key: "retained", label: "Por cobrar" },
+                        { key: "released", label: "Cobrados" },
+                        { key: "initiated", label: "Iniciados" },
+                    ]}
+                />
             </div>
 
             {items.length === 0 ? (

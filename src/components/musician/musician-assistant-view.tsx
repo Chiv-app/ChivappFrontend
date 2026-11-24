@@ -601,43 +601,38 @@ export default function MusicianAssistantView() {
   const formDiffersFromSaved = pricingDiffersFromSaved(formPayload, config);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Cabecera con contexto del perfil activo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-default-200 bg-content1 p-5 shadow-xs">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-            <Icon icon="material-symbols:smart-toy-rounded" width={28} />
+    <div className="flex flex-col gap-4">
+      {/* Cabecera unificada con el resto de módulos */}
+      <header className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+              Asistente IA
+            </h1>
+            <Chip size="sm" color="primary" variant="flat">
+              Perfil: {config?.profile_stage_name || activeProfileName}
+            </Chip>
           </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-extrabold text-foreground">
-                Asistente IA de Ventas y Contratas
-              </h1>
-              <Chip size="sm" color="primary" variant="flat">
-                Perfil: {config?.profile_stage_name || activeProfileName}
-              </Chip>
-            </div>
-            <p className="text-xs sm:text-sm text-default-500 mt-1">
-              Responde consultas por WhatsApp, revisa tu calendario en tiempo
-              real, cotiza según integrantes/ubicación y envía el link de
-              contrato pre-llenado en Chivapp.
-            </p>
+          <div className="flex items-center gap-2 rounded-full border border-default-200/80 bg-content1 px-3.5 py-1.5 shadow-xs">
+            <Switch
+              isSelected={enabled}
+              onValueChange={setEnabled}
+              color="success"
+              size="sm"
+              aria-label="Activar asistente para este perfil"
+            >
+              <span className="text-xs font-semibold">
+                {enabled ? "IA Activa en este perfil" : "IA Pausada"}
+              </span>
+            </Switch>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Switch
-            isSelected={enabled}
-            onValueChange={setEnabled}
-            color="success"
-            size="sm"
-            aria-label="Activar asistente para este perfil"
-          >
-            <span className="text-xs font-semibold">
-              {enabled ? "IA Activa en este perfil" : "IA Pausada"}
-            </span>
-          </Switch>
-        </div>
-      </div>
+        <p className="text-xs sm:text-sm text-default-500 max-w-3xl">
+          Responde consultas por WhatsApp, revisa tu calendario en tiempo real,
+          cotiza según integrantes/ubicación y envía el link de contrato
+          pre-llenado en Chivapp.
+        </p>
+      </header>
 
       {/* En «Inicio» el aviso de uso va dentro de la propia pestaña. */}
       {activeTab !== "home" && (
@@ -646,11 +641,11 @@ export default function MusicianAssistantView() {
         />
       )}
 
-      {/* Pestañas accesibles con roving tabindex */}
+      {/* Pestañas tipo píldora en una sola fila (simétricas con el resto de módulos) */}
       <div
         role="tablist"
         aria-label="Secciones del Asistente IA"
-        className="flex flex-wrap gap-2 border-b border-default-200 pb-2"
+        className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {TABS.map((tab, idx) => {
           const isSelected = activeTab === tab.key;
@@ -668,17 +663,17 @@ export default function MusicianAssistantView() {
               tabIndex={isSelected ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
               onKeyDown={(e) => handleTabKeyDown(e, idx)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                 isSelected
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-default-100/70 text-default-600 hover:bg-default-200/70"
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                  : "bg-content1 text-default-700 border-default-200/80 hover:border-default-300"
               }`}
             >
-              <Icon icon={tab.icon} width={18} />
+              <Icon icon={tab.icon} width={16} aria-hidden="true" />
               <span>{tab.label}</span>
               {tab.key === "conversations" && conversations.length > 0 && (
                 <span
-                  className={`px-1.5 py-0.5 text-[11px] rounded-full ${
+                  className={`px-1.5 py-0.5 text-[11px] rounded-full tabular-nums ${
                     isSelected
                       ? "bg-white/20 text-white"
                       : "bg-default-200 text-default-700"
@@ -689,7 +684,7 @@ export default function MusicianAssistantView() {
               )}
               {tab.key === "pending" && pendingBadgeCount > 0 && (
                 <span
-                  className={`px-1.5 py-0.5 text-[11px] rounded-full ${
+                  className={`px-1.5 py-0.5 text-[11px] rounded-full tabular-nums ${
                     isSelected
                       ? "bg-white/20 text-white"
                       : "bg-warning-100 text-warning-700"

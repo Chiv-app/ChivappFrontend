@@ -18,6 +18,12 @@ import {
     Avatar,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import {
+    DashboardKpiStrip,
+    DashboardModuleHeader,
+    DashboardPillTabs,
+    EQUIPO_SUB_NAV,
+} from "@/components/dashboard/dashboard-module-header";
 import ChipListInput from "@/components/ui/chip-list-input";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import MemberPayoutHistoryModal from "@/components/dashboard/member-payout-history-modal";
@@ -444,32 +450,83 @@ export default function MusicianMembersView() {
     }
 
     return (
-        <div className="w-full flex flex-col gap-6">
-            <section className={UI.pageHero}>
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div className="min-w-0">
-                        <Chip color="primary" variant="flat" size="sm" className="mb-3">
-                            Tu agrupación
-                        </Chip>
-                        <h1 className={UI.pageTitle}>Integrantes</h1>
-                        <p className={UI.pageSubtitle}>
-                            Solo se considera que aceptaron cuando crean su contraseña.
-                            Hasta entonces puedes copiar y reenviar el enlace.
-                        </p>
-                    </div>
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Integrantes"
+                subtitle="Solo se considera que aceptaron cuando crean su contraseña. Hasta entonces puedes copiar y reenviar el enlace."
+                subNav={EQUIPO_SUB_NAV}
+                subNavAriaLabel="Secciones de Equipo"
+                actions={
                     <Button
                         color="primary"
-                        radius="lg"
-                        className={UI.primaryButton}
+                        radius="full"
+                        className="font-bold shadow-soft px-4 sm:px-5"
                         startContent={
-                            <Icon icon="material-symbols:person-add" width={20} />
+                            <Icon icon="material-symbols:person-add" width={18} />
                         }
                         onPress={openCreate}
                     >
                         Agregar integrante
                     </Button>
-                </div>
-            </section>
+                }
+            />
+
+            <DashboardKpiStrip
+                items={[
+                    {
+                        key: "active",
+                        label: "Aceptaron",
+                        value: counts.active,
+                        dotClass: "bg-success",
+                        isSelected: statusFilter === "active",
+                        activeClass: "bg-success/15 border-success/40 text-foreground",
+                        onClick: () =>
+                            setStatusFilter((prev) =>
+                                prev === "active" ? "all" : "active",
+                            ),
+                    },
+                    {
+                        key: "invited",
+                        label: "Pendientes",
+                        value: counts.invited,
+                        dotClass: "bg-warning",
+                        isSelected: statusFilter === "invited",
+                        activeClass: "bg-warning/15 border-warning/40 text-foreground",
+                        onClick: () =>
+                            setStatusFilter((prev) =>
+                                prev === "invited" ? "all" : "invited",
+                            ),
+                    },
+                    {
+                        key: "expired",
+                        label: "Expirados",
+                        value: counts.expired,
+                        dotClass: "bg-danger",
+                        isSelected: statusFilter === "expired",
+                        activeClass: "bg-danger/15 border-danger/40 text-foreground",
+                        onClick: () =>
+                            setStatusFilter((prev) =>
+                                prev === "expired" ? "all" : "expired",
+                            ),
+                    },
+                    {
+                        key: "inactive",
+                        label: "Inactivos",
+                        value: counts.inactive,
+                        dotClass: "bg-default-400",
+                        isSelected: statusFilter === "inactive",
+                        activeClass: "bg-default-200/70 border-default-300 text-foreground",
+                        onClick: () =>
+                            setStatusFilter((prev) =>
+                                prev === "inactive" ? "all" : "inactive",
+                            ),
+                    },
+                ]}
+                summaryLabel="Total integrantes:"
+                summaryValue={counts.all}
+                summarySelected={statusFilter === "all"}
+                onSummaryClick={() => setStatusFilter("all")}
+            />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Input
@@ -478,7 +535,8 @@ export default function MusicianMembersView() {
                     onValueChange={setQuery}
                     placeholder="Buscar por nombre o correo..."
                     variant="bordered"
-                    radius="lg"
+                    radius="full"
+                    size="sm"
                     startContent={
                         <Icon
                             icon="material-symbols:search"
@@ -487,23 +545,16 @@ export default function MusicianMembersView() {
                         />
                     }
                     className="sm:max-w-md"
-                    classNames={UI.authInput}
+                    classNames={{
+                        inputWrapper: "bg-content1 border-default-200/80 shadow-xs",
+                    }}
                 />
-                <div className="flex flex-wrap gap-2">
-                    {filters.map((filter) => (
-                        <Button
-                            key={filter.key}
-                            size="sm"
-                            radius="lg"
-                            variant={statusFilter === filter.key ? "flat" : "light"}
-                            color={statusFilter === filter.key ? "primary" : "default"}
-                            onPress={() => setStatusFilter(filter.key)}
-                        >
-                            {filter.label}
-                            <span className="text-default-500 ml-1">{filter.count}</span>
-                        </Button>
-                    ))}
-                </div>
+                <DashboardPillTabs
+                    items={filters}
+                    selectedKey={statusFilter}
+                    onSelect={setStatusFilter}
+                    ariaLabel="Filtrar integrantes por estado"
+                />
             </div>
 
             {loadError ? (

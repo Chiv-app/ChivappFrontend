@@ -13,6 +13,11 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import {
+    AGENDA_SUB_NAV,
+    DashboardKpiStrip,
+    DashboardModuleHeader,
+} from "@/components/dashboard/dashboard-module-header";
 import MusicianCreateLinkForm from "@/components/booking/musician-create-link-form";
 import CircularStepper from "@/components/ui/circular-stepper";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
@@ -203,43 +208,33 @@ export default function MusicianLinksView() {
         );
     }
 
+    const activeCount = links.filter(
+        (l) =>
+            l.status !== "completed" &&
+            l.status !== "expired" &&
+            new Date(l.expires_at) >= new Date(),
+    ).length;
+    const completedCount = links.filter((l) => l.status === "completed").length;
+    const expiredCount = links.length - activeCount - completedCount;
+
     return (
-        <div className="w-full flex flex-col gap-6">
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                            <Chip color="primary" variant="flat" size="sm">
-                                Contratas rápidas
-                            </Chip>
-                            <Chip
-                                color="success"
-                                variant="flat"
-                                size="sm"
-                                startContent={
-                                    <Icon icon="material-symbols:sync" width={14} />
-                                }
-                            >
-                                Seguimiento de avance en vivo
-                            </Chip>
-                        </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                            Mis links de pago
-                        </h1>
-                        <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                            Crea enlaces pre-llenados y supervisa en tiempo real cuántas veces los abrió tu cliente, qué campos ya completó y en qué paso se encuentra.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="w-full flex flex-col gap-4">
+            <DashboardModuleHeader
+                title="Enlaces de pago"
+                subNav={AGENDA_SUB_NAV}
+                subNavAriaLabel="Secciones de Agenda"
+                actions={
+                    <>
                         <Button
                             variant="flat"
-                            radius="lg"
-                            className="font-semibold flex-1 sm:flex-none"
+                            radius="full"
+                            size="sm"
+                            className="font-semibold"
                             isLoading={isRefreshing}
                             onPress={() => void loadLinks({ silent: true })}
                             startContent={
                                 !isRefreshing ? (
-                                    <Icon icon="material-symbols:refresh" width={18} />
+                                    <Icon icon="material-symbols:refresh" width={16} />
                                 ) : undefined
                             }
                         >
@@ -247,16 +242,41 @@ export default function MusicianLinksView() {
                         </Button>
                         <Button
                             color="primary"
-                            radius="lg"
-                            className="font-semibold shadow-glow hover:shadow-glow-lg transition-shadow flex-1 sm:flex-none"
+                            radius="full"
+                            className="font-bold shadow-soft px-4 sm:px-5"
                             startContent={<Icon icon="material-symbols:add" width={18} />}
                             onPress={() => setIsCreateOpen(true)}
                         >
                             Nuevo link de pago
                         </Button>
-                    </div>
-                </div>
-            </div>
+                    </>
+                }
+            />
+
+            <DashboardKpiStrip
+                items={[
+                    {
+                        key: "active",
+                        label: "En avance / Vigentes",
+                        value: activeCount,
+                        dotClass: "bg-primary",
+                    },
+                    {
+                        key: "completed",
+                        label: "Completados",
+                        value: completedCount,
+                        dotClass: "bg-success",
+                    },
+                    {
+                        key: "expired",
+                        label: "Expirados",
+                        value: expiredCount,
+                        dotClass: "bg-warning",
+                    },
+                ]}
+                summaryLabel="Total enlaces:"
+                summaryValue={links.length}
+            />
 
             <Modal
                 closeButton={<ModalCloseButton aria-label="Cerrar" />}
