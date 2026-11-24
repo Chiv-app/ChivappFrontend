@@ -74,7 +74,7 @@ export default function RecommendContractorCard({
         return () => {
             cancelled = true;
         };
-    }, [booking.id, reloadCount]);
+    }, [booking.id, onRecommendationStatusChange, reloadCount]);
 
     async function handleSubmit(event: FormEvent) {
         event.preventDefault();
