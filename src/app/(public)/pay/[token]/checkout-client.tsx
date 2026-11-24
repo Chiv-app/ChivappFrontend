@@ -1,11 +1,12 @@
 "use client";
 
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   addToast,
   Button,
+  Chip,
   Modal,
   ModalBody,
   ModalContent,
@@ -19,6 +20,7 @@ import {
   BookingLinkPublicOut,
   checkoutBookingLink,
   checkIdentityBookingLink,
+  saveBookingLinkProgress,
   sendOtpBookingLink,
   BookingLinkIdentityStatus,
 } from "@/lib/booking-links";
@@ -69,35 +71,49 @@ export default function CheckoutClient({
 
   const todayIso = useMemo(() => todayPeruIso(), []);
 
-  // Form state
+  // Form state (hydrate from client draft_data if previously saved, while keeping locks strictly on musician-prefilled fields)
+  const draft = linkData.draft_data ?? {};
   const isDateLocked = Boolean(linkData.event_date);
   const isTimeLocked = Boolean(linkData.start_time);
   const isEmailLocked = Boolean(linkData.client_email);
 
-  const [eventDate, setEventDate] = useState(linkData.event_date || "");
-  const [startTime, setStartTime] = useState(
-    linkData.start_time ? linkData.start_time.slice(0, 5) : "",
-  );
-  const [eventType, setEventType] = useState(linkData.event_type || "");
+  const initialEventDate = linkData.event_date || draft.event_date || "";
+  const initialStartTime = linkData.start_time
+    ? linkData.start_time.slice(0, 5)
+    : draft.start_time
+      ? draft.start_time.slice(0, 5)
+      : "";
+  const initialEventType = linkData.event_type || draft.event_type || "";
+  const initialAddress = linkData.location_address || draft.location_address || "";
+  const initialCity =
+    linkData.location_city ||
+    draft.location_city ||
+    linkData.musician.location_city ||
+    null;
+
+  const [eventDate, setEventDate] = useState(initialEventDate);
+  const [startTime, setStartTime] = useState(initialStartTime);
+  const [eventType, setEventType] = useState(initialEventType);
   const [location, setLocation] = useState<MapLocation | null>(() => {
-    if (!linkData.location_address) return null;
+    if (!initialAddress) return null;
     return {
-      address: linkData.location_address,
-      city: linkData.location_city || linkData.musician.location_city || null,
+      address: initialAddress,
+      city: initialCity,
       lat: Number.NaN,
       lng: Number.NaN,
     };
   });
 
   useEffect(() => {
-    const initialAddress = linkData.location_address?.trim();
-    const initialCity = (
+    const addr = (linkData.location_address || draft.location_address || "").trim();
+    const city = (
       linkData.location_city ||
+      draft.location_city ||
       linkData.musician.location_city ||
       ""
     ).trim();
-    const query = [initialAddress, initialCity].filter(Boolean).join(", ");
-    if (!initialAddress || query.length < 3) return;
+    const query = [addr, city].filter(Boolean).join(", ");
+    if (!addr || query.length < 3) return;
 
     let cancelled = false;
     void searchPlaces(query)
@@ -109,8 +125,8 @@ export default function CheckoutClient({
             return prev;
           }
           return {
-            address: prev?.address || initialAddress,
-            city: prev?.city || top.city || initialCity || null,
+            address: prev?.address || addr,
+            city: prev?.city || top.city || city || null,
             lat: top.lat,
             lng: top.lng,
           };
@@ -122,15 +138,23 @@ export default function CheckoutClient({
       cancelled = true;
     };
   }, [
+    draft.location_address,
+    draft.location_city,
     linkData.location_address,
     linkData.location_city,
     linkData.musician.location_city,
   ]);
-  const [fullname, setFullname] = useState(linkData.client_fullname || "");
-  const [email, setEmail] = useState(linkData.client_email || "");
-  const [phone, setPhone] = useState(linkData.client_phone || "");
+  const [fullname, setFullname] = useState(
+    linkData.client_fullname || draft.client_fullname || "",
+  );
+  const [email, setEmail] = useState(
+    linkData.client_email || draft.client_email || "",
+  );
+  const [phone, setPhone] = useState(
+    linkData.client_phone || draft.client_phone || "",
+  );
   const [documentNumber, setDocumentNumber] = useState(
-    linkData.client_document_number || "",
+    linkData.client_document_number || draft.client_document_number || "",
   );
   const [step1Attempted, setStep1Attempted] = useState(false);
   const [step2Attempted, setStep2Attempted] = useState(false);
@@ -143,6 +167,9 @@ export default function CheckoutClient({
       linkData.event_type &&
       linkData.location_address,
   );
+  const isStep1DraftComplete = Boolean(
+    initialEventDate && initialStartTime && initialEventType && initialAddress,
+  );
 
   // Identity Flow State
   const [identityStatus, setIdentityStatus] = useState<
@@ -154,10 +181,19 @@ export default function CheckoutClient({
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
 
-  const [activeStep, setActiveStep] = useState<number>(isStep1Prefilled ? 2 : 1);
-  const [completedSteps, setCompletedSteps] = useState(
-    () => new Set<number>(isStep1Prefilled ? [1] : []),
-  );
+  const initialStep = useMemo(() => {
+    const savedStep = Number(linkData.current_step ?? 0);
+    if (savedStep >= 1 && savedStep <= 3) return savedStep;
+    return isStep1Prefilled || isStep1DraftComplete ? 2 : 1;
+  }, [isStep1DraftComplete, isStep1Prefilled, linkData.current_step]);
+
+  const [activeStep, setActiveStep] = useState<number>(initialStep);
+  const [completedSteps, setCompletedSteps] = useState(() => {
+    const set = new Set<number>();
+    if (isStep1Prefilled || isStep1DraftComplete || initialStep >= 2) set.add(1);
+    if (initialStep >= 3) set.add(2);
+    return set;
+  });
   const { user, refresh: refreshAuth } = useAuth();
 
   useEffect(() => {
@@ -196,6 +232,128 @@ export default function CheckoutClient({
     string | null
   >(null);
   const isClient = useIsClient();
+
+  // Auto-save & progress tracking state
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >(draft.updated_at ? "saved" : "idle");
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(
+    draft.updated_at ?? null,
+  );
+  const openRecordedRef = useRef(false);
+  const lastSavedPayloadRef = useRef<string>("");
+
+  const buildProgressPayload = useCallback(
+    (options?: { recordOpen?: boolean }) => ({
+      record_open: Boolean(options?.recordOpen),
+      current_step: isPaymentModalOpen ? 4 : activeStep,
+      event_date: eventDate || null,
+      start_time: startTime || null,
+      event_type: eventType.trim() || null,
+      location_address: location?.address?.trim() || null,
+      location_city: location?.city?.trim() || null,
+      location_reference:
+        location &&
+        Number.isFinite(location.lat) &&
+        Number.isFinite(location.lng)
+          ? formatLocationReference(location.lat, location.lng)
+          : null,
+      client_fullname: fullname.trim() || null,
+      client_email: email.trim() || null,
+      client_phone: phone.trim() || null,
+      client_document_number: documentNumber.trim() || null,
+      has_signature: Boolean(signature || uploadedSignatureUrl),
+      payment_modal_opened: isPaymentModalOpen,
+    }),
+    [
+      activeStep,
+      documentNumber,
+      email,
+      eventDate,
+      eventType,
+      fullname,
+      isPaymentModalOpen,
+      location,
+      phone,
+      signature,
+      startTime,
+      uploadedSignatureUrl,
+    ],
+  );
+
+  const persistProgress = useCallback(
+    async (options?: { recordOpen?: boolean; manual?: boolean }) => {
+      if (typeof saveBookingLinkProgress !== "function") return;
+      const payload = buildProgressPayload({
+        recordOpen: options?.recordOpen,
+      });
+      const serialized = JSON.stringify({ ...payload, record_open: false });
+      if (
+        !options?.recordOpen &&
+        !options?.manual &&
+        serialized === lastSavedPayloadRef.current
+      ) {
+        return;
+      }
+      setSaveState("saving");
+      try {
+        const res = await saveBookingLinkProgress(linkData.token, payload);
+        lastSavedPayloadRef.current = serialized;
+        setSaveState("saved");
+        setLastSavedAt(res?.saved_at || new Date().toISOString());
+        if (options?.manual) {
+          addToast({
+            title: "Avance guardado",
+            description:
+              "Tus datos y el paso actual quedaron guardados en este enlace.",
+            color: "success",
+          });
+        }
+      } catch {
+        setSaveState("error");
+        if (options?.manual) {
+          addToast({
+            title: "No se pudo guardar el avance",
+            description: "Revisa tu conexión e inténtalo de nuevo.",
+            color: "warning",
+          });
+        }
+      }
+    },
+    [buildProgressPayload, linkData.token],
+  );
+
+  // Record real client open once when mounted in browser
+  useEffect(() => {
+    if (!isClient || openRecordedRef.current) return;
+    openRecordedRef.current = true;
+    void Promise.resolve().then(() => persistProgress({ recordOpen: true }));
+  }, [isClient, persistProgress]);
+
+  // Debounced real-time auto-save whenever fields or steps change
+  useEffect(() => {
+    if (!isClient || !openRecordedRef.current || paymentCompleted) return;
+    const timer = window.setTimeout(() => {
+      void persistProgress();
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [
+    activeStep,
+    documentNumber,
+    email,
+    eventDate,
+    eventType,
+    fullname,
+    isClient,
+    isPaymentModalOpen,
+    location,
+    paymentCompleted,
+    persistProgress,
+    phone,
+    signature,
+    startTime,
+    uploadedSignatureUrl,
+  ]);
 
   const renderedContractHtml = useMemo(() => {
     const rawTemplate = linkData.contract_template_body?.trim();
@@ -1015,6 +1173,83 @@ export default function CheckoutClient({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* COLUMNA IZQUIERDA: Acordeones */}
           <section className="lg:col-span-7 space-y-4">
+            {/* Barra de guardado automático + botón manual Guardar */}
+            <div className="rounded-2xl border border-default-200/80 bg-content1/95 backdrop-blur-md px-4 py-3 shadow-soft flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${
+                    saveState === "saving"
+                      ? "bg-primary/15 text-primary"
+                      : saveState === "saved"
+                        ? "bg-success/15 text-success"
+                        : saveState === "error"
+                          ? "bg-warning/15 text-warning-text"
+                          : "bg-default-100 text-default-500"
+                  }`}
+                >
+                  <Icon
+                    icon={
+                      saveState === "saving"
+                        ? "lucide:loader-2"
+                        : saveState === "saved"
+                          ? "lucide:cloud-check"
+                          : "lucide:save"
+                    }
+                    className={`w-4 h-4 ${saveState === "saving" ? "animate-spin" : ""}`}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs sm:text-sm font-semibold text-foreground">
+                      Guardado automático activo
+                    </p>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={
+                        saveState === "saving"
+                          ? "primary"
+                          : saveState === "saved"
+                            ? "success"
+                            : saveState === "error"
+                              ? "warning"
+                              : "default"
+                      }
+                    >
+                      {saveState === "saving"
+                        ? "Guardando..."
+                        : saveState === "saved"
+                          ? "Avance guardado"
+                          : saveState === "error"
+                            ? "Pendiente de sincronizar"
+                            : "En vivo"}
+                    </Chip>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-default-500 truncate">
+                    {lastSavedAt
+                      ? "Tus datos quedan guardados si necesitas retomar este enlace más tarde."
+                      : "Los campos que completes se guardan automáticamente mientras avanzas."}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="flat"
+                color="primary"
+                radius="lg"
+                className="font-semibold shrink-0"
+                isLoading={saveState === "saving"}
+                onPress={() => void persistProgress({ manual: true })}
+                startContent={
+                  saveState !== "saving" ? (
+                    <Icon icon="lucide:save" className="w-4 h-4" />
+                  ) : undefined
+                }
+              >
+                Guardar avance
+              </Button>
+            </div>
+
             {isStep1Prefilled && (
               <div className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-start gap-3">
                 <Icon

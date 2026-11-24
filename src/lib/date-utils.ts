@@ -94,6 +94,107 @@ export function getPeruEventDate(eventDate: string, startTime: string): Date {
     return new Date(`${eventDate}T${cleanTime}-05:00`);
 }
 
+const DEFAULT_EVENT_DURATION_MINUTES = 120;
+export const REVIEW_GRACE_HOURS = 24;
+
+/**
+ * Retorna la fecha y hora de finalización del evento en huso horario de Perú (-05:00).
+ * Si no hay `endTime`, asume 120 minutos desde `startTime`. Si `endTime <= startTime`, suma 1 día.
+ */
+export function getPeruEventEndDate(
+    eventDate: string,
+    startTime: string,
+    endTime?: string | null,
+): Date {
+    const start = getPeruEventDate(eventDate, startTime);
+    if (endTime) {
+        const end = getPeruEventDate(eventDate, endTime);
+        if (end.getTime() <= start.getTime()) {
+            return new Date(end.getTime() + 24 * 60 * 60 * 1000);
+        }
+        return end;
+    }
+    return new Date(start.getTime() + DEFAULT_EVENT_DURATION_MINUTES * 60 * 1000);
+}
+
+/**
+ * Retorna la fecha límite exacta (fin del show + 24 horas) para el desbloqueo automático de cobro.
+ */
+export function getBookingReviewGraceDeadline(
+    eventDate?: string | null,
+    startTime?: string | null,
+    endTime?: string | null,
+): Date | null {
+    if (!eventDate || !startTime) return null;
+    const end = getPeruEventEndDate(eventDate, startTime, endTime);
+    if (Number.isNaN(end.getTime())) return null;
+    return new Date(end.getTime() + REVIEW_GRACE_HOURS * 60 * 60 * 1000);
+}
+
+/**
+ * Calcula el tiempo restante hasta una fecha objetivo y lo formatea como reloj HH:MM:SS.
+ */
+export function getRemainingCountdown(
+    target: Date | string | null | undefined,
+    now: Date = new Date(),
+): {
+    expired: boolean;
+    totalSeconds: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    clock: string;
+    human: string;
+} | null {
+    if (!target) return null;
+    const targetDate =
+        typeof target === "string" ? new Date(normalizeUtcString(target)) : target;
+    if (Number.isNaN(targetDate.getTime())) return null;
+
+    const diffMs = targetDate.getTime() - now.getTime();
+    if (diffMs <= 0) {
+        return {
+            expired: true,
+            totalSeconds: 0,
+            hours: 0,
+            minutes: 0,
+            seconds: 0,
+            clock: "00:00:00",
+            human: "0h 00m 00s",
+        };
+    }
+
+    const totalSeconds = Math.ceil(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return {
+        expired: false,
+        totalSeconds,
+        hours,
+        minutes,
+        seconds,
+        clock: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
+        human: `${hours}h ${pad(minutes)}m ${pad(seconds)}s`,
+    };
+}
+
+/**
+ * Indica si ya transcurrieron las 24 horas posteriores al fin del show.
+ */
+export function isBookingReviewGraceExpired(
+    eventDate?: string | null,
+    startTime?: string | null,
+    endTime?: string | null,
+    now: Date = new Date(),
+): boolean {
+    const deadline = getBookingReviewGraceDeadline(eventDate, startTime, endTime);
+    if (!deadline) return false;
+    return now.getTime() >= deadline.getTime();
+}
+
 /**
  * Formatea un timestamp ISO genérico a formato legible.
  * Ej: "10 de sep. de 2026, 19:30"

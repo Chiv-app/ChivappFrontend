@@ -19,9 +19,13 @@ import type { BookingOut, ContractorRecommendationOut } from "@/types/api";
 
 type Props = {
     booking: BookingOut;
+    onRecommendationStatusChange?: (hasRecommendation: boolean) => void;
 };
 
-export default function RecommendContractorCard({ booking }: Props) {
+export default function RecommendContractorCard({
+    booking,
+    onRecommendationStatusChange,
+}: Props) {
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -45,12 +49,16 @@ export default function RecommendContractorCard({ booking }: Props) {
         });
         getContractorRecommendation(booking.id)
             .then((data) => {
-                if (!cancelled) setExisting(data);
+                if (!cancelled) {
+                    setExisting(data);
+                    onRecommendationStatusChange?.(data != null);
+                }
             })
             .catch((err) => {
                 if (cancelled) return;
                 if (err instanceof ApiError && err.status === 404) {
                     setExisting(null);
+                    onRecommendationStatusChange?.(false);
                 } else {
                     setExisting(null);
                     setLoadError(
@@ -88,6 +96,7 @@ export default function RecommendContractorCard({ booking }: Props) {
                 comment: trimmed,
             });
             setExisting(created);
+            onRecommendationStatusChange?.(true);
             addToast({
                 title: "Recomendación publicada",
                 description:

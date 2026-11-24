@@ -239,6 +239,7 @@ export function getCompletionGates(
         hasReview?: boolean;
         role?: "musician" | "contractor";
         isExternalBooking?: boolean;
+        gracePeriodExpired?: boolean;
     },
 ): {
     canFinalize: boolean;
@@ -248,6 +249,7 @@ export function getCompletionGates(
     const hasReview = Boolean(options?.hasReview);
     const role = options?.role;
     const isExternalBooking = Boolean(options?.isExternalBooking);
+    const gracePeriodExpired = Boolean(options?.gracePeriodExpired);
     const statusIndex = statusToStepIndex(status);
 
     const confirmedDone = statusIndex >= 3 && status !== "cancelled";
@@ -259,6 +261,7 @@ export function getCompletionGates(
         status === "completed";
     const reviewDone =
         hasReview ||
+        gracePeriodExpired ||
         status === "completed" ||
         (isExternalBooking && role === "musician");
     const finalized = status === "completed";
@@ -278,12 +281,15 @@ export function getCompletionGates(
         },
         {
             id: "review",
-            title: "Reseña final del contratista",
+            title:
+                !hasReview && gracePeriodExpired
+                    ? "Reseña final o desbloqueo por 24 h post-show"
+                    : "Reseña final del contratista",
             done: reviewDone,
             hint:
                 role === "contractor"
-                    ? "Se te pedirá en un popup al pulsar Finalizar."
-                    : "El contratista deja estrellas y comentario al finalizar.",
+                    ? "Se te pedirá en un popup al pulsar Finalizar (o se desbloquea el cobro al músico a las 24 h del show)."
+                    : "Se desbloquea al instante cuando ambos reseñan, o automáticamente 24 h después de finalizado el show.",
         },
         {
             id: "done",

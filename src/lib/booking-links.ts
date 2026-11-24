@@ -31,6 +31,24 @@ export type CancellationPolicyPublicOut = {
     partial_refund_percent: number;
 };
 
+export type BookingLinkDraftData = {
+    event_date?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    event_type?: string | null;
+    location_address?: string | null;
+    location_city?: string | null;
+    location_reference?: string | null;
+    event_description?: string | null;
+    client_fullname?: string | null;
+    client_phone?: string | null;
+    client_email?: string | null;
+    client_document_number?: string | null;
+    has_signature?: boolean | null;
+    payment_modal_opened?: boolean | null;
+    updated_at?: string | null;
+};
+
 export type BookingLinkPublicOut = {
     token: string;
     price: number;
@@ -56,6 +74,13 @@ export type BookingLinkPublicOut = {
     cancellation_policy?: CancellationPolicyPublicOut | null;
     contract_template_title?: string | null;
     contract_template_body?: string | null;
+    open_count?: number;
+    first_opened_at?: string | null;
+    last_opened_at?: string | null;
+    last_activity_at?: string | null;
+    current_step?: number;
+    max_step_reached?: number;
+    draft_data?: BookingLinkDraftData | null;
 };
 
 export type BookingLinkCheckout = {
@@ -126,9 +151,56 @@ export type BookingLinkOut = {
     status: BookingLinkStatus;
     expires_at: string;
     booking_id: string | null;
+    open_count?: number;
+    first_opened_at?: string | null;
+    last_opened_at?: string | null;
+    last_activity_at?: string | null;
+    current_step?: number;
+    max_step_reached?: number;
+    draft_data?: BookingLinkDraftData | null;
     created_at: string;
     updated_at: string;
 };
+
+export type BookingLinkProgressUpdate = {
+    record_open?: boolean;
+    current_step?: number;
+    event_date?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    event_type?: string | null;
+    location_address?: string | null;
+    location_city?: string | null;
+    location_reference?: string | null;
+    event_description?: string | null;
+    client_fullname?: string | null;
+    client_phone?: string | null;
+    client_email?: string | null;
+    client_document_number?: string | null;
+    has_signature?: boolean | null;
+    payment_modal_opened?: boolean | null;
+};
+
+export type BookingLinkProgressOut = {
+    open_count: number;
+    first_opened_at?: string | null;
+    last_opened_at?: string | null;
+    last_activity_at?: string | null;
+    current_step: number;
+    max_step_reached: number;
+    draft_data: BookingLinkDraftData;
+    saved_at: string;
+};
+
+export async function saveBookingLinkProgress(
+    token: string,
+    payload: BookingLinkProgressUpdate
+): Promise<BookingLinkProgressOut> {
+    return apiFetch<BookingLinkProgressOut>(`/booking-links/${token}/progress`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
 
 export type BookingLinkAutocompleteOut = {
     transcript?: string | null;

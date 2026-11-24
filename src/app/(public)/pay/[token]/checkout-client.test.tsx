@@ -37,6 +37,13 @@ vi.mock("@/lib/booking-links", () => ({
     checkIdentityBookingLink: (...args: unknown[]) =>
         checkIdentityMock(...args),
     sendOtpBookingLink: vi.fn(),
+    saveBookingLinkProgress: vi.fn().mockResolvedValue({
+        open_count: 1,
+        current_step: 1,
+        max_step_reached: 1,
+        draft_data: {},
+        saved_at: new Date().toISOString(),
+    }),
 }));
 
 vi.mock("@/components/ui/location-map-picker-field", () => ({

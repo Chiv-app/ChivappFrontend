@@ -14,16 +14,18 @@ import BookingEnsemblePanel from "@/components/booking/booking-ensemble-panel";
 import BookingLiveLocationCard from "@/components/booking/booking-live-location-card";
 import BookingMemberPayoutPanel from "@/components/booking/booking-member-payout-panel";
 import BookingFinalReviewModal from "@/components/booking/booking-final-review-modal";
+import BookingReviewStatusCountdown from "@/components/booking/booking-review-status-countdown";
 import BookingReviewsTimeline from "@/components/booking/booking-reviews-timeline";
 import BookingShareCard from "@/components/booking/booking-share-card";
 import RecommendContractorCard from "@/components/booking/recommend-contractor-card";
 import { useAuth } from "@/contexts/auth-context";
 import { useProfileVerification } from "@/hooks/use-profile-verification";
-import { formatDateTime } from "@/lib/date-utils";
+import { formatDateTime, isBookingReviewGraceExpired } from "@/lib/date-utils";
 import {
     cancelBookingChange,
     completeBooking,
     getBooking,
+    getContractorRecommendation,
     listBookingMessages,
     postBookingMessage,
 } from "@/lib/bookings";
@@ -95,6 +97,10 @@ export default function BookingConfirmedWorkspace({
     const [isCompleting, setIsCompleting] = useState(false);
     const [isWithdrawingChange, setIsWithdrawingChange] = useState(false);
     const [isFinalReviewOpen, setIsFinalReviewOpen] = useState(false);
+    const [hasMusicianRecommendation, setHasMusicianRecommendation] =
+        useState(false);
+    const [isLoadingMusicianRec, setIsLoadingMusicianRec] = useState(false);
+    const [countdownExpired, setCountdownExpired] = useState(false);
     const isExternalBooking = Number(booking.platform_fee_amount ?? 0) === 0;
 
     const loadMessages = useCallback(() => {
@@ -117,6 +123,27 @@ export default function BookingConfirmedWorkspace({
     useEffect(() => {
         void Promise.resolve().then(() => loadMessages());
     }, [booking.status, isMemberMode, loadMessages]);
+
+    useEffect(() => {
+        if (isMemberMode || role !== "contractor") return;
+        let cancelled = false;
+        void Promise.resolve().then(() => {
+            if (!cancelled) setIsLoadingMusicianRec(true);
+        });
+        getContractorRecommendation(booking.id)
+            .then((data) => {
+                if (!cancelled) setHasMusicianRecommendation(data != null);
+            })
+            .catch(() => {
+                if (!cancelled) setHasMusicianRecommendation(false);
+            })
+            .finally(() => {
+                if (!cancelled) setIsLoadingMusicianRec(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [booking.id, booking.status, isMemberMode, role]);
 
     async function handleSendMessage(event: FormEvent) {
         event.preventDefault();
@@ -241,7 +268,14 @@ export default function BookingConfirmedWorkspace({
         booking.status === "in_progress" ||
         booking.status === "payment_released" ||
         booking.status === "completed";
-    const reviewGateDone = hasReview || isCompleted;
+    const gracePeriodExpired =
+        countdownExpired ||
+        isBookingReviewGraceExpired(
+            booking.event_date,
+            booking.start_time,
+            booking.end_time,
+        );
+    const reviewGateDone = hasReview || gracePeriodExpired || isCompleted;
     // Finalizada: solo lectura (sin nuevas reacciones).
     const canAddReview =
         !isMemberMode &&
@@ -256,6 +290,7 @@ export default function BookingConfirmedWorkspace({
         hasReview,
         role,
         isExternalBooking,
+        gracePeriodExpired,
     });
 
     const showMusicianRecommend =
@@ -470,14 +505,31 @@ export default function BookingConfirmedWorkspace({
                     icon="material-symbols:reviews"
                     title="Reseñas y recomendación"
                     summary={
-                        reviewGateDone
-                            ? "Reseña final ya registrada"
-                            : "Falta la reseña final del contratista"
+                        hasReview && hasMusicianRecommendation
+                            ? "Ambas reseñas ya registradas"
+                            : gracePeriodExpired || isCompleted
+                              ? "Cobro desbloqueado tras 24 h (puedes dejar tu reseña)"
+                              : !hasReview && !hasMusicianRecommendation
+                                ? "Faltan las reseñas del contratista y del músico (o 24 h post-show)"
+                                : !hasReview
+                                  ? "Falta la reseña final del contratista (o 24 h post-show)"
+                                  : "Falta la recomendación del músico (o 24 h post-show)"
                     }
                     done={reviewGateDone}
-                    pendingLabel="Pendiente de contratista"
+                    pendingLabel="Pendiente de reseñas"
                 >
                     <div className="flex flex-col gap-6 pt-2">
+                        {!isMemberMode ? (
+                            <BookingReviewStatusCountdown
+                                booking={booking}
+                                role={role}
+                                hasContractorReview={hasReview}
+                                hasMusicianRecommendation={hasMusicianRecommendation}
+                                isLoadingMusicianRecommendation={isLoadingMusicianRec}
+                                onOpenContractorFinalReview={() => setIsFinalReviewOpen(true)}
+                                onCountdownExpiredChange={setCountdownExpired}
+                            />
+                        ) : null}
                         <BookingReviewsTimeline
                             booking={booking}
                             role={role}
@@ -485,7 +537,10 @@ export default function BookingConfirmedWorkspace({
                             onReviewsChanged={onReviewsChanged}
                         />
                         {showMusicianRecommend ? (
-                            <RecommendContractorCard booking={booking} />
+                            <RecommendContractorCard
+                                booking={booking}
+                                onRecommendationStatusChange={setHasMusicianRecommendation}
+                            />
                         ) : null}
                     </div>
                 </CollapsiblePhaseSection>

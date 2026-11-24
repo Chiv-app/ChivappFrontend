@@ -126,6 +126,7 @@ export type MusicianDebtItem = {
     debt_state: string;
     has_contractor_review?: boolean;
     has_musician_review?: boolean;
+    review_grace_ends_at?: string | null;
     complaint_status: string | null;
     complaint_reason: string | null;
     admin_musician_amount: number | null;

@@ -27,7 +27,7 @@ import {
     formatBookingDate,
     formatCurrency,
 } from "@/lib/booking-labels";
-import { formatDateTime } from "@/lib/date-utils";
+import { formatDateTime, getRemainingCountdown } from "@/lib/date-utils";
 import { listMyMemberIncome } from "@/lib/ensemble-members";
 import { getMusicianEarnings, requestPayout } from "@/lib/payments";
 import type {
@@ -783,11 +783,31 @@ function MemberIncomeSection({
 }
 
 function DebtRow({ item }: { item: MusicianDebtItem }) {
+    const [now, setNow] = useState<Date>(() => new Date());
     const bookingStatus = item.booking_status as BookingStatus;
     const amount =
         item.debt_state === "settled"
             ? item.admin_musician_amount ?? item.released_total
             : item.retained_total || item.released_total;
+
+    const countdown =
+        item.debt_state === "awaiting_reviews" && item.review_grace_ends_at
+            ? getRemainingCountdown(item.review_grace_ends_at, now)
+            : null;
+
+    useEffect(() => {
+        if (item.debt_state !== "awaiting_reviews" || !item.review_grace_ends_at) return;
+        const timer = window.setInterval(() => {
+            setNow(new Date());
+        }, 1000);
+        return () => window.clearInterval(timer);
+    }, [item.debt_state, item.review_grace_ends_at]);
+
+    const showReviewBadges =
+        item.debt_state === "awaiting_reviews" ||
+        (item.debt_state === "payable" &&
+            bookingStatus !== "cancelled" &&
+            (!item.has_contractor_review || !item.has_musician_review));
 
     return (
         <Card className="border border-default-200/70 shadow-soft">
@@ -808,6 +828,22 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                             >
                                 {DEBT_STATE_LABEL[item.debt_state] || item.debt_state}
                             </Chip>
+                            {countdown && !countdown.expired ? (
+                                <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    color="warning"
+                                    className="font-mono tabular-nums font-semibold"
+                                    startContent={
+                                        <Icon
+                                            icon="material-symbols:timer-outline"
+                                            width={15}
+                                        />
+                                    }
+                                >
+                                    Desbloqueo en {countdown.clock}
+                                </Chip>
+                            ) : null}
                         </div>
                         <p className="text-sm text-default-500 mt-1">
                             {formatBookingDate(item.event_date)}
@@ -815,6 +851,46 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                             {" · "}
                             {BOOKING_STATUS_LABELS[bookingStatus] || item.booking_status}
                         </p>
+                        {showReviewBadges ? (
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    color={item.has_contractor_review ? "success" : "warning"}
+                                    startContent={
+                                        <Icon
+                                            icon={
+                                                item.has_contractor_review
+                                                    ? "material-symbols:check-circle"
+                                                    : "material-symbols:pending-actions"
+                                            }
+                                            width={14}
+                                        />
+                                    }
+                                >
+                                    Reseña contratista:{" "}
+                                    {item.has_contractor_review ? "Completada" : "Pendiente"}
+                                </Chip>
+                                <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    color={item.has_musician_review ? "success" : "warning"}
+                                    startContent={
+                                        <Icon
+                                            icon={
+                                                item.has_musician_review
+                                                    ? "material-symbols:check-circle"
+                                                    : "material-symbols:pending-actions"
+                                            }
+                                            width={14}
+                                        />
+                                    }
+                                >
+                                    Tu reseña:{" "}
+                                    {item.has_musician_review ? "Completada" : "Pendiente"}
+                                </Chip>
+                            </div>
+                        ) : null}
                         {item.complaint_reason ? (
                             <p className="text-sm text-danger mt-2 line-clamp-2">
                                 Queja: {item.complaint_reason}
@@ -829,12 +905,12 @@ function DebtRow({ item }: { item: MusicianDebtItem }) {
                         {item.debt_state === "awaiting_reviews" ? (
                             <p className="text-xs text-warning-text mt-1.5">
                                 {!item.has_contractor_review && !item.has_musician_review
-                                    ? "Para habilitar el pago, tanto el contratista como tú deben dejar su reseña tras culminar el evento."
+                                    ? "El cobro se habilita al instante cuando el contratista y tú dejan su reseña, o automáticamente 24 h después de finalizado el show."
                                     : !item.has_contractor_review
-                                      ? "Falta la reseña final del contratista tras culminar el evento para habilitar el pago."
+                                      ? "Falta la reseña final del contratista (si no la registra dentro de las 24 h de finalizado el show, tu cobro se desbloqueará automáticamente)."
                                       : !item.has_musician_review
-                                        ? "Falta que dejes tu reseña al contratista en el detalle de la reserva para habilitar el pago."
-                                        : "El evento debe estar marcado como finalizado con ambas reseñas para habilitar el pago."}
+                                        ? "Deja tu recomendación al cliente en la reserva para desbloquear el cobro de inmediato (o se desbloqueará automáticamente a las 24 h de finalizado el show)."
+                                        : "El cobro se habilita al contar con ambas reseñas o tras 24 h de finalizado el show."}
                             </p>
                         ) : null}
                     </div>
