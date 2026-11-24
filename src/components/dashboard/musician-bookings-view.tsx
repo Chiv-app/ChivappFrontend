@@ -119,10 +119,12 @@ export default function MusicianBookingsView() {
             UPCOMING_STATUSES.includes(b.status),
         ).length;
         const completed = bookings.filter((b) => b.status === "completed").length;
-        const quoted = owned.reduce(
-            (sum, b) => sum + (b.price_agreed != null ? Number(b.price_agreed) : 0),
-            0,
-        );
+        const quoted = owned
+            .filter((b) => b.status !== "cancelled")
+            .reduce(
+                (sum, b) => sum + (b.price_agreed != null ? Number(b.price_agreed) : 0),
+                0,
+            );
         return { action, upcoming, completed, quoted };
     }, [bookings]);
 

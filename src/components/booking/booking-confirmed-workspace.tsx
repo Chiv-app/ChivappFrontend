@@ -206,11 +206,20 @@ export default function BookingConfirmedWorkspace({
         }
     }
 
+    const gracePeriodExpired =
+        countdownExpired ||
+        isBookingReviewGraceExpired(
+            booking.event_date,
+            booking.start_time,
+            booking.end_time,
+        );
+
     async function handleComplete() {
         const { canFinalize, missing } = getCompletionGates(booking.status, {
             hasReview,
             role,
             isExternalBooking,
+            gracePeriodExpired,
         });
 
         if (!canFinalize) {
@@ -268,13 +277,6 @@ export default function BookingConfirmedWorkspace({
         booking.status === "in_progress" ||
         booking.status === "payment_released" ||
         booking.status === "completed";
-    const gracePeriodExpired =
-        countdownExpired ||
-        isBookingReviewGraceExpired(
-            booking.event_date,
-            booking.start_time,
-            booking.end_time,
-        );
     const reviewGateDone = hasReview || gracePeriodExpired || isCompleted;
     // Finalizada: solo lectura (sin nuevas reacciones).
     const canAddReview =
