@@ -1,23 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
     Button,
     Card,
     CardBody,
-    Chip,
     Input,
     Pagination,
-    Tab,
-    Tabs,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import MusicianCreateBookingModal from "@/components/booking/musician-create-booking-modal";
 import CancelBookingModal from "@/components/booking/cancel-booking-modal";
-import BookingReservationItem, {
-    type BookingLayoutMode,
-} from "@/components/dashboard/booking-reservation-item";
+import {
+    BookingAgendaListItem,
+    BookingDetailPreviewContent,
+    BookingMobileSheet,
+    groupBookingsByEventDate,
+} from "@/components/dashboard/booking-master-detail-panel";
 import { useAuth } from "@/contexts/auth-context";
 import { listBookings } from "@/lib/bookings";
 import {
@@ -60,9 +61,9 @@ function getMusicianBookingBucket(
 function actionLabel(booking: BookingOut) {
     if (booking.complaint_status === "open") return "Responder queja";
     const status = booking.status;
-    if (status === "requested") return "Cotizar";
+    if (status === "requested") return "Cotizar ahora";
     if (status === "change_pending") return "Revisar cambio";
-    return "Gestionar";
+    return "Gestionar presentación";
 }
 
 export default function MusicianBookingsView() {
@@ -73,7 +74,10 @@ export default function MusicianBookingsView() {
     const [filter, setFilter] = useState<FilterKey>("all");
     const [query, setQuery] = useState("");
     const [page, setPage] = useState(1);
-    const [layout, setLayout] = useState<BookingLayoutMode>("cards");
+    const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+        null,
+    );
+    const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -131,7 +135,8 @@ export default function MusicianBookingsView() {
         const quoted = owned
             .filter((b) => b.status !== "cancelled")
             .reduce(
-                (sum, b) => sum + (b.price_agreed != null ? Number(b.price_agreed) : 0),
+                (sum, b) =>
+                    sum + (b.price_agreed != null ? Number(b.price_agreed) : 0),
                 0,
             );
         return { action, active, completed, cancelled, quoted };
@@ -171,17 +176,43 @@ export default function MusicianBookingsView() {
         return filtered.slice(start, start + PAGE_SIZE);
     }, [filtered, currentPage]);
 
+    const dateGroups = useMemo(
+        () => groupBookingsByEventDate(pageItems),
+        [pageItems],
+    );
+
+    const activeSelectedBooking = useMemo(() => {
+        if (filtered.length === 0) return null;
+        if (selectedBookingId) {
+            const found = filtered.find((b) => b.id === selectedBookingId);
+            if (found) return found;
+        }
+        return pageItems[0] ?? filtered[0] ?? null;
+    }, [filtered, pageItems, selectedBookingId]);
+
     if (isLoading) {
         return (
             <div className="w-full flex flex-col gap-4">
-                <div className="h-28 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
-                <div className="h-64 rounded-4xl bg-content1/60 border border-default-200/70 animate-pulse" />
+                <div className="h-14 rounded-2xl bg-content1/60 border border-default-200/70 animate-pulse" />
+                <div className="h-96 rounded-3xl bg-content1/60 border border-default-200/70 animate-pulse" />
             </div>
         );
     }
 
+    const filterPills: Array<{
+        key: FilterKey;
+        label: string;
+        count: number;
+    }> = [
+        { key: "all", label: "Todas", count: bookings.length },
+        { key: "action", label: "Por atender", count: stats.action },
+        { key: "active", label: "Activas", count: stats.active },
+        { key: "completed", label: "Finalizadas", count: stats.completed },
+        { key: "cancelled", label: "Canceladas", count: stats.cancelled },
+    ];
+
     return (
-        <div className="w-full flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-4">
             <CancelBookingModal
                 bookingId={cancelTargetId}
                 isOpen={cancelTargetId != null}
@@ -192,34 +223,6 @@ export default function MusicianBookingsView() {
                     void loadBookings();
                 }}
             />
-            <div className="rounded-4xl border border-default-200/70 bg-gradient-to-br from-primary/15 via-content1 to-content1 px-4 py-5 sm:px-6 sm:py-6 shadow-soft overflow-hidden relative">
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-4">
-                    <div className="min-w-0">
-                        <Chip color="primary" variant="flat" size="sm" className="mb-3">
-                            Gestión de agenda
-                        </Chip>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                            Reservas
-                        </h1>
-                        <p className="text-default-600 mt-2 max-w-2xl text-sm sm:text-base">
-                            {memberOnly
-                                ? "Aquí ves las reservas a las que te convocaron. Puedes aceptar o rechazar y, si aceptas, coordinar el evento."
-                                : "Prioriza lo que necesita tu respuesta, crea contratas con tus clientes y cierra presentaciones con claridad."}
-                        </p>
-                    </div>
-                    {!memberOnly ? (
-                        <Button
-                            color="primary"
-                            radius="lg"
-                            className="font-semibold shadow-glow hover:shadow-glow-lg transition-shadow w-full sm:w-auto"
-                            startContent={<Icon icon="material-symbols:add" width={18} />}
-                            onPress={() => setIsCreateOpen(true)}
-                        >
-                            Nueva contrata
-                        </Button>
-                    ) : null}
-                </div>
-            </div>
 
             {!memberOnly ? (
                 <MusicianCreateBookingModal
@@ -227,6 +230,115 @@ export default function MusicianBookingsView() {
                     onOpenChange={setIsCreateOpen}
                 />
             ) : null}
+
+            {/* 1. Cabecera compacta integrada: Título + Sub-navegación de Agenda + Nueva contrata */}
+            <header className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                            Reservas
+                        </h1>
+                        <nav
+                            aria-label="Secciones de Agenda"
+                            className="hidden sm:inline-flex items-center gap-1 rounded-full border border-default-200/80 bg-content1 p-1 shadow-xs"
+                        >
+                            <Link
+                                href="/musician/bookings"
+                                aria-current="page"
+                                className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 text-primary-text px-3.5 py-1.5 text-xs font-bold transition-colors"
+                            >
+                                <Icon
+                                    icon="material-symbols:event-upcoming-rounded"
+                                    width={16}
+                                    aria-hidden="true"
+                                />
+                                <span>Reservas</span>
+                            </Link>
+                            <Link
+                                href="/musician/calendar"
+                                className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-default-600 hover:text-foreground hover:bg-default-100/70 transition-colors"
+                            >
+                                <Icon
+                                    icon="material-symbols:calendar-view-week-rounded"
+                                    width={16}
+                                    aria-hidden="true"
+                                />
+                                <span>Calendario</span>
+                            </Link>
+                            {!memberOnly ? (
+                                <Link
+                                    href="/musician/links"
+                                    className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-default-600 hover:text-foreground hover:bg-default-100/70 transition-colors"
+                                >
+                                    <Icon
+                                        icon="material-symbols:add-link-rounded"
+                                        width={16}
+                                        aria-hidden="true"
+                                    />
+                                    <span>Enlaces de pago</span>
+                                </Link>
+                            ) : null}
+                        </nav>
+                    </div>
+
+                    {!memberOnly ? (
+                        <Button
+                            color="primary"
+                            radius="full"
+                            className="font-bold shadow-soft px-4 sm:px-5 shrink-0"
+                            startContent={
+                                <Icon icon="material-symbols:add" width={18} />
+                            }
+                            onPress={() => setIsCreateOpen(true)}
+                        >
+                            Nueva contrata
+                        </Button>
+                    ) : null}
+                </div>
+
+                {/* Sub-navegación de Agenda en Mobile */}
+                <nav
+                    aria-label="Secciones de Agenda móvil"
+                    className="grid sm:hidden grid-cols-3 gap-1 rounded-full border border-default-200/80 bg-content1 p-1 shadow-xs"
+                >
+                    <Link
+                        href="/musician/bookings"
+                        aria-current="page"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary/15 text-primary-text py-2 px-2 text-xs font-bold"
+                    >
+                        <Icon
+                            icon="material-symbols:event-upcoming-rounded"
+                            width={15}
+                            aria-hidden="true"
+                        />
+                        <span>Reservas</span>
+                    </Link>
+                    <Link
+                        href="/musician/calendar"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-full py-2 px-2 text-xs font-semibold text-default-600"
+                    >
+                        <Icon
+                            icon="material-symbols:calendar-view-week-rounded"
+                            width={15}
+                            aria-hidden="true"
+                        />
+                        <span>Calendario</span>
+                    </Link>
+                    {!memberOnly ? (
+                        <Link
+                            href="/musician/links"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full py-2 px-2 text-xs font-semibold text-default-600"
+                        >
+                            <Icon
+                                icon="material-symbols:add-link-rounded"
+                                width={15}
+                                aria-hidden="true"
+                            />
+                            <span>Pagos</span>
+                        </Link>
+                    ) : null}
+                </nav>
+            </header>
 
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -236,142 +348,123 @@ export default function MusicianBookingsView() {
                         </p>
                         <p className="text-xs text-default-600">{loadError}</p>
                     </div>
-                    <Button size="sm" color="danger" variant="flat" onPress={loadBookings}>
+                    <Button
+                        size="sm"
+                        color="danger"
+                        variant="flat"
+                        onPress={loadBookings}
+                    >
                         Reintentar
                     </Button>
                 </div>
             ) : null}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-                {[
-                    {
-                        key: "action" as FilterKey,
-                        label: "Por atender",
-                        subtitle: "Solicitudes por cotizar, cambios o disputas",
-                        value: stats.action,
-                        icon: "material-symbols:priority-high",
-                        tone: "text-warning",
-                        bg: "bg-warning/10",
-                        activeBorder: "border-warning ring-2 ring-warning/20 bg-warning/5",
-                    },
-                    {
-                        key: "active" as FilterKey,
-                        label: "Activas",
-                        subtitle: "Cotizadas en espera o shows confirmados",
-                        value: stats.active,
-                        icon: "material-symbols:event-upcoming",
-                        tone: "text-primary",
-                        bg: "bg-primary/10",
-                        activeBorder: "border-primary ring-2 ring-primary/20 bg-primary/5",
-                    },
-                    {
-                        key: "completed" as FilterKey,
-                        label: "Finalizadas",
-                        subtitle: "Eventos realizados y cerrados con éxito",
-                        value: stats.completed,
-                        icon: "material-symbols:check-circle",
-                        tone: "text-success",
-                        bg: "bg-success/10",
-                        activeBorder: "border-success ring-2 ring-success/20 bg-success/5",
-                    },
-                    {
-                        key: "all" as FilterKey,
-                        label: "Monto vigente",
-                        subtitle: "Activas y finalizadas (sin canceladas)",
-                        value: formatCurrency(stats.quoted),
-                        icon: "material-symbols:payments",
-                        tone: "text-secondary",
-                        bg: "bg-secondary/10",
-                        activeBorder: "border-secondary ring-2 ring-secondary/20 bg-secondary/5",
-                        isText: true,
-                    },
-                ].map((item) => {
-                    const isSelected = filter === item.key;
-                    return (
-                        <button
-                            key={item.label}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => {
-                                setFilter((prev) =>
-                                    prev === item.key && item.key !== "all"
-                                        ? "all"
-                                        : item.key,
-                                );
-                                setPage(1);
-                            }}
-                            className={`group text-left rounded-2xl border p-3.5 sm:p-4 transition-all shadow-soft hover:border-default-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                                isSelected
-                                    ? item.activeBorder
-                                    : "border-default-200/70 bg-content1"
-                            }`}
-                        >
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <div
-                                        className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${item.bg} ${item.tone}`}
-                                    >
-                                        <Icon icon={item.icon} width={18} aria-hidden="true" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-foreground truncate">
-                                            {item.label}
-                                        </p>
-                                        <p className="text-[11px] text-default-500 line-clamp-1 mt-0.5">
-                                            {item.subtitle}
-                                        </p>
-                                    </div>
-                                </div>
-                                <p
-                                    className={`font-bold text-foreground tabular-nums shrink-0 ${
-                                        item.isText
-                                            ? "text-base sm:text-lg"
-                                            : "text-xl sm:text-2xl"
+            {/* 2. Barra compacta clicable de indicadores (Tira horizontal en Desktop, grilla 2x2 en Mobile) */}
+            <div className="rounded-2xl border border-default-200/80 bg-content1 p-2.5 sm:px-4 sm:py-2.5 shadow-soft">
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4">
+                    <div className="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+                        {[
+                            {
+                                key: "action" as FilterKey,
+                                label: "Por atender",
+                                mobileLabel: "Por atender",
+                                count: stats.action,
+                                dotClass: "bg-warning",
+                                activeClass:
+                                    "bg-warning/15 border-warning/40 text-foreground",
+                            },
+                            {
+                                key: "active" as FilterKey,
+                                label: "Activas",
+                                mobileLabel: "Activas",
+                                count: stats.active,
+                                dotClass: "bg-primary",
+                                activeClass:
+                                    "bg-primary/15 border-primary/40 text-foreground",
+                            },
+                            {
+                                key: "completed" as FilterKey,
+                                label: "Finalizadas",
+                                mobileLabel: "Finalizadas",
+                                count: stats.completed,
+                                dotClass: "bg-success",
+                                activeClass:
+                                    "bg-success/15 border-success/40 text-foreground",
+                            },
+                        ].map((item) => {
+                            const isSelected = filter === item.key;
+                            return (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    aria-pressed={isSelected}
+                                    onClick={() => {
+                                        setFilter((prev) =>
+                                            prev === item.key ? "all" : item.key,
+                                        );
+                                        setPage(1);
+                                    }}
+                                    className={`inline-flex items-center justify-between sm:justify-start gap-2 rounded-xl border px-3 py-2 sm:py-1.5 text-xs sm:text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                                        isSelected
+                                            ? item.activeClass
+                                            : "border-transparent bg-default-100/70 sm:bg-transparent hover:bg-default-100 text-default-700"
                                     }`}
                                 >
-                                    {item.value}
-                                </p>
-                            </div>
-                        </button>
-                    );
-                })}
+                                    <span className="inline-flex items-center gap-2 min-w-0">
+                                        <span
+                                            aria-hidden="true"
+                                            className={`size-2.5 rounded-full shrink-0 ${item.dotClass}`}
+                                        />
+                                        <span className="truncate font-medium">
+                                            {item.label}
+                                        </span>
+                                    </span>
+                                    <span className="font-extrabold text-foreground tabular-nums">
+                                        {item.count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <button
+                        type="button"
+                        aria-pressed={filter === "all"}
+                        onClick={() => {
+                            setFilter("all");
+                            setPage(1);
+                        }}
+                        title="Suma de reservas activas y finalizadas (no incluye canceladas)"
+                        className="inline-flex items-center justify-between sm:justify-end gap-2 rounded-xl border border-transparent bg-default-100/70 sm:bg-transparent px-3 py-2 sm:py-1.5 text-xs sm:text-sm hover:bg-default-100 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                    >
+                        <span className="text-default-600 font-medium">
+                            Total cotizado:
+                        </span>
+                        <span className="font-extrabold text-primary-text text-sm sm:text-base tabular-nums">
+                            {formatCurrency(stats.quoted)}
+                        </span>
+                    </button>
+                </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 rounded-2xl border border-default-200/70 bg-content1 p-2 sm:p-2.5 shadow-soft">
-                <Tabs
-                    aria-label="Filtrar reservas de la agrupación por estado"
-                    selectedKey={filter}
-                    onSelectionChange={(key) => {
-                        setFilter(key as FilterKey);
-                        setPage(1);
-                    }}
-                    variant="underlined"
-                    color="primary"
-                    classNames={{
-                        base: "w-full lg:w-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                        tabList: "gap-1 sm:gap-2 flex-nowrap border-b-0 p-0",
-                        tab: "h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium",
-                    }}
-                >
-                    <Tab key="all" title={`Todas (${bookings.length})`} />
-                    <Tab key="action" title={`Por atender (${stats.action})`} />
-                    <Tab key="active" title={`Activas (${stats.active})`} />
-                    <Tab key="completed" title={`Finalizadas (${stats.completed})`} />
-                    <Tab key="cancelled" title={`Canceladas (${stats.cancelled})`} />
-                </Tabs>
-                <div className="flex items-center gap-2 w-full lg:w-auto lg:justify-end">
+            {/* 3. Layout Maestro-Detalle (Lista compacta a la izquierda + Panel de detalle a la derecha en Desktop / Bottom Sheet en Mobile) */}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(21rem,26rem)_minmax(0,1fr)] xl:grid-cols-[28rem_minmax(0,1fr)] gap-4 items-start">
+                {/* Columna Izquierda: Buscador + Píldoras de estado + Lista agrupada por fecha */}
+                <div className="flex flex-col gap-3 min-w-0">
                     <Input
-                        aria-label="Buscar reservas por evento, cliente, ciudad o estado"
+                        aria-label="Buscar reservas por evento, cliente o lugar"
                         value={query}
                         onValueChange={(val) => {
                             setQuery(val);
                             setPage(1);
                         }}
-                        placeholder="Buscar por evento, cliente, ciudad o estado..."
+                        placeholder="Buscar por evento, cliente o lugar..."
                         variant="bordered"
-                        radius="lg"
+                        radius="full"
                         size="sm"
-                        className="w-full lg:w-72 xl:w-80"
+                        classNames={{
+                            inputWrapper: "bg-content1 border-default-200/80 shadow-xs",
+                        }}
                         startContent={
                             <Icon
                                 icon="material-symbols:search"
@@ -380,125 +473,253 @@ export default function MusicianBookingsView() {
                             />
                         }
                     />
-                    <div className="inline-flex items-center rounded-xl bg-content2/70 p-1 gap-1 shrink-0">
-                        <Button
-                            isIconOnly
-                            aria-label="Vista en cards"
-                            size="sm"
-                            radius="lg"
-                            variant={layout === "cards" ? "solid" : "light"}
-                            color={layout === "cards" ? "primary" : "default"}
-                            onPress={() => setLayout("cards")}
-                        >
-                            <Icon icon="material-symbols:grid-view" width={18} />
-                        </Button>
-                        <Button
-                            isIconOnly
-                            aria-label="Vista en lista"
-                            size="sm"
-                            radius="lg"
-                            variant={layout === "list" ? "solid" : "light"}
-                            color={layout === "list" ? "primary" : "default"}
-                            onPress={() => setLayout("list")}
-                        >
-                            <Icon icon="material-symbols:view-list" width={18} />
-                        </Button>
-                    </div>
-                </div>
-            </div>
 
-            {filtered.length === 0 ? (
-                <Card className="border border-default-200/70 shadow-soft">
-                    <CardBody className="gap-3 p-10 text-center">
-                        <Icon
-                            icon="material-symbols:event-busy"
-                            width={36}
-                            className="mx-auto text-default-400"
-                        />
-                        <p className="font-semibold text-foreground">
-                            No hay reservas en esta vista
-                        </p>
-                        <p className="text-sm text-default-500">
-                            {memberOnly
-                                ? "Cuando te asocien a un evento aparecerá aquí."
-                                : "Cuando recibas solicitudes aparecerán aquí, o crea una contrata con los datos de tu cliente."}
-                        </p>
-                        {!memberOnly ? (
-                            <Button
-                                color="primary"
-                                variant="flat"
-                                radius="lg"
-                                className="mx-auto font-semibold"
-                                startContent={<Icon icon="material-symbols:add" width={18} />}
-                                onPress={() => setIsCreateOpen(true)}
-                            >
-                                Nueva contrata
-                            </Button>
-                        ) : null}
-                    </CardBody>
-                </Card>
-            ) : (
-                <div className="flex flex-col gap-3">
+                    {/* Píldoras de filtro con suma exacta */}
                     <div
-                        className={
-                            layout === "cards"
-                                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4"
-                                : "flex flex-col gap-3"
-                        }
+                        role="group"
+                        aria-label="Filtrar reservas por estado"
+                        className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     >
-                        {pageItems.map((booking) => {
-                            const isMember = booking.viewer_role === "member";
-                            const memberPending =
-                                isMember &&
-                                booking.member_invite_status === "pending";
-                            const urgent = needsMusicianAction(booking);
-                            const canCancel =
-                                !isMember && isCancellableBookingStatus(booking.status);
-
+                        {filterPills.map((pill) => {
+                            const active = filter === pill.key;
                             return (
-                                <BookingReservationItem
-                                    key={booking.id}
-                                    booking={booking}
-                                    role="musician"
-                                    layout={layout}
-                                    urgent={urgent}
-                                    primaryActionLabel={
-                                        memberPending
-                                            ? "Responder convocatoria"
-                                            : isMember
-                                              ? "Ver detalle"
-                                              : actionLabel(booking)
-                                    }
-                                    detailHref={`/musician/bookings/${booking.id}`}
-                                    canCancel={canCancel}
-                                    isCancelling={false}
-                                    onCancel={() => setCancelTargetId(booking.id)}
-                                    memberBadge={isMember}
-                                />
+                                <button
+                                    key={pill.key}
+                                    type="button"
+                                    aria-pressed={active}
+                                    onClick={() => {
+                                        setFilter(pill.key);
+                                        setPage(1);
+                                    }}
+                                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                                        active
+                                            ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                                            : "bg-content1 text-default-700 border-default-200/80 hover:border-default-300"
+                                    }`}
+                                >
+                                    <span>{pill.label}</span>
+                                    <span className="tabular-nums opacity-90">
+                                        ({pill.count})
+                                    </span>
+                                </button>
                             );
                         })}
                     </div>
 
-                    {filtered.length > PAGE_SIZE ? (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                            <p className="text-sm text-default-500">
-                                Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
-                                {Math.min(currentPage * PAGE_SIZE, filtered.length)} de{" "}
-                                {filtered.length}
-                            </p>
-                            <Pagination
-                                page={currentPage}
-                                total={totalPages}
-                                onChange={setPage}
-                                showControls
-                                color="primary"
-                                radius="lg"
-                                size="sm"
-                            />
+                    {filtered.length === 0 ? (
+                        <Card className="border border-default-200/70 shadow-soft">
+                            <CardBody className="gap-3 p-8 text-center">
+                                <Icon
+                                    icon="material-symbols:event-busy"
+                                    width={34}
+                                    className="mx-auto text-default-400"
+                                />
+                                <p className="font-semibold text-foreground text-sm">
+                                    No hay reservas en esta vista
+                                </p>
+                                <p className="text-xs text-default-500">
+                                    {memberOnly
+                                        ? "Cuando te asocien a un evento aparecerá aquí."
+                                        : "Cuando recibas solicitudes aparecerán aquí, o crea una contrata con los datos de tu cliente."}
+                                </p>
+                                {!memberOnly ? (
+                                    <Button
+                                        color="primary"
+                                        variant="flat"
+                                        radius="full"
+                                        size="sm"
+                                        className="mx-auto font-semibold"
+                                        startContent={
+                                            <Icon
+                                                icon="material-symbols:add"
+                                                width={16}
+                                            />
+                                        }
+                                        onPress={() => setIsCreateOpen(true)}
+                                    >
+                                        Nueva contrata
+                                    </Button>
+                                ) : null}
+                            </CardBody>
+                        </Card>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            {dateGroups.map((group) => (
+                                <div
+                                    key={group.eventDate}
+                                    className="flex flex-col gap-2"
+                                >
+                                    <div className="flex items-center justify-between px-1 pt-1 text-xs">
+                                        <span
+                                            className={`font-bold ${
+                                                group.isToday
+                                                    ? "text-primary-text"
+                                                    : "text-default-600"
+                                            }`}
+                                        >
+                                            {group.headerLabel}
+                                        </span>
+                                        <span className="text-default-500 font-medium">
+                                            {group.items.length}{" "}
+                                            {group.items.length === 1
+                                                ? "evento"
+                                                : "eventos"}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {group.items.map((booking) => {
+                                            const isMember =
+                                                booking.viewer_role === "member";
+                                            const urgent =
+                                                needsMusicianAction(booking);
+                                            const isSelected =
+                                                activeSelectedBooking?.id ===
+                                                booking.id;
+
+                                            return (
+                                                <BookingAgendaListItem
+                                                    key={booking.id}
+                                                    booking={booking}
+                                                    role="musician"
+                                                    urgent={urgent}
+                                                    isSelected={isSelected}
+                                                    memberBadge={isMember}
+                                                    onSelect={() => {
+                                                        setSelectedBookingId(
+                                                            booking.id,
+                                                        );
+                                                        if (
+                                                            typeof window !==
+                                                                "undefined" &&
+                                                            window.innerWidth <
+                                                                1024
+                                                        ) {
+                                                            setIsMobileSheetOpen(
+                                                                true,
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {filtered.length > PAGE_SIZE ? (
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
+                                    <p className="text-xs text-default-500">
+                                        Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+                                        {Math.min(
+                                            currentPage * PAGE_SIZE,
+                                            filtered.length,
+                                        )}{" "}
+                                        de {filtered.length}
+                                    </p>
+                                    <Pagination
+                                        page={currentPage}
+                                        total={totalPages}
+                                        onChange={setPage}
+                                        showControls
+                                        color="primary"
+                                        radius="lg"
+                                        size="sm"
+                                    />
+                                </div>
+                            ) : null}
                         </div>
-                    ) : null}
+                    )}
                 </div>
-            )}
+
+                {/* Columna Derecha (Desktop): Panel de Detalle Persistente */}
+                <div className="hidden lg:block sticky top-[calc(var(--app-navbar-height)+1rem)]">
+                    {activeSelectedBooking ? (
+                        <Card className="border border-default-200/80 bg-content1 shadow-soft rounded-3xl">
+                            <CardBody className="p-6">
+                                {(() => {
+                                    const isMember =
+                                        activeSelectedBooking.viewer_role ===
+                                        "member";
+                                    const memberPending =
+                                        isMember &&
+                                        activeSelectedBooking.member_invite_status ===
+                                            "pending";
+                                    const urgent = needsMusicianAction(
+                                        activeSelectedBooking,
+                                    );
+                                    const canCancel =
+                                        !isMember &&
+                                        isCancellableBookingStatus(
+                                            activeSelectedBooking.status,
+                                        );
+
+                                    return (
+                                        <BookingDetailPreviewContent
+                                            booking={activeSelectedBooking}
+                                            role="musician"
+                                            urgent={urgent}
+                                            primaryActionLabel={
+                                                memberPending
+                                                    ? "Responder convocatoria"
+                                                    : isMember
+                                                      ? "Ver detalle"
+                                                      : actionLabel(
+                                                            activeSelectedBooking,
+                                                        )
+                                            }
+                                            detailHref={`/musician/bookings/${activeSelectedBooking.id}`}
+                                            canCancel={canCancel}
+                                            onCancel={() =>
+                                                setCancelTargetId(
+                                                    activeSelectedBooking.id,
+                                                )
+                                            }
+                                            memberBadge={isMember}
+                                        />
+                                    );
+                                })()}
+                            </CardBody>
+                        </Card>
+                    ) : (
+                        <Card className="border border-default-200/70 bg-content1/60 shadow-soft rounded-3xl">
+                            <CardBody className="p-10 text-center text-default-500 text-sm">
+                                Selecciona una reserva de la lista para ver su
+                                ubicación, cliente, resumen económico y acciones
+                                rápidas.
+                            </CardBody>
+                        </Card>
+                    )}
+                </div>
+            </div>
+
+            {/* Bottom Sheet (Mobile) al tocar una reserva */}
+            {activeSelectedBooking ? (
+                <BookingMobileSheet
+                    isOpen={isMobileSheetOpen}
+                    onOpenChange={setIsMobileSheetOpen}
+                    booking={activeSelectedBooking}
+                    role="musician"
+                    urgent={needsMusicianAction(activeSelectedBooking)}
+                    primaryActionLabel={
+                        activeSelectedBooking.viewer_role === "member" &&
+                        activeSelectedBooking.member_invite_status === "pending"
+                            ? "Responder convocatoria"
+                            : activeSelectedBooking.viewer_role === "member"
+                              ? "Ver detalle"
+                              : actionLabel(activeSelectedBooking)
+                    }
+                    detailHref={`/musician/bookings/${activeSelectedBooking.id}`}
+                    canCancel={
+                        activeSelectedBooking.viewer_role !== "member" &&
+                        isCancellableBookingStatus(activeSelectedBooking.status)
+                    }
+                    onCancel={() => {
+                        setIsMobileSheetOpen(false);
+                        setCancelTargetId(activeSelectedBooking.id);
+                    }}
+                    memberBadge={activeSelectedBooking.viewer_role === "member"}
+                />
+            ) : null}
         </div>
     );
 }

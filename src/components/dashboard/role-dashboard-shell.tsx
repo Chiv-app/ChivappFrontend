@@ -186,9 +186,11 @@ export default function RoleDashboardShell({
     const isBookingDetailRoute = /^\/(musician|contractor)\/bookings\/[^/]+$/.test(
         pathname,
     );
+    const hasEmbeddedSubNav = pathname === "/musician/bookings";
 
     const activeHubSubItems = useMemo(() => {
-        if (!activeHub?.subItems || isBookingDetailRoute) return [];
+        if (!activeHub?.subItems || isBookingDetailRoute || hasEmbeddedSubNav)
+            return [];
         const isEnsembleOnly =
             role === "musician" &&
             Boolean(user?.is_ensemble_member) &&
@@ -197,7 +199,14 @@ export default function RoleDashboardShell({
             if (isEnsembleOnly && !sub.ensembleAllowed) return false;
             return true;
         });
-    }, [activeHub, isBookingDetailRoute, role, user?.is_ensemble_member, isVerified]);
+    }, [
+        activeHub,
+        isBookingDetailRoute,
+        hasEmbeddedSubNav,
+        role,
+        user?.is_ensemble_member,
+        isVerified,
+    ]);
 
     if (!isLoading && !user && authError) {
         return (
