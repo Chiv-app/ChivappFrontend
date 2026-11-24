@@ -42,7 +42,7 @@ export default function HeroSearchSection({ stats = null }: Props) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                className="relative z-20 max-w-4xl mx-auto flex flex-col items-center w-full"
+                className="relative z-20 max-w-5xl mx-auto flex flex-col items-center w-full"
             >
                 <p className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3.5 py-1 text-xs font-semibold text-primary-text mb-4">
                     Músicos, agrupaciones y DJs verificados en Perú
@@ -75,7 +75,7 @@ export default function HeroSearchSection({ stats = null }: Props) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 }}
-                    className="flex flex-col sm:flex-row items-stretch sm:items-center w-full max-w-4xl bg-content1 border border-default-200/80 sm:rounded-full rounded-3xl p-2.5 shadow-elevated backdrop-blur-xl"
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center w-full max-w-5xl bg-content1 border border-default-200/80 sm:rounded-full rounded-3xl p-2.5 shadow-elevated backdrop-blur-xl"
                 >
                     <label
                         htmlFor="hero-location"
@@ -98,8 +98,8 @@ export default function HeroSearchSection({ stats = null }: Props) {
                                 enterKeyHint="search"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
-                                placeholder="¿Dónde es tu evento? (ej. Lima)"
-                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
+                                placeholder="Ej. Lima, Arequipa, Cusco"
+                                className="bg-transparent border-none text-base sm:text-sm text-foreground w-full p-0 m-0 focus-visible:outline-none"
                             />
                         </span>
                     </label>
@@ -124,8 +124,8 @@ export default function HeroSearchSection({ stats = null }: Props) {
                                 enterKeyHint="search"
                                 value={style}
                                 onChange={(e) => setStyle(e.target.value)}
-                                placeholder="Rock, salsa, jazz, orquesta, DJ..."
-                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
+                                placeholder="Ej. Mariachi, Rock, Salsa, DJ"
+                                className="bg-transparent border-none text-base sm:text-sm text-foreground w-full p-0 m-0 focus-visible:outline-none"
                             />
                         </span>
                     </label>
@@ -147,9 +147,10 @@ export default function HeroSearchSection({ stats = null }: Props) {
                                 id="hero-date"
                                 name="available_date"
                                 type="date"
+                                data-empty={eventDate === "" ? "true" : undefined}
                                 value={eventDate}
                                 onChange={(e) => setEventDate(e.target.value)}
-                                className="bg-transparent border-none text-base sm:text-sm text-foreground placeholder:text-default-500 w-full p-0 m-0 focus-visible:outline-none"
+                                className="bg-transparent border-none text-base sm:text-sm text-foreground w-full p-0 m-0 focus-visible:outline-none"
                             />
                         </span>
                     </label>

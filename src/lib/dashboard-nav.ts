@@ -300,9 +300,8 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/bookings",
         title: "Agenda y Reservas",
-        badge: "3 vistas integradas",
         description:
-            "Gestiona tus reservas, sincroniza tu calendario con Google y genera enlaces rápidos de pago en un solo módulo.",
+            "Gestiona tus reservas, sincroniza tu calendario con Google y genera enlaces rápidos de pago.",
         icon: "material-symbols:calendar-month-rounded",
         requiresVerification: true,
         subLinks: [
@@ -326,9 +325,8 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/members",
         title: "Equipo y Reparto",
-        badge: "2 vistas integradas",
         description:
-            "Administra el directorio de integrantes de tu agrupación, convócalos a shows y liquida el reparto por evento.",
+            "Administra a los integrantes de tu agrupación, convócalos a shows y liquida el reparto por evento.",
         icon: "material-symbols:groups-rounded",
         requiresVerification: true,
         subLinks: [
@@ -347,19 +345,18 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/earnings",
         title: "Finanzas y Reportes",
-        badge: "2 vistas integradas",
         description:
-            "Controla tu dinero disponible para retirar, el historial de pagos, tus ingresos como integrante y la analítica.",
+            "Controla tu dinero disponible para retirar, el historial de pagos, tus ingresos como integrante y reportes.",
         icon: "material-symbols:payments-rounded",
         requiresVerification: true,
         subLinks: [
             {
-                label: "Mis cobros y Retiros",
+                label: "Mis cobros",
                 href: "/musician/earnings",
                 icon: "material-symbols:payments-rounded",
             },
             {
-                label: "Reportes y Analítica",
+                label: "Reportes",
                 href: "/musician/reports",
                 icon: "material-symbols:analytics-rounded",
             },
@@ -368,18 +365,10 @@ export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/assistant",
         title: "Asistente IA",
-        badge: "IA + WhatsApp",
         description:
             "Entrena tu tarifario inteligente por zona y horario, prueba el simulador en vivo y conecta tu WhatsApp.",
         icon: "material-symbols:smart-toy-rounded",
         requiresVerification: true,
-        subLinks: [
-            {
-                label: "Tarifario y Simulador",
-                href: "/musician/assistant",
-                icon: "material-symbols:smart-toy-rounded",
-            },
-        ],
     },
 ];
 
@@ -387,7 +376,6 @@ export const CONTRACTOR_MODULES: DashboardModule[] = [
     {
         href: "/contractor/bookings",
         title: "Mis Eventos y Calendario",
-        badge: "2 vistas integradas",
         description:
             "Administra tus eventos contratados, coordina en vivo con los músicos y revisa tu calendario sincronizado.",
         icon: "material-symbols:celebration-rounded",
@@ -407,15 +395,13 @@ export const CONTRACTOR_MODULES: DashboardModule[] = [
     {
         href: "/contractor/operations",
         title: "Pagos y Gastos",
-        badge: "Pago protegido",
         description:
-            "Sigue tus pagos en garantía, liberaciones, disputas y reembolsos en un solo centro financiero.",
+            "Sigue tus pagos en garantía, liberaciones, disputas y reembolsos en un solo lugar.",
         icon: "material-symbols:receipt-long-rounded",
     },
     {
         href: "/musicians",
         title: "Explorar músicos",
-        badge: "Catálogo verificado",
         description:
             "Encuentra solistas, bandas, mariachis, orquestas y DJs verificados para tu próximo evento.",
         icon: "material-symbols:search-rounded",

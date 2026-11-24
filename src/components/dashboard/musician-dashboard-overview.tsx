@@ -324,7 +324,7 @@ export default function MusicianDashboardOverview({
                         Módulos principales
                     </h2>
                     <p className="text-sm text-default-500 mt-1">
-                        Tus herramientas agrupadas en 4 centros operativos con vistas integradas.
+                        Accesos directos a lo que usas día a día.
                     </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

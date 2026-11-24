@@ -22,16 +22,10 @@ const FALLBACK_IMAGE =
   "https://images.pexels.com/photos/1105666/pexels-photo-1105666.jpeg";
 const CAROUSEL_MS = 2500;
 
-/** Stable aspect-ratio pattern so masonry heights vary across cards. */
+/** Balanced aspect ratios so card titles, prices, and ratings always fit in viewport. */
 const ASPECT_VARIANTS = [
-  "aspect-[3/4]",
-  "aspect-[4/5]",
-  "aspect-[5/6]",
-  "aspect-square",
-  "aspect-[5/4]",
-  "aspect-[6/5]",
-  "aspect-[2/3]",
   "aspect-[4/3]",
+  "aspect-[5/4]",
 ] as const;
 
 const TEXT_SHADOW = "drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]";
@@ -114,8 +108,8 @@ export default function MusicianCardComponent({
       className={[
         "relative group overflow-hidden rounded-3xl sm:rounded-4xl break-inside-avoid cursor-pointer block w-full",
         size === "large"
-          ? "min-h-64 sm:min-h-80 lg:min-h-[28rem]"
-          : "min-h-48 sm:min-h-56",
+          ? "min-h-60 sm:min-h-68 lg:min-h-72"
+          : "min-h-56 sm:min-h-64",
         aspectClass,
         "ring-1 ring-transparent shadow-soft",
         "transition-[transform,box-shadow,ring-color] duration-500",

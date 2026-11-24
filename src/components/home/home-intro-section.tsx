@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import MusicianCard from "@/components/layout/musician-card";
 import EmptyMusiciansState from "@/components/musicians/empty-musicians-state";
-import MasonryItem from "@/components/ui/masonry-item";
 import type { MusicianCard as MusicianCardModel } from "@/types/ui/musician";
 import { motion } from "framer-motion";
 
@@ -73,25 +72,24 @@ export default function HomeIntroSection({
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
                     transition={{ staggerChildren: 0.1 }}
-                    className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-7 grid-flow-dense auto-rows-[10px]"
+                    className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6 items-start"
                 >
                     {musicians.map((m, i) => (
-                        <MasonryItem key={m.id} index={i}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: i * 0.05 }}
-                                className="h-full"
-                            >
-                                <MusicianCard
-                                    musician={m}
-                                    index={i}
-                                    size="large"
-                                    priority={i < 2}
-                                />
-                            </motion.div>
-                        </MasonryItem>
+                        <motion.div
+                            key={m.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: i * 0.05 }}
+                            className="min-w-0 w-full"
+                        >
+                            <MusicianCard
+                                musician={m}
+                                index={i}
+                                size="large"
+                                priority={i < 2}
+                            />
+                        </motion.div>
                     ))}
                 </motion.div>
             )}

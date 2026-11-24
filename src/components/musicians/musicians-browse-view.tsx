@@ -5,7 +5,6 @@ import { Icon } from "@iconify/react";
 import { Button } from "@heroui/react";
 import MusicianCard from "@/components/layout/musician-card";
 import EmptyMusiciansState from "@/components/musicians/empty-musicians-state";
-import MasonryItem from "@/components/ui/masonry-item";
 import { todayPeruIso } from "@/lib/date-utils";
 import { searchMusicians } from "@/lib/musicians";
 import { EVENT_TYPE_OPTIONS } from "@/lib/profile-details";
@@ -111,6 +110,7 @@ function FilterField({
                 <input
                     id={id}
                     type={type}
+                    data-empty={value === "" ? "true" : undefined}
                     inputMode={type === "number" ? "numeric" : undefined}
                     min={type === "date" ? todayPeruIso() : type === "number" ? 0 : undefined}
                     list={listId}
@@ -387,27 +387,84 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                         />
                     </div>
 
-                    <div className={`${showMobileFilters ? "flex" : "hidden sm:flex"} mt-3 flex-col gap-2.5 pt-2.5 border-t border-default-200/60`}>
-                        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Tipo de artista">
-                            <span className="text-xs font-medium text-default-500 mr-1">Tipo:</span>
-                            {PROFILE_TYPE_CHOICES.map((choice) => {
-                                const selected = filters.profileType === choice.value;
-                                return (
+                    <div className={`${showMobileFilters ? "flex" : "hidden sm:flex"} mt-3 flex-col gap-2 pt-2.5 border-t border-default-200/60`}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <div className="flex flex-wrap items-center gap-1.5 mr-2 pr-2 border-r border-default-200/70" role="group" aria-label="Tipo de artista">
+                                    <span className="text-xs font-medium text-default-500 mr-0.5">Tipo:</span>
+                                    {PROFILE_TYPE_CHOICES.map((choice) => {
+                                        const selected = filters.profileType === choice.value;
+                                        return (
+                                            <button
+                                                key={choice.value}
+                                                type="button"
+                                                aria-pressed={selected}
+                                                onClick={() => updateFilter("profileType", selected ? "" : choice.value)}
+                                                className={chipClass(selected)}
+                                            >
+                                                <Icon icon={choice.icon} width={14} aria-hidden="true" />
+                                                {choice.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <span className="text-xs font-medium text-default-500 mr-0.5">
+                                    Populares:
+                                </span>
+                                {POPULAR_GENRES.map((genre) => {
+                                    const selected =
+                                        filters.genre.trim().toLowerCase() === genre.toLowerCase();
+                                    return (
+                                        <button
+                                            key={genre}
+                                            type="button"
+                                            aria-pressed={selected}
+                                            onClick={() =>
+                                                updateFilter("genre", selected ? "" : genre)
+                                            }
+                                            className={[
+                                                "inline-flex items-center min-h-8 px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                                                selected
+                                                    ? "bg-primary text-primary-foreground font-semibold"
+                                                    : "bg-default-100 text-default-700 hover:bg-default-200",
+                                            ].join(" ")}
+                                        >
+                                            {genre}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="flex items-center gap-3 ml-auto">
+                                <p
+                                    role="status"
+                                    aria-live="polite"
+                                    className="text-xs font-medium text-default-600"
+                                >
+                                    {isLoading
+                                        ? "Buscando músicos…"
+                                        : `${musicians.length} ${
+                                              musicians.length === 1
+                                                  ? "músico mostrado"
+                                                  : "músicos mostrados"
+                                          }`}
+                                </p>
+                                {activeFilterFlag ? (
                                     <button
-                                        key={choice.value}
                                         type="button"
-                                        aria-pressed={selected}
-                                        onClick={() => updateFilter("profileType", selected ? "" : choice.value)}
-                                        className={chipClass(selected)}
+                                        onClick={clearFilters}
+                                        className="inline-flex items-center gap-1 min-h-8 rounded-full px-3 py-1 text-xs font-semibold text-danger-text hover:bg-danger/10 transition-colors"
                                     >
-                                        <Icon icon={choice.icon} width={14} aria-hidden="true" />
-                                        {choice.label}
+                                        <Icon icon="material-symbols:close" width={14} />
+                                        Limpiar filtros
                                     </button>
-                                );
-                            })}
+                                ) : null}
+                            </div>
                         </div>
+
                         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Tipo de evento">
-                            <span className="text-xs font-medium text-default-500 mr-1">Evento:</span>
+                            <span className="text-xs font-medium text-default-500 mr-0.5">Evento:</span>
                             {EVENT_TYPE_OPTIONS.map((option) => {
                                 const selected = filters.eventType === option.value;
                                 return (
@@ -425,72 +482,16 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                             })}
                         </div>
                     </div>
-
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-default-200/60">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs font-medium text-default-500 mr-1">
-                                Populares:
-                            </span>
-                            {POPULAR_GENRES.map((genre) => {
-                                const selected =
-                                    filters.genre.trim().toLowerCase() === genre.toLowerCase();
-                                return (
-                                    <button
-                                        key={genre}
-                                        type="button"
-                                        aria-pressed={selected}
-                                        onClick={() =>
-                                            updateFilter("genre", selected ? "" : genre)
-                                        }
-                                        className={[
-                                            "inline-flex items-center min-h-9 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors",
-                                            selected
-                                                ? "bg-primary text-primary-foreground font-semibold"
-                                                : "bg-default-100 text-default-700 hover:bg-default-200",
-                                        ].join(" ")}
-                                    >
-                                        {genre}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <p
-                                role="status"
-                                aria-live="polite"
-                                className="text-xs font-medium text-default-600"
-                            >
-                                {isLoading
-                                    ? "Buscando músicos…"
-                                    : `${musicians.length} ${
-                                          musicians.length === 1
-                                              ? "músico mostrado"
-                                              : "músicos mostrados"
-                                      }`}
-                            </p>
-                            {activeFilterFlag ? (
-                                <button
-                                    type="button"
-                                    onClick={clearFilters}
-                                    className="inline-flex items-center gap-1 min-h-9 rounded-full px-3.5 py-1.5 text-xs font-semibold text-danger-text hover:bg-danger/10 transition-colors"
-                                >
-                                    <Icon icon="material-symbols:close" width={14} />
-                                    Limpiar filtros
-                                </button>
-                            ) : null}
-                        </div>
-                    </div>
                 </div>
             </section>
 
-            <div className="w-full px-3 sm:px-6 pt-6 sm:pt-8">
+            <div className="w-full px-3 sm:px-6 pt-5 sm:pt-6">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-7 lg:gap-8">
+                    <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-6">
                         {Array.from({ length: 8 }).map((_, i) => (
                             <div
                                 key={i}
-                                className="rounded-3xl sm:rounded-4xl bg-content1 border border-default-200/70 animate-pulse min-h-64 sm:min-h-72"
+                                className="rounded-3xl sm:rounded-4xl bg-content1 border border-default-200/70 animate-pulse aspect-[4/3] min-h-56"
                             />
                         ))}
                     </div>
@@ -505,7 +506,7 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                     </div>
                 ) : (
                     <>
-                        <div className="flex flex-col gap-3 pb-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-default-600 text-pretty">
                                 {multiMode
                                     ? `${MULTI_QUOTE_NAME}: elige entre ${MULTI_QUOTE_MIN} y ${MULTI_QUOTE_MAX} artistas, completa los datos de tu evento una sola vez y compara sus cotizaciones.`
@@ -515,20 +516,21 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                                 variant={multiMode ? "solid" : "bordered"}
                                 color="primary"
                                 radius="full"
+                                size="sm"
                                 className="shrink-0 font-semibold"
                                 aria-pressed={multiMode}
-                                startContent={<Icon icon="material-symbols:checklist" width={20} />}
+                                startContent={<Icon icon="material-symbols:checklist" width={18} />}
                                 onPress={toggleMultiMode}
                             >
                                 {multiMode ? "Salir de cotización múltiple" : MULTI_QUOTE_NAME}
                             </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-7 lg:gap-8 grid-flow-dense auto-rows-[10px]">
+                        <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-6 items-start">
                             {musicians.map((m, i) => {
                                 const isSelected = selected.some((item) => item.id === m.id);
                                 return (
-                                    <MasonryItem key={m.id} index={i}>
+                                    <div key={m.id} className="min-w-0 w-full">
                                         <SelectableCard
                                             enabled={multiMode}
                                             selected={isSelected}
@@ -536,9 +538,9 @@ export default function MusiciansBrowseView({ initialFilters, initialMusicians }
                                             name={m.name}
                                             onToggle={() => toggleSelected(m)}
                                         >
-                                            <MusicianCard musician={m} index={i} priority={i < 3} />
+                                            <MusicianCard musician={m} index={i} priority={i < 4} />
                                         </SelectableCard>
-                                    </MasonryItem>
+                                    </div>
                                 );
                             })}
                         </div>

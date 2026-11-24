@@ -495,6 +495,23 @@ textarea,
   color: hsl(var(--heroui-foreground));
 }
 
+/* 2b. Empty native date/time inputs (mm/dd/yyyy, --:--): muted like placeholders until filled */
+input[type="date"][data-empty="true"]:not(:focus),
+input[type="date"][value=""]:not(:focus),
+input[type="time"][data-empty="true"]:not(:focus),
+input[type="time"][value=""]:not(:focus) {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}
+
+.dark input[type="date"][data-empty="true"]:not(:focus),
+.dark input[type="date"][value=""]:not(:focus),
+.dark input[type="time"][data-empty="true"]:not(:focus),
+.dark input[type="time"][value=""]:not(:focus) {
+  color: #64748b !important;
+  font-weight: 400 !important;
+}
+
 /* 3. HeroUI Input / Textarea / Select Wrapper Surface, Border & Focus Ring */
 [data-slot="input-wrapper"],
 [data-slot="trigger"] {

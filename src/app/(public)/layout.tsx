@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import AppNavbar from "@/components/layout/app-navbar";
 import EmailVerificationBanner from "@/components/auth/email-verification-banner";
 import Footer from "@/components/layout/footer";
+import { isScrollRevealRoute } from "@/lib/scroll-reveal-routes";
 
 export default function PublicLayout({
     children,
@@ -11,10 +12,10 @@ export default function PublicLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
-    // El home y las vistas de músicos (listado y perfil) manejan su propio
-    // espaciado superior para convivir con la barra flotante siempre visible
-    // (compacta antes de hacer scroll en el inicio).
-    const isFullBleed = pathname === "/" || pathname.startsWith("/musicians");
+    // Solo el home (que tiene su propio hero con pt-28/pt-36) y el detalle de perfil
+    // público de músico (/musicians/[id], donde el navbar aparece al hacer scroll)
+    // arrancan desde el borde superior sin padding de navbar.
+    const isFullBleed = pathname === "/" || isScrollRevealRoute(pathname);
 
     return (
         <>
@@ -27,7 +28,7 @@ export default function PublicLayout({
                 }
             >
                 <EmailVerificationBanner
-                    className={`px-4 sm:px-6 md:px-8 max-w-content mx-auto ${
+                    className={`px-3 sm:px-6 max-w-content mx-auto ${
                         isFullBleed ? "pt-[calc(var(--app-navbar-height)+0.75rem)]" : "pt-3"
                     }`}
                 />

@@ -321,80 +321,28 @@ export default function RoleDashboardShell({
 
                 <main className="w-full px-3 sm:px-6 py-4 lg:py-6">
                     {activeHub && activeHubSubItems.length > 1 ? (
-                        <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-3xl border border-default-200/80 bg-content1/90 backdrop-blur-md px-4 py-3 shadow-soft">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary-text">
-                                    <Icon
-                                        icon={activeHub.icon}
-                                        width={22}
-                                        aria-hidden="true"
-                                    />
-                                </span>
-                                <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-sm sm:text-base font-bold text-foreground truncate">
-                                            Módulo {activeHub.label}
-                                        </span>
-                                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary-text">
-                                            {activeHubSubItems.length} vistas integradas
-                                        </span>
-                                    </div>
-                                    {activeHub.description ? (
-                                        <p className="text-xs text-default-500 truncate mt-0.5">
-                                            {activeHub.description}
-                                        </p>
-                                    ) : null}
-                                </div>
-                            </div>
+                        <nav
+                            aria-label={activeHub.label}
+                            className="mb-4 inline-flex flex-wrap items-center gap-1 rounded-2xl border border-default-200/80 bg-content1/90 backdrop-blur-md p-1 shadow-soft"
+                        >
+                            {activeHubSubItems.map((sub) => {
+                                const isSubActive =
+                                    pathname === sub.href ||
+                                    pathname.startsWith(`${sub.href}/`);
+                                const subLocked =
+                                    Boolean(sub.requiresVerification) &&
+                                    !isVerified &&
+                                    !(
+                                        Boolean(user.is_ensemble_member) &&
+                                        sub.ensembleAllowed
+                                    );
 
-                            <nav
-                                aria-label={`Vistas del módulo ${activeHub.label}`}
-                                className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-default-100/80 dark:bg-default-100/50 p-1"
-                            >
-                                {activeHubSubItems.map((sub) => {
-                                    const isSubActive =
-                                        pathname === sub.href ||
-                                        pathname.startsWith(`${sub.href}/`);
-                                    const subLocked =
-                                        Boolean(sub.requiresVerification) &&
-                                        !isVerified &&
-                                        !(
-                                            Boolean(user.is_ensemble_member) &&
-                                            sub.ensembleAllowed
-                                        );
-
-                                    if (subLocked) {
-                                        return (
-                                            <span
-                                                key={sub.href}
-                                                aria-disabled="true"
-                                                className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold text-default-400 cursor-not-allowed"
-                                            >
-                                                <Icon
-                                                    icon={sub.icon}
-                                                    width={17}
-                                                    aria-hidden="true"
-                                                />
-                                                <span>{sub.label}</span>
-                                                <Icon
-                                                    icon="material-symbols:lock"
-                                                    width={14}
-                                                    aria-hidden="true"
-                                                />
-                                            </span>
-                                        );
-                                    }
-
+                                if (subLocked) {
                                     return (
-                                        <Link
+                                        <span
                                             key={sub.href}
-                                            href={sub.href}
-                                            aria-current={isSubActive ? "page" : undefined}
-                                            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all ${
-                                                isSubActive
-                                                    ? "bg-primary text-primary-foreground shadow-xs"
-                                                    : "text-default-600 hover:text-foreground hover:bg-content1/80"
-                                            }`}
+                                            aria-disabled="true"
+                                            className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold text-default-400 cursor-not-allowed"
                                         >
                                             <Icon
                                                 icon={sub.icon}
@@ -402,11 +350,36 @@ export default function RoleDashboardShell({
                                                 aria-hidden="true"
                                             />
                                             <span>{sub.label}</span>
-                                        </Link>
+                                            <Icon
+                                                icon="material-symbols:lock"
+                                                width={14}
+                                                aria-hidden="true"
+                                            />
+                                        </span>
                                     );
-                                })}
-                            </nav>
-                        </div>
+                                }
+
+                                return (
+                                    <Link
+                                        key={sub.href}
+                                        href={sub.href}
+                                        aria-current={isSubActive ? "page" : undefined}
+                                        className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all ${
+                                            isSubActive
+                                                ? "bg-primary text-primary-foreground shadow-xs"
+                                                : "text-default-600 hover:text-foreground hover:bg-default-100/70"
+                                        }`}
+                                    >
+                                        <Icon
+                                            icon={sub.icon}
+                                            width={17}
+                                            aria-hidden="true"
+                                        />
+                                        <span>{sub.label}</span>
+                                    </Link>
+                                );
+                            })}
+                        </nav>
                     ) : null}
                     {children}
                 </main>
