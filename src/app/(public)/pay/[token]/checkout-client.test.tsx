@@ -194,7 +194,7 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
         const user = userEvent.setup();
         render(<CheckoutClient linkData={makeLinkData()} />);
 
-        await user.type(
+        await user.selectOptions(
             screen.getByLabelText(/Tipo de evento/i),
             "Aniversario",
         );
@@ -252,9 +252,9 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
         );
 
         // Step 1
-        await user.type(
+        await user.selectOptions(
             screen.getByLabelText(/Tipo de evento/i),
-            "Cumpleaños 50",
+            "Cumpleaños",
         );
         await user.type(
             screen.getByLabelText(/Ubicación del evento/i),
@@ -286,7 +286,7 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
         expect(contractDoc).not.toBeNull();
         expect(contractDoc?.textContent).toContain("Mariachi Imperial");
         expect(contractDoc?.textContent).toContain("Carlos Mendoza");
-        expect(contractDoc?.textContent).toContain("Cumpleaños 50");
+        expect(contractDoc?.textContent).toContain("Cumpleaños");
         expect(contractDoc?.textContent).toContain("15 de junio de 2027");
         expect(contractDoc?.textContent).not.toContain("{{");
 
@@ -321,8 +321,7 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
             screen.getByRole("button", { name: /1\. Datos del evento/i }),
         );
         const eventTypeInput = screen.getByLabelText(/Tipo de evento/i);
-        await user.clear(eventTypeInput);
-        await user.type(eventTypeInput, "Boda Civil");
+        await user.selectOptions(eventTypeInput, "Boda");
         await user.click(
             screen.getByRole("button", { name: /3\. Confirmación y pago/i }),
         );
@@ -335,7 +334,7 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
             expect(checkoutBookingLinkMock).toHaveBeenLastCalledWith(
                 "tok-public-123",
                 expect.objectContaining({
-                    event_type: "Boda Civil",
+                    event_type: "Boda",
                     location_reference: "-12.119123,-77.028987",
                 }),
             );
@@ -346,7 +345,7 @@ describe("CheckoutClient (FE4-08, FE5-06, FE6-07)", () => {
         const user = userEvent.setup();
         render(<CheckoutClient linkData={makeLinkData()} />);
 
-        await user.type(screen.getByLabelText(/Tipo de evento/i), "Serenata");
+        await user.selectOptions(screen.getByLabelText(/Tipo de evento/i), "Serenata");
         await user.type(screen.getByLabelText(/Ubicación del evento/i), "Av. Brasil 500");
         await user.click(screen.getByRole("button", { name: /Continuar al paso 2/i }));
 

@@ -254,3 +254,27 @@ export const PAYMENT_TYPE_LABELS: Record<string, string> = {
     // Legacy: pagos antiguos registrados como "advance" equivalen al pago total.
     advance: "Pago total",
 };
+
+export const CANONICAL_EVENT_TYPES = [
+    "Cumpleaños",
+    "Boda",
+    "Serenata",
+    "Quinceañero",
+    "Aniversario",
+    "Evento corporativo",
+    "Bautizo / Comunión",
+    "Fiesta infantil",
+    "Inauguración",
+    "Restaurante / Bar",
+    "Otro",
+] as const;
+
+export function getEventTypeOptions(currentValue?: string | null): string[] {
+    const trimmed = (currentValue ?? "").trim();
+    if (!trimmed) return [...CANONICAL_EVENT_TYPES];
+    const exists = CANONICAL_EVENT_TYPES.some(
+        (item) => item.toLowerCase() === trimmed.toLowerCase(),
+    );
+    return exists ? [...CANONICAL_EVENT_TYPES] : [trimmed, ...CANONICAL_EVENT_TYPES];
+}
+

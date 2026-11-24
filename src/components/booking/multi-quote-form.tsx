@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Button, Card, CardBody, Chip, Input, Select, SelectItem, Textarea } from "@heroui/react";
 import { useAuth } from "@/contexts/auth-context";
 import { useAuthModal } from "@/contexts/auth-modal-context";
+import { CANONICAL_EVENT_TYPES } from "@/lib/booking-labels";
 import { createBookingsBatch } from "@/lib/bookings";
 import { todayPeruIso } from "@/lib/date-utils";
 import { getMusicianById } from "@/lib/musicians";
@@ -18,15 +19,7 @@ import {
 } from "@/lib/multi-quote";
 import type { BookingBatchCreate, BookingOut } from "@/types/api";
 
-const EVENT_TYPES = [
-    "Boda",
-    "Quinceañero",
-    "Cumpleaños",
-    "Aniversario",
-    "Evento corporativo",
-    "Serenata",
-    "Otro",
-];
+const EVENT_TYPES = [...CANONICAL_EVENT_TYPES];
 
 type Artist = { id: string; name: string };
 
@@ -289,10 +282,12 @@ export default function MultiQuoteForm() {
 
             <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                 <Select
-                    label="Motivo del evento"
+                    label="Tipo de evento"
+                    placeholder="Selecciona el tipo de evento"
                     selectedKeys={eventType ? new Set([eventType]) : new Set<string>()}
                     onSelectionChange={(keys) => setEventType(Array.from(keys)[0]?.toString() ?? "")}
                     variant="bordered"
+                    radius="lg"
                     isRequired
                     isInvalid={attempted && Boolean(errors.eventType)}
                     errorMessage={attempted ? errors.eventType : undefined}
@@ -310,6 +305,7 @@ export default function MultiQuoteForm() {
                         value={eventDate}
                         onValueChange={setEventDate}
                         variant="bordered"
+                        radius="lg"
                         isRequired
                         isInvalid={attempted && Boolean(errors.eventDate)}
                         errorMessage={attempted ? errors.eventDate : undefined}
@@ -320,6 +316,7 @@ export default function MultiQuoteForm() {
                         value={startTime}
                         onValueChange={setStartTime}
                         variant="bordered"
+                        radius="lg"
                         isRequired
                         isInvalid={attempted && Boolean(errors.startTime)}
                         errorMessage={attempted ? errors.startTime : undefined}
@@ -332,6 +329,7 @@ export default function MultiQuoteForm() {
                     value={city}
                     onValueChange={setCity}
                     variant="bordered"
+                    radius="lg"
                     isRequired
                     isInvalid={attempted && Boolean(errors.city)}
                     errorMessage={attempted ? errors.city : undefined}
@@ -339,10 +337,11 @@ export default function MultiQuoteForm() {
                 />
 
                 <Input
-                    label="Dirección (opcional)"
+                    label="Dirección exacta del evento (opcional)"
                     value={address}
                     onValueChange={setAddress}
                     variant="bordered"
+                    radius="lg"
                 />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -353,6 +352,7 @@ export default function MultiQuoteForm() {
                         value={guests}
                         onValueChange={setGuests}
                         variant="bordered"
+                        radius="lg"
                     />
                     <Input
                         type="number"
@@ -362,6 +362,7 @@ export default function MultiQuoteForm() {
                         value={duration}
                         onValueChange={setDuration}
                         variant="bordered"
+                        radius="lg"
                     />
                     <Input
                         type="number"
@@ -370,6 +371,7 @@ export default function MultiQuoteForm() {
                         value={budget}
                         onValueChange={setBudget}
                         variant="bordered"
+                        radius="lg"
                     />
                 </div>
 
@@ -379,6 +381,7 @@ export default function MultiQuoteForm() {
                     value={description}
                     onValueChange={setDescription}
                     variant="bordered"
+                    radius="lg"
                     minRows={3}
                     maxLength={1000}
                 />

@@ -27,8 +27,9 @@ import {
 import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
+import CircularStepper from "@/components/ui/circular-stepper";
 import { formatLocationReference, searchPlaces } from "@/lib/geocoding";
-import { formatCurrency } from "@/lib/booking-labels";
+import { formatCurrency, getEventTypeOptions } from "@/lib/booking-labels";
 import { formatPeruDate, todayPeruIso } from "@/lib/date-utils";
 import { sanitizeContractHtml } from "@/lib/sanitize-html";
 import { useIsClient } from "@/hooks/use-is-client";
@@ -70,6 +71,10 @@ export default function CheckoutClient({
       : platformFeeAmount(bookingPreview)) || 0;
 
   const todayIso = useMemo(() => todayPeruIso(), []);
+  const eventTypeOptions = useMemo(
+    () => getEventTypeOptions(linkData.event_type || linkData.draft_data?.event_type),
+    [linkData.draft_data?.event_type, linkData.event_type],
+  );
 
   // Form state (hydrate from client draft_data if previously saved, while keeping locks strictly on musician-prefilled fields)
   const draft = linkData.draft_data ?? {};
@@ -1250,6 +1255,52 @@ export default function CheckoutClient({
               </Button>
             </div>
 
+            {/* Stepper circular unificado */}
+            <div className="rounded-2xl border border-default-200/80 bg-content1/95 px-4 py-3.5 shadow-soft">
+              <CircularStepper
+                ariaLabel="Pasos de confirmación de reserva"
+                steps={[
+                  {
+                    id: 1,
+                    title: "Datos del evento",
+                    state:
+                      completedSteps.has(1) && activeStep !== 1
+                        ? "done"
+                        : activeStep === 1
+                          ? "current"
+                          : "upcoming",
+                  },
+                  {
+                    id: 2,
+                    title: "Datos personales",
+                    state:
+                      completedSteps.has(2) && activeStep !== 2
+                        ? "done"
+                        : activeStep === 2
+                          ? "current"
+                          : "upcoming",
+                    disabled: !completedSteps.has(1) && activeStep < 2,
+                  },
+                  {
+                    id: 3,
+                    title: "Confirmación y pago",
+                    state: paymentCompleted
+                      ? "done"
+                      : activeStep === 3
+                        ? "current"
+                        : "upcoming",
+                    disabled: !completedSteps.has(2) && activeStep < 3,
+                  },
+                ]}
+                onStepClick={(stepItem) => {
+                  const target = Number(stepItem.id);
+                  if (target === 1) goToStep(1);
+                  else if (target === 2 && completedSteps.has(1)) goToStep(2);
+                  else if (target === 3 && completedSteps.has(2)) goToStep(3);
+                }}
+              />
+            </div>
+
             {isStep1Prefilled && (
               <div className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-start gap-3">
                 <Icon
@@ -1284,13 +1335,19 @@ export default function CheckoutClient({
               >
                 <div className="flex items-center space-x-3.5">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${
-                      activeStep === 1
-                        ? "bg-primary/20 text-primary-text border-primary/30"
-                        : "bg-default-100 text-default-600 border-divider"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center border font-bold text-sm ${
+                      completedSteps.has(1) && activeStep !== 1
+                        ? "bg-success text-success-foreground border-success"
+                        : activeStep === 1
+                          ? "bg-primary text-primary-foreground border-primary shadow-glow ring-4 ring-primary/20"
+                          : "bg-default-100 text-default-600 border-divider"
                     }`}
                   >
-                    <Icon icon="lucide:calendar" className="w-5 h-5" />
+                    {completedSteps.has(1) && activeStep !== 1 ? (
+                      <Icon icon="lucide:check" className="w-4 h-4 stroke-[3]" />
+                    ) : (
+                      1
+                    )}
                   </div>
                   <div>
                     <h2
@@ -1426,12 +1483,11 @@ export default function CheckoutClient({
                         icon="lucide:sparkles"
                         className="w-3.5 h-3.5 text-primary"
                       />{" "}
-                      Tipo de evento (ej. Cumpleaños, Boda){" "}
+                      Tipo de evento{" "}
                       <span className="text-primary">*</span>
                     </label>
-                    <input
+                    <select
                       id="checkout-event-type"
-                      type="text"
                       aria-invalid={
                         step1Attempted &&
                         (!eventType.trim() || eventType.trim().length < 2)
@@ -1450,8 +1506,16 @@ export default function CheckoutClient({
                       } w-full rounded-xl px-4 py-3 text-base sm:text-sm text-foreground focus:border-primary focus:ring-2 focus:ring-primary/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
                       value={eventType}
                       onChange={(e) => setEventType(e.target.value)}
-                      placeholder="Ej. Cumpleaños, Boda"
-                    />
+                    >
+                      <option value="">Selecciona el tipo de evento</option>
+                      {getEventTypeOptions(eventType || eventTypeOptions[0]).map(
+                        (type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ),
+                      )}
+                    </select>
                     {step1Attempted &&
                       (!eventType.trim() || eventType.trim().length < 2) && (
                         <p
@@ -1459,9 +1523,7 @@ export default function CheckoutClient({
                           role="alert"
                           className="text-xs text-danger mt-1"
                         >
-                          {!eventType.trim()
-                            ? "Indica el tipo de evento."
-                            : "El tipo de evento debe tener al menos 2 caracteres."}
+                          Selecciona el tipo de evento.
                         </p>
                       )}
                   </div>
@@ -1548,13 +1610,19 @@ export default function CheckoutClient({
               >
                 <div className="flex items-center space-x-3.5">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${
-                      activeStep === 2
-                        ? "bg-primary/20 text-primary-text border-primary/30"
-                        : "bg-default-100 text-default-600 border-divider"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center border font-bold text-sm ${
+                      completedSteps.has(2) && activeStep !== 2
+                        ? "bg-success text-success-foreground border-success"
+                        : activeStep === 2
+                          ? "bg-primary text-primary-foreground border-primary shadow-glow ring-4 ring-primary/20"
+                          : "bg-default-100 text-default-600 border-divider"
                     }`}
                   >
-                    <Icon icon="lucide:user" className="w-5 h-5" />
+                    {completedSteps.has(2) && activeStep !== 2 ? (
+                      <Icon icon="lucide:check" className="w-4 h-4 stroke-[3]" />
+                    ) : (
+                      2
+                    )}
                   </div>
                   <div>
                     <h2
@@ -1968,13 +2036,19 @@ export default function CheckoutClient({
               >
                 <div className="flex items-center space-x-3.5">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border font-bold ${
-                      activeStep === 3
-                        ? "bg-primary/20 text-primary-text border-primary/30"
-                        : "bg-default-100 text-default-600 border-divider"
+                    className={`w-9 h-9 rounded-full flex items-center justify-center border font-bold text-sm ${
+                      paymentCompleted
+                        ? "bg-success text-success-foreground border-success"
+                        : activeStep === 3
+                          ? "bg-primary text-primary-foreground border-primary shadow-glow ring-4 ring-primary/20"
+                          : "bg-default-100 text-default-600 border-divider"
                     }`}
                   >
-                    <Icon icon="lucide:credit-card" className="w-5 h-5" />
+                    {paymentCompleted ? (
+                      <Icon icon="lucide:check" className="w-4 h-4 stroke-[3]" />
+                    ) : (
+                      3
+                    )}
                   </div>
                   <div>
                     <h2

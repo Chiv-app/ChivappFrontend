@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button, Input, Textarea, addToast } from "@heroui/react";
+import { Button, Input, Select, SelectItem, Textarea, addToast } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { apiFetch } from "@/lib/api";
 import { autocompleteBookingLink, type BookingLinkOut } from "@/lib/booking-links";
 import { startVoiceDictation, type VoiceDictationSession } from "@/lib/voice-dictation";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
-import { formatCurrency } from "@/lib/booking-labels";
+import { formatCurrency, getEventTypeOptions } from "@/lib/booking-labels";
 import { todayPeruIso } from "@/lib/date-utils";
 import { getPlatformPaymentInstructions } from "@/lib/payments";
 
@@ -315,6 +315,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     }
 
     const parsedPrice = parseFloat(price) || 0;
+    const eventTypeOptions = getEventTypeOptions(eventType);
     const bookingPreview = {
         price_agreed: parsedPrice,
         platform_fee_percent: livePlatformFeePercent
@@ -392,11 +393,12 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 value={price}
                 onValueChange={setPrice}
                 variant="bordered"
+                radius="lg"
                 startContent={<span className="text-default-400 text-sm">S/</span>}
             />
             
             {parsedPrice > 0 && (
-                <div className="bg-default-50 border border-default-200 rounded-lg p-3 flex flex-col gap-2">
+                <div className="bg-default-50 border border-default-200 rounded-xl p-3 flex flex-col gap-2">
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-default-500">Tu ganancia (Precio base)</span>
                         <span className="font-semibold">{formatCurrency(parsedPrice)}</span>
@@ -424,20 +426,23 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                     value={eventDate}
                     onValueChange={setEventDate}
                     variant="bordered"
+                    radius="lg"
                 />
                 <Input
-                    label="Hora inicio"
+                    label="Hora de inicio"
                     type="time"
                     value={startTime}
                     onValueChange={setStartTime}
                     variant="bordered"
+                    radius="lg"
                 />
                 <Input
-                    label="Hora fin (opc.)"
+                    label="Hora de fin (opcional)"
                     type="time"
                     value={endTime}
                     onValueChange={setEndTime}
                     variant="bordered"
+                    radius="lg"
                 />
             </div>
 
@@ -460,21 +465,28 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
             {showExtraFields && (
                 <div className="flex flex-col gap-3 rounded-xl border border-default-200 bg-default-50/50 p-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Input
+                        <Select
                             label="Tipo de evento"
-                            placeholder="Ej. Cumpleaños, Serenata, Boda"
-                            value={eventType}
-                            onValueChange={setEventType}
+                            placeholder="Selecciona el tipo de evento"
+                            selectedKeys={eventType ? new Set([eventType]) : new Set()}
+                            onSelectionChange={(keys) => {
+                                if (keys === "all") return;
+                                setEventType(Array.from(keys)[0]?.toString() ?? "");
+                            }}
                             variant="bordered"
-                            size="sm"
-                        />
+                            radius="lg"
+                        >
+                            {eventTypeOptions.map((type) => (
+                                <SelectItem key={type}>{type}</SelectItem>
+                            ))}
+                        </Select>
                         <Input
-                            label="Ciudad / Distrito"
+                            label="Distrito o ciudad"
                             placeholder="Ej. Huamanga, Ayacucho"
                             value={locationCity}
                             onValueChange={setLocationCity}
                             variant="bordered"
-                            size="sm"
+                            radius="lg"
                         />
                     </div>
                     <Input
@@ -483,7 +495,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                         value={locationAddress}
                         onValueChange={setLocationAddress}
                         variant="bordered"
-                        size="sm"
+                        radius="lg"
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input
@@ -492,7 +504,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                             value={clientFullname}
                             onValueChange={setClientFullname}
                             variant="bordered"
-                            size="sm"
+                            radius="lg"
                             autoComplete="name"
                         />
                         <Input
@@ -503,7 +515,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                             value={clientPhone}
                             onValueChange={setClientPhone}
                             variant="bordered"
-                            size="sm"
+                            radius="lg"
                             autoComplete="tel"
                         />
                     </div>
@@ -514,7 +526,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                         value={eventDescription}
                         onValueChange={setEventDescription}
                         variant="bordered"
-                        size="sm"
+                        radius="lg"
                     />
                 </div>
             )}
@@ -529,6 +541,7 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 value={clientEmail}
                 onValueChange={setClientEmail}
                 variant="bordered"
+                radius="lg"
             />
             <div className="bg-primary/10 p-3 rounded-lg mt-1">
                 <p className="text-xs text-primary-text">

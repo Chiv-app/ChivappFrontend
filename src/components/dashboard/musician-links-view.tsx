@@ -14,6 +14,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import MusicianCreateLinkForm from "@/components/booking/musician-create-link-form";
+import CircularStepper from "@/components/ui/circular-stepper";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
 import {
     BookingLinkOut,
@@ -24,10 +25,10 @@ import { formatCurrency } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
 
 const FUNNEL_STEPS = [
-    { step: 1, short: "1. Evento", label: "Datos del evento" },
-    { step: 2, short: "2. Datos", label: "Datos del cliente" },
-    { step: 3, short: "3. Firma", label: "Firma de contrato" },
-    { step: 4, short: "4. Pago", label: "Pasarela de pago" },
+    { step: 1, short: "Evento", label: "Datos del evento" },
+    { step: 2, short: "Datos", label: "Datos del cliente" },
+    { step: 3, short: "Firma", label: "Firma de contrato" },
+    { step: 4, short: "Pago", label: "Pasarela de pago" },
 ] as const;
 
 function getEffectiveStepInfo(link: BookingLinkOut): {
@@ -534,46 +535,23 @@ export default function MusicianLinksView() {
                                                 </span>
                                             </div>
 
-                                            {/* Barra de 4 pasos del embudo */}
-                                            <div className="grid grid-cols-4 gap-1.5">
-                                                {FUNNEL_STEPS.map((s) => {
-                                                    const reached =
-                                                        stepInfo.maxStep >= s.step ||
-                                                        stepInfo.step >= s.step;
-                                                    const isCurrent =
-                                                        stepInfo.step === s.step &&
-                                                        link.status !== "completed";
-                                                    return (
-                                                        <div
-                                                            key={s.step}
-                                                            className="flex flex-col gap-1"
-                                                        >
-                                                            <div
-                                                                className={`h-1.5 rounded-full transition-colors ${
-                                                                    link.status === "completed"
-                                                                        ? "bg-success"
-                                                                        : isCurrent
-                                                                          ? "bg-primary"
-                                                                          : reached
-                                                                            ? "bg-primary/55"
-                                                                            : "bg-default-200"
-                                                                }`}
-                                                            />
-                                                            <span
-                                                                className={`text-[10px] font-semibold truncate ${
-                                                                    isCurrent
-                                                                        ? "text-primary"
-                                                                        : reached
-                                                                          ? "text-foreground"
-                                                                          : "text-default-400"
-                                                                }`}
-                                                            >
-                                                                {s.short}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                                            {/* Stepper circular de 4 pasos del embudo */}
+                                            <CircularStepper
+                                                compact
+                                                ariaLabel="Avance del cliente en el enlace de pago"
+                                                steps={FUNNEL_STEPS.map((s) => ({
+                                                    id: s.step,
+                                                    title: s.short,
+                                                    state:
+                                                        link.status === "completed" ||
+                                                        stepInfo.step > s.step
+                                                            ? "done"
+                                                            : stepInfo.step === s.step &&
+                                                                stepInfo.step > 0
+                                                              ? "current"
+                                                              : "upcoming",
+                                                }))}
+                                            />
 
                                             <p className="text-xs font-semibold text-foreground leading-snug">
                                                 {stepInfo.headline}

@@ -196,7 +196,7 @@ export default function BookingEditCommitmentModal({
                                 className="flex flex-col gap-4"
                             >
                                 <Input
-                                    label="Dirección"
+                                    label="Dirección exacta del evento"
                                     value={address}
                                     onValueChange={(val) => {
                                         setAddress(val);
@@ -207,10 +207,11 @@ export default function BookingEditCommitmentModal({
                                         );
                                     }}
                                     variant="bordered"
+                                    radius="lg"
                                     isRequired
                                 />
                                 <Input
-                                    label="Ciudad"
+                                    label="Distrito o ciudad"
                                     value={city}
                                     onValueChange={(val) => {
                                         setCity(val);
@@ -221,6 +222,7 @@ export default function BookingEditCommitmentModal({
                                         );
                                     }}
                                     variant="bordered"
+                                    radius="lg"
                                 />
                                 <div className="relative z-10">
                                     <p className="text-sm font-semibold text-foreground mb-2">
@@ -245,6 +247,7 @@ export default function BookingEditCommitmentModal({
                                         value={reference}
                                         onValueChange={setReference}
                                         variant="bordered"
+                                        radius="lg"
                                         description="Indicaciones de llegada o coordenadas si no marcas el mapa."
                                     />
                                 ) : null}
@@ -253,6 +256,7 @@ export default function BookingEditCommitmentModal({
                                     value={description}
                                     onValueChange={setDescription}
                                     variant="bordered"
+                                    radius="lg"
                                     minRows={2}
                                 />
 

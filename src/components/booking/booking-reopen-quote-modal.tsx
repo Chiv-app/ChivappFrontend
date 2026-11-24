@@ -10,10 +10,13 @@ import {
     ModalContent,
     ModalFooter,
     ModalHeader,
+    Select,
+    SelectItem,
     Textarea,
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { getEventTypeOptions } from "@/lib/booking-labels";
 import { getMusicianAvailability } from "@/lib/availability";
 import {
     formatTimeLabel,
@@ -57,6 +60,10 @@ export default function BookingReopenQuoteModal({
     const daySlots = useMemo(
         () => (eventDate ? getSlotsForDate(slots, eventDate) : []),
         [slots, eventDate],
+    );
+    const eventTypeOptions = useMemo(
+        () => getEventTypeOptions(eventType),
+        [eventType],
     );
 
     useEffect(() => {
@@ -203,6 +210,7 @@ export default function BookingReopenQuoteModal({
                                     type="date"
                                     label="Fecha del evento"
                                     variant="bordered"
+                                    radius="lg"
                                     isRequired
                                     isDisabled={isSaving}
                                     value={eventDate}
@@ -218,46 +226,59 @@ export default function BookingReopenQuoteModal({
                                             : undefined
                                     }
                                 />
-                                <Input
+                                <Select
                                     label="Tipo de evento"
-                                    value={eventType}
-                                    onValueChange={setEventType}
+                                    placeholder="Selecciona el tipo de evento"
+                                    selectedKeys={eventType ? new Set([eventType]) : new Set()}
+                                    onSelectionChange={(keys) => {
+                                        if (keys === "all") return;
+                                        setEventType(Array.from(keys)[0]?.toString() ?? "");
+                                    }}
                                     variant="bordered"
+                                    radius="lg"
                                     isRequired
                                     isDisabled={isSaving}
-                                />
+                                >
+                                    {eventTypeOptions.map((type) => (
+                                        <SelectItem key={type}>{type}</SelectItem>
+                                    ))}
+                                </Select>
                                 <Input
                                     type="time"
-                                    label="Hora inicio"
+                                    label="Hora de inicio"
                                     value={startTime}
                                     onValueChange={setStartTime}
                                     variant="bordered"
+                                    radius="lg"
                                     isRequired
                                     isDisabled={isSaving}
                                 />
                                 <Input
                                     type="time"
-                                    label="Hora fin (opcional)"
+                                    label="Hora de fin (opcional)"
                                     value={endTime}
                                     onValueChange={setEndTime}
                                     variant="bordered"
+                                    radius="lg"
                                     isDisabled={isSaving}
                                 />
                             </div>
                             <Input
-                                label="Dirección"
+                                label="Dirección exacta del evento"
                                 value={locationAddress}
                                 onValueChange={setLocationAddress}
                                 variant="bordered"
+                                radius="lg"
                                 isRequired
                                 isDisabled={isSaving}
                             />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input
-                                    label="Ciudad"
+                                    label="Distrito o ciudad"
                                     value={locationCity}
                                     onValueChange={setLocationCity}
                                     variant="bordered"
+                                    radius="lg"
                                     isDisabled={isSaving}
                                 />
                                 <Input
@@ -265,6 +286,7 @@ export default function BookingReopenQuoteModal({
                                     value={locationReference}
                                     onValueChange={setLocationReference}
                                     variant="bordered"
+                                    radius="lg"
                                     isDisabled={isSaving}
                                 />
                             </div>
@@ -273,6 +295,7 @@ export default function BookingReopenQuoteModal({
                                 value={eventDescription}
                                 onValueChange={setEventDescription}
                                 variant="bordered"
+                                radius="lg"
                                 minRows={3}
                                 isDisabled={isSaving}
                             />

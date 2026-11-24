@@ -5,7 +5,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
     Button,
     Checkbox,
-    Chip,
     Divider,
     Input,
     Select,
@@ -14,7 +13,9 @@ import {
     addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import CircularStepper from "@/components/ui/circular-stepper";
 import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
+import { getEventTypeOptions } from "@/lib/booking-labels";
 import { autocompleteBookingLink } from "@/lib/booking-links";
 import { startVoiceDictation, type VoiceDictationSession } from "@/lib/voice-dictation";
 import { createMusicianBooking } from "@/lib/bookings";
@@ -27,16 +28,6 @@ import {
 } from "@/lib/geocoding";
 import { getMusicianProfile } from "@/lib/profiles";
 import type { EnsembleMemberOut } from "@/types/api";
-
-const EVENT_TYPES = [
-    "Cumpleaños",
-    "Boda",
-    "Serenata",
-    "Aniversario",
-    "Quinceañero",
-    "Evento corporativo",
-    "Otro",
-];
 
 const DOCUMENT_TYPES = ["DNI", "CE", "Pasaporte", "RUC", "Otro"];
 
@@ -454,60 +445,42 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
     }
 
     const stepsMeta: Array<{ id: WizardStep; title: string }> = [
-        { id: 1, title: "1. Dictado o resumen" },
-        { id: 2, title: "2. Evento y lugar" },
-        { id: 3, title: "3. Cliente, precio y equipo" },
+        { id: 1, title: "Dictado o resumen" },
+        { id: 2, title: "Evento y lugar" },
+        { id: 3, title: "Cliente, precio y equipo" },
     ];
+
+    const eventTypeOptions = useMemo(
+        () => getEventTypeOptions(eventType),
+        [eventType],
+    );
 
     return (
         <div className="flex flex-col gap-5">
-            {/* Barra de pasos guiada */}
-            <nav aria-label="Pasos para registrar nueva contrata" className="grid grid-cols-3 gap-2">
-                {stepsMeta.map((item) => {
-                    const active = step === item.id;
-                    const completed = step > item.id;
-                    return (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                                if (item.id < step) {
-                                    setStep(item.id);
-                                } else if (item.id === 2) {
-                                    setStep(2);
-                                } else if (item.id === 3 && validateStep2()) {
-                                    setStep(3);
-                                }
-                            }}
-                            className={`flex flex-col gap-1.5 text-left rounded-xl p-2.5 border transition-colors ${
-                                active
-                                    ? "border-primary bg-primary/10 text-primary-text"
-                                    : completed
-                                      ? "border-success/40 bg-success/5 text-success-text"
-                                      : "border-default-200 bg-content1 text-default-500"
-                            }`}
-                        >
-                            <div className="flex items-center justify-between gap-1">
-                                <span className="text-xs font-semibold truncate">{item.title}</span>
-                                {completed ? (
-                                    <Icon icon="lucide:check-circle-2" width={14} className="shrink-0" />
-                                ) : null}
-                            </div>
-                            <div className="h-1 w-full rounded-full bg-default-200 overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all ${
-                                        completed
-                                            ? "w-full bg-success"
-                                            : active
-                                              ? "w-2/3 bg-primary"
-                                              : "w-0"
-                                    }`}
-                                />
-                            </div>
-                        </button>
-                    );
-                })}
-            </nav>
+            {/* Barra de pasos circular unificada */}
+            <CircularStepper
+                ariaLabel="Pasos para registrar nueva contrata"
+                steps={stepsMeta.map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    state:
+                        step > item.id
+                            ? "done"
+                            : step === item.id
+                              ? "current"
+                              : "upcoming",
+                }))}
+                onStepClick={(clicked) => {
+                    const targetId = Number(clicked.id) as WizardStep;
+                    if (targetId < step) {
+                        setStep(targetId);
+                    } else if (targetId === 2) {
+                        setStep(2);
+                    } else if (targetId === 3 && validateStep2()) {
+                        setStep(3);
+                    }
+                }}
+            />
 
             {step === 1 && (
                 <div className="flex flex-col gap-4 py-1">
@@ -586,35 +559,23 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                             <h3 className="font-semibold text-foreground">Evento y horario</h3>
                         </div>
 
-                        <div className="flex flex-wrap gap-1.5">
-                            {EVENT_TYPES.map((type) => {
-                                const selected = eventType.trim().toLowerCase() === type.toLowerCase();
-                                return (
-                                    <Chip
-                                        key={type}
-                                        as="button"
-                                        type="button"
-                                        size="sm"
-                                        color={selected ? "primary" : "default"}
-                                        variant={selected ? "solid" : "flat"}
-                                        className="cursor-pointer"
-                                        onClick={() => setEventType(type)}
-                                    >
-                                        {type}
-                                    </Chip>
-                                );
-                            })}
-                        </div>
-
-                        <Input
+                        <Select
                             label="Tipo de evento"
-                            placeholder="Ej. Cumpleaños, Serenata, Boda"
+                            placeholder="Selecciona el tipo de evento"
+                            selectedKeys={eventType ? new Set([eventType]) : new Set()}
+                            onSelectionChange={(keys) => {
+                                if (keys === "all") return;
+                                const val = Array.from(keys)[0]?.toString() ?? "";
+                                setEventType(val);
+                            }}
                             isRequired
-                            value={eventType}
-                            onValueChange={setEventType}
                             variant="bordered"
                             radius="lg"
-                        />
+                        >
+                            {eventTypeOptions.map((type) => (
+                                <SelectItem key={type}>{type}</SelectItem>
+                            ))}
+                        </Select>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <Input

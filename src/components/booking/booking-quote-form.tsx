@@ -279,22 +279,18 @@ export default function BookingQuoteForm({
                     <p className="text-xs text-default-500 font-semibold uppercase tracking-wider">Detalles del evento</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
-                            label="Dirección"
+                            label="Dirección exacta del evento"
                             value={locationAddress}
                             onValueChange={setLocationAddress}
-                            variant="faded"
-                            classNames={{
-                                inputWrapper: "bg-default-100/50 border-default-200/50",
-                            }}
+                            variant="bordered"
+                            radius="lg"
                         />
                         <Input
-                            label="Ciudad"
+                            label="Distrito o ciudad"
                             value={locationCity}
                             onValueChange={setLocationCity}
-                            variant="faded"
-                            classNames={{
-                                inputWrapper: "bg-default-100/50 border-default-200/50",
-                            }}
+                            variant="bordered"
+                            radius="lg"
                         />
                     </div>
                 </div>

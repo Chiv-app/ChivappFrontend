@@ -35,17 +35,10 @@ import {
   searchPlaces,
   validateBookingRequest,
 } from "@/lib/geocoding";
+import { CANONICAL_EVENT_TYPES } from "@/lib/booking-labels";
 import type { AvailabilityOut } from "@/types/api";
 
-const EVENT_TYPES = [
-  "Boda",
-  "Quinceañero",
-  "Cumpleaños",
-  "Aniversario",
-  "Evento corporativo",
-  "Serenata",
-  "Otro",
-];
+const EVENT_TYPES = [...CANONICAL_EVENT_TYPES];
 
 type MusicianRef = {
   id: string;
@@ -607,8 +600,9 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         <div className="flex flex-col justify-center">
           <Input
             type="date"
-            label="Fecha"
+            label="Fecha del evento"
             variant="bordered"
+            radius="lg"
             isRequired
             min={todayIso}
             value={eventDate}
@@ -633,8 +627,9 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
         <div className="flex flex-col justify-center">
           <Input
             type="time"
-            label="Hora"
+            label="Hora de inicio"
             variant="bordered"
+            radius="lg"
             isRequired
             value={startTime}
             onValueChange={(val) => {
@@ -666,8 +661,8 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
 
         {/* 3. Tipo de evento */}
         <Select
-          label="Motivo"
-          placeholder="Elegir"
+          label="Tipo de evento"
+          placeholder="Selecciona el tipo de evento"
           selectedKeys={eventType ? new Set([eventType]) : new Set()}
           onSelectionChange={(keys) => {
             if (keys === "all") return;
@@ -675,10 +670,11 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
             setEventType(value ?? "");
           }}
           variant="bordered"
+          radius="lg"
           isRequired
           isInvalid={attemptedSubmit && !eventType}
           errorMessage={
-            attemptedSubmit && !eventType ? "Elige el motivo" : undefined
+            attemptedSubmit && !eventType ? "Elige el tipo de evento" : undefined
           }
           classNames={{
             label: "font-semibold text-xs",
@@ -722,6 +718,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           label="Distrito o ciudad"
           placeholder="Ej. Miraflores, Lima"
           variant="bordered"
+          radius="lg"
           value={locationCity}
           onValueChange={setLocationCity}
           isInvalid={attemptedSubmit && !location?.address && !locationCity.trim()}
@@ -742,6 +739,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           label="Invitados (opc.)"
           placeholder="Ej. 80"
           variant="bordered"
+          radius="lg"
           value={guestsCount}
           onValueChange={setGuestsCount}
           classNames={{
@@ -756,6 +754,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           label="Duración h (opc.)"
           placeholder="Ej. 2"
           variant="bordered"
+          radius="lg"
           value={durationHours}
           onValueChange={setDurationHours}
           classNames={{
@@ -770,6 +769,7 @@ export default function BookingRequestForm({ musician, onSuccess }: Props) {
           label="Presupuesto S/ (opc.)"
           placeholder="Ej. 1200"
           variant="bordered"
+          radius="lg"
           value={estimatedBudget}
           onValueChange={setEstimatedBudget}
           classNames={{
