@@ -25,27 +25,21 @@ import {
 } from "@/lib/booking-labels";
 import type { BookingOut, BookingStatus } from "@/types/api";
 
-type FilterKey = "all" | "action" | "upcoming" | "done";
+type FilterKey = "all" | "action" | "active" | "completed" | "cancelled";
 
 const PAGE_SIZE = 10;
 
 const ACTION_STATUSES: BookingStatus[] = [
     "accepted",
     "contract_pending",
+    "contract_signed",
     "in_progress",
 ];
 
-const UPCOMING_STATUSES: BookingStatus[] = [
-    "requested",
-    "contract_signed",
-    "payment_retained",
-    "change_pending",
-    "payment_released",
-];
-
-const DONE_STATUSES: BookingStatus[] = ["completed", "cancelled"];
-
 function needsContractorAction(booking: BookingOut) {
+    if (booking.status === "completed" || booking.status === "cancelled") {
+        return false;
+    }
     if (
         booking.complaint_status &&
         booking.complaint_status !== "settled"
@@ -53,6 +47,15 @@ function needsContractorAction(booking: BookingOut) {
         return true;
     }
     return ACTION_STATUSES.includes(booking.status);
+}
+
+function getContractorBookingBucket(
+    booking: BookingOut,
+): Exclude<FilterKey, "all"> {
+    if (booking.status === "completed") return "completed";
+    if (booking.status === "cancelled") return "cancelled";
+    if (needsContractorAction(booking)) return "action";
+    return "active";
 }
 
 function actionLabel(booking: BookingOut) {
@@ -113,24 +116,27 @@ export default function ContractorBookingsView() {
     }, []);
 
     const stats = useMemo(() => {
-        const action = bookings.filter((b) => needsContractorAction(b)).length;
-        const upcoming = bookings.filter((b) =>
-            UPCOMING_STATUSES.includes(b.status),
-        ).length;
-        const completed = bookings.filter((b) => b.status === "completed").length;
-        return { action, upcoming, completed, total: bookings.length };
+        let action = 0;
+        let active = 0;
+        let completed = 0;
+        let cancelled = 0;
+
+        for (const booking of bookings) {
+            const bucket = getContractorBookingBucket(booking);
+            if (bucket === "action") action += 1;
+            else if (bucket === "active") active += 1;
+            else if (bucket === "completed") completed += 1;
+            else if (bucket === "cancelled") cancelled += 1;
+        }
+
+        return { action, active, completed, cancelled, total: bookings.length };
     }, [bookings]);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
         return bookings.filter((booking) => {
-            if (filter === "action" && !needsContractorAction(booking)) {
-                return false;
-            }
-            if (filter === "upcoming" && !UPCOMING_STATUSES.includes(booking.status)) {
-                return false;
-            }
-            if (filter === "done" && !DONE_STATUSES.includes(booking.status)) {
+            const bucket = getContractorBookingBucket(booking);
+            if (filter !== "all" && bucket !== filter) {
                 return false;
             }
             if (!q) return true;
@@ -220,58 +226,98 @@ export default function ContractorBookingsView() {
                 </div>
             ) : null}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
                 {[
                     {
-                        label: "Requieren acción",
+                        key: "action" as FilterKey,
+                        label: "Por atender",
+                        subtitle: "Cotizaciones, firmas o pagos por completar",
                         value: stats.action,
                         icon: "material-symbols:priority-high",
                         tone: "text-warning",
                         bg: "bg-warning/10",
+                        activeBorder: "border-warning ring-2 ring-warning/20 bg-warning/5",
                     },
                     {
-                        label: "En curso",
-                        value: stats.upcoming,
+                        key: "active" as FilterKey,
+                        label: "Activas",
+                        subtitle: "Enviadas o confirmadas próximas al evento",
+                        value: stats.active,
                         icon: "material-symbols:event-upcoming",
                         tone: "text-primary",
                         bg: "bg-primary/10",
+                        activeBorder: "border-primary ring-2 ring-primary/20 bg-primary/5",
                     },
                     {
+                        key: "completed" as FilterKey,
                         label: "Finalizadas",
+                        subtitle: "Eventos realizados y cerrados con éxito",
                         value: stats.completed,
                         icon: "material-symbols:check-circle",
                         tone: "text-success",
                         bg: "bg-success/10",
+                        activeBorder: "border-success ring-2 ring-success/20 bg-success/5",
                     },
                     {
-                        label: "Total",
+                        key: "all" as FilterKey,
+                        label: "Todas las reservas",
+                        subtitle:
+                            stats.cancelled > 0
+                                ? `Incluye ${stats.cancelled} cancelada${stats.cancelled === 1 ? "" : "s"}`
+                                : "Historial completo de solicitudes",
                         value: stats.total,
                         icon: "material-symbols:calendar-month",
                         tone: "text-secondary",
                         bg: "bg-secondary/10",
+                        activeBorder: "border-secondary ring-2 ring-secondary/20 bg-secondary/5",
                     },
-                ].map((item) => (
-                    <Card key={item.label} className="border border-default-200/70 shadow-soft">
-                        <CardBody className="gap-2 sm:gap-3 p-3 sm:p-4">
-                            <div
-                                className={`flex size-8 sm:size-9 items-center justify-center rounded-xl ${item.bg} ${item.tone}`}
-                            >
-                                <Icon icon={item.icon} width={18} />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-xs text-default-500">
-                                    {item.label}
-                                </p>
-                                <p className="text-xl sm:text-2xl font-bold text-foreground mt-1">
+                ].map((item) => {
+                    const isSelected = filter === item.key;
+                    return (
+                        <button
+                            key={item.label}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => {
+                                setFilter((prev) =>
+                                    prev === item.key && item.key !== "all"
+                                        ? "all"
+                                        : item.key,
+                                );
+                                setPage(1);
+                            }}
+                            className={`group text-left rounded-2xl border p-3.5 sm:p-4 transition-all shadow-soft hover:border-default-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                                isSelected
+                                    ? item.activeBorder
+                                    : "border-default-200/70 bg-content1"
+                            }`}
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div
+                                        className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${item.bg} ${item.tone}`}
+                                    >
+                                        <Icon icon={item.icon} width={18} aria-hidden="true" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-foreground truncate">
+                                            {item.label}
+                                        </p>
+                                        <p className="text-[11px] text-default-500 line-clamp-1 mt-0.5">
+                                            {item.subtitle}
+                                        </p>
+                                    </div>
+                                </div>
+                                <p className="text-xl sm:text-2xl font-bold text-foreground tabular-nums shrink-0">
                                     {item.value}
                                 </p>
                             </div>
-                        </CardBody>
-                    </Card>
-                ))}
+                        </button>
+                    );
+                })}
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 rounded-2xl border border-default-200/70 bg-content1 p-2 sm:p-2.5 shadow-soft">
                 <Tabs
                     aria-label="Filtrar reservas del contratante por estado"
                     selectedKey={filter}
@@ -282,16 +328,18 @@ export default function ContractorBookingsView() {
                     variant="underlined"
                     color="primary"
                     classNames={{
-                        base: "w-full overflow-x-auto",
-                        tabList: "gap-2 sm:gap-4 flex-nowrap",
+                        base: "w-full lg:w-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+                        tabList: "gap-1 sm:gap-2 flex-nowrap border-b-0 p-0",
+                        tab: "h-9 px-2.5 sm:px-3 text-xs sm:text-sm font-medium",
                     }}
                 >
                     <Tab key="all" title={`Todas (${bookings.length})`} />
-                    <Tab key="action" title={`Acción (${stats.action})`} />
-                    <Tab key="upcoming" title={`En curso (${stats.upcoming})`} />
-                    <Tab key="done" title="Cerradas" />
+                    <Tab key="action" title={`Por atender (${stats.action})`} />
+                    <Tab key="active" title={`Activas (${stats.active})`} />
+                    <Tab key="completed" title={`Finalizadas (${stats.completed})`} />
+                    <Tab key="cancelled" title={`Canceladas (${stats.cancelled})`} />
                 </Tabs>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                <div className="flex items-center gap-2 w-full lg:w-auto lg:justify-end">
                     <Input
                         aria-label="Buscar reservas por evento, músico, ciudad o estado"
                         value={query}
@@ -302,7 +350,8 @@ export default function ContractorBookingsView() {
                         placeholder="Buscar por evento, músico, ciudad o estado..."
                         variant="bordered"
                         radius="lg"
-                        className="w-full max-w-md"
+                        size="sm"
+                        className="w-full lg:w-72 xl:w-80"
                         startContent={
                             <Icon
                                 icon="material-symbols:search"
@@ -311,7 +360,7 @@ export default function ContractorBookingsView() {
                             />
                         }
                     />
-                    <div className="inline-flex items-center rounded-2xl bg-content2/70 p-1 gap-1 shrink-0">
+                    <div className="inline-flex items-center rounded-xl bg-content2/70 p-1 gap-1 shrink-0">
                         <Button
                             isIconOnly
                             aria-label="Vista en cards"

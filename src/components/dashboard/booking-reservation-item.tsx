@@ -147,9 +147,71 @@ function StatusChip({
                   ? COMPLAINT_STATUS_LABEL[booking.complaint_status || ""] ||
                     "En disputa"
                   : urgent
-                    ? `Acción: ${getBookingStatusLabel(booking.status, role)}`
+                    ? `Por atender · ${getBookingStatusLabel(booking.status, role)}`
                     : getBookingStatusLabel(booking.status, role)}
         </Chip>
+    );
+}
+
+function StepGuidanceBox({
+    booking,
+    role,
+    urgent,
+    disputeHint,
+    compact = false,
+}: {
+    booking: BookingOut;
+    role: Role;
+    urgent: boolean;
+    disputeHint: string | null;
+    compact?: boolean;
+}) {
+    const hintText = disputeHint || getBookingStatusHint(booking.status, role);
+    if (!hintText) return null;
+
+    const isCancelled = booking.status === "cancelled";
+    const isCompleted =
+        booking.status === "completed" || booking.status === "payment_released";
+
+    const boxClass = disputeHint
+        ? "bg-danger/10 text-danger-text border-danger/25"
+        : urgent
+          ? "bg-warning/10 text-warning-text border-warning/30"
+          : isCompleted
+            ? "bg-success/10 text-success-text border-success/25"
+            : isCancelled
+              ? "bg-default-100/80 text-default-600 border-default-200/80"
+              : "bg-primary/10 text-foreground border-primary/20";
+
+    const iconName = disputeHint
+        ? "material-symbols:report-outline"
+        : urgent
+          ? "material-symbols:bolt"
+          : isCompleted
+            ? "material-symbols:verified-outline"
+            : isCancelled
+              ? "material-symbols:cancel-outline"
+              : "material-symbols:schedule";
+
+    return (
+        <div
+            className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${
+                compact ? "text-xs mt-1.5" : "text-xs sm:text-sm"
+            } ${boxClass}`}
+        >
+            <Icon
+                icon={iconName}
+                width={16}
+                className="shrink-0 mt-0.5"
+                aria-hidden="true"
+            />
+            <p className={compact ? "line-clamp-2" : "leading-snug"}>
+                {urgent && !disputeHint ? (
+                    <span className="font-semibold">Requiere tu acción: </span>
+                ) : null}
+                {hintText}
+            </p>
+        </div>
     );
 }
 
@@ -502,15 +564,12 @@ export default function BookingReservationItem({
                             </FactRow>
                         </div>
 
-                        {disputeHint ? (
-                            <p className="text-sm text-danger-text bg-danger/10 rounded-xl px-3 py-2">
-                                {disputeHint}
-                            </p>
-                        ) : urgent ? (
-                            <p className="text-sm text-warning-text bg-warning/10 rounded-xl px-3 py-2">
-                                {getBookingStatusHint(booking.status, role)}
-                            </p>
-                        ) : null}
+                        <StepGuidanceBox
+                            booking={booking}
+                            role={role}
+                            urgent={urgent}
+                            disputeHint={disputeHint}
+                        />
 
                         <CardActions
                             urgent={urgent || disputeUrgent}
@@ -531,15 +590,13 @@ export default function BookingReservationItem({
                             <p className="text-sm text-default-600 mt-1 truncate">
                                 {whenLabel}
                             </p>
-                            {disputeHint ? (
-                                <p className="text-xs text-danger-text mt-1.5 line-clamp-2">
-                                    {disputeHint}
-                                </p>
-                            ) : urgent ? (
-                                <p className="text-xs text-warning-text mt-1.5 line-clamp-2">
-                                    {getBookingStatusHint(booking.status, role)}
-                                </p>
-                            ) : null}
+                            <StepGuidanceBox
+                                booking={booking}
+                                role={role}
+                                urgent={urgent}
+                                disputeHint={disputeHint}
+                                compact
+                            />
                         </div>
 
                         <div className="min-w-0">
@@ -632,16 +689,13 @@ export default function BookingReservationItem({
                     </FactRow>
                 </div>
 
-                {/* 3. Guidance only when it helps */}
-                {disputeHint ? (
-                    <p className="text-sm text-danger-text bg-danger/10 rounded-xl px-3 py-2">
-                        {disputeHint}
-                    </p>
-                ) : urgent ? (
-                    <p className="text-sm text-warning-text bg-warning/10 rounded-xl px-3 py-2">
-                        {getBookingStatusHint(booking.status, role)}
-                    </p>
-                ) : null}
+                {/* 3. Guidance for the current step */}
+                <StepGuidanceBox
+                    booking={booking}
+                    role={role}
+                    urgent={urgent}
+                    disputeHint={disputeHint}
+                />
 
                 {/* 4. Actions */}
                 <div className="mt-auto">
