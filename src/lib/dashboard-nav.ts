@@ -1,9 +1,24 @@
 import type { UserRole } from "@/types/api";
 
+export type DashboardSubItem = {
+    href: string;
+    label: string;
+    icon: string;
+    description?: string;
+    requiresVerification?: boolean;
+    ensembleAllowed?: boolean;
+};
+
 export type DashboardNavItem = {
     href: string;
     label: string;
     icon: string;
+    category?: string;
+    description?: string;
+    /** Additional route prefixes that belong to this unified hub. */
+    matchPrefixes?: string[];
+    /** Sub-tabs rendered inside the unified module hub. */
+    subItems?: DashboardSubItem[];
     requiresVerification?: boolean;
     requiresEmailVerification?: boolean;
 };
@@ -13,6 +28,8 @@ export type DashboardModule = {
     title: string;
     description: string;
     icon: string;
+    badge?: string;
+    subLinks?: Array<{ label: string; href: string; icon?: string }>;
     requiresVerification?: boolean;
     comingSoon?: boolean;
 };
@@ -21,59 +38,108 @@ export const MUSICIAN_NAV: DashboardNavItem[] = [
     {
         href: "/musician",
         label: "Resumen",
-        icon: "material-symbols:dashboard",
+        icon: "material-symbols:dashboard-rounded",
+        category: "Principal",
+        description: "Indicadores y accesos rápidos",
         requiresVerification: true,
     },
     {
         href: "/musician/profile",
         label: "Mi perfil",
         icon: "material-symbols:person",
+        category: "Cuenta",
+        description: "Datos, portafolio y verificación",
     },
     {
         href: "/musician/bookings",
-        label: "Reservas",
-        icon: "material-symbols:calendar-month",
+        label: "Agenda",
+        icon: "material-symbols:calendar-month-rounded",
+        category: "Operación",
+        description: "Reservas, calendario y links de pago",
+        matchPrefixes: ["/musician/bookings", "/musician/calendar", "/musician/links"],
         requiresVerification: true,
+        subItems: [
+            {
+                href: "/musician/bookings",
+                label: "Reservas",
+                icon: "material-symbols:event-upcoming-rounded",
+                description: "Solicitudes, contratas y shows en curso",
+                requiresVerification: true,
+                ensembleAllowed: true,
+            },
+            {
+                href: "/musician/calendar",
+                label: "Calendario",
+                icon: "material-symbols:calendar-view-week-rounded",
+                description: "Vista mensual/semanal y Google Calendar",
+                ensembleAllowed: true,
+            },
+            {
+                href: "/musician/links",
+                label: "Enlaces de pago",
+                icon: "material-symbols:add-link-rounded",
+                description: "Links rápidos de contratación y firma",
+                requiresVerification: true,
+            },
+        ],
     },
     {
-        href: "/musician/calendar",
-        label: "Calendario",
-        icon: "material-symbols:calendar-view-week",
+        href: "/musician/members",
+        label: "Equipo",
+        icon: "material-symbols:groups-rounded",
+        category: "Agrupación",
+        description: "Integrantes y reparto por show",
+        matchPrefixes: ["/musician/members", "/musician/payouts"],
+        requiresVerification: true,
+        subItems: [
+            {
+                href: "/musician/members",
+                label: "Integrantes",
+                icon: "material-symbols:groups-rounded",
+                description: "Directorio, especialidades e invitaciones",
+                requiresVerification: true,
+            },
+            {
+                href: "/musician/payouts",
+                label: "Reparto por evento",
+                icon: "material-symbols:account-balance-wallet-rounded",
+                description: "Liquidación y pagos a tu agrupación",
+                requiresVerification: true,
+            },
+        ],
     },
     {
-        href: "/musician/links",
-        label: "Enlaces de pago",
-        icon: "material-symbols:link",
+        href: "/musician/earnings",
+        label: "Finanzas",
+        icon: "material-symbols:payments-rounded",
+        category: "Dinero y Analítica",
+        description: "Mis cobros, retiros y reportes",
+        matchPrefixes: ["/musician/earnings", "/musician/reports"],
         requiresVerification: true,
+        subItems: [
+            {
+                href: "/musician/earnings",
+                label: "Mis cobros y Retiros",
+                icon: "material-symbols:payments-rounded",
+                description: "Deuda por show, historial y pagos como integrante",
+                requiresVerification: true,
+                ensembleAllowed: true,
+            },
+            {
+                href: "/musician/reports",
+                label: "Reportes y Analítica",
+                icon: "material-symbols:analytics-rounded",
+                description: "Métricas de ingresos, shows y conversión",
+                requiresVerification: true,
+            },
+        ],
     },
     {
         href: "/musician/assistant",
         label: "Asistente IA",
-        icon: "material-symbols:smart-toy",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/members",
-        label: "Integrantes",
-        icon: "material-symbols:groups",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/payouts",
-        label: "Reparto a integrantes",
-        icon: "material-symbols:account-balance-wallet",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/earnings",
-        label: "Mis cobros",
-        icon: "material-symbols:payments",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/reports",
-        label: "Reportes",
-        icon: "material-symbols:analytics",
+        icon: "material-symbols:smart-toy-rounded",
+        category: "Automatización",
+        description: "Tarifario IA, simulador y WhatsApp",
         requiresVerification: true,
     },
     {
@@ -182,27 +248,45 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
     {
         href: "/contractor",
         label: "Resumen",
-        icon: "material-symbols:dashboard",
+        icon: "material-symbols:dashboard-rounded",
+        category: "Principal",
+        description: "Panel general de actividad",
     },
     {
         href: "/contractor/profile",
         label: "Mi perfil",
         icon: "material-symbols:verified-user",
+        category: "Cuenta",
+        description: "Datos e identidad verificada",
     },
     {
         href: "/contractor/bookings",
-        label: "Mis reservas",
-        icon: "material-symbols:event-available",
-    },
-    {
-        href: "/contractor/calendar",
-        label: "Calendario",
-        icon: "material-symbols:calendar-view-week",
+        label: "Mis Eventos",
+        icon: "material-symbols:celebration-rounded",
+        category: "Contrataciones",
+        description: "Reservas y calendario de eventos",
+        matchPrefixes: ["/contractor/bookings", "/contractor/calendar"],
+        subItems: [
+            {
+                href: "/contractor/bookings",
+                label: "Mis reservas",
+                icon: "material-symbols:event-available-rounded",
+                description: "Seguimiento de cada presentación",
+            },
+            {
+                href: "/contractor/calendar",
+                label: "Calendario",
+                icon: "material-symbols:calendar-view-week-rounded",
+                description: "Agenda mensual/semanal y Google Calendar",
+            },
+        ],
     },
     {
         href: "/contractor/operations",
-        label: "Mis pagos y gastos",
-        icon: "material-symbols:receipt-long",
+        label: "Pagos y Gastos",
+        icon: "material-symbols:receipt-long-rounded",
+        category: "Finanzas",
+        description: "Operaciones, garantías y reembolsos",
         requiresEmailVerification: true,
     },
     {
@@ -215,100 +299,133 @@ export const CONTRACTOR_NAV: DashboardNavItem[] = [
 export const MUSICIAN_MODULES: DashboardModule[] = [
     {
         href: "/musician/bookings",
-        title: "Reservas",
-        description: "Atiende cotizaciones, valida pagos y sigue cada presentación.",
-        icon: "material-symbols:calendar-month",
+        title: "Agenda y Reservas",
+        badge: "3 vistas integradas",
+        description:
+            "Gestiona tus reservas, sincroniza tu calendario con Google y genera enlaces rápidos de pago en un solo módulo.",
+        icon: "material-symbols:calendar-month-rounded",
         requiresVerification: true,
+        subLinks: [
+            {
+                label: "Reservas",
+                href: "/musician/bookings",
+                icon: "material-symbols:event-upcoming-rounded",
+            },
+            {
+                label: "Calendario",
+                href: "/musician/calendar",
+                icon: "material-symbols:calendar-view-week-rounded",
+            },
+            {
+                label: "Enlaces de pago",
+                href: "/musician/links",
+                icon: "material-symbols:add-link-rounded",
+            },
+        ],
     },
     {
-        href: "/musician/links",
-        title: "Enlaces de pago",
-        description: "Revisa los enlaces de contratación rápida que has generado.",
-        icon: "material-symbols:link",
+        href: "/musician/members",
+        title: "Equipo y Reparto",
+        badge: "2 vistas integradas",
+        description:
+            "Administra el directorio de integrantes de tu agrupación, convócalos a shows y liquida el reparto por evento.",
+        icon: "material-symbols:groups-rounded",
         requiresVerification: true,
+        subLinks: [
+            {
+                label: "Integrantes",
+                href: "/musician/members",
+                icon: "material-symbols:groups-rounded",
+            },
+            {
+                label: "Reparto por evento",
+                href: "/musician/payouts",
+                icon: "material-symbols:account-balance-wallet-rounded",
+            },
+        ],
+    },
+    {
+        href: "/musician/earnings",
+        title: "Finanzas y Reportes",
+        badge: "2 vistas integradas",
+        description:
+            "Controla tu dinero disponible para retirar, el historial de pagos, tus ingresos como integrante y la analítica.",
+        icon: "material-symbols:payments-rounded",
+        requiresVerification: true,
+        subLinks: [
+            {
+                label: "Mis cobros y Retiros",
+                href: "/musician/earnings",
+                icon: "material-symbols:payments-rounded",
+            },
+            {
+                label: "Reportes y Analítica",
+                href: "/musician/reports",
+                icon: "material-symbols:analytics-rounded",
+            },
+        ],
     },
     {
         href: "/musician/assistant",
         title: "Asistente IA",
-        description: "Entrena tu tarifario inteligente, prueba el simulador y conecta tu WhatsApp.",
-        icon: "material-symbols:smart-toy",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/members",
-        title: "Integrantes",
-        description: "Gestiona tu agrupación, especialidades, convocatorias y repartos.",
-        icon: "material-symbols:groups",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/payouts",
-        title: "Reparto a integrantes",
-        description: "Paga a tus integrantes por reserva, con montos y estados pendientes.",
-        icon: "material-symbols:account-balance-wallet",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/earnings",
-        title: "Mis cobros",
-        description: "Controla lo cotizado, por cobrar y cobrado de tus eventos.",
-        icon: "material-symbols:payments",
-        requiresVerification: true,
-    },
-    {
-        href: "/musician/reports",
-        title: "Reportes",
+        badge: "IA + WhatsApp",
         description:
-            "Gráficas y tablas de reservas, ingresos, integrantes y quejas con filtros.",
-        icon: "material-symbols:analytics",
+            "Entrena tu tarifario inteligente por zona y horario, prueba el simulador en vivo y conecta tu WhatsApp.",
+        icon: "material-symbols:smart-toy-rounded",
         requiresVerification: true,
-    },
-    {
-        href: "/musician/profile",
-        title: "Mi perfil",
-        description: "Actualiza tu información artística, fotos, videos y tarifas.",
-        icon: "material-symbols:edit-document",
-    },
-    {
-        href: "/musician/notifications",
-        title: "Notificaciones",
-        description: "Mantente al día con novedades sobre tus reservas y pagos.",
-        icon: "material-symbols:notifications-active",
-        requiresVerification: true,
+        subLinks: [
+            {
+                label: "Tarifario y Simulador",
+                href: "/musician/assistant",
+                icon: "material-symbols:smart-toy-rounded",
+            },
+        ],
     },
 ];
 
 export const CONTRACTOR_MODULES: DashboardModule[] = [
     {
-        href: "/contractor/profile",
-        title: "Gestionar perfil",
-        description: "Actualiza tus datos personales y documentos de verificación.",
-        icon: "material-symbols:badge",
-    },
-    {
         href: "/contractor/bookings",
-        title: "Reservas y presentaciones",
-        description: "Administra tus eventos contratados y el estado de cada reserva.",
-        icon: "material-symbols:celebration",
+        title: "Mis Eventos y Calendario",
+        badge: "2 vistas integradas",
+        description:
+            "Administra tus eventos contratados, coordina en vivo con los músicos y revisa tu calendario sincronizado.",
+        icon: "material-symbols:celebration-rounded",
+        subLinks: [
+            {
+                label: "Mis reservas",
+                href: "/contractor/bookings",
+                icon: "material-symbols:event-available-rounded",
+            },
+            {
+                label: "Calendario",
+                href: "/contractor/calendar",
+                icon: "material-symbols:calendar-view-week-rounded",
+            },
+        ],
     },
     {
         href: "/contractor/operations",
-        title: "Mis pagos y gastos",
+        title: "Pagos y Gastos",
+        badge: "Pago protegido",
         description:
-            "Pendientes, pagos, disputas y reembolsos de tus reservas en un solo lugar.",
-        icon: "material-symbols:receipt-long",
-    },
-    {
-        href: "/contractor/notifications",
-        title: "Notificaciones",
-        description: "Recibe alertas sobre reservas, pagos y contratos.",
-        icon: "material-symbols:notifications-active",
+            "Sigue tus pagos en garantía, liberaciones, disputas y reembolsos en un solo centro financiero.",
+        icon: "material-symbols:receipt-long-rounded",
     },
     {
         href: "/musicians",
         title: "Explorar músicos",
-        description: "Encuentra artistas verificados para tu próximo evento.",
-        icon: "material-symbols:search",
+        badge: "Catálogo verificado",
+        description:
+            "Encuentra solistas, bandas, mariachis, orquestas y DJs verificados para tu próximo evento.",
+        icon: "material-symbols:search-rounded",
+    },
+    {
+        href: "/contractor/profile",
+        title: "Mi Perfil y Verificación",
+        description:
+            "Actualiza tus datos personales, documento de identidad y vinculación con Google Calendar.",
+        icon: "material-symbols:badge",
     },
 ];
 
@@ -332,18 +449,42 @@ export function getNotificationsPath(role: UserRole): string | null {
     return null;
 }
 
-export function isNavItemActive(pathname: string, href: string): boolean {
+export function isNavItemActive(
+    pathname: string,
+    href: string,
+    matchPrefixes?: string[],
+): boolean {
     if (href === "/musician" || href === "/contractor" || href === "/admin") {
         return pathname === href;
     }
-    return pathname === href || pathname.startsWith(`${href}/`);
+    if (pathname === href || pathname.startsWith(`${href}/`)) {
+        return true;
+    }
+    if (matchPrefixes && matchPrefixes.length > 0) {
+        return matchPrefixes.some(
+            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+        );
+    }
+    return false;
+}
+
+export function findActiveHub(
+    pathname: string,
+    navItems: DashboardNavItem[],
+): DashboardNavItem | undefined {
+    return navItems.find((item) =>
+        isNavItemActive(pathname, item.href, item.matchPrefixes),
+    );
 }
 
 export function isVerifiedOnlyPath(
     pathname: string,
     navItems: DashboardNavItem[],
 ): boolean {
-    const match = navItems.find((item) => isNavItemActive(pathname, item.href));
+    if (pathname === "/musician/calendar" || pathname === "/contractor/calendar") {
+        return false;
+    }
+    const match = findActiveHub(pathname, navItems);
     return match?.requiresVerification === true;
 }
 
@@ -351,7 +492,7 @@ export function isEmailVerifiedOnlyPath(
     pathname: string,
     navItems: DashboardNavItem[],
 ): boolean {
-    const match = navItems.find((item) => isNavItemActive(pathname, item.href));
+    const match = findActiveHub(pathname, navItems);
     if (pathname.match(/^\/contractor\/bookings\/[a-zA-Z0-9-]+$/)) {
         return false;
     }

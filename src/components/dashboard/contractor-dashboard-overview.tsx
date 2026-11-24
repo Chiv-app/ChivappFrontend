@@ -155,8 +155,13 @@ export default function ContractorDashboardOverview({
                 </div>
 
             <div>
-                <h2 className="text-xl font-bold text-foreground mb-4">Módulos</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                    Módulos principales
+                </h2>
+                <p className="text-sm text-default-500 mb-4">
+                    Tus contrataciones, calendario y pagos protegidos en un solo lugar.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {CONTRACTOR_MODULES.map((module) => (
                         <DashboardModuleCard
                             key={module.title}

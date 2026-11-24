@@ -63,6 +63,8 @@ type ModuleEntry = {
     label: string;
     icon: string;
     href: string;
+    description?: string;
+    subCount?: number;
     locked: boolean;
     active: boolean;
 };
@@ -251,11 +253,13 @@ export default function AppNavbar() {
                     label: item.label,
                     icon: item.icon,
                     href: item.href,
+                    description: item.description,
+                    subCount: item.subItems?.length,
                     locked:
                         !!item.requiresVerification &&
                         !isVerified &&
                         !ensembleUnlocked,
-                    active: isNavItemActive(pathname, item.href),
+                    active: isNavItemActive(pathname, item.href, item.matchPrefixes),
                 };
             });
     }, [user, isVerified, pathname, profilePath]);
@@ -267,6 +271,17 @@ export default function AppNavbar() {
     }
 
     const homePath = authReady && user ? getRoleHomePath(user.role) : "/";
+    const isBookingDetailRoute = /^\/(musician|contractor)\/bookings\/[^/]+$/.test(
+        pathname,
+    );
+    const showNavbarHubPills =
+        authReady &&
+        !!user &&
+        (user.role === "musician" || user.role === "contractor") &&
+        moduleEntries.length > 0 &&
+        !isBookingDetailRoute &&
+        pathname !== "/musician/onboarding" &&
+        pathname !== "/contractor/onboarding";
     // En el perfil público la barra aparece al hacer scroll; en el resto del sitio está siempre visible.
     const revealOnScroll = isScrollRevealRoute(pathname);
     const isRevealed = useScrolledPast(80, revealOnScroll);
@@ -293,7 +308,67 @@ export default function AppNavbar() {
                         </Link>
                     </div>
 
-                    <div id="navbar-center-slot" className="hidden xl:flex flex-1 justify-center px-4" />
+                    <div
+                        id="navbar-center-slot"
+                        className="hidden lg:flex flex-1 justify-center px-3 min-w-0"
+                    >
+                        {showNavbarHubPills ? (
+                            <div
+                                role="navigation"
+                                aria-label="Módulos principales"
+                                className="inline-flex items-center gap-1 rounded-full bg-default-100/75 dark:bg-default-100/60 border border-default-200/70 p-1 overflow-x-auto scrollbar-none max-w-full"
+                            >
+                                {moduleEntries.map((entry) =>
+                                    entry.locked ? (
+                                        <span
+                                            key={entry.key}
+                                            aria-disabled="true"
+                                            title="Completa tu perfil para habilitar este módulo"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-default-400 cursor-not-allowed whitespace-nowrap"
+                                        >
+                                            <Icon icon={entry.icon} width={16} aria-hidden="true" />
+                                            <span>{entry.label}</span>
+                                            <Icon icon="material-symbols:lock" width={13} aria-hidden="true" />
+                                        </span>
+                                    ) : (
+                                        <Link
+                                            key={entry.key}
+                                            href={entry.href}
+                                            aria-current={entry.active ? "page" : undefined}
+                                            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
+                                                entry.active
+                                                    ? "bg-primary text-primary-foreground shadow-xs"
+                                                    : "text-default-600 hover:text-foreground hover:bg-content1/80"
+                                            }`}
+                                        >
+                                            <Icon icon={entry.icon} width={17} aria-hidden="true" />
+                                            <span>{entry.label}</span>
+                                        </Link>
+                                    ),
+                                )}
+                                {user.role === "contractor" ? (
+                                    <Link
+                                        href="/musicians"
+                                        aria-current={
+                                            pathname.startsWith("/musicians") ? "page" : undefined
+                                        }
+                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
+                                            pathname.startsWith("/musicians")
+                                                ? "bg-primary text-primary-foreground shadow-xs"
+                                                : "text-default-600 hover:text-foreground hover:bg-content1/80"
+                                        }`}
+                                    >
+                                        <Icon
+                                            icon="material-symbols:search-rounded"
+                                            width={17}
+                                            aria-hidden="true"
+                                        />
+                                        <span>Explorar músicos</span>
+                                    </Link>
+                                ) : null}
+                            </div>
+                        ) : null}
+                    </div>
 
                     <div className="flex items-center min-w-0 gap-1 sm:gap-3">
                         <ThemeToggle size="md" />
@@ -593,7 +668,7 @@ export default function AppNavbar() {
 
                                         <DropdownSection
                                             showDivider
-                                            title="Navegación"
+                                            title="Módulos principales"
                                             classNames={{
                                                 heading:
                                                     "text-xs font-semibold text-default-500 px-2",
@@ -646,7 +721,7 @@ export default function AppNavbar() {
                                                     description={
                                                         entry.locked
                                                             ? "Completa tu verificación"
-                                                            : undefined
+                                                            : entry.description
                                                     }
                                                 >
                                                     {entry.label}

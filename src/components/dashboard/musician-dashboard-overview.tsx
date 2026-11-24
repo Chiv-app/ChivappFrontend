@@ -320,21 +320,29 @@ export default function MusicianDashboardOverview({
 
             <section>
                 <div className="mb-4">
-                    <h2 className="text-xl font-bold text-foreground">Módulos</h2>
+                    <h2 className="text-xl font-bold text-foreground">
+                        Módulos principales
+                    </h2>
                     <p className="text-sm text-default-500 mt-1">
-                        Accesos directos a lo que usas día a día.
+                        Tus herramientas agrupadas en 4 centros operativos con vistas integradas.
                     </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {MUSICIAN_MODULES.map((module) => (
-                                                    <DashboardModuleCard
-                                key={module.title}
-                                module={module}
-                                locked={
-                                    (!!module.requiresVerification && !isVerified) ||
-                                    (isEnsembleMember && !["Reservas", "Ingresos", "Notificaciones"].includes(module.title))
-                                }
-                            />
+                        <DashboardModuleCard
+                            key={module.title}
+                            module={module}
+                            locked={
+                                (!!module.requiresVerification && !isVerified) ||
+                                (isEnsembleMember &&
+                                    ![
+                                        "Agenda y Reservas",
+                                        "Finanzas y Reportes",
+                                        "Reservas",
+                                        "Ingresos",
+                                    ].includes(module.title))
+                            }
+                        />
                     ))}
                 </div>
             </section>
