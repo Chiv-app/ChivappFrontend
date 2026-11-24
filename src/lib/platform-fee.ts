@@ -30,16 +30,112 @@ export function setPlatformGatewayConfig(config: {
 
 /** Comisión de plataforma sobre el precio del músico (solo la paga el contratista). */
 
+export function isDirectExternalBooking(
+    booking: Pick<BookingOut, "platform_fee_amount" | "platform_fee_percent" | "status">,
+): boolean {
+    if (booking.status === "requested") return false;
+    const hasZeroFeeAmount =
+        booking.platform_fee_amount != null &&
+        Number.isFinite(Number(booking.platform_fee_amount)) &&
+        Number(booking.platform_fee_amount) === 0;
+    const hasZeroFeePercent =
+        booking.platform_fee_percent == null ||
+        Number(booking.platform_fee_percent) === 0;
+    return hasZeroFeeAmount && hasZeroFeePercent;
+}
+
+export function parseDirectBookingAdvance(
+    notes: string | null | undefined,
+    totalAgreed: number | null,
+): {
+    advanceAmount: number | null;
+    remainingBalance: number | null;
+    cleanNote: string | null;
+} {
+    const raw = (notes ?? "").trim();
+    if (!raw) {
+        return {
+            advanceAmount: null,
+            remainingBalance: totalAgreed,
+            cleanNote: null,
+        };
+    }
+
+    // Caso 1: el músico ingresó directamente un monto numérico (ej. "150" o "S/ 150.00")
+    const pureNumberMatch = raw.match(/^(?:s\/\.?\s*)?(\d+(?:[.,]\d{1,2})?)$/i);
+    if (pureNumberMatch) {
+        const val = Number(pureNumberMatch[1].replace(",", "."));
+        if (Number.isFinite(val) && val >= 0) {
+            return {
+                advanceAmount: roundCurrency(val),
+                remainingBalance:
+                    totalAgreed != null
+                        ? roundCurrency(Math.max(0, totalAgreed - val))
+                        : null,
+                cleanNote: null,
+            };
+        }
+    }
+
+    // Caso 2: "Adelanto recibido: S/ 150.00 · ..." o "Adelantó S/ 150..."
+    const prefixMatch = raw.match(
+        /^Adelanto recibido:\s*S\/\.?\s*(\d+(?:[.,]\d{1,2})?)(?:\s*·\s*(.*))?$/i,
+    );
+    if (prefixMatch) {
+        const val = Number(prefixMatch[1].replace(",", "."));
+        const extra = (prefixMatch[2] ?? "").trim() || null;
+        if (Number.isFinite(val) && val >= 0) {
+            return {
+                advanceAmount: roundCurrency(val),
+                remainingBalance:
+                    totalAgreed != null
+                        ? roundCurrency(Math.max(0, totalAgreed - val))
+                        : null,
+                cleanNote: extra,
+            };
+        }
+    }
+
+    const inlineMatch = raw.match(
+        /adelant[oó]\s*(?:de\s*)?(?:s\/\.?\s*)?(\d+(?:[.,]\d{1,2})?)/i,
+    );
+    if (inlineMatch) {
+        const val = Number(inlineMatch[1].replace(",", "."));
+        if (Number.isFinite(val) && val >= 0) {
+            return {
+                advanceAmount: roundCurrency(val),
+                remainingBalance:
+                    totalAgreed != null
+                        ? roundCurrency(Math.max(0, totalAgreed - val))
+                        : null,
+                cleanNote: raw,
+            };
+        }
+    }
+
+    return {
+        advanceAmount: null,
+        remainingBalance: totalAgreed,
+        cleanNote: raw,
+    };
+}
+
 export function contractorPayableTotal(booking: Pick<
     BookingOut,
     "price_agreed" | "platform_fee_percent"
-> & Partial<Pick<BookingOut, "platform_fee_amount">>): number | null {
+> & Partial<Pick<BookingOut, "platform_fee_amount" | "status">>): number | null {
     if (booking.price_agreed == null) return null;
     const M = Number(booking.price_agreed);
     if (!Number.isFinite(M)) return null;
     if (booking.platform_fee_amount != null) {
         const fee = Number(booking.platform_fee_amount);
-        if (Number.isFinite(fee) && fee > 0) {
+        if (
+            Number.isFinite(fee) &&
+            (fee > 0 ||
+                (fee === 0 &&
+                    (booking.platform_fee_percent == null ||
+                        Number(booking.platform_fee_percent) === 0)))
+        ) {
             return roundCurrency(M + fee);
         }
     }
@@ -57,10 +153,16 @@ export function contractorPayableTotal(booking: Pick<
 export function platformFeeAmount(booking: Pick<
     BookingOut,
     "price_agreed" | "platform_fee_percent"
-> & Partial<Pick<BookingOut, "platform_fee_amount">>): number {
+> & Partial<Pick<BookingOut, "platform_fee_amount" | "status">>): number {
     if (booking.platform_fee_amount != null) {
         const fee = Number(booking.platform_fee_amount);
-        if (Number.isFinite(fee) && fee > 0) {
+        if (
+            Number.isFinite(fee) &&
+            (fee > 0 ||
+                (fee === 0 &&
+                    (booking.platform_fee_percent == null ||
+                        Number(booking.platform_fee_percent) === 0)))
+        ) {
             return roundCurrency(fee);
         }
     }

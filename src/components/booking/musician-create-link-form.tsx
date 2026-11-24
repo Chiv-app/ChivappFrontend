@@ -17,6 +17,8 @@ type Props = {
 
 export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     const [price, setPrice] = useState("");
+    const [paymentMode, setPaymentMode] = useState<"platform" | "direct">("platform");
+    const [advanceAmount, setAdvanceAmount] = useState("");
     const [eventDate, setEventDate] = useState("");
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
@@ -229,6 +231,22 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
             });
             return;
         }
+        const numericAdvance = advanceAmount.trim() ? Number(advanceAmount) : 0;
+        if (
+            paymentMode === "direct" &&
+            advanceAmount.trim() &&
+            (!Number.isFinite(numericAdvance) ||
+                numericAdvance < 0 ||
+                numericAdvance > numericPrice)
+        ) {
+            addToast({
+                title: "Adelanto inválido",
+                description:
+                    "El adelanto recibido no puede ser negativo ni mayor que el precio acordado.",
+                color: "danger",
+            });
+            return;
+        }
         setIsSubmitting(true);
         try {
             const res = await apiFetch<BookingLinkOut>("/booking-links", {
@@ -246,13 +264,21 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                     client_email: clientEmail.trim() || null,
                     event_description: eventDescription.trim() || null,
                     source: sourceType,
+                    payment_mode: paymentMode,
+                    advance_amount:
+                        paymentMode === "direct" && numericAdvance > 0
+                            ? numericAdvance
+                            : null,
                 })
             });
             const url = `${window.location.origin}/pay/${res.token}`;
             setCreatedLink(url);
             addToast({
                 title: "Link creado",
-                description: "El link de contrato pre-llenado ha sido generado.",
+                description:
+                    paymentMode === "direct"
+                        ? "Enlace generado en modo Pago Directo (solo datos, ubicación GPS y firma, 0 % comisión)."
+                        : "El link de contrato pre-llenado ha sido generado.",
                 color: "success"
             });
         } catch (error: unknown) {
@@ -270,15 +296,23 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
         const cleanDigits = clientPhone.replace(/\D/g, "");
         const waPhone = cleanDigits.length === 9 ? `51${cleanDigits}` : cleanDigits;
         const waText = encodeURIComponent(
-            `¡Hola${clientFullname ? ` ${clientFullname}` : ""}! Aquí tienes el enlace oficial de Chivapp con todos los datos de nuestra contrata ya listos para revisar el contrato y confirmar la reserva: ${createdLink}`
+            paymentMode === "direct"
+                ? `¡Hola${clientFullname ? ` ${clientFullname}` : ""}! Aquí tienes el enlace oficial de Chivapp para que indiques la ubicación exacta en el mapa, completes tus datos y firmes nuestro contrato digital (sin cobro adicional): ${createdLink}`
+                : `¡Hola${clientFullname ? ` ${clientFullname}` : ""}! Aquí tienes el enlace oficial de Chivapp con todos los datos de nuestra contrata ya listos para revisar el contrato y confirmar la reserva: ${createdLink}`
         );
 
         return (
             <div className="flex flex-col gap-4 py-4 text-center">
                 <Icon icon="lucide:check-circle-2" className="text-success mx-auto" width={48} />
-                <h3 className="text-xl font-bold">¡Contrata pre-llenada lista!</h3>
+                <h3 className="text-xl font-bold">
+                    {paymentMode === "direct"
+                        ? "¡Enlace de datos, ubicación y firma listo!"
+                        : "¡Contrata pre-llenada lista!"}
+                </h3>
                 <p className="text-sm text-default-500">
-                    Tu cliente abrirá el enlace con todos los datos que completaste ya cargados, listo para firmar y pagar.
+                    {paymentMode === "direct"
+                        ? "Tu cliente abrirá el enlace para marcar el punto GPS en el mapa, completar sus datos y firmar el contrato digital (0 % comisión, sin pasarela de pago)."
+                        : "Tu cliente abrirá el enlace con todos los datos que completaste ya cargados, listo para firmar y pagar."}
                 </p>
                 <div className="bg-content2 p-3 rounded-lg flex items-center justify-between gap-2 border border-default-200">
                     <span className="text-sm truncate select-all">{createdLink}</span>
@@ -315,6 +349,8 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     }
 
     const parsedPrice = parseFloat(price) || 0;
+    const parsedAdvance = parseFloat(advanceAmount) || 0;
+    const directRemaining = Math.max(0, parsedPrice - parsedAdvance);
     const eventTypeOptions = getEventTypeOptions(eventType);
     const bookingPreview = {
         price_agreed: parsedPrice,
@@ -325,6 +361,75 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
+            {/* Selector de Modalidad del Enlace */}
+            <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-default-600">
+                    Modalidad del enlace para el cliente
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                        type="button"
+                        onClick={() => setPaymentMode("platform")}
+                        className={`text-left rounded-xl border p-3 transition-all flex flex-col gap-1 ${
+                            paymentMode === "platform"
+                                ? "border-2 border-primary bg-primary/10"
+                                : "border-default-200 bg-content1 hover:border-default-300"
+                        }`}
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                <Icon
+                                    icon="material-symbols:shield-lock-outline"
+                                    className="text-primary"
+                                    width={16}
+                                />
+                                Cobrar con pasarela Chivapp
+                            </span>
+                            {paymentMode === "platform" ? (
+                                <Icon
+                                    icon="material-symbols:check-circle"
+                                    className="text-primary"
+                                    width={16}
+                                />
+                            ) : null}
+                        </div>
+                        <p className="text-[11px] text-default-500 leading-snug">
+                            El cliente firma el contrato y paga con tarjeta o Yape en custodia.
+                        </p>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setPaymentMode("direct")}
+                        className={`text-left rounded-xl border p-3 transition-all flex flex-col gap-1 ${
+                            paymentMode === "direct"
+                                ? "border-2 border-secondary bg-secondary/10"
+                                : "border-default-200 bg-content1 hover:border-default-300"
+                        }`}
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                <Icon
+                                    icon="material-symbols:draw-outline"
+                                    className="text-secondary"
+                                    width={16}
+                                />
+                                Solo datos, GPS y firma (0 %)
+                            </span>
+                            {paymentMode === "direct" ? (
+                                <Icon
+                                    icon="material-symbols:check-circle"
+                                    className="text-secondary"
+                                    width={16}
+                                />
+                            ) : null}
+                        </div>
+                        <p className="text-[11px] text-default-500 leading-snug">
+                            Si el cliente ya te pagó por fuera: solo llena ubicación GPS, datos y firma.
+                        </p>
+                    </button>
+                </div>
+            </div>
             {/* Bloque de Autocompletado por Voz o Texto (para llamadas / WhatsApp) */}
             <div className="rounded-xl border border-primary/25 bg-primary/5 p-3.5 flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-2">
@@ -382,22 +487,43 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                 </div>
             </div>
 
-            <Input
-                label="Precio acordado (obligatorio)"
-                type="number"
-                min={10}
-                max={50000}
-                step="0.01"
-                description="Monto entre S/ 10.00 y S/ 50,000.00"
-                isRequired
-                value={price}
-                onValueChange={setPrice}
-                variant="bordered"
-                radius="lg"
-                startContent={<span className="text-default-400 text-sm">S/</span>}
-            />
+            <div
+                className={`grid grid-cols-1 ${
+                    paymentMode === "direct" ? "sm:grid-cols-2" : ""
+                } gap-3`}
+            >
+                <Input
+                    label="Precio acordado (obligatorio)"
+                    type="number"
+                    min={10}
+                    max={50000}
+                    step="0.01"
+                    description="Monto entre S/ 10.00 y S/ 50,000.00"
+                    isRequired
+                    value={price}
+                    onValueChange={setPrice}
+                    variant="bordered"
+                    radius="lg"
+                    startContent={<span className="text-default-400 text-sm">S/</span>}
+                />
+                {paymentMode === "direct" && (
+                    <Input
+                        label="Adelanto ya recibido (opcional)"
+                        type="number"
+                        min={0}
+                        max={parsedPrice || 50000}
+                        step="0.01"
+                        description="Monto que el cliente ya te abonó por fuera"
+                        value={advanceAmount}
+                        onValueChange={setAdvanceAmount}
+                        variant="bordered"
+                        radius="lg"
+                        startContent={<span className="text-default-400 text-sm">S/</span>}
+                    />
+                )}
+            </div>
             
-            {parsedPrice > 0 && (
+            {parsedPrice > 0 && paymentMode === "platform" && (
                 <div className="bg-default-50 border border-default-200 rounded-xl p-3 flex flex-col gap-2">
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-default-500">Tu ganancia (Precio base)</span>
@@ -415,6 +541,35 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                     <p className="text-xs text-default-500 mt-1 leading-tight">
                         * El cliente pagará esta cantidad. Incluye la comisión de la plataforma y los cargos de procesamiento bancario.
                     </p>
+                </div>
+            )}
+
+            {parsedPrice > 0 && paymentMode === "direct" && (
+                <div className="bg-secondary/10 border border-secondary/25 rounded-xl p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-xs font-semibold text-secondary">
+                        <span>Resumen del acuerdo directo</span>
+                        <span>0 % comisión Chivapp</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                        <div>
+                            <p className="text-[11px] text-default-500">Tarifa total</p>
+                            <p className="text-sm font-bold text-foreground tabular-nums">
+                                {formatCurrency(parsedPrice)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-default-500">Adelanto recibido</p>
+                            <p className="text-sm font-bold text-success-text tabular-nums">
+                                {formatCurrency(parsedAdvance)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-default-500">Saldo en el show</p>
+                            <p className="text-sm font-bold text-foreground tabular-nums">
+                                {formatCurrency(directRemaining)}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
 

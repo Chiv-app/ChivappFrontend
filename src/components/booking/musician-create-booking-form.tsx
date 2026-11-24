@@ -78,6 +78,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
     const [documentType, setDocumentType] = useState("DNI");
     const [documentNumber, setDocumentNumber] = useState("");
     const [priceAgreed, setPriceAgreed] = useState("");
+    const [advanceReceived, setAdvanceReceived] = useState("");
     const [quoteNotes, setQuoteNotes] = useState("");
 
     // Integrantes del grupo (solo cuando el perfil activo es group)
@@ -375,6 +376,27 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             return;
         }
 
+        const trimmedAdvance = advanceReceived.trim().replace(",", ".");
+        const advanceNum = trimmedAdvance ? Number(trimmedAdvance) : 0;
+        if (
+            trimmedAdvance &&
+            (Number.isNaN(advanceNum) || advanceNum < 0 || advanceNum > price)
+        ) {
+            addToast({
+                title: "Adelanto inválido",
+                description:
+                    "El adelanto recibido no puede ser negativo ni mayor al monto total acordado.",
+                color: "warning",
+            });
+            return;
+        }
+        const combinedQuoteNotes =
+            advanceNum > 0
+                ? `Adelanto recibido: S/ ${advanceNum.toFixed(2)}${
+                      quoteNotes.trim() ? ` · ${quoteNotes.trim()}` : ""
+                  }`
+                : quoteNotes.trim() || null;
+
         const effectiveAddress = locationAddress.trim() || location?.address?.trim() || "";
         const effectiveCity = locationCity.trim() || location?.city?.trim() || null;
 
@@ -416,7 +438,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                 event_type: eventType.trim(),
                 event_description: eventDescription.trim() || null,
                 price_agreed: price,
-                musician_quote_notes: quoteNotes.trim() || null,
+                musician_quote_notes: combinedQuoteNotes,
                 already_paid: true,
                 ensemble_member_ids:
                     isGroupProfile && selectedMemberIds.size > 0
@@ -809,9 +831,9 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                     <section className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                             <Icon icon="material-symbols:payments" width={20} className="text-primary" />
-                            <h3 className="font-semibold text-foreground">Precio acordado</h3>
+                            <h3 className="font-semibold text-foreground">Precio acordado y adelanto</h3>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <Input
                                 label="Monto total acordado"
                                 type="number"
@@ -824,17 +846,53 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                 variant="bordered"
                                 radius="lg"
                                 startContent={<span className="text-default-400 text-sm">S/</span>}
-                                description="Pago gestionado directamente contigo (0 % comisión en Chivapp)."
+                                description="Sin comisión Chivapp (0 %)."
                             />
                             <Input
-                                label="Nota de pago / saldo (opcional)"
-                                placeholder="Ej. Adelantó S/ 200 por Yape, resto en el evento"
+                                label="Adelanto recibido (opcional)"
+                                type="number"
+                                min={0}
+                                max={Number(priceAgreed) || 50000}
+                                step="0.01"
+                                placeholder="0.00"
+                                value={advanceReceived}
+                                onValueChange={setAdvanceReceived}
+                                variant="bordered"
+                                radius="lg"
+                                startContent={<span className="text-default-400 text-sm">S/</span>}
+                                description="Lo que ya te abonó el cliente."
+                            />
+                            <Input
+                                label="Nota o medio de pago (opcional)"
+                                placeholder="Ej. Por Yape, saldo en efectivo"
                                 value={quoteNotes}
                                 onValueChange={setQuoteNotes}
                                 variant="bordered"
                                 radius="lg"
                             />
                         </div>
+                        {Number(priceAgreed) > 0 ? (
+                            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-default-200/80 bg-default-50/70 p-3 text-xs">
+                                <div>
+                                    <p className="text-default-500">Tarifa total</p>
+                                    <p className="font-bold text-foreground text-sm tabular-nums mt-0.5">
+                                        S/ {Number(priceAgreed).toFixed(2)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-default-500">Adelanto recibido</p>
+                                    <p className="font-bold text-success-text text-sm tabular-nums mt-0.5">
+                                        S/ {Math.min(Number(priceAgreed), Math.max(0, Number(advanceReceived) || 0)).toFixed(2)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-default-500">Saldo al finalizar</p>
+                                    <p className="font-bold text-foreground text-sm tabular-nums mt-0.5">
+                                        S/ {Math.max(0, Number(priceAgreed) - (Number(advanceReceived) || 0)).toFixed(2)}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : null}
                     </section>
 
                     {isGroupProfile && activeMembers.length > 0 ? (

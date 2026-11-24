@@ -36,6 +36,7 @@ import { useIsClient } from "@/hooks/use-is-client";
 import { getVideoEmbedUrl, isSupportedVideoUrl } from "@/lib/video-urls";
 import { useAuth } from "@/contexts/auth-context";
 import BookingMercadoPagoModal from "@/components/booking/booking-mercadopago-modal";
+import BookingAchievementShareModal from "@/components/booking/booking-achievement-share-modal";
 import type { BookingOut } from "@/types/api";
 import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 import SignaturePad from "@/components/ui/signature-pad";
@@ -54,21 +55,37 @@ export default function CheckoutClient({
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isShareAchievementOpen, setIsShareAchievementOpen] = useState(false);
+
+  const draft = linkData.draft_data ?? {};
+  const isDirectMode = draft.payment_mode === "direct";
+  const directAdvanceAmount =
+    isDirectMode &&
+    draft.advance_amount != null &&
+    Number(draft.advance_amount) > 0
+      ? Number(draft.advance_amount)
+      : null;
+  const directRemainingBalance =
+    directAdvanceAmount != null
+      ? Math.max(0, Number(linkData.price) - directAdvanceAmount)
+      : Number(linkData.price);
 
   const bookingPreview = {
     price_agreed: linkData.price,
-    platform_fee_percent: linkData.fee_percent ?? 2,
-    platform_fee_amount: linkData.fee_amount ?? null,
+    platform_fee_percent: isDirectMode ? 0 : (linkData.fee_percent ?? 2),
+    platform_fee_amount: isDirectMode ? 0 : (linkData.fee_amount ?? null),
   };
-  const totalPayable =
-    (linkData.total_payable != null &&
-    Number(linkData.total_payable) > Number(linkData.price)
-      ? Number(linkData.total_payable)
-      : contractorPayableTotal(bookingPreview)) || 0;
-  const serviceFee =
-    (linkData.fee_amount != null && Number(linkData.fee_amount) > 0
-      ? Number(linkData.fee_amount)
-      : platformFeeAmount(bookingPreview)) || 0;
+  const totalPayable = isDirectMode
+    ? Number(linkData.price)
+    : (linkData.total_payable != null &&
+      Number(linkData.total_payable) > Number(linkData.price)
+        ? Number(linkData.total_payable)
+        : contractorPayableTotal(bookingPreview)) || 0;
+  const serviceFee = isDirectMode
+    ? 0
+    : (linkData.fee_amount != null && Number(linkData.fee_amount) > 0
+        ? Number(linkData.fee_amount)
+        : platformFeeAmount(bookingPreview)) || 0;
 
   const todayIso = useMemo(() => todayPeruIso(), []);
   const eventTypeOptions = useMemo(
@@ -77,7 +94,6 @@ export default function CheckoutClient({
   );
 
   // Form state (hydrate from client draft_data if previously saved, while keeping locks strictly on musician-prefilled fields)
-  const draft = linkData.draft_data ?? {};
   const isDateLocked = Boolean(linkData.event_date);
   const isTimeLocked = Boolean(linkData.start_time);
   const isEmailLocked = Boolean(linkData.client_email);
@@ -417,13 +433,25 @@ export default function CheckoutClient({
       "{{duracion_servicio}}": "Según lo acordado",
       "{{monto_total}}": escapeHtml(formatCurrency(totalPayable)),
       "{{total_cliente}}": escapeHtml(formatCurrency(totalPayable)),
-      "{{anticipo}}": escapeHtml(formatCurrency(totalPayable)),
-      "{{saldo_pendiente}}": escapeHtml(formatCurrency(0)),
+      "{{anticipo}}": escapeHtml(
+        isDirectMode
+          ? directAdvanceAmount != null
+            ? formatCurrency(directAdvanceAmount)
+            : "Gestionado directamente con el artista"
+          : formatCurrency(totalPayable),
+      ),
+      "{{saldo_pendiente}}": escapeHtml(
+        isDirectMode
+          ? formatCurrency(directRemainingBalance)
+          : formatCurrency(0),
+      ),
       "{{tarifa_evento}}": escapeHtml(formatCurrency(linkData.price)),
       "{{tarifa_hora}}": escapeHtml(formatCurrency(linkData.price)),
       "{{neto_artista}}": escapeHtml(formatCurrency(linkData.price)),
       "{{comision_plataforma}}": escapeHtml(formatCurrency(serviceFee)),
-      "{{porcentaje_comision}}": escapeHtml(`${linkData.fee_percent ?? 2}%`),
+      "{{porcentaje_comision}}": escapeHtml(
+        isDirectMode ? "0%" : `${linkData.fee_percent ?? 2}%`,
+      ),
       "{{fecha_contrato}}": escapeHtml(formatPeruDate(todayIso)),
     };
 
@@ -453,6 +481,9 @@ export default function CheckoutClient({
     serviceFee,
     todayIso,
     isClient,
+    isDirectMode,
+    directAdvanceAmount,
+    directRemainingBalance,
   ]);
 
   const hasVideos =
@@ -793,6 +824,7 @@ export default function CheckoutClient({
           setContractBodySha256(res.contract_body_sha256);
         }
         setLastCheckoutSnapshot(currentSnapshot);
+        const directConfirmed = Boolean(res.direct_confirmed || isDirectMode);
         setBooking({
           id: res.booking_id,
           event_type: eventType.trim(),
@@ -802,13 +834,26 @@ export default function CheckoutClient({
           location_city: location?.city || "",
           location_reference: locationReference ?? null,
           price_agreed: linkData.price,
-          platform_fee_percent: linkData.fee_percent ?? 2,
-          platform_fee_amount: serviceFee,
-          status: "contract_signed",
+          platform_fee_percent: directConfirmed ? 0 : (linkData.fee_percent ?? 2),
+          platform_fee_amount: directConfirmed ? 0 : serviceFee,
+          status: directConfirmed ? "payment_retained" : "contract_signed",
         } as BookingOut);
-        // Se firma y se paga primero: el correo se verifica después, con el enlace del
-        // correo de confirmación del pago.
-        setIsPaymentModalOpen(true);
+
+        if (directConfirmed) {
+          setPendingPayment(null);
+          setIsPaymentModalOpen(false);
+          setPaymentCompleted(true);
+          addToast({
+            title: "¡Reserva confirmada!",
+            description:
+              "El contrato digital quedó firmado y tu fecha está confirmada en la agenda del artista.",
+            color: "success",
+          });
+        } else {
+          // Se firma y se paga primero: el correo se verifica después, con el enlace del
+          // correo de confirmación del pago.
+          setIsPaymentModalOpen(true);
+        }
       } catch (error: unknown) {
         let errorMsg =
           (error as Error).message || "Ocurrió un problema inesperado.";
@@ -1283,7 +1328,9 @@ export default function CheckoutClient({
                   },
                   {
                     id: 3,
-                    title: "Confirmación y pago",
+                    title: isDirectMode
+                      ? "Contrato y firma"
+                      : "Confirmación y pago",
                     state: paymentCompleted
                       ? "done"
                       : activeStep === 3
@@ -1301,6 +1348,23 @@ export default function CheckoutClient({
               />
             </div>
 
+            {isDirectMode && (
+              <div className="rounded-2xl border border-secondary/35 bg-secondary/10 p-4 flex items-start gap-3">
+                <Icon
+                  icon="lucide:file-check-2"
+                  className="w-5 h-5 text-secondary shrink-0 mt-0.5"
+                />
+                <div className="text-xs sm:text-sm text-foreground">
+                  <p className="font-bold text-secondary">
+                    Acuerdo directo con {linkData.musician.stage_name} · Sin cobro adicional en este enlace
+                  </p>
+                  <p className="text-default-600 mt-0.5">
+                    Este enlace es únicamente para confirmar la <strong>ubicación exacta en el mapa GPS</strong>, registrar tus <strong>datos de contratista</strong> y <strong>firmar el contrato digital</strong> de tu presentación.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {isStep1Prefilled && (
               <div className="rounded-2xl border border-success/30 bg-success/10 p-4 flex items-start gap-3">
                 <Icon
@@ -1313,7 +1377,10 @@ export default function CheckoutClient({
                   </p>
                   <p className="text-default-600 mt-0.5">
                     Cargamos automáticamente la fecha, hora, lugar y tipo de evento que acordaste con{" "}
-                    <strong>{linkData.musician.stage_name}</strong>. Solo confirma tus datos de contacto, firma el contrato digital y realiza el pago.
+                    <strong>{linkData.musician.stage_name}</strong>.{" "}
+                    {isDirectMode
+                      ? "Solo confirma tus datos de contacto y firma el contrato digital para dejar tu reserva lista."
+                      : "Solo confirma tus datos de contacto, firma el contrato digital y realiza el pago."}
                   </p>
                 </div>
               </div>
@@ -2006,7 +2073,11 @@ export default function CheckoutClient({
                       onClick={() => goToStep(3)}
                       type="button"
                     >
-                      <span>Continuar al paso 3: Pago</span>
+                      <span>
+                        {isDirectMode
+                          ? "Continuar al paso 3: Contrato y firma"
+                          : "Continuar al paso 3: Pago"}
+                      </span>
                       <Icon
                         icon="lucide:arrow-right"
                         className="w-4 h-4 stroke-[3]"
@@ -2056,10 +2127,14 @@ export default function CheckoutClient({
                       tabIndex={-1}
                       className="text-base font-bold text-foreground flex items-center gap-2 outline-none"
                     >
-                      3. Confirmación y pago
+                      {isDirectMode
+                        ? "3. Firma de contrato y confirmación"
+                        : "3. Confirmación y pago"}
                     </h2>
                     <p className="text-xs text-default-500">
-                      Revisa el contrato y reserva
+                      {isDirectMode
+                        ? "Revisa tu contrato digital, firma y confirma tu reserva"
+                        : "Revisa el contrato y reserva"}
                     </p>
                   </div>
                 </div>
@@ -2083,19 +2158,37 @@ export default function CheckoutClient({
                             tabIndex={-1}
                             className="text-lg font-extrabold text-foreground outline-none"
                           >
-                            ¡Reserva confirmada y pago protegido!
+                            {isDirectMode
+                              ? "¡Reserva confirmada y contrato firmado!"
+                              : "¡Reserva confirmada y pago protegido!"}
                           </h3>
                           <p className="text-xs sm:text-sm text-default-600">
-                            Tu pago por{" "}
-                            <strong className="text-foreground">
-                              {formatCurrency(totalPayable)}
-                            </strong>{" "}
-                            fue procesado y permanece protegido por
-                            Chivapp hasta que finalice tu presentación con{" "}
-                            <strong className="text-foreground">
-                              {linkData.musician.stage_name}
-                            </strong>
-                            .
+                            {isDirectMode ? (
+                              <>
+                                Tu contrato digital por{" "}
+                                <strong className="text-foreground">
+                                  {formatCurrency(linkData.price)}
+                                </strong>{" "}
+                                quedó firmado y tu fecha está oficialmente reservada en la agenda de{" "}
+                                <strong className="text-foreground">
+                                  {linkData.musician.stage_name}
+                                </strong>
+                                .
+                              </>
+                            ) : (
+                              <>
+                                Tu pago por{" "}
+                                <strong className="text-foreground">
+                                  {formatCurrency(totalPayable)}
+                                </strong>{" "}
+                                fue procesado y permanece protegido por
+                                Chivapp hasta que finalice tu presentación con{" "}
+                                <strong className="text-foreground">
+                                  {linkData.musician.stage_name}
+                                </strong>
+                                .
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -2168,6 +2261,16 @@ export default function CheckoutClient({
                         >
                           Ir al detalle de mi reserva
                         </Button>
+                        <Button
+                          variant="bordered"
+                          className="font-semibold bg-content1"
+                          onPress={() => setIsShareAchievementOpen(true)}
+                          startContent={
+                            <Icon icon="lucide:share-2" className="w-4 h-4" />
+                          }
+                        >
+                          Compartir logro en redes / historias
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -2226,33 +2329,53 @@ export default function CheckoutClient({
                       )}
                     </div>
 
-                    <div className="rounded-xl border border-primary/25 bg-primary/5 p-3.5 text-xs text-default-600 space-y-1.5">
-                      <p className="font-bold text-foreground flex items-center gap-1.5">
-                        <Icon
-                          icon="lucide:shield-check"
-                          className="w-4 h-4 text-primary"
-                        />
-                        Política de cancelación y protección del pago
-                      </p>
-                      <p>
-                        Tu pago queda protegido por Chivapp hasta finalizar el
-                        evento. Si cancelas con{" "}
-                        {linkData.cancellation_policy?.full_refund_min_days ?? 15}{" "}
-                        días calendario o más de anticipación recibes el 100% de
-                        la tarifa del artista; entre{" "}
-                        {linkData.cancellation_policy?.partial_refund_min_days ?? 7}{" "}
-                        y{" "}
-                        {(linkData.cancellation_policy?.full_refund_min_days ?? 15) - 1}{" "}
-                        días antes, el{" "}
-                        {linkData.cancellation_policy?.partial_refund_percent ?? 50}
-                        % de la tarifa; con menos de{" "}
-                        {linkData.cancellation_policy?.partial_refund_min_days ?? 7}{" "}
-                        días no aplica reembolso salvo cancelación o
-                        inasistencia del músico (reembolso del 100% de la
-                        tarifa). La comisión de servicio y el costo de la
-                        pasarela no son reembolsables.
-                      </p>
-                    </div>
+                    {isDirectMode ? (
+                      <div className="rounded-xl border border-secondary/30 bg-secondary/10 p-3.5 text-xs text-default-700 space-y-1.5">
+                        <p className="font-bold text-foreground flex items-center gap-1.5">
+                          <Icon
+                            icon="lucide:handshake"
+                            className="w-4 h-4 text-secondary"
+                          />
+                          Modalidad de acuerdo directo con el artista (0 % comisión Chivapp)
+                        </p>
+                        <p>
+                          El pago de los honorarios ({formatCurrency(linkData.price)}) se gestiona directamente con{" "}
+                          <strong>{linkData.musician.stage_name}</strong>
+                          {directAdvanceAmount != null
+                            ? ` (adelanto registrado: ${formatCurrency(directAdvanceAmount)} · saldo en el evento: ${formatCurrency(directRemainingBalance)})`
+                            : ""}
+                          . Al firmar este contrato digital, tu reserva queda confirmada de inmediato sin cobros en línea adicionales.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-primary/25 bg-primary/5 p-3.5 text-xs text-default-600 space-y-1.5">
+                        <p className="font-bold text-foreground flex items-center gap-1.5">
+                          <Icon
+                            icon="lucide:shield-check"
+                            className="w-4 h-4 text-primary"
+                          />
+                          Política de cancelación y protección del pago
+                        </p>
+                        <p>
+                          Tu pago queda protegido por Chivapp hasta finalizar el
+                          evento. Si cancelas con{" "}
+                          {linkData.cancellation_policy?.full_refund_min_days ?? 15}{" "}
+                          días calendario o más de anticipación recibes el 100% de
+                          la tarifa del artista; entre{" "}
+                          {linkData.cancellation_policy?.partial_refund_min_days ?? 7}{" "}
+                          y{" "}
+                          {(linkData.cancellation_policy?.full_refund_min_days ?? 15) - 1}{" "}
+                          días antes, el{" "}
+                          {linkData.cancellation_policy?.partial_refund_percent ?? 50}
+                          % de la tarifa; con menos de{" "}
+                          {linkData.cancellation_policy?.partial_refund_min_days ?? 7}{" "}
+                          días no aplica reembolso salvo cancelación o
+                          inasistencia del músico (reembolso del 100% de la
+                          tarifa). La comisión de servicio y el costo de la
+                          pasarela no son reembolsables.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="pt-2 border-t border-divider">
                       <SignaturePad
@@ -2345,11 +2468,18 @@ export default function CheckoutClient({
                   <div className="p-4 sm:p-5 rounded-2xl bg-default-100 border border-primary/30 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
                       <span className="text-xs text-default-500 block font-medium">
-                        Total a pagar ahora (Yape o tarjeta vía Mercado Pago):
+                        {isDirectMode
+                          ? "Honorarios acordados directamente con el artista (sin cobro en este enlace):"
+                          : "Total a pagar ahora (Yape o tarjeta vía Mercado Pago):"}
                       </span>
                       <span className="text-3xl font-black text-primary">
                         {formatCurrency(totalPayable)}
                       </span>
+                      {isDirectMode && directAdvanceAmount != null && (
+                        <span className="text-xs text-success-text font-semibold block mt-0.5">
+                          Adelanto abonado: {formatCurrency(directAdvanceAmount)} · Saldo en el evento: {formatCurrency(directRemainingBalance)}
+                        </span>
+                      )}
                     </div>
                     <button
                       className="w-full sm:w-auto min-h-11 px-8 py-3.5 rounded-2xl bg-primary text-primary-foreground font-black text-sm tracking-wide flex items-center justify-center gap-2 hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
@@ -2362,14 +2492,20 @@ export default function CheckoutClient({
                         <Spinner size="sm" color="current" />
                       ) : (
                         <Icon
-                          icon="lucide:lock"
+                          icon={
+                            isDirectMode
+                              ? "lucide:file-check-2"
+                              : "lucide:lock"
+                          }
                           className="w-4 h-4 stroke-[3]"
                         />
                       )}
                       <span>
-                        {pendingPayment
-                          ? "Ver estado del pago en proceso"
-                          : "Pagar y confirmar"}
+                        {isDirectMode
+                          ? "Firmar contrato y confirmar reserva"
+                          : pendingPayment
+                            ? "Ver estado del pago en proceso"
+                            : "Pagar y confirmar"}
                       </span>
                     </button>
                   </div>
@@ -2410,20 +2546,53 @@ export default function CheckoutClient({
                     {formatCurrency(linkData.price)}
                   </span>
                 </div>
-                {serviceFee > 0.01 && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-default-500">
-                      Tarifa de servicio (incluye comisión y procesamiento)
-                    </span>
-                    <span className="font-semibold text-foreground">
-                      {formatCurrency(serviceFee)}
-                    </span>
-                  </div>
+                {isDirectMode ? (
+                  <>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-default-500">
+                        Comisión Chivapp (Pago directo)
+                      </span>
+                      <span className="font-semibold text-success-text">
+                        S/ 0.00
+                      </span>
+                    </div>
+                    {directAdvanceAmount != null && (
+                      <>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-default-500">
+                            Adelanto registrado
+                          </span>
+                          <span className="font-semibold text-success-text">
+                            {formatCurrency(directAdvanceAmount)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-default-500">
+                            Saldo en el evento
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            {formatCurrency(directRemainingBalance)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  serviceFee > 0.01 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-default-500">
+                        Tarifa de servicio (incluye comisión y procesamiento)
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {formatCurrency(serviceFee)}
+                      </span>
+                    </div>
+                  )
                 )}
                 <div className="h-px w-full bg-divider my-1"></div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-foreground font-bold">
-                    Total a pagar
+                    {isDirectMode ? "Tarifa total acordada" : "Total a pagar"}
                   </span>
                   <span className="font-bold text-foreground">
                     {formatCurrency(totalPayable)}
@@ -2434,11 +2603,15 @@ export default function CheckoutClient({
               <div className="p-4 rounded-2xl bg-primary/10 border border-primary/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <span className="text-xs uppercase tracking-wider text-primary font-extrabold block">
-                    Costo total del evento
+                    {isDirectMode
+                      ? "Acuerdo directo con el artista"
+                      : "Costo total del evento"}
                   </span>
                   <span className="text-xs text-success font-semibold flex items-center gap-1.5">
                     <Icon icon="lucide:check-circle" className="w-3.5 h-3.5" />{" "}
-                    Pago único y seguro
+                    {isDirectMode
+                      ? "Solo firma digital · Sin cobro en este link"
+                      : "Pago único y seguro"}
                   </span>
                 </div>
                 <div className="text-right">
@@ -2541,6 +2714,23 @@ export default function CheckoutClient({
             setIsPaymentModalOpen(false);
             setPaymentCompleted(true);
           }}
+        />
+      )}
+
+      {booking && (
+        <BookingAchievementShareModal
+          isOpen={isShareAchievementOpen}
+          onOpenChange={setIsShareAchievementOpen}
+          role="contractor"
+          musicianName={linkData.musician.stage_name}
+          eventType={booking.event_type || eventType}
+          eventDate={booking.event_date || eventDate}
+          startTime={booking.start_time || startTime}
+          city={
+            booking.location_city ||
+            location?.city ||
+            linkData.musician.location_city
+          }
         />
       )}
     </div>

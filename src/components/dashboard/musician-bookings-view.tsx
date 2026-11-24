@@ -674,6 +674,15 @@ export default function MusicianBookingsView() {
                                                     activeSelectedBooking.id,
                                                 )
                                             }
+                                            onBookingUpdated={(updated) => {
+                                                setBookings((prev) =>
+                                                    prev.map((b) =>
+                                                        b.id === updated.id
+                                                            ? updated
+                                                            : b,
+                                                    ),
+                                                );
+                                            }}
                                             memberBadge={isMember}
                                         />
                                     );
@@ -716,6 +725,13 @@ export default function MusicianBookingsView() {
                     onCancel={() => {
                         setIsMobileSheetOpen(false);
                         setCancelTargetId(activeSelectedBooking.id);
+                    }}
+                    onBookingUpdated={(updated) => {
+                        setBookings((prev) =>
+                            prev.map((b) =>
+                                b.id === updated.id ? updated : b,
+                            ),
+                        );
                     }}
                     memberBadge={activeSelectedBooking.viewer_role === "member"}
                 />

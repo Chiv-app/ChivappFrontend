@@ -47,6 +47,9 @@ export type BookingLinkDraftData = {
     has_signature?: boolean | null;
     payment_modal_opened?: boolean | null;
     updated_at?: string | null;
+    payment_mode?: "platform" | "direct" | null;
+    advance_amount?: number | null;
+    linked_booking_id?: string | null;
 };
 
 export type BookingLinkPublicOut = {
@@ -114,12 +117,14 @@ export async function checkoutBookingLink(
     booking_id: string;
     signature_image_url?: string | null;
     contract_body_sha256?: string | null;
+    direct_confirmed?: boolean;
 }> {
     return apiFetch<{
         message: string;
         booking_id: string;
         signature_image_url?: string | null;
         contract_body_sha256?: string | null;
+        direct_confirmed?: boolean;
     }>(
         `/booking-links/${token}/checkout`,
         {
@@ -127,6 +132,48 @@ export async function checkoutBookingLink(
             body: JSON.stringify(payload),
         }
     );
+}
+
+export type BookingLinkCreateInput = {
+    price: number;
+    event_date?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    event_type?: string | null;
+    location_address?: string | null;
+    location_city?: string | null;
+    location_reference?: string | null;
+    client_fullname?: string | null;
+    client_phone?: string | null;
+    client_email?: string | null;
+    client_document_number?: string | null;
+    event_description?: string | null;
+    source?: string | null;
+    payment_mode?: "platform" | "direct";
+    advance_amount?: number | null;
+    booking_id?: string | null;
+};
+
+export async function createBookingLink(
+    payload: BookingLinkCreateInput
+): Promise<BookingLinkOut> {
+    return apiFetch<BookingLinkOut>("/booking-links", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function switchBookingLinkMode(
+    token: string,
+    payload: {
+        payment_mode: "platform" | "direct";
+        advance_amount?: number | null;
+    }
+): Promise<BookingLinkOut> {
+    return apiFetch<BookingLinkOut>(`/booking-links/${token}/switch-mode`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
 }
 
 

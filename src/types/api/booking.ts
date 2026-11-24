@@ -249,8 +249,11 @@ export type BookingOut = {
     updated_at: string;
     musician_name?: string | null;
     musician_image_url?: string | null;
+    musician_phone?: string | null;
     contractor_name?: string | null;
     contractor_image_url?: string | null;
+    contractor_phone?: string | null;
+    contractor_is_guest?: boolean;
     /** owner = líder/contratista; member = integrante asociado */
     viewer_role?: "owner" | "member" | null;
     /** pending | accepted | declined — solo relevante si viewer_role=member */

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
     Avatar,
@@ -8,12 +9,15 @@ import {
     Modal,
     ModalBody,
     ModalContent,
+    addToast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import CircularStepper, {
     type CircularStepItem,
 } from "@/components/ui/circular-stepper";
+import BookingAchievementShareModal from "@/components/booking/booking-achievement-share-modal";
 import { ModalCloseButton } from "@/components/ui/modal-close-button";
+import { createBookingLink } from "@/lib/booking-links";
 import {
     BOOKING_STATUS_COLORS,
     formatBookingDate,
@@ -24,12 +28,15 @@ import {
     getBookingStatusLabel,
 } from "@/lib/booking-labels";
 import { buildBookingTimeline, getBookingStage } from "@/lib/booking-timeline";
+import { completeBooking, startBookingEvent } from "@/lib/bookings";
 import {
     buildGoogleMapsUrl,
     parseLocationReference,
 } from "@/lib/geocoding";
 import {
     contractorPayableTotal,
+    isDirectExternalBooking,
+    parseDirectBookingAdvance,
     platformFeeAmount,
 } from "@/lib/platform-fee";
 import { resolveUploadUrl } from "@/lib/uploads";
@@ -76,7 +83,12 @@ function computeBookingDurationHours(
     if (!endTime) return null;
     const [sh, sm] = startTime.slice(0, 5).split(":").map(Number);
     const [eh, em] = endTime.slice(0, 5).split(":").map(Number);
-    if (!Number.isFinite(sh) || !Number.isFinite(sm) || !Number.isFinite(eh) || !Number.isFinite(em)) {
+    if (
+        !Number.isFinite(sh) ||
+        !Number.isFinite(sm) ||
+        !Number.isFinite(eh) ||
+        !Number.isFinite(em)
+    ) {
         return null;
     }
     let diffMinutes = eh * 60 + em - (sh * 60 + sm);
@@ -85,10 +97,114 @@ function computeBookingDurationHours(
     return `${hours}h`;
 }
 
-function resolvePaymentStatusSummary(booking: BookingOut): {
+function extractPhoneFromText(text?: string | null): string | null {
+    if (!text) return null;
+    const match = text.match(/(\+?\d[\d\s-]{6,14}\d)/);
+    if (!match) return null;
+    const digits = match[1].replace(/\D/g, "");
+    if (digits.length < 7) return null;
+    return match[1].trim();
+}
+
+function resolveCounterpartyPhone(
+    booking: BookingOut,
+    role: Role,
+): {
+    displayPhone: string | null;
+    telHref: string | null;
+    waDigits: string | null;
+} {
+    const raw =
+        role === "musician"
+            ? booking.contractor_phone ||
+              extractPhoneFromText(booking.contractor_name)
+            : booking.musician_phone ||
+              extractPhoneFromText(booking.musician_name);
+
+    if (!raw) {
+        return { displayPhone: null, telHref: null, waDigits: null };
+    }
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length < 7) {
+        return { displayPhone: null, telHref: null, waDigits: null };
+    }
+    const waDigits = digits.length === 9 ? `51${digits}` : digits;
+    const formatted =
+        digits.length === 9
+            ? `+51 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+            : digits.length === 11 && digits.startsWith("51")
+              ? `+51 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`
+              : raw.trim();
+
+    return {
+        displayPhone: formatted,
+        telHref: `tel:+${waDigits}`,
+        waDigits,
+    };
+}
+
+function buildQuickWhatsAppUrl({
+    waDigits,
+    booking,
+    role,
+    detailHref,
+}: {
+    waDigits: string;
+    booking: BookingOut;
+    role: Role;
+    detailHref: string;
+}): string {
+    const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+    const fullUrl = origin ? `${origin}${detailHref}` : "";
+    const dateStr = formatBookingDate(booking.event_date);
+    const timeStr = formatBookingTime(booking.start_time);
+    const place =
+        [booking.location_address, booking.location_city]
+            .filter(Boolean)
+            .join(", ") || "la ubicación acordada";
+
+    let message = "";
+    if (role === "musician") {
+        if (
+            booking.status === "accepted" ||
+            booking.status === "contract_pending" ||
+            booking.status === "contract_signed"
+        ) {
+            message = `¡Hola! Te escribo por tu reserva de ${booking.event_type} para el ${dateStr} a las ${timeStr} en ${place}.${fullUrl ? ` Aquí puedes revisar los detalles: ${fullUrl}` : ""}`;
+        } else if (booking.status === "payment_retained") {
+            message = `¡Hola! Confirmamos nuestra presentación para tu evento (${booking.event_type}) el ${dateStr} a las ${timeStr} en ${place}. Quedamos atentos para coordinar cualquier detalle.`;
+        } else if (booking.status === "in_progress") {
+            message = `¡Hola! Ya estamos en curso para tu presentación de ${booking.event_type} en ${place}.`;
+        } else {
+            message = `¡Hola! Te escribo respecto a tu evento (${booking.event_type}) del ${dateStr} a las ${timeStr}.`;
+        }
+    } else {
+        message = `¡Hola! Te escribo por la reserva de ${booking.event_type} para el ${dateStr} a las ${timeStr} en ${place}.`;
+    }
+
+    return `https://wa.me/${waDigits}?text=${encodeURIComponent(message)}`;
+}
+
+function resolvePaymentStatusSummary(
+    booking: BookingOut,
+    isDirectBooking: boolean,
+): {
     label: string;
     toneClass: string;
 } {
+    if (booking.status === "cancelled") {
+        return {
+            label: "Reserva cancelada",
+            toneClass: "text-danger-text",
+        };
+    }
+    if (isDirectBooking) {
+        return {
+            label: "Contrata directa (0 % comisión Chivapp)",
+            toneClass: "text-secondary",
+        };
+    }
     switch (booking.status) {
         case "payment_retained":
         case "change_pending":
@@ -102,11 +218,6 @@ function resolvePaymentStatusSummary(booking: BookingOut): {
             return {
                 label: "Liberado al artista",
                 toneClass: "text-success-text",
-            };
-        case "cancelled":
-            return {
-                label: "Reserva cancelada",
-                toneClass: "text-danger-text",
             };
         case "contract_signed":
             return {
@@ -129,6 +240,7 @@ export type BookingDetailPreviewProps = {
     detailHref: string;
     canCancel: boolean;
     onCancel: () => void;
+    onBookingUpdated?: (updated: BookingOut) => void;
     memberBadge?: boolean;
 };
 
@@ -140,24 +252,56 @@ export function BookingDetailPreviewContent({
     detailHref,
     canCancel,
     onCancel,
+    onBookingUpdated,
     memberBadge = false,
 }: BookingDetailPreviewProps) {
+    const [isStartingShow, setIsStartingShow] = useState(false);
+    const [isCompletingShow, setIsCompletingShow] = useState(false);
+    const [isCreatingClientLink, setIsCreatingClientLink] = useState(false);
+    const [generatedClientLink, setGeneratedClientLink] = useState<string | null>(
+        null,
+    );
+    const [isShareAchievementOpen, setIsShareAchievementOpen] = useState(false);
+
+    const isDirectBooking = isDirectExternalBooking(booking);
+    const isGuestContractor = Boolean(
+        booking.contractor_is_guest ||
+            isDirectBooking ||
+            /^Cliente\s*\(/i.test(booking.contractor_name?.trim() || ""),
+    );
+
     const party =
         role === "contractor"
             ? {
                   label: "Músico / Agrupación",
                   name: booking.musician_name?.trim() || "Músico",
+                  subtitle: "Artista / Agrupación verificada",
                   imageUrl: resolveUploadUrl(booking.musician_image_url),
                   profileHref: `/musicians/${booking.musician_id}`,
+                  canViewProfile: true,
                   icon: "material-symbols:music-note",
               }
             : {
-                  label: "Cliente solicitante",
+                  label: "Cliente",
                   name: booking.contractor_name?.trim() || "Cliente",
+                  subtitle: isGuestContractor
+                      ? "Cliente de contrata directa"
+                      : "Contratista registrado en Chivapp",
                   imageUrl: resolveUploadUrl(booking.contractor_image_url),
                   profileHref: `/contractors/${booking.contractor_id}`,
+                  canViewProfile: !isGuestContractor,
                   icon: "material-symbols:person",
               };
+
+    const phoneInfo = resolveCounterpartyPhone(booking, role);
+    const waUrl = phoneInfo.waDigits
+        ? buildQuickWhatsAppUrl({
+              waDigits: phoneInfo.waDigits,
+              booking,
+              role,
+              detailHref,
+          })
+        : null;
 
     const timeLabel = `${formatBookingTime(booking.start_time)}${
         booking.end_time ? ` – ${formatBookingTime(booking.end_time)}` : ""
@@ -184,18 +328,34 @@ export function BookingDetailPreviewContent({
     const contractorTotal = contractorPayableTotal(booking);
     const priceLabel =
         totalService != null ? formatCurrency(totalService) : "Sin cotizar";
-    const paymentSummary = resolvePaymentStatusSummary(booking);
+    const paymentSummary = resolvePaymentStatusSummary(
+        booking,
+        isDirectBooking,
+    );
+    const directAdvanceInfo = parseDirectBookingAdvance(
+        booking.musician_quote_notes,
+        totalService,
+    );
 
     const stage = getBookingStage(booking.status);
     const timeline = buildBookingTimeline(booking.status, role);
     const stepperItems: CircularStepItem[] = timeline.steps.map((step) => ({
         id: step.id,
-        title:
-            step.id === "quote"
-                ? "Cotización"
-                : step.id === "event"
-                  ? "Show"
-                  : step.title,
+        title: isDirectBooking
+            ? step.id === "request"
+                ? "Registro"
+                : step.id === "quote"
+                  ? "Acuerdo"
+                  : step.id === "payment"
+                    ? "Adelanto"
+                    : step.id === "event"
+                      ? "Show"
+                      : step.title
+            : step.id === "quote"
+              ? "Cotización"
+              : step.id === "event"
+                ? "Show"
+                : step.title,
         state:
             step.state === "done"
                 ? "done"
@@ -205,7 +365,18 @@ export function BookingDetailPreviewContent({
     }));
 
     const disputeHint = complaintHint(booking, role);
-    const hintText = disputeHint || getBookingStatusHint(booking.status, role);
+    const hintText = disputeHint
+        ? disputeHint
+        : isDirectBooking
+          ? booking.status === "payment_retained"
+              ? "Contrata directa confirmada (pago gestionado directamente con tu cliente, 0 % comisión). Coordina por llamada o WhatsApp y registra el inicio del show el día del evento."
+              : booking.status === "in_progress"
+                ? "Presentación en curso — al finalizar puedes cerrarla con un clic o desde el expediente."
+                : booking.status === "completed"
+                  ? "Contrata directa finalizada con éxito (100 % de tu tarifa sin comisión)."
+                  : getBookingStatusHint(booking.status, role)
+          : getBookingStatusHint(booking.status, role);
+
     const complaintOpen = booking.complaint_status === "open";
     const inDispute =
         Boolean(booking.complaint_status) &&
@@ -215,11 +386,136 @@ export function BookingDetailPreviewContent({
         booking.end_time,
     );
 
+    const displayQuoteNotes = isDirectBooking
+        ? directAdvanceInfo.cleanNote
+        : booking.musician_quote_notes?.trim() || null;
+
     const hasEventExtraDetails = Boolean(
         booking.event_description?.trim() ||
-            booking.musician_quote_notes?.trim() ||
+            displayQuoteNotes ||
             durationComputed,
     );
+
+    const canQuickStartShow =
+        role === "musician" &&
+        booking.viewer_role !== "member" &&
+        booking.status === "payment_retained";
+    const canQuickCompleteDirectShow =
+        role === "musician" &&
+        booking.viewer_role !== "member" &&
+        booking.status === "in_progress" &&
+        isDirectBooking;
+    const canGenerateDirectClientLink =
+        role === "musician" &&
+        booking.viewer_role !== "member" &&
+        isDirectBooking &&
+        booking.status === "payment_retained" &&
+        totalService != null &&
+        totalService >= 10;
+    const canShareAchievement =
+        booking.status === "payment_retained" ||
+        booking.status === "in_progress" ||
+        booking.status === "payment_released" ||
+        booking.status === "completed";
+
+    async function handleGenerateDirectClientLink() {
+        if (!totalService) return;
+        setIsCreatingClientLink(true);
+        try {
+            const cleanContractorName = booking.contractor_name
+                ?.replace(/^Cliente\s*\([^)]*\)$/i, "")
+                .trim();
+            const res = await createBookingLink({
+                price: totalService,
+                event_date: booking.event_date,
+                start_time: booking.start_time,
+                end_time: booking.end_time || null,
+                event_type: booking.event_type,
+                location_address:
+                    booking.location_address &&
+                    booking.location_address !== "Ubicación por confirmar"
+                        ? booking.location_address
+                        : null,
+                location_city: booking.location_city || null,
+                location_reference: booking.location_reference || null,
+                client_fullname: cleanContractorName || null,
+                client_phone: phoneInfo.waDigits || null,
+                event_description: booking.event_description || null,
+                source: "direct_booking_followup",
+                payment_mode: "direct",
+                advance_amount: directAdvanceInfo.advanceAmount ?? null,
+                booking_id: booking.id,
+            });
+            const url = `${window.location.origin}/pay/${res.token}`;
+            setGeneratedClientLink(url);
+            await navigator.clipboard.writeText(url);
+            addToast({
+                title: "Enlace copiado al portapapeles",
+                description:
+                    "Envíaselo a tu cliente para que marque la ubicación GPS exacta, complete sus datos y firme el contrato digital (sin cobro).",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo generar el enlace",
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : "Inténtalo nuevamente.",
+                color: "danger",
+            });
+        } finally {
+            setIsCreatingClientLink(false);
+        }
+    }
+
+    async function handleQuickStartShow() {
+        setIsStartingShow(true);
+        try {
+            const updated = await startBookingEvent(booking.id);
+            onBookingUpdated?.(updated);
+            addToast({
+                title: "Presentación en curso",
+                description: "El estado de la reserva pasó a Show en curso.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "Aún no se puede iniciar el show",
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : "Verifica la fecha y hora del evento.",
+                color: "warning",
+            });
+        } finally {
+            setIsStartingShow(false);
+        }
+    }
+
+    async function handleQuickCompleteShow() {
+        setIsCompletingShow(true);
+        try {
+            const updated = await completeBooking(booking.id);
+            onBookingUpdated?.(updated);
+            addToast({
+                title: "Presentación finalizada",
+                description: "La contrata quedó cerrada como finalizada.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo finalizar desde aquí",
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : "Abre Gestionar presentación para completar los requisitos de cierre.",
+                color: "warning",
+            });
+        } finally {
+            setIsCompletingShow(false);
+        }
+    }
 
     return (
         <div className="flex flex-col gap-5">
@@ -269,6 +565,11 @@ export function BookingDetailPreviewContent({
                                     ? `Por atender · ${getBookingStatusLabel(booking.status, role)}`
                                     : getBookingStatusLabel(booking.status, role)}
                         </Chip>
+                        {isDirectBooking ? (
+                            <Chip size="sm" variant="flat" color="secondary">
+                                Contrata directa
+                            </Chip>
+                        ) : null}
                         <span className="text-xs font-semibold text-default-400 tabular-nums">
                             {formatBookingCode(booking)}
                         </span>
@@ -289,12 +590,16 @@ export function BookingDetailPreviewContent({
 
                 <div className="sm:text-right shrink-0">
                     <p className="text-xs font-medium text-default-500">
-                        {role === "musician" ? "Monto acordado" : "Precio del servicio"}
+                        {role === "musician"
+                            ? "Monto acordado"
+                            : "Precio del servicio"}
                     </p>
                     <p className="text-2xl sm:text-3xl font-extrabold text-foreground tabular-nums mt-0.5">
                         {priceLabel}
                     </p>
-                    <p className={`text-xs font-medium mt-0.5 ${paymentSummary.toneClass}`}>
+                    <p
+                        className={`text-xs font-medium mt-0.5 ${paymentSummary.toneClass}`}
+                    >
                         {paymentSummary.label}
                     </p>
                 </div>
@@ -350,22 +655,33 @@ export function BookingDetailPreviewContent({
                     />
                     <p className="leading-snug">
                         {urgent && !disputeHint ? (
-                            <span className="font-bold">Siguiente paso (tu turno): </span>
+                            <span className="font-bold">
+                                Siguiente paso (tu turno):{" "}
+                            </span>
                         ) : null}
                         {hintText}
                     </p>
                 </div>
             ) : null}
 
-            {/* 3. Bloques de Cliente/Músico y Ubicación completa */}
+            {/* 3. Bloques de Cliente/Músico (con Llamar y WhatsApp rápidos) y Ubicación completa */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Contraparte */}
                 <div className="rounded-2xl border border-default-200/70 bg-default-50/70 p-4 flex flex-col justify-between gap-3">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-default-500">
-                            <Icon icon={party.icon} width={16} aria-hidden="true" />
+                            <Icon
+                                icon={party.icon}
+                                width={16}
+                                aria-hidden="true"
+                            />
                             <span>{party.label}</span>
                         </div>
+                        {phoneInfo.displayPhone ? (
+                            <span className="text-xs font-semibold text-default-600 tabular-nums">
+                                {phoneInfo.displayPhone}
+                            </span>
+                        ) : null}
                     </div>
 
                     <div className="flex items-center gap-3 min-w-0">
@@ -388,44 +704,88 @@ export function BookingDetailPreviewContent({
                                 {party.name}
                             </p>
                             <p className="text-xs text-default-500 truncate">
-                                {role === "musician"
-                                    ? "Contratista registrado en Chivapp"
-                                    : "Artista / Agrupación verificada"}
+                                {party.subtitle}
                             </p>
                         </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <Button
-                            as={Link}
-                            href={party.profileHref}
-                            size="sm"
-                            variant="bordered"
-                            radius="full"
-                            className="h-8 text-xs font-semibold bg-content1"
-                            startContent={
-                                <Icon
-                                    icon="material-symbols:account-circle-outline"
-                                    width={15}
-                                />
-                            }
-                        >
-                            Ver perfil
-                        </Button>
-                        <Button
-                            as={Link}
-                            href={detailHref}
-                            size="sm"
-                            variant="flat"
-                            color="primary"
-                            radius="full"
-                            className="h-8 text-xs font-semibold"
-                            startContent={
-                                <Icon icon="material-symbols:chat-outline" width={15} />
-                            }
-                        >
-                            Abrir chat y sala
-                        </Button>
+                        {phoneInfo.telHref ? (
+                            <Button
+                                as="a"
+                                href={phoneInfo.telHref}
+                                size="sm"
+                                variant="bordered"
+                                radius="full"
+                                className="h-8 text-xs font-semibold bg-content1"
+                                startContent={
+                                    <Icon
+                                        icon="material-symbols:call-outline"
+                                        width={15}
+                                    />
+                                }
+                            >
+                                Llamar
+                            </Button>
+                        ) : null}
+                        {waUrl ? (
+                            <Button
+                                as="a"
+                                href={waUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                size="sm"
+                                color="success"
+                                variant="flat"
+                                radius="full"
+                                className="h-8 text-xs font-semibold"
+                                startContent={
+                                    <Icon
+                                        icon="ic:baseline-whatsapp"
+                                        width={15}
+                                    />
+                                }
+                            >
+                                WhatsApp
+                            </Button>
+                        ) : null}
+                        {party.canViewProfile ? (
+                            <Button
+                                as={Link}
+                                href={party.profileHref}
+                                size="sm"
+                                variant="bordered"
+                                radius="full"
+                                className="h-8 text-xs font-semibold bg-content1"
+                                startContent={
+                                    <Icon
+                                        icon="material-symbols:account-circle-outline"
+                                        width={15}
+                                    />
+                                }
+                            >
+                                Ver perfil
+                            </Button>
+                        ) : null}
+                        {!phoneInfo.telHref && !waUrl ? (
+                            <Button
+                                as={Link}
+                                href={detailHref}
+                                size="sm"
+                                variant="flat"
+                                color="primary"
+                                radius="full"
+                                className="h-8 text-xs font-semibold"
+                                startContent={
+                                    <Icon
+                                        icon="material-symbols:chat-outline"
+                                        width={15}
+                                    />
+                                }
+                            >
+                                Chat en sala
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
 
@@ -442,7 +802,10 @@ export function BookingDetailPreviewContent({
                         </div>
                         {coords ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success-text">
-                                <Icon icon="material-symbols:my-location" width={13} />
+                                <Icon
+                                    icon="material-symbols:my-location"
+                                    width={13}
+                                />
                                 GPS
                             </span>
                         ) : null}
@@ -464,7 +827,7 @@ export function BookingDetailPreviewContent({
                         ) : null}
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
                         {mapsUrl ? (
                             <Button
                                 as="a"
@@ -477,21 +840,44 @@ export function BookingDetailPreviewContent({
                                 radius="full"
                                 className="h-8 text-xs font-semibold"
                                 startContent={
-                                    <Icon icon="material-symbols:map-outline" width={15} />
+                                    <Icon
+                                        icon="material-symbols:map-outline"
+                                        width={15}
+                                    />
                                 }
                             >
                                 Abrir en Maps
                             </Button>
-                        ) : (
-                            <span className="text-xs text-default-400">
-                                Sin enlace de mapa disponible
-                            </span>
-                        )}
+                        ) : null}
+                        <Button
+                            size="sm"
+                            variant="bordered"
+                            radius="full"
+                            className="h-8 text-xs font-semibold bg-content1"
+                            startContent={
+                                <Icon
+                                    icon="material-symbols:content-copy-outline"
+                                    width={14}
+                                />
+                            }
+                            onPress={() => {
+                                const textToCopy = [addressLine, cityLine]
+                                    .filter(Boolean)
+                                    .join(", ");
+                                void navigator.clipboard.writeText(textToCopy);
+                                addToast({
+                                    title: "Ubicación copiada",
+                                    color: "success",
+                                });
+                            }}
+                        >
+                            Copiar dirección
+                        </Button>
                     </div>
                 </div>
             </div>
 
-            {/* 4. Detalles adicionales del evento (mensaje del cliente, duración, invitados, notas) */}
+            {/* 4. Detalles adicionales del evento */}
             {hasEventExtraDetails ? (
                 <div className="rounded-2xl border border-default-200/70 bg-default-50/50 p-4 flex flex-col gap-2.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -512,57 +898,203 @@ export function BookingDetailPreviewContent({
                             “{booking.event_description.trim()}”
                         </p>
                     ) : null}
-                    {booking.musician_quote_notes?.trim() ? (
+                    {displayQuoteNotes ? (
                         <p className="text-xs text-default-600">
                             <span className="font-semibold text-foreground">
-                                Condiciones de cotización:{" "}
+                                Nota de pago / acuerdo:{" "}
                             </span>
-                            {booking.musician_quote_notes.trim()}
+                            {displayQuoteNotes}
                         </p>
                     ) : null}
                 </div>
             ) : null}
 
-            {/* 5. Resumen económico */}
+            {/* 5. Resumen económico real según tipo de contrata (Directa sin comisión vs Pasarela Chivapp) */}
             <div className="rounded-2xl border border-default-200/70 bg-default-50/70 p-4 flex flex-col gap-3">
-                <p className="text-xs font-semibold text-default-500">
-                    Resumen económico
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                    <div>
-                        <p className="text-[11px] text-default-500">
-                            {role === "musician" ? "Tu tarifa neta" : "Precio servicio"}
-                        </p>
-                        <p className="text-sm sm:text-base font-bold text-foreground tabular-nums mt-0.5">
-                            {totalService != null
-                                ? formatCurrency(totalService)
-                                : "Por cotizar"}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-[11px] text-default-500">
-                            Servicio y pasarela
-                        </p>
-                        <p className="text-sm sm:text-base font-bold text-primary-text tabular-nums mt-0.5">
-                            {totalService != null ? formatCurrency(fee) : "—"}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-[11px] text-default-500">
-                            Total contratista
-                        </p>
-                        <p className="text-sm sm:text-base font-bold text-foreground tabular-nums mt-0.5">
-                            {contractorTotal != null
-                                ? formatCurrency(contractorTotal)
-                                : "—"}
-                        </p>
-                    </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-default-500">
+                        Resumen económico
+                    </p>
+                    <span className="text-[11px] font-semibold text-default-500">
+                        {isDirectBooking
+                            ? "Contrata directa · 0 % comisión Chivapp"
+                            : "Pago protegido por Chivapp"}
+                    </span>
                 </div>
+
+                {isDirectBooking ? (
+                    <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <p className="text-[11px] text-default-500">
+                                Tarifa acordada
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-foreground tabular-nums mt-0.5">
+                                {totalService != null
+                                    ? formatCurrency(totalService)
+                                    : "Por definir"}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-default-500">
+                                Adelanto recibido
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-success-text tabular-nums mt-0.5">
+                                {directAdvanceInfo.advanceAmount != null
+                                    ? formatCurrency(
+                                          directAdvanceInfo.advanceAmount,
+                                      )
+                                    : "Pago directo"}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-default-500">
+                                {directAdvanceInfo.advanceAmount != null
+                                    ? "Saldo al finalizar"
+                                    : "Comisión Chivapp"}
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-foreground tabular-nums mt-0.5">
+                                {directAdvanceInfo.advanceAmount != null &&
+                                directAdvanceInfo.remainingBalance != null
+                                    ? formatCurrency(
+                                          directAdvanceInfo.remainingBalance,
+                                      )
+                                    : "S/ 0.00"}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <p className="text-[11px] text-default-500">
+                                {role === "musician"
+                                    ? "Tu tarifa neta"
+                                    : "Precio servicio"}
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-foreground tabular-nums mt-0.5">
+                                {totalService != null
+                                    ? formatCurrency(totalService)
+                                    : "Por cotizar"}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-default-500">
+                                Servicio y pasarela
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-primary-text tabular-nums mt-0.5">
+                                {totalService != null ? formatCurrency(fee) : "—"}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[11px] text-default-500">
+                                Total contratista
+                            </p>
+                            <p className="text-sm sm:text-base font-bold text-foreground tabular-nums mt-0.5">
+                                {contractorTotal != null
+                                    ? formatCurrency(contractorTotal)
+                                    : "—"}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* 6. Acciones principales */}
+            {/* 5.5. Enlace rápido para que el cliente de contrata directa complete GPS, datos y firma */}
+            {canGenerateDirectClientLink ? (
+                <div className="rounded-2xl border border-secondary/30 bg-secondary/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Icon
+                                icon="material-symbols:add-location-alt-outline"
+                                width={16}
+                                className="text-secondary"
+                            />
+                            ¿Falta ubicación GPS exacta, DNI o firma del cliente?
+                        </p>
+                        <p className="text-[11px] text-default-600 mt-0.5">
+                            Comparte un link sin pasarela de pago para que tu cliente marque el mapa GPS y firme el contrato sobre esta misma reserva.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        {generatedClientLink ? (
+                            <>
+                                <Button
+                                    size="sm"
+                                    color="secondary"
+                                    variant="flat"
+                                    radius="full"
+                                    className="h-8 text-xs font-semibold"
+                                    startContent={
+                                        <Icon
+                                            icon="material-symbols:content-copy-outline"
+                                            width={14}
+                                        />
+                                    }
+                                    onPress={() => {
+                                        void navigator.clipboard.writeText(
+                                            generatedClientLink,
+                                        );
+                                        addToast({
+                                            title: "Enlace copiado",
+                                            color: "success",
+                                        });
+                                    }}
+                                >
+                                    Copiar link
+                                </Button>
+                                {phoneInfo.waDigits ? (
+                                    <Button
+                                        as="a"
+                                        href={`https://wa.me/${phoneInfo.waDigits}?text=${encodeURIComponent(
+                                            `¡Hola! Aquí tienes el enlace oficial de nuestra presentación (${booking.event_type}) para que marques la ubicación exacta en el mapa GPS, completes tus datos y firmes nuestro contrato digital: ${generatedClientLink}`,
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        size="sm"
+                                        color="success"
+                                        variant="flat"
+                                        radius="full"
+                                        className="h-8 text-xs font-semibold"
+                                        startContent={
+                                            <Icon
+                                                icon="ic:baseline-whatsapp"
+                                                width={15}
+                                            />
+                                        }
+                                    >
+                                        Enviar link por WhatsApp
+                                    </Button>
+                                ) : null}
+                            </>
+                        ) : (
+                            <Button
+                                size="sm"
+                                color="secondary"
+                                variant="solid"
+                                radius="full"
+                                isLoading={isCreatingClientLink}
+                                onPress={() =>
+                                    void handleGenerateDirectClientLink()
+                                }
+                                className="h-8 text-xs font-semibold"
+                                startContent={
+                                    !isCreatingClientLink ? (
+                                        <Icon
+                                            icon="material-symbols:link"
+                                            width={15}
+                                        />
+                                    ) : undefined
+                                }
+                            >
+                                Generar link de datos y firma
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            ) : null}
+
+            {/* 6. Acciones rápidas de fase + Gestionar presentación */}
             <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-default-200/70">
-                <div>
+                <div className="flex flex-wrap items-center gap-2">
                     {canCancel ? (
                         <Button
                             color="danger"
@@ -575,25 +1107,67 @@ export function BookingDetailPreviewContent({
                             Cancelar reserva
                         </Button>
                     ) : null}
+                    {canShareAchievement ? (
+                        <Button
+                            variant="bordered"
+                            radius="full"
+                            size="sm"
+                            onPress={() => setIsShareAchievementOpen(true)}
+                            className="w-full sm:w-auto font-semibold bg-content1"
+                            startContent={
+                                <Icon
+                                    icon="material-symbols:ios-share"
+                                    width={15}
+                                />
+                            }
+                        >
+                            Compartir logro
+                        </Button>
+                    ) : null}
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <Button
-                        as={Link}
-                        href={detailHref}
-                        variant="flat"
-                        color="primary"
-                        radius="full"
-                        size="md"
-                        className="font-semibold"
-                        startContent={
-                            <Icon
-                                icon="material-symbols:description-outline"
-                                width={17}
-                            />
-                        }
-                    >
-                        Ver contrato y sala
-                    </Button>
+                    {canQuickStartShow ? (
+                        <Button
+                            color="success"
+                            variant="flat"
+                            radius="full"
+                            size="md"
+                            isLoading={isStartingShow}
+                            onPress={() => void handleQuickStartShow()}
+                            className="font-semibold"
+                            startContent={
+                                !isStartingShow ? (
+                                    <Icon
+                                        icon="material-symbols:play-arrow-rounded"
+                                        width={18}
+                                    />
+                                ) : undefined
+                            }
+                        >
+                            Iniciar presentación
+                        </Button>
+                    ) : null}
+                    {canQuickCompleteDirectShow ? (
+                        <Button
+                            color="success"
+                            variant="flat"
+                            radius="full"
+                            size="md"
+                            isLoading={isCompletingShow}
+                            onPress={() => void handleQuickCompleteShow()}
+                            className="font-semibold"
+                            startContent={
+                                !isCompletingShow ? (
+                                    <Icon
+                                        icon="material-symbols:task-alt"
+                                        width={18}
+                                    />
+                                ) : undefined
+                            }
+                        >
+                            Finalizar show
+                        </Button>
+                    ) : null}
                     <Button
                         as={Link}
                         href={detailHref}
@@ -607,7 +1181,7 @@ export function BookingDetailPreviewContent({
                                 icon={
                                     urgent || inDispute
                                         ? "material-symbols:bolt"
-                                        : "material-symbols:check-rounded"
+                                        : "material-symbols:open-in-new"
                                 }
                                 width={18}
                             />
@@ -619,6 +1193,17 @@ export function BookingDetailPreviewContent({
                     </Button>
                 </div>
             </div>
+
+            <BookingAchievementShareModal
+                isOpen={isShareAchievementOpen}
+                onOpenChange={setIsShareAchievementOpen}
+                role={role}
+                musicianName={booking.musician_name?.trim() || "Agrupación Musical"}
+                eventType={booking.event_type}
+                eventDate={booking.event_date}
+                startTime={booking.start_time}
+                city={booking.location_city || booking.location_address}
+            />
         </div>
     );
 }
@@ -720,6 +1305,7 @@ export function BookingAgendaListItem({
             ? formatCurrency(Number(booking.price_agreed))
             : "Sin cotizar";
     const statusBadge = getCompactStatusBadge(booking, role, urgent);
+    const isDirect = isDirectExternalBooking(booking);
 
     const timeBoxClass =
         booking.status === "cancelled"
@@ -760,6 +1346,11 @@ export function BookingAgendaListItem({
                     <span className="font-bold text-sm sm:text-base text-foreground truncate">
                         {booking.event_type}
                     </span>
+                    {isDirect ? (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary shrink-0">
+                            Directa
+                        </span>
+                    ) : null}
                     {memberBadge ? (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary/15 text-secondary shrink-0">
                             Integrante

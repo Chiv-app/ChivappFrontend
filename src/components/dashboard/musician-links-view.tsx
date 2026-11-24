@@ -25,6 +25,7 @@ import {
     BookingLinkOut,
     getMyBookingLinks,
     resetBookingLinkExpiration,
+    switchBookingLinkMode,
 } from "@/lib/booking-links";
 import { formatCurrency } from "@/lib/booking-labels";
 import { formatDateTime } from "@/lib/date-utils";
@@ -43,11 +44,14 @@ function getEffectiveStepInfo(link: BookingLinkOut): {
     tone: "default" | "primary" | "warning" | "success";
 } {
     const draft = link.draft_data ?? {};
+    const isDirect = draft.payment_mode === "direct";
     if (link.status === "completed") {
         return {
             step: 4,
             maxStep: 4,
-            headline: "Completado: contrato firmado y pago acreditado",
+            headline: isDirect
+                ? "Completado: ubicación GPS, datos y contrato firmados (Pago directo)"
+                : "Completado: contrato firmado y pago acreditado",
             tone: "success",
         };
     }
@@ -70,11 +74,13 @@ function getEffectiveStepInfo(link: BookingLinkOut): {
     }
 
     const active = currentStep || maxStep || 1;
-    if (active >= 4 || draft.payment_modal_opened || link.booking_id) {
+    if (active >= 4 || draft.payment_modal_opened) {
         return {
             step: 4,
             maxStep: 4,
-            headline: "Se quedó en Paso 4: firmó el contrato y abrió la pasarela de pago",
+            headline: isDirect
+                ? "En Paso 3: revisando y firmando el contrato directo"
+                : "Se quedó en Paso 4: firmó el contrato y abrió la pasarela de pago",
             tone: "primary",
         };
     }
@@ -83,7 +89,9 @@ function getEffectiveStepInfo(link: BookingLinkOut): {
             step: 3,
             maxStep,
             headline: draft.has_signature
-                ? "En Paso 3: ya dibujó su firma, falta confirmar y pasar al pago"
+                ? isDirect
+                    ? "En Paso 3: ya dibujó su firma, falta pulsar Confirmar reserva"
+                    : "En Paso 3: ya dibujó su firma, falta confirmar y pasar al pago"
                 : "Se quedó en Paso 3: revisando y firmando el contrato",
             tone: "warning",
         };
@@ -131,6 +139,7 @@ export default function MusicianLinksView() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [renewingToken, setRenewingToken] = useState<string | null>(null);
+    const [switchingToken, setSwitchingToken] = useState<string | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -196,6 +205,41 @@ export default function MusicianLinksView() {
             });
         } finally {
             setRenewingToken(null);
+        }
+    }
+
+    async function handleSwitchLinkMode(
+        token: string,
+        nextMode: "platform" | "direct",
+    ) {
+        setSwitchingToken(token);
+        try {
+            const updated = await switchBookingLinkMode(token, {
+                payment_mode: nextMode,
+            });
+            setLinks((prev) =>
+                prev.map((item) => (item.token === token ? updated : item)),
+            );
+            addToast({
+                title:
+                    nextMode === "direct"
+                        ? "Cambiado a Pago directo (0 % comisión)"
+                        : "Cambiado a cobro con pasarela Chivapp",
+                description:
+                    nextMode === "direct"
+                        ? "Ahora el cliente podrá confirmar la reserva al firmar el contrato, sin pasar por Mercado Pago."
+                        : "Ahora el enlace solicitará el pago con tarjeta o Yape al firmar el contrato.",
+                color: "success",
+            });
+        } catch (error) {
+            addToast({
+                title: "No se pudo cambiar la modalidad",
+                description:
+                    error instanceof Error ? error.message : "Intenta de nuevo.",
+                color: "danger",
+            });
+        } finally {
+            setSwitchingToken(null);
         }
     }
 
@@ -375,6 +419,7 @@ export default function MusicianLinksView() {
                                 ? `${window.location.origin}/pay/${link.token}`
                                 : "";
                         const draft = link.draft_data ?? {};
+                        const isDirectMode = draft.payment_mode === "direct";
                         const openCount = Number(link.open_count ?? 0);
                         const stepInfo = getEffectiveStepInfo(link);
 
@@ -468,6 +513,15 @@ export default function MusicianLinksView() {
                                                     <p className="text-xl font-bold text-primary">
                                                         {formatCurrency(link.price)}
                                                     </p>
+                                                    <Chip
+                                                        size="sm"
+                                                        color={isDirectMode ? "secondary" : "primary"}
+                                                        variant="flat"
+                                                    >
+                                                        {isDirectMode
+                                                            ? "Pago directo · Solo firma (0 %)"
+                                                            : "Con pasarela Chivapp"}
+                                                    </Chip>
                                                     {(link.source === "whatsapp_ai" ||
                                                         link.source ===
                                                             "assistant_whatsapp") && (
@@ -720,6 +774,37 @@ export default function MusicianLinksView() {
                                                     }
                                                 >
                                                     Reactivar 24 h
+                                                </Button>
+                                            ) : null}
+
+                                            {link.status === "active" && !isExpired ? (
+                                                <Button
+                                                    size="sm"
+                                                    color={isDirectMode ? "primary" : "secondary"}
+                                                    variant="flat"
+                                                    radius="lg"
+                                                    className="w-full font-semibold"
+                                                    isLoading={switchingToken === link.token}
+                                                    onPress={() =>
+                                                        void handleSwitchLinkMode(
+                                                            link.token,
+                                                            isDirectMode ? "platform" : "direct",
+                                                        )
+                                                    }
+                                                    startContent={
+                                                        <Icon
+                                                            icon={
+                                                                isDirectMode
+                                                                    ? "material-symbols:shield-lock-outline"
+                                                                    : "material-symbols:draw-outline"
+                                                            }
+                                                            width={16}
+                                                        />
+                                                    }
+                                                >
+                                                    {isDirectMode
+                                                        ? "Activar cobro con pasarela Chivapp"
+                                                        : "¿Ya te pagó por fuera? Cambiar a solo datos y firma (0 %)"}
                                                 </Button>
                                             ) : null}
 
