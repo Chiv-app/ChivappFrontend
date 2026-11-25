@@ -631,7 +631,7 @@ export default function LocationMapPicker({
       <div className="relative z-30 flex gap-2 items-start">
         <div className="flex-1 relative">
           <Input
-            label="Buscar dirección o pegar link de WhatsApp / Google Maps"
+            label="Buscar lugar o pegar link de WhatsApp / Maps"
             placeholder="Ej. Av. Mariscal Cáceres 820, Ayacucho o pega https://maps.app.goo.gl/..."
             description="Escribe la calle, pega la ubicación compartida de WhatsApp o toca el mapa para fijar el pin."
             value={searchQuery}
