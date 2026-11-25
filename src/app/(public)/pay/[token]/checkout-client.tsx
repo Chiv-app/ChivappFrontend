@@ -28,7 +28,11 @@ import LocationMapPickerField, {
   type MapLocation,
 } from "@/components/ui/location-map-picker-field";
 import CircularStepper from "@/components/ui/circular-stepper";
-import { formatLocationReference, searchPlaces } from "@/lib/geocoding";
+import {
+  formatLocationReference,
+  parseLocationReference,
+  searchPlaces,
+} from "@/lib/geocoding";
 import { formatCurrency, getEventTypeOptions } from "@/lib/booking-labels";
 import { formatPeruDate, todayPeruIso } from "@/lib/date-utils";
 import { sanitizeContractHtml } from "@/lib/sanitize-html";
@@ -111,17 +115,24 @@ export default function CheckoutClient({
     draft.location_city ||
     linkData.musician.location_city ||
     null;
+  const initialCoords = parseLocationReference(
+    draft.location_reference || linkData.location_reference,
+  );
 
   const [eventDate, setEventDate] = useState(initialEventDate);
   const [startTime, setStartTime] = useState(initialStartTime);
   const [eventType, setEventType] = useState(initialEventType);
   const [location, setLocation] = useState<MapLocation | null>(() => {
-    if (!initialAddress) return null;
+    if (!initialAddress && !initialCoords) return null;
     return {
-      address: initialAddress,
+      address:
+        initialAddress ||
+        (initialCoords
+          ? `Ubicación marcada (${initialCoords.lat.toFixed(5)}, ${initialCoords.lng.toFixed(5)})`
+          : ""),
       city: initialCity,
-      lat: Number.NaN,
-      lng: Number.NaN,
+      lat: initialCoords ? initialCoords.lat : Number.NaN,
+      lng: initialCoords ? initialCoords.lng : Number.NaN,
     };
   });
 

@@ -5,14 +5,25 @@ import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const markerIcon = L.icon({
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
+const markerIcon = L.divIcon({
+    className: "",
+    html: `<div style="
+        position: relative;
+        width: 32px;
+        height: 42px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
+    ">
+        <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 0C7.163 0 0 7.163 0 16C0 27.2 14.2 40.6 15.1 41.4C15.6 41.9 16.4 41.9 16.9 41.4C17.8 40.6 32 27.2 32 16C32 7.163 24.837 0 16 0Z" fill="#0E7490"/>
+            <circle cx="16" cy="15" r="6.5" fill="#FFFFFF"/>
+        </svg>
+    </div>`,
+    iconSize: [32, 42],
+    iconAnchor: [16, 41],
+    popupAnchor: [0, -36],
 });
 
 function InvalidateSize({ lat, lng }: { lat: number; lng: number }) {
@@ -54,7 +65,7 @@ export default function LocationMapPreviewInner({ lat, lng }: Props) {
         <div className="relative h-52 sm:h-60 rounded-2xl overflow-hidden border border-default-200 isolate">
             <MapContainer
                 center={[lat, lng]}
-                zoom={15}
+                zoom={16}
                 className="h-full w-full"
                 scrollWheelZoom={false}
                 dragging

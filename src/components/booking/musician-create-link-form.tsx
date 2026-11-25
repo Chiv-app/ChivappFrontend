@@ -10,6 +10,13 @@ import { contractorPayableTotal, platformFeeAmount } from "@/lib/platform-fee";
 import { formatCurrency, getEventTypeOptions } from "@/lib/booking-labels";
 import { todayPeruIso } from "@/lib/date-utils";
 import { getPlatformPaymentInstructions } from "@/lib/payments";
+import LocationMapPickerField, { type MapLocation } from "@/components/ui/location-map-picker-field";
+import {
+    formatLocationReference,
+    looksLikeSharedLocationText,
+    parseLocationReference,
+    resolveSharedLocation,
+} from "@/lib/geocoding";
 
 type Props = {
     onSuccess: () => void;
@@ -25,6 +32,8 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
     const [eventType, setEventType] = useState("");
     const [locationAddress, setLocationAddress] = useState("");
     const [locationCity, setLocationCity] = useState("");
+    const [location, setLocation] = useState<MapLocation | null>(null);
+    const [showMapPicker, setShowMapPicker] = useState(false);
     const [clientFullname, setClientFullname] = useState("");
     const [clientPhone, setClientPhone] = useState("");
     const [clientEmail, setClientEmail] = useState("");
@@ -91,6 +100,23 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
             setShowExtraFields(true);
             filledCount++;
         }
+        if (data.location_reference) {
+            const parsedRef = parseLocationReference(data.location_reference);
+            if (parsedRef) {
+                setLocation({
+                    address:
+                        data.location_address ||
+                        locationAddress ||
+                        `Ubicación (${parsedRef.lat.toFixed(5)}, ${parsedRef.lng.toFixed(5)})`,
+                    city: data.location_city || locationCity || null,
+                    lat: parsedRef.lat,
+                    lng: parsedRef.lng,
+                });
+                setShowExtraFields(true);
+                setShowMapPicker(true);
+                filledCount++;
+            }
+        }
         if (data.client_fullname) {
             setClientFullname(data.client_fullname);
             setShowExtraFields(true);
@@ -135,7 +161,21 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
         }
         setIsExtracting(true);
         try {
-            const res = await autocompleteBookingLink({ text: quickNote.trim() });
+            const trimmed = quickNote.trim();
+            const [res, sharedLoc] = await Promise.all([
+                autocompleteBookingLink({ text: trimmed }),
+                looksLikeSharedLocationText(trimmed)
+                    ? resolveSharedLocation(trimmed).catch(() => null)
+                    : Promise.resolve(null),
+            ]);
+            if (sharedLoc) {
+                res.location_address = sharedLoc.address || res.location_address;
+                res.location_city = sharedLoc.city || res.location_city;
+                res.location_reference = formatLocationReference(
+                    sharedLoc.lat,
+                    sharedLoc.lng,
+                );
+            }
             applyExtractedFields(res);
         } catch (err: unknown) {
             addToast({
@@ -146,6 +186,23 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
         } finally {
             setIsExtracting(false);
         }
+    };
+
+    const handleResolvePastedLocation = async (rawText: string) => {
+        const resolved = await resolveSharedLocation(rawText).catch(() => null);
+        if (!resolved) return;
+        setLocation(resolved);
+        setLocationAddress(resolved.address);
+        if (resolved.city) {
+            setLocationCity(resolved.city);
+        }
+        setShowExtraFields(true);
+        setShowMapPicker(true);
+        addToast({
+            title: "Ubicación de WhatsApp / Maps cargada",
+            description: `${resolved.address}${resolved.city ? ` (${resolved.city})` : ""}`,
+            color: "success",
+        });
     };
 
     const handleToggleVoiceRecording = async () => {
@@ -259,6 +316,12 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                     event_type: eventType.trim() || null,
                     location_address: locationAddress.trim() || null,
                     location_city: locationCity.trim() || null,
+                    location_reference:
+                        location &&
+                        Number.isFinite(location.lat) &&
+                        Number.isFinite(location.lng)
+                            ? formatLocationReference(location.lat, location.lng)
+                            : null,
                     client_fullname: clientFullname.trim() || null,
                     client_phone: clientPhone.trim() || null,
                     client_email: clientEmail.trim() || null,
@@ -644,14 +707,64 @@ export default function MusicianCreateLinkForm({ onSuccess }: Props) {
                             radius="lg"
                         />
                     </div>
-                    <Input
-                        label="Dirección exacta del evento"
-                        placeholder="Ej. Av. Mariscal Cáceres 820, Huamanga"
-                        value={locationAddress}
-                        onValueChange={setLocationAddress}
-                        variant="bordered"
-                        radius="lg"
-                    />
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-default-600">
+                                Ubicación del evento (puedes pegar un enlace de WhatsApp / Maps)
+                            </span>
+                            <Button
+                                size="sm"
+                                variant="flat"
+                                color="primary"
+                                radius="lg"
+                                className="h-7 text-xs"
+                                onPress={() => setShowMapPicker((v) => !v)}
+                                startContent={<Icon icon="lucide:map-pin" width={13} />}
+                            >
+                                {showMapPicker ? "Ocultar mapa" : "Marcar en el mapa"}
+                            </Button>
+                        </div>
+                        <Input
+                            label="Dirección exacta o link de WhatsApp / Google Maps"
+                            placeholder="Ej. Av. Mariscal Cáceres 820 o pega https://maps.app.goo.gl/..."
+                            value={locationAddress}
+                            onPaste={(e) => {
+                                const pasted = e.clipboardData?.getData("text") ?? "";
+                                if (pasted && looksLikeSharedLocationText(pasted)) {
+                                    e.preventDefault();
+                                    setLocationAddress(pasted.trim());
+                                    void handleResolvePastedLocation(pasted);
+                                }
+                            }}
+                            onValueChange={(val) => {
+                                setLocationAddress(val);
+                                if (looksLikeSharedLocationText(val)) {
+                                    void handleResolvePastedLocation(val);
+                                    return;
+                                }
+                                setLocation((prev) =>
+                                    prev ? { ...prev, address: val } : null,
+                                );
+                            }}
+                            variant="bordered"
+                            radius="lg"
+                        />
+                        {showMapPicker ? (
+                            <LocationMapPickerField
+                                value={location}
+                                onChange={(loc) => {
+                                    setLocation(loc);
+                                    if (loc.address) setLocationAddress(loc.address);
+                                    if (loc.city) setLocationCity(loc.city);
+                                }}
+                                fallbackQuery={
+                                    [locationAddress.trim(), locationCity.trim()]
+                                        .filter(Boolean)
+                                        .join(", ") || undefined
+                                }
+                            />
+                        ) : null}
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input
                             label="Nombre del cliente"

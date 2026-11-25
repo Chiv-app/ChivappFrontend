@@ -14,14 +14,60 @@ export function parseLocationReference(
 ): { lat: number; lng: number } | null {
     if (!reference) return null;
 
-    const match = reference.trim().match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
+    const match = reference
+        .trim()
+        .match(/(-?\d{1,2}(?:\.\d+)?)\s*,\s*\+?(-?\d{1,3}(?:\.\d+)?)/);
     if (!match) return null;
 
     const lat = Number(match[1]);
     const lng = Number(match[2]);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng) ||
+        lat < -90 ||
+        lat > 90 ||
+        lng < -180 ||
+        lng > 180
+    ) {
+        return null;
+    }
 
     return { lat, lng };
+}
+
+/**
+ * Detecta si un texto pegado parece ser una ubicación compartida de WhatsApp / Google Maps / Waze
+ * o coordenadas GPS directas (decimales o grados/minutos/segundos).
+ */
+export function looksLikeSharedLocationText(input: string): boolean {
+    const trimmed = input.trim();
+    if (trimmed.length < 6) return false;
+    return (
+        /https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|(?:www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|g\.co\/kgs|(?:www\.)?waze\.com\/ul|(?:www\.)?openstreetmap\.org)/i.test(
+            trimmed,
+        ) ||
+        /!3d-?\d{1,2}\.\d+!4d-?\d{1,3}\.\d+/.test(trimmed) ||
+        /(?:^|[^\d.])(-?\d{1,2}\.\d{4,})\s*,\s*\+?(-?\d{1,3}\.\d{4,})(?!\d)/.test(
+            trimmed,
+        ) ||
+        /\d{1,2}\s*°\s*\d{1,2}/.test(trimmed)
+    );
+}
+
+export async function resolveSharedLocation(
+    rawText: string,
+): Promise<MapLocation | null> {
+    const trimmed = rawText.trim();
+    if (!trimmed) return null;
+
+    const response = await fetch("/api/geocode/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: trimmed }),
+    });
+
+    if (!response.ok) return null;
+    return (await response.json()) as MapLocation;
 }
 
 export function buildGoogleMapsUrl(input: {

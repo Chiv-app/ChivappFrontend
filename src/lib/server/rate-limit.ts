@@ -59,5 +59,5 @@ export function getClientIp(request: NextRequest): string {
     return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
-/** Límite compartido por los endpoints de geocodificación: 30 solicitudes/minuto por IP. */
-export const geocodeRateLimit = createRateLimiter({ limit: 30, windowMs: 60_000 });
+/** Límite compartido por los endpoints de geocodificación: 90 solicitudes/minuto por IP. */
+export const geocodeRateLimit = createRateLimiter({ limit: 90, windowMs: 60_000 });

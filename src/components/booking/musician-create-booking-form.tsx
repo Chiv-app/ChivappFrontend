@@ -23,7 +23,10 @@ import { listEnsembleMembers } from "@/lib/ensemble-members";
 import {
     formatLocationReference,
     getMinEventDate,
+    looksLikeSharedLocationText,
     normalizeStartTime,
+    parseLocationReference,
+    resolveSharedLocation,
     searchPlaces,
 } from "@/lib/geocoding";
 import { getMusicianProfile } from "@/lib/profiles";
@@ -148,6 +151,19 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
             setLocationCity(data.location_city);
             filledCount++;
         }
+        if (data.location_reference) {
+            const parsedRef = parseLocationReference(data.location_reference);
+            if (parsedRef) {
+                setLocation({
+                    address: data.location_address || locationAddress || `Ubicación (${parsedRef.lat.toFixed(5)}, ${parsedRef.lng.toFixed(5)})`,
+                    city: data.location_city || locationCity || null,
+                    lat: parsedRef.lat,
+                    lng: parsedRef.lng,
+                });
+                setShowMapPicker(true);
+                filledCount++;
+            }
+        }
         if (data.client_fullname) {
             setContractorFullname(data.client_fullname);
             filledCount++;
@@ -199,7 +215,21 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
         }
         setIsExtracting(true);
         try {
-            const res = await autocompleteBookingLink({ text: quickNote.trim() });
+            const trimmed = quickNote.trim();
+            const [res, sharedLoc] = await Promise.all([
+                autocompleteBookingLink({ text: trimmed }),
+                looksLikeSharedLocationText(trimmed)
+                    ? resolveSharedLocation(trimmed).catch(() => null)
+                    : Promise.resolve(null),
+            ]);
+            if (sharedLoc) {
+                res.location_address = sharedLoc.address || res.location_address;
+                res.location_city = sharedLoc.city || res.location_city;
+                res.location_reference = formatLocationReference(
+                    sharedLoc.lat,
+                    sharedLoc.lng,
+                );
+            }
             applyExtractedFields(res);
         } catch (err: unknown) {
             addToast({
@@ -279,15 +309,29 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
     function handleMapLocationChange(loc: MapLocation | null) {
         setLocation(loc);
         if (loc) {
-            if (loc.address && !locationAddress.trim()) {
-                setLocationAddress(loc.address);
-            } else if (loc.address) {
+            if (loc.address) {
                 setLocationAddress(loc.address);
             }
             if (loc.city) {
                 setLocationCity(loc.city);
             }
         }
+    }
+
+    async function handleResolvePastedLocation(rawText: string) {
+        const resolved = await resolveSharedLocation(rawText).catch(() => null);
+        if (!resolved) return;
+        setLocation(resolved);
+        setLocationAddress(resolved.address);
+        if (resolved.city) {
+            setLocationCity(resolved.city);
+        }
+        setShowMapPicker(true);
+        addToast({
+            title: "Ubicación de WhatsApp / Maps cargada",
+            description: `${resolved.address}${resolved.city ? ` (${resolved.city})` : ""}`,
+            color: "success",
+        });
     }
 
     function validateStep2(): boolean {
@@ -661,30 +705,72 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                 <Icon icon="material-symbols:location-on" width={20} className="text-primary" />
                                 <h3 className="font-semibold text-foreground">Ubicación del evento</h3>
                             </div>
-                            <Button
-                                size="sm"
-                                variant="flat"
-                                color="primary"
-                                radius="lg"
-                                onPress={() => setShowMapPicker((v) => !v)}
-                                startContent={<Icon icon="lucide:map-pin" width={14} />}
-                            >
-                                {showMapPicker ? "Ocultar mapa" : "Colocar pin en el mapa"}
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <Button
+                                    size="sm"
+                                    variant="flat"
+                                    color="success"
+                                    radius="lg"
+                                    onPress={async () => {
+                                        if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+                                            try {
+                                                const clip = await navigator.clipboard.readText();
+                                                if (clip && clip.trim()) {
+                                                    await handleResolvePastedLocation(clip);
+                                                    return;
+                                                }
+                                            } catch {
+                                                // Abrir mapa para pegar manualmente
+                                            }
+                                        }
+                                        setShowMapPicker(true);
+                                        addToast({
+                                            title: "Pega la ubicación de WhatsApp",
+                                            description: "Pega el enlace o mensaje de ubicación en el campo de dirección o en el buscador del mapa.",
+                                            color: "primary",
+                                        });
+                                    }}
+                                    startContent={<Icon icon="ic:baseline-whatsapp" width={15} />}
+                                >
+                                    Pegar ubicación de WhatsApp
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="flat"
+                                    color="primary"
+                                    radius="lg"
+                                    onPress={() => setShowMapPicker((v) => !v)}
+                                    startContent={<Icon icon="lucide:map-pin" width={14} />}
+                                >
+                                    {showMapPicker ? "Ocultar mapa" : "Colocar pin en el mapa"}
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <Input
                                 className="sm:col-span-2"
-                                label="Dirección exacta del evento"
-                                placeholder="Ej. Av. Mariscal Cáceres 820"
+                                label="Dirección exacta o link de ubicación de WhatsApp / Maps"
+                                placeholder="Ej. Av. Mariscal Cáceres 820 o pega https://maps.app.goo.gl/..."
                                 isRequired
                                 value={locationAddress}
+                                onPaste={(e) => {
+                                    const pasted = e.clipboardData?.getData("text") ?? "";
+                                    if (pasted && looksLikeSharedLocationText(pasted)) {
+                                        e.preventDefault();
+                                        setLocationAddress(pasted.trim());
+                                        void handleResolvePastedLocation(pasted);
+                                    }
+                                }}
                                 onValueChange={(val) => {
                                     setLocationAddress(val);
+                                    if (looksLikeSharedLocationText(val)) {
+                                        void handleResolvePastedLocation(val);
+                                        return;
+                                    }
                                     setLocation((prev) =>
                                         prev
-                                            ? { ...prev, lat: Number.NaN, lng: Number.NaN, address: val }
+                                            ? { ...prev, address: val }
                                             : null,
                                     );
                                 }}
@@ -699,7 +785,7 @@ export default function MusicianCreateBookingForm({ onSuccess }: Props) {
                                     setLocationCity(val);
                                     setLocation((prev) =>
                                         prev
-                                            ? { ...prev, lat: Number.NaN, lng: Number.NaN, city: val }
+                                            ? { ...prev, city: val }
                                             : null,
                                     );
                                 }}

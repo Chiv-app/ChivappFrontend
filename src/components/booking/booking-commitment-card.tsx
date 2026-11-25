@@ -3,6 +3,7 @@ import {
     buildOpenStreetMapUrl,
     parseLocationReference,
 } from "@/lib/geocoding";
+import LocationMapPreview from "@/components/ui/location-map-preview";
 import type { BookingOut } from "@/types/api";
 import { Icon } from "@iconify/react";
 import { BOOKING_STATUS_LABELS } from '@/lib/booking-labels';
@@ -143,10 +144,24 @@ export default function BookingCommitmentCard({
                                 {booking.location_address || "Dirección no especificada"}
                                 {booking.location_city ? `, ${booking.location_city}` : ""}
                             </p>
-                            {booking.location_reference ? (
+                            {booking.location_reference && !coords ? (
                                 <p className="text-sm text-default-400 mt-1">
                                     Ref: {booking.location_reference}
                                 </p>
+                            ) : coords ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-success-text mt-1">
+                                    <Icon icon="material-symbols:my-location" width={14} />
+                                    Punto GPS exacto confirmado
+                                </span>
+                            ) : null}
+                            {(booking.location_address || coords) ? (
+                                <div className="mt-3">
+                                    <LocationMapPreview
+                                        address={booking.location_address}
+                                        city={booking.location_city}
+                                        reference={booking.location_reference}
+                                    />
+                                </div>
                             ) : null}
                         </div>
                     </div>

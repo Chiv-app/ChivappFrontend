@@ -18,7 +18,9 @@ import { formatCurrency } from "@/lib/booking-labels";
 import { requestBookingChange } from "@/lib/bookings";
 import {
     formatLocationReference,
+    looksLikeSharedLocationText,
     parseLocationReference,
+    resolveSharedLocation,
     searchPlaces,
 } from "@/lib/geocoding";
 import type { BookingOut, UserRole } from "@/types/api";
@@ -196,13 +198,35 @@ export default function BookingEditCommitmentModal({
                                 className="flex flex-col gap-4"
                             >
                                 <Input
-                                    label="Dirección exacta del evento"
+                                    label="Dirección exacta o enlace de WhatsApp / Maps"
                                     value={address}
+                                    onPaste={(e) => {
+                                        const pasted = e.clipboardData?.getData("text") ?? "";
+                                        if (pasted && looksLikeSharedLocationText(pasted)) {
+                                            e.preventDefault();
+                                            setAddress(pasted.trim());
+                                            void resolveSharedLocation(pasted).then((resolved) => {
+                                                if (!resolved) return;
+                                                setLocation(resolved);
+                                                setAddress(resolved.address);
+                                                if (resolved.city) setCity(resolved.city);
+                                            });
+                                        }
+                                    }}
                                     onValueChange={(val) => {
                                         setAddress(val);
+                                        if (looksLikeSharedLocationText(val)) {
+                                            void resolveSharedLocation(val).then((resolved) => {
+                                                if (!resolved) return;
+                                                setLocation(resolved);
+                                                setAddress(resolved.address);
+                                                if (resolved.city) setCity(resolved.city);
+                                            });
+                                            return;
+                                        }
                                         setLocation((prev) =>
                                             prev
-                                                ? { ...prev, lat: Number.NaN, lng: Number.NaN, address: val }
+                                                ? { ...prev, address: val }
                                                 : null,
                                         );
                                     }}
@@ -217,7 +241,7 @@ export default function BookingEditCommitmentModal({
                                         setCity(val);
                                         setLocation((prev) =>
                                             prev
-                                                ? { ...prev, lat: Number.NaN, lng: Number.NaN, city: val }
+                                                ? { ...prev, city: val }
                                                 : null,
                                         );
                                     }}
