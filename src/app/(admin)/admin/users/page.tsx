@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
             <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                     label="Buscar"
-                    placeholder="Nombre o email"
+                    placeholder="Nombre, correo o teléfono"
                     value={q}
                     onValueChange={setQ}
                     variant="bordered"
@@ -189,73 +189,96 @@ export default function AdminUsersPage() {
                         isLoading={loading}
                         items={users}
                     >
-                        {(user) => (
-                            <TableRow key={user.id}>
-                                <TableCell>
-                                    <div>
-                                        <p className="font-medium text-foreground">
-                                            {user.fullname || "-"}
-                                        </p>
-                                        <p className="text-xs text-default-500">
-                                            {user.email}
-                                        </p>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Chip size="sm" variant="flat">
-                                        {ROLE_LABELS[user.role] ?? user.role}
-                                    </Chip>
-                                </TableCell>
-                                <TableCell>
-                                    <Chip
-                                        size="sm"
-                                        color={user.is_active === false ? "danger" : "success"}
-                                        variant="flat"
-                                    >
-                                        {user.is_active === false ? "Suspendido" : "Activo"}
-                                    </Chip>
-                                </TableCell>
-                                <TableCell>
-                                    <Switch
-                                        size="sm"
-                                        aria-label={`Verificar a ${user.fullname || user.email}`}
-                                        isSelected={user.is_verified}
-                                        isDisabled={busyId === user.id || user.role === "admin"}
-                                        onValueChange={(value) =>
-                                            patchUser(user.id, { is_verified: value })
-                                        }
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Switch
-                                        size="sm"
-                                        color="danger"
-                                        aria-label={`Activar o suspender a ${user.fullname || user.email}`}
-                                        isSelected={user.is_active !== false}
-                                        isDisabled={busyId === user.id || user.role === "admin"}
-                                        onValueChange={(value) => {
-                                            if (!value) {
-                                                setSuspendTarget(user);
-                                            } else {
-                                                void patchUser(user.id, { is_active: true });
+                        {(user) => {
+                            const isGuestEmail = Boolean(
+                                user.email?.endsWith("@guest.local") ||
+                                    user.registration_type === "guest",
+                            );
+                            return (
+                                <TableRow key={user.id}>
+                                    <TableCell>
+                                        <div>
+                                            <p className="font-medium text-foreground">
+                                                {user.fullname || "-"}
+                                            </p>
+                                            <p className="text-xs text-default-500">
+                                                {isGuestEmail
+                                                    ? "Sin correo (cliente de contrata directa)"
+                                                    : user.email}
+                                            </p>
+                                            {user.phone ? (
+                                                <p className="text-xs text-default-400 tabular-nums">
+                                                    Tel: {user.phone}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip size="sm" variant="flat">
+                                            {ROLE_LABELS[user.role] ?? user.role}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            size="sm"
+                                            color={user.is_active === false ? "danger" : "success"}
+                                            variant="flat"
+                                        >
+                                            {user.is_active === false ? "Suspendido" : "Activo"}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Switch
+                                            size="sm"
+                                            aria-label={`Verificar a ${user.fullname || user.email}`}
+                                            isSelected={Boolean(user.is_verified)}
+                                            isDisabled={busyId === user.id || user.role === "admin"}
+                                            onValueChange={(value) =>
+                                                patchUser(user.id, { is_verified: value })
                                             }
-                                        }}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Chip
-                                        size="sm"
-                                        variant="flat"
-                                        color={user.registration_type === "google" ? "primary" : "secondary"}
-                                    >
-                                        {user.registration_type === "google" ? "Google" : "Chivapp"}
-                                    </Chip>
-                                </TableCell>
-                                <TableCell className="text-xs text-default-500">
-                                    {formatDateTime(user.created_at)}
-                                </TableCell>
-                            </TableRow>
-                        )}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Switch
+                                            size="sm"
+                                            color="danger"
+                                            aria-label={`Activar o suspender a ${user.fullname || user.email}`}
+                                            isSelected={user.is_active !== false}
+                                            isDisabled={busyId === user.id || user.role === "admin"}
+                                            onValueChange={(value) => {
+                                                if (!value) {
+                                                    setSuspendTarget(user);
+                                                } else {
+                                                    void patchUser(user.id, { is_active: true });
+                                                }
+                                            }}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            size="sm"
+                                            variant="flat"
+                                            color={
+                                                user.registration_type === "google"
+                                                    ? "primary"
+                                                    : isGuestEmail
+                                                      ? "default"
+                                                      : "secondary"
+                                            }
+                                        >
+                                            {user.registration_type === "google"
+                                                ? "Google"
+                                                : isGuestEmail
+                                                  ? "Contrata directa"
+                                                  : "Chivapp"}
+                                        </Chip>
+                                    </TableCell>
+                                    <TableCell className="text-xs text-default-500">
+                                        {user.created_at ? formatDateTime(user.created_at) : "—"}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        }}
                     </TableBody>
                 </Table>
             </div>
